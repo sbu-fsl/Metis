@@ -3,4 +3,5 @@
 test
 *.o
 pan*
+*.trail
 .vscode/
