@@ -1,0 +1,6 @@
+*.log*
+*.swp
+test
+*.o
+pan*
+.vscode/
