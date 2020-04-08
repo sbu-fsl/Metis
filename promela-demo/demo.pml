@@ -1,18 +1,14 @@
 c_code {
 \#include "fileutil.h"
 
-const char *filename = "test.txt";
-const char *dirname = "testdir";
-/* Reference f/s: tmpfs */
-const char *rfs_path = "/tmp/test";
-/* Target f/s */
-const char *tfs_path = "/mnt/shared/test";
+char *fslist[] = {"ext4", "ramfs", "xfs", "nfs"};
+#define n_fs 4 
+char *basepaths[n_fs];
+char *testdirs[n_fs];
+char *testfiles[n_fs];
 
-int r1, r2, err1, err2;
-int fd1 = -1, fd2 = -1;
-char *rfs_file, *rfs_dir, *tfs_file, *tfs_dir;
-bool equality_of_existence, equality_of_content;
-
+int rets[n_fs], errs[n_fs];
+int fds[n_fs] = {-1};
 };
 
 c_track "func" "9";
@@ -21,81 +17,102 @@ c_track "&errno" "sizeof(int)";
 proctype worker()
 {
     /* Non-deterministic test loop */
+    bool eq_of_existence, eq_of_value, eq_of_error, eq_of_content;
     do 
     :: d_step { 
         /* mkdir, check: retval, errno, existence */
         c_code {
-            makecall(r1, err1, "%s, %o", mkdir, rfs_dir, 0755);
-            makecall(r2, err2, "%s, %o", mkdir, tfs_dir, 0755);
-            equality_of_existence =
-              check_file_existence(rfs_dir) == check_file_existence(tfs_dir);
+            int i;
+            for (i = 0; i < n_fs; ++i) {
+                makecall(rets[i], errs[i], "%s, %o", mkdir, testdirs[i], 0755);
+            }
+
+            Pworker->eq_of_existence = compare_equality_fexists(fslist, n_fs, testdirs);
+            Pworker->eq_of_value = compare_equality_values(fslist, n_fs, rets);
+            Pworker->eq_of_error = compare_equality_values(fslist, n_fs, errs);
         };
-        assert(c_expr{r1 == r2});
-        assert(c_expr{err1 == err2});
-        assert(c_expr{equality_of_existence});
+        assert(eq_of_existence);
+        assert(eq_of_value);
+        assert(eq_of_error);
     };
     :: d_step { 
         /* rmdir, check: retval, errno, existence */
         c_code {
-            makecall(r1, err1, "%s", rmdir, rfs_dir);
-            makecall(r2, err2, "%s", rmdir, tfs_dir);
-            equality_of_existence =
-              check_file_existence(rfs_dir) == check_file_existence(tfs_dir);
+            int i;
+            for (i = 0; i < n_fs; ++i) {
+                makecall(rets[i], errs[i], "%s", rmdir, testdirs[i]);
+            }
+
+            Pworker->eq_of_existence = compare_equality_fexists(fslist, n_fs, testdirs);
+            Pworker->eq_of_value = compare_equality_values(fslist, n_fs, rets);
+            Pworker->eq_of_error = compare_equality_values(fslist, n_fs, errs);
         };
-        assert(c_expr{r1 == r2});
-        assert(c_expr{err1 == err2});
-        assert(c_expr{equality_of_existence});
+        assert(eq_of_existence);
+        assert(eq_of_value);
+        assert(eq_of_error);
     };
     :: d_step {
         /* open, check: errno, existence */
         c_code { 
-            makecall(fd1, err1, "%s, %#x, %o", open, rfs_file, O_RDWR | O_CREAT, 0644);
-            makecall(fd2, err2, "%s, %#x, %o", open, tfs_file, O_RDWR | O_CREAT, 0644);
-            equality_of_existence =
-              check_file_existence(rfs_dir) == check_file_existence(tfs_dir);
+            int i;
+            for (i = 0; i < n_fs; ++i) {
+                makecall(fds[i], errs[i], "%s, %#x, %o", open, testfiles[i], O_RDWR | O_CREAT, 0644);
+            }
+
+            Pworker->eq_of_existence = compare_equality_fexists(fslist, n_fs, testdirs);
+            Pworker->eq_of_error = compare_equality_values(fslist, n_fs, errs);
         };
-        assert(c_expr{err1 == err2});
-        assert(c_expr{equality_of_existence});
+        assert(eq_of_existence);
+        assert(eq_of_error);
     };
     :: d_step {
         /* write, check: retval, errno, content */
         c_code {
             size_t writelen = pick_value(4096, 16384);
             char *data = malloc(writelen);
-            makecall(r1, err1, "%d, %p, %zu", write, fd1, data, writelen);
-            makecall(r2, err2, "%d, %p, %zu", write, fd2, data, writelen);
+            int i;
+            for (i = 0; i < n_fs; ++i) {
+                makecall(rets[i], errs[i], "%d, %p, %zu", write, fds[i], data, writelen);
+            }
+
             free(data);
-            /* Let's consider equality of content = true when neither rfs_file
-               nor tfs_file exists. */
-            if (!check_file_existence(rfs_file) && !check_file_existence(tfs_file))
-                equality_of_content = true;
-            else
-                equality_of_content = compare_file_content(fd1, fd2) == 0;
+            Pworker->eq_of_value = compare_equality_values(fslist, n_fs, rets);
+            Pworker->eq_of_error = compare_equality_values(fslist, n_fs, errs);
+            Pworker->eq_of_content = compare_equality_fcontent(fslist, n_fs, testfiles, fds);
         };
-        assert(c_expr{r1 == r2});
-        assert(c_expr{err1 == err2});
-        assert(c_expr{equality_of_content});
+        assert(eq_of_value);
+        assert(eq_of_error);
+        assert(eq_of_content);
     };
     :: d_step {
         /* close, check: retval, errno */
         c_code {
-            makecall(r1, err1, "%d", close, fd1);
-            makecall(r2, err2, "%d", close, fd2);
+            int i;
+            for (i = 0; i < n_fs; ++i) {
+                makecall(rets[i], errs[i], "%d", close, fds[i]);
+            }
+            
+            Pworker->eq_of_value = compare_equality_values(fslist, n_fs, rets);
+            Pworker->eq_of_error = compare_equality_values(fslist, n_fs, errs);
         };
-        assert(c_expr{r1 == r2});
-        assert(c_expr{err1 == err2});
+        assert(eq_of_value);
+        assert(eq_of_error);
     };
     :: d_step {
         /* unlink, check: retval, errno, existence */
         c_code {
-            makecall(r1, err1, "%s", unlink, rfs_file);
-            makecall(r2, err2, "%s", unlink, tfs_file);
-            equality_of_existence =
-              check_file_existence(rfs_dir) == check_file_existence(tfs_dir);
+            int i;
+            for (i = 0; i < n_fs; ++i) {
+                makecall(rets[i], errs[i], "%s", unlink, testfiles[i]);
+            }
+
+            Pworker->eq_of_existence = compare_equality_fexists(fslist, n_fs, testdirs);
+            Pworker->eq_of_value = compare_equality_values(fslist, n_fs, rets);
+            Pworker->eq_of_error = compare_equality_values(fslist, n_fs, errs);
         };
-        assert(c_expr{r1 == r2});
-        assert(c_expr{err1 == err2});
-        assert(c_expr{equality_of_existence});
+        assert(eq_of_existence);
+        assert(eq_of_value);
+        assert(eq_of_error);
     };
     od
 };
@@ -105,15 +122,23 @@ proctype driver(int nproc)
     int i;
     c_code {
         srand(time(0));
-        /* Initialize path names */
-        rfs_file = malloc(PATH_MAX * 4);
-        rfs_dir = rfs_file + PATH_MAX;
-        tfs_file = rfs_file + PATH_MAX * 2;
-        tfs_dir = rfs_file + PATH_MAX * 3;
-        snprintf(rfs_file, PATH_MAX, "%s/%s", rfs_path, filename);
-        snprintf(rfs_dir, PATH_MAX, "%s/%s", rfs_path, dirname);
-        snprintf(tfs_file, PATH_MAX, "%s/%s", tfs_path, filename);
-        snprintf(tfs_dir, PATH_MAX, "%s/%s", tfs_path, dirname);
+        /* Initialize base paths */
+        printf("%d file systems to test.\n", n_fs);
+        for (int i = 0; i < n_fs; ++i) {
+            size_t len = snprintf(NULL, 0, "/mnt/test-%s", fslist[i]);
+            basepaths[i] = calloc(1, len + 1);
+            snprintf(basepaths[i], len + 1, "/mnt/test-%s", fslist[i]);
+        }
+        /* Initialize test dirs and files names */
+        for (int i = 0; i < n_fs; ++i) {
+            size_t len = snprintf(NULL, 0, "%s/testdir", basepaths[i]);
+            testdirs[i] = calloc(1, len + 1);
+            snprintf(testdirs[i], len + 1, "%s/testdir", basepaths[i]);
+
+            len = snprintf(NULL, 0, "%s/test.txt", basepaths[i]);
+            testfiles[i] = calloc(1, len + 1);
+            snprintf(testfiles[i], len + 1, "%s/test.txt", basepaths[i]);
+        }
     };
 
     for (i : 1 .. nproc) {
