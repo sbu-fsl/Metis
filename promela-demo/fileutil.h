@@ -57,6 +57,9 @@ static inline bool check_file_existence(const char *path)
     return access(path, F_OK) == 0;
 }
 
+bool compare_equality_values(char **fses, int n_fs, int *nums);
+bool compare_equality_fexists(char **fses, int n_fs, char **fpaths);
+bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths, int *fds);
 int compare_file_content(int fd1, int fd2);
 
 #endif

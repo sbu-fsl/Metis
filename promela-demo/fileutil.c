@@ -41,3 +41,69 @@ int compare_file_content(int fd1, int fd2)
     return 0;
 }
 
+bool compare_equality_values(char **fses, int n_fs, int *nums)
+{
+    bool res = true;
+    int base = nums[0];
+    for (int i = 0; i < n_fs; ++i) {
+        if (nums[i] != base) {
+            res = false;
+            break;
+        }
+    }
+    if (!res) {
+        printf("[%d] Discrepancy in return values found:\n", cur_pid);
+        for (int i = 0; i < n_fs; ++i)
+            printf("[%d] [%s]: %d\n", cur_pid, fses[i], nums[i]);
+    }
+    return res;
+}
+
+bool compare_equality_fexists(char **fses, int n_fs, char **fpaths)
+{
+    bool res = true;
+    bool fexists[n_fs];
+
+    /* Check file existence */
+    for (int i = 0; i < n_fs; ++i)
+        fexists[i] = check_file_existence(fpaths[i]);
+
+    bool base = fexists[0];
+    for (int i = 0; i < n_fs; ++i) {
+        if (fexists[i] != base) {
+            res = false;
+            break;
+        }
+    }
+    if (!res) {
+        printf("[%d] Discrepancy in existence of files found:\n", cur_pid);
+        for (int i = 0; i < n_fs; ++i) {
+            printf("[%d] [%s]: %s: %d\n", cur_pid, fses[i], fpaths[i],
+                    fexists[i]);
+        }
+    }
+    return res;
+}
+
+bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths, int *fds)
+{
+    bool res = true;
+
+    if (!compare_equality_fexists(fses, n_fs, fpaths))
+        return false;
+
+    /* If none of the files exists, return TRUE */
+    if (check_file_existence(fpaths[0]) == false)
+        return true;
+
+    for (int i = 1; i < n_fs; ++i) {
+        if (compare_file_content(fds[i-1], fds[i]) != 0) {
+            if (res)
+                res = false;
+            printf("[%d] [%s] (%s) is different from [%s] (%s)\n",
+                   cur_pid, fses[i-1], fpaths[i-1], fses[i], fpaths[i]);
+        }
+    }
+    return res;
+}
+
