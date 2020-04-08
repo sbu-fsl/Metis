@@ -17,6 +17,7 @@
 #define ERRNONAME_C
 
 #include <errno.h>
+#include "errnoname.h"
 
 char const * errnoname(int errno_)
 {

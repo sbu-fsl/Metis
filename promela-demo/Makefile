@@ -1,7 +1,12 @@
-run: demo.pml
+COMMON_DIR=../common
+override CFLAGS += -I../include
+
+all: demo.pml
 	spin -a demo.pml; \
-	gcc -std=c99 -o pan pan.c fileutil.c; \
-	./pan;
+	gcc -o pan pan.c fileutil.c $(COMMON_DIR)/*.c $(CFLAGS); \
+
+run: all
+	./pan | less -N
 
 clean:
 	rm -rf test test.txt pan* \
