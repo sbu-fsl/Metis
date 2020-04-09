@@ -6,7 +6,8 @@ all: demo.pml
 	gcc -o pan pan.c fileutil.c $(COMMON_DIR)/*.c $(CFLAGS); \
 
 run: all
-	./pan | less -N
+	./pan | less -N; \
+	rm -rf /mnt/test-*/test* || true; \
 
 clean:
 	rm -rf test test.txt pan* \
