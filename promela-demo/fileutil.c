@@ -27,6 +27,8 @@ int compare_file_content(int fd1, int fd2)
     }
     /* Compare the file content */
     int r1, r2;
+    lseek(fd1, 0, SEEK_SET);
+    lseek(fd2, 0, SEEK_SET);
     while ((r1 = read(fd1, buf1, bs)) > 0 && (r2 = read(fd2, buf2, bs)) > 0) {
         if (memcmp(buf1, buf2, r1) != 0) {
             printf("[%d] cmp_file_content: f1 and f2 content is not equal.\n",
@@ -34,6 +36,8 @@ int compare_file_content(int fd1, int fd2)
             return 1;
         }
     }
+    lseek(fd1, 0, SEEK_SET);
+    lseek(fd2, 0, SEEK_SET);
     if (r1 < 0 || r2 < 0) {
         printf("[%d] cmp_file_content: error occurred when reading: %d\n",
                cur_pid, errno);

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdarg.h>
 #include <errno.h>
 #include <time.h>
 #include <fcntl.h>
@@ -10,12 +11,26 @@
 #include <linux/limits.h>
 #include <unistd.h>
 
+#include "nanotiming.h"
+
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
 
 /* State variables */
 int cur_pid;
 char func[9];
+struct timespec begin_time;
+
+static inline int makelog(const char *format, ...)
+{
+    struct timespec now, diff;
+    va_list args;
+    va_start(args, format);
+    current_utc_time(&now);
+    timediff(&diff, &now, &begin_time);
+    printf("[%4ld.%09ld] ", diff.tv_sec, diff.tv_nsec);
+    return vprintf(format, args);
+}
 
 #define makecall(retvar, err, argfmt, funcname, ...) \
     memset(func, 0, 9); \
@@ -23,7 +38,7 @@ char func[9];
     cur_pid = Pworker->_pid; \
     retvar = funcname(__VA_ARGS__); \
     err = errno; \
-    printf("[%d] %s (" argfmt ")", cur_pid, func, __VA_ARGS__); \
+    makelog("[PROC #%d] %s (" argfmt ")", cur_pid, func, __VA_ARGS__); \
     printf(" -> %d\n", retvar);
 
 #define min(x, y) ((x >= y) ? y : x)

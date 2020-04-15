@@ -21,6 +21,7 @@ proctype worker()
     do 
     :: d_step { 
         /* mkdir, check: retval, errno, existence */
+        c_code { makelog("BEGIN: mkdir\n"); };
         c_code {
             int i;
             for (i = 0; i < n_fs; ++i) {
@@ -34,9 +35,11 @@ proctype worker()
         assert(eq_of_existence);
         assert(eq_of_value);
         assert(eq_of_error);
+        c_code { makelog("END: mkdir\n"); };
     };
     :: d_step { 
         /* rmdir, check: retval, errno, existence */
+        c_code { makelog("BEGIN: rmdir\n"); };
         c_code {
             int i;
             for (i = 0; i < n_fs; ++i) {
@@ -50,9 +53,11 @@ proctype worker()
         assert(eq_of_existence);
         assert(eq_of_value);
         assert(eq_of_error);
+        c_code { makelog("END: rmdir\n"); };
     };
     :: d_step {
         /* open, check: errno, existence */
+        c_code { makelog("BEGIN: open\n"); };
         c_code { 
             int i;
             for (i = 0; i < n_fs; ++i) {
@@ -64,9 +69,11 @@ proctype worker()
         };
         assert(eq_of_existence);
         assert(eq_of_error);
+        c_code { makelog("END: open\n"); };
     };
     :: d_step {
         /* write, check: retval, errno, content */
+        c_code { makelog("BEGIN: write\n"); };
         c_code {
             size_t writelen = pick_value(4096, 16384);
             char *data = malloc(writelen);
@@ -83,9 +90,11 @@ proctype worker()
         assert(eq_of_value);
         assert(eq_of_error);
         assert(eq_of_content);
+        c_code { makelog("END: write\n"); };
     };
     :: d_step {
         /* close, check: retval, errno */
+        c_code { makelog("BEGIN: close\n"); };
         c_code {
             int i;
             for (i = 0; i < n_fs; ++i) {
@@ -97,9 +106,11 @@ proctype worker()
         };
         assert(eq_of_value);
         assert(eq_of_error);
+        c_code { makelog("END: close\n"); };
     };
     :: d_step {
         /* unlink, check: retval, errno, existence */
+        c_code { makelog("BEGIN: unlink\n"); };
         c_code {
             int i;
             for (i = 0; i < n_fs; ++i) {
@@ -113,6 +124,7 @@ proctype worker()
         assert(eq_of_existence);
         assert(eq_of_value);
         assert(eq_of_error);
+        c_code { makelog("END: unlink\n"); };
     };
     od
 };
@@ -122,6 +134,7 @@ proctype driver(int nproc)
     int i;
     c_code {
         srand(time(0));
+        current_utc_time(&begin_time);
         /* Initialize base paths */
         printf("%d file systems to test.\n", n_fs);
         for (int i = 0; i < n_fs; ++i) {
@@ -150,5 +163,5 @@ proctype driver(int nproc)
 
 init
 {
-    run driver(1);
+    run driver(4);
 }
