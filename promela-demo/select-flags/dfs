@@ -1,0 +1,94 @@
+Flags: octet: 03303,	hex: 0x6c3
+Flags: octet: 01303,	hex: 0x2c3
+Flags: octet: 02303,	hex: 0x4c3
+Flags: octet: 00303,	hex: 0xc3
+Flags: octet: 03103,	hex: 0x643
+Flags: octet: 01103,	hex: 0x243
+Flags: octet: 02103,	hex: 0x443
+Flags: octet: 00103,	hex: 0x43
+Flags: octet: 03203,	hex: 0x683
+Flags: octet: 01203,	hex: 0x283
+Flags: octet: 02203,	hex: 0x483
+Flags: octet: 00203,	hex: 0x83
+Flags: octet: 03003,	hex: 0x603
+Flags: octet: 01003,	hex: 0x203
+Flags: octet: 02003,	hex: 0x403
+Flags: octet: 00003,	hex: 0x3
+Flags: octet: 03301,	hex: 0x6c1
+Flags: octet: 01301,	hex: 0x2c1
+Flags: octet: 02301,	hex: 0x4c1
+Flags: octet: 00301,	hex: 0xc1
+Flags: octet: 03101,	hex: 0x641
+Flags: octet: 01101,	hex: 0x241
+Flags: octet: 02101,	hex: 0x441
+Flags: octet: 00101,	hex: 0x41
+Flags: octet: 03201,	hex: 0x681
+Flags: octet: 01201,	hex: 0x281
+Flags: octet: 02201,	hex: 0x481
+Flags: octet: 00201,	hex: 0x81
+Flags: octet: 03001,	hex: 0x601
+Flags: octet: 01001,	hex: 0x201
+Flags: octet: 02001,	hex: 0x401
+Flags: octet: 00001,	hex: 0x1
+Flags: octet: 03302,	hex: 0x6c2
+Flags: octet: 01302,	hex: 0x2c2
+Flags: octet: 02302,	hex: 0x4c2
+Flags: octet: 00302,	hex: 0xc2
+Flags: octet: 03102,	hex: 0x642
+Flags: octet: 01102,	hex: 0x242
+Flags: octet: 02102,	hex: 0x442
+Flags: octet: 00102,	hex: 0x42
+Flags: octet: 03202,	hex: 0x682
+Flags: octet: 01202,	hex: 0x282
+Flags: octet: 02202,	hex: 0x482
+Flags: octet: 00202,	hex: 0x82
+Flags: octet: 03002,	hex: 0x602
+Flags: octet: 01002,	hex: 0x202
+Flags: octet: 02002,	hex: 0x402
+Flags: octet: 00002,	hex: 0x2
+Flags: octet: 03300,	hex: 0x6c0
+Flags: octet: 01300,	hex: 0x2c0
+Flags: octet: 02300,	hex: 0x4c0
+Flags: octet: 00300,	hex: 0xc0
+Flags: octet: 03100,	hex: 0x640
+Flags: octet: 01100,	hex: 0x240
+Flags: octet: 02100,	hex: 0x440
+Flags: octet: 00100,	hex: 0x40
+Flags: octet: 03200,	hex: 0x680
+Flags: octet: 01200,	hex: 0x280
+Flags: octet: 02200,	hex: 0x480
+Flags: octet: 00200,	hex: 0x80
+Flags: octet: 03000,	hex: 0x600
+Flags: octet: 01000,	hex: 0x200
+Flags: octet: 02000,	hex: 0x400
+Flags: octet: 00000,	hex: 0x0
+
+(Spin Version 6.4.6 -- 2 December 2016)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	acceptance   cycles 	- (not selected)
+	invalid end states	+
+
+State-vector 20 byte, depth reached 9, errors: 0
+      192 states, stored
+       65 states, matched
+      257 transitions (= stored+matched)
+        0 atomic steps
+hash conflicts:         0 (resolved)
+
+Stats on memory usage (in Megabytes):
+    0.009	equivalent memory usage for states (stored*(State-vector + overhead))
+    0.288	actual memory usage for states
+  128.000	memory used for hash table (-w24)
+    0.534	memory used for DFS stack (-m10000)
+  128.730	total actual memory usage
+
+
+unreached in init
+	select-flags.pml:55, state 35, "-end-"
+	(1 of 35 states)
+
+pan: elapsed time 0 seconds

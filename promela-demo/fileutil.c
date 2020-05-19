@@ -89,6 +89,20 @@ bool compare_equality_fexists(char **fses, int n_fs, char **fpaths)
     return res;
 }
 
+bool is_all_fd_invalid(int *fds, int n_fs)
+{
+    bool res = true;
+    for (int i = 0; i < n_fs; ++i) {
+        errno = 0;
+        /* Stop if any of the fd is valid */
+        if (fcntl(fds[i], F_GETFD) != -1) {
+            res = false;
+            break;
+        }
+    }
+    return res;
+}
+
 bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths, int *fds)
 {
     bool res = true;
@@ -98,6 +112,10 @@ bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths, int *fds)
 
     /* If none of the files exists, return TRUE */
     if (check_file_existence(fpaths[0]) == false)
+        return true;
+
+    /* If all fds are not valid, return TRUE */
+    if (is_all_fd_invalid(fds, n_fs))
         return true;
 
     for (int i = 1; i < n_fs; ++i) {

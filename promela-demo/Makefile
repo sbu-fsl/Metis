@@ -1,5 +1,5 @@
 COMMON_DIR=../common
-override CFLAGS += -I../include
+override CFLAGS += -I../include -D PRINTF
 
 all: demo.pml
 	spin -a demo.pml; \

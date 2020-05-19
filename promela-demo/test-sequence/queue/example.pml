@@ -7,15 +7,11 @@ inline enqueue_id(num) {
     /* record current ID (let's assume 0 <= num <= 15) */
     state = state | num;;
     /* state &= 0xfff - only open the last 3 4-bits and mask out the rest */
-    state = state & 65535;
+    state = state & 4095;
 }
 
 active [1] proctype worker() {
     do
-    :: atomic {
-        enqueue_id(0);
-        printf("[%d] 0, state=%x\n", _pid, state);
-    };
     :: atomic {
         enqueue_id(1);
         printf("[%d] 1, state=%x\n", _pid, state);
@@ -23,6 +19,10 @@ active [1] proctype worker() {
     :: atomic {
         enqueue_id(2);
         printf("[%d] 2, state=%x\n", _pid, state);
+    };
+    :: atomic {
+        enqueue_id(3);
+        printf("[%d] 3, state=%x\n", _pid, state);
     };
     od
 }

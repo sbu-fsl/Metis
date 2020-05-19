@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdarg.h>
 #include <errno.h>
 #include <time.h>
@@ -36,6 +37,7 @@ static inline int makelog(const char *format, ...)
     memset(func, 0, 9); \
     strncpy(func, #funcname, 9); \
     cur_pid = Pworker->_pid; \
+    errno = 0; \
     retvar = funcname(__VA_ARGS__); \
     err = errno; \
     makelog("[PROC #%d] %s (" argfmt ")", cur_pid, func, __VA_ARGS__); \
