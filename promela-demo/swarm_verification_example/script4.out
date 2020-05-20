@@ -1,0 +1,596 @@
+Depth=      24 States=    1e+06 Transitions= 1.23e+06 Memory=    64.980	t=     0.84 R=   1e+06
+Depth=      24 States=    2e+06 Transitions= 2.47e+06 Memory=    64.980	t=     1.82 R=   1e+06
+Depth=      24 States=    3e+06 Transitions= 3.77e+06 Memory=    64.980	t=     2.76 R=   1e+06
+Depth=      24 States=    4e+06 Transitions=  5.1e+06 Memory=    64.980	t=     3.66 R=   1e+06
+Depth=      24 States=    5e+06 Transitions= 6.42e+06 Memory=    64.980	t=     4.84 R=   1e+06
+Depth=      24 States=    6e+06 Transitions= 7.75e+06 Memory=    64.980	t=     6.11 R=   1e+06
+Depth=      24 States=    7e+06 Transitions= 9.08e+06 Memory=    64.980	t=     7.62 R=   9e+05
+Depth=      24 States=    8e+06 Transitions= 1.04e+07 Memory=    64.980	t=     8.78 R=   9e+05
+Depth=      24 States=    9e+06 Transitions= 1.17e+07 Memory=    64.980	t=     10.1 R=   9e+05
+Depth=      24 States=    1e+07 Transitions= 1.31e+07 Memory=    64.980	t=     11.2 R=   9e+05
+Depth=      24 States=  1.1e+07 Transitions= 1.44e+07 Memory=    64.980	t=     12.4 R=   9e+05
+Depth=      24 States=  1.2e+07 Transitions= 1.57e+07 Memory=    64.980	t=     13.4 R=   9e+05
+Depth=      24 States=  1.3e+07 Transitions= 1.71e+07 Memory=    64.980	t=     14.5 R=   9e+05
+Depth=      24 States=  1.4e+07 Transitions= 1.84e+07 Memory=    64.980	t=     15.4 R=   9e+05
+Depth=      24 States=  1.5e+07 Transitions= 1.99e+07 Memory=    64.980	t=     16.4 R=   9e+05
+Depth=      24 States=  1.6e+07 Transitions= 2.14e+07 Memory=    64.980	t=     17.4 R=   9e+05
+Depth=      24 States=  1.7e+07 Transitions= 2.28e+07 Memory=    64.980	t=     18.5 R=   9e+05
+Depth=      24 States=  1.8e+07 Transitions= 2.43e+07 Memory=    64.980	t=     19.5 R=   9e+05
+Depth=      24 States=  1.9e+07 Transitions= 2.58e+07 Memory=    64.980	t=     20.8 R=   9e+05
+Depth=      24 States=    2e+07 Transitions= 2.73e+07 Memory=    64.980	t=       22 R=   9e+05
+Depth=      24 States=  2.1e+07 Transitions= 2.87e+07 Memory=    64.980	t=     22.9 R=   9e+05
+Depth=      24 States=  2.2e+07 Transitions= 3.02e+07 Memory=    64.980	t=       24 R=   9e+05
+Depth=      24 States=  2.3e+07 Transitions= 3.17e+07 Memory=    64.980	t=     25.1 R=   9e+05
+Depth=      24 States=  2.4e+07 Transitions= 3.32e+07 Memory=    64.980	t=     26.3 R=   9e+05
+Depth=      24 States=  2.5e+07 Transitions= 3.47e+07 Memory=    64.980	t=     27.6 R=   9e+05
+Depth=      24 States=  2.6e+07 Transitions= 3.62e+07 Memory=    64.980	t=     28.7 R=   9e+05
+Depth=      24 States=  2.7e+07 Transitions= 3.77e+07 Memory=    64.980	t=       30 R=   9e+05
+Depth=      24 States=  2.8e+07 Transitions= 3.92e+07 Memory=    64.980	t=     31.2 R=   9e+05
+Depth=      24 States=  2.9e+07 Transitions= 4.07e+07 Memory=    64.980	t=     32.4 R=   9e+05
+Depth=      24 States=    3e+07 Transitions= 4.22e+07 Memory=    64.980	t=     33.4 R=   9e+05
+Depth=      24 States=  3.1e+07 Transitions= 4.37e+07 Memory=    64.980	t=     34.4 R=   9e+05
+Depth=      24 States=  3.2e+07 Transitions= 4.52e+07 Memory=    64.980	t=     35.4 R=   9e+05
+Depth=      24 States=  3.3e+07 Transitions= 4.68e+07 Memory=    64.980	t=     36.6 R=   9e+05
+Depth=      24 States=  3.4e+07 Transitions= 4.83e+07 Memory=    64.980	t=     37.8 R=   9e+05
+Depth=      24 States=  3.5e+07 Transitions= 4.98e+07 Memory=    64.980	t=     38.9 R=   9e+05
+Depth=      24 States=  3.6e+07 Transitions= 5.13e+07 Memory=    64.980	t=     39.9 R=   9e+05
+Depth=      24 States=  3.7e+07 Transitions= 5.28e+07 Memory=    64.980	t=     40.9 R=   9e+05
+Depth=      24 States=  3.8e+07 Transitions= 5.44e+07 Memory=    64.980	t=     41.9 R=   9e+05
+Depth=      24 States=  3.9e+07 Transitions= 5.59e+07 Memory=    64.980	t=       43 R=   9e+05
+Depth=      24 States=    4e+07 Transitions= 5.74e+07 Memory=    64.980	t=     44.3 R=   9e+05
+Depth=      24 States=  4.1e+07 Transitions= 5.89e+07 Memory=    64.980	t=     45.4 R=   9e+05
+Depth=      24 States=  4.2e+07 Transitions= 6.05e+07 Memory=    64.980	t=     46.5 R=   9e+05
+Depth=      24 States=  4.3e+07 Transitions=  6.2e+07 Memory=    64.980	t=     47.8 R=   9e+05
+Depth=      24 States=  4.4e+07 Transitions= 6.35e+07 Memory=    64.980	t=     49.4 R=   9e+05
+Depth=      24 States=  4.5e+07 Transitions= 6.51e+07 Memory=    64.980	t=     50.7 R=   9e+05
+Depth=      24 States=  4.6e+07 Transitions= 6.66e+07 Memory=    64.980	t=     51.7 R=   9e+05
+Depth=      24 States=  4.7e+07 Transitions= 6.82e+07 Memory=    64.980	t=     52.7 R=   9e+05
+Depth=      24 States=  4.8e+07 Transitions= 6.97e+07 Memory=    64.980	t=     53.5 R=   9e+05
+Depth=      24 States=  4.9e+07 Transitions= 7.12e+07 Memory=    64.980	t=     54.3 R=   9e+05
+Depth=      24 States=    5e+07 Transitions= 7.28e+07 Memory=    64.980	t=     55.2 R=   9e+05
+
+(Spin Version 6.4.6 -- 2 December 2016)
+	+ Partial Order Reduction
+	+ Reverse Depth-First Search Order
+	+ Reverse Transition Ordering
+	+ Randomized Transition Ordering
+	+ Randomized Process Ordering
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 44 byte, depth reached 24, errors: 0
+ 50949468 states, stored
+ 23306561 states, matched
+ 74256029 transitions (= stored+matched)
+        0 atomic steps
+
+hash factor: 10.5373 (best if > 100.)
+
+bits set per state: 1 (-k1)
+random seed used: 0
+
+Stats on memory usage (in Megabytes):
+ 3109.709	equivalent memory usage for states (stored*(State-vector + overhead))
+   64.000	memory used for hash array (-w29)
+    0.076	memory used for bit stack
+    0.687	memory used for DFS stack (-m10000)
+   64.980	total actual memory usage
+
+
+unreached in init
+	multicore.pml:115, state 102, "-end-"
+	(1 of 102 states)
+
+pan: elapsed time 56.2 seconds
+pan: rate 906412.88 states/second
+Depth=      24 States=    1e+06 Transitions= 1.23e+06 Memory=    32.980	t=     0.82 R=   1e+06
+Depth=      24 States=    2e+06 Transitions= 2.47e+06 Memory=    32.980	t=     1.58 R=   1e+06
+Depth=      24 States=    3e+06 Transitions= 3.78e+06 Memory=    32.980	t=     2.61 R=   1e+06
+Depth=      24 States=    4e+06 Transitions= 5.11e+06 Memory=    32.980	t=     3.35 R=   1e+06
+Depth=      24 States=    5e+06 Transitions= 6.44e+06 Memory=    32.980	t=      4.3 R=   1e+06
+Depth=      24 States=    6e+06 Transitions= 7.77e+06 Memory=    32.980	t=     5.08 R=   1e+06
+Depth=      24 States=    7e+06 Transitions= 9.11e+06 Memory=    32.980	t=      6.1 R=   1e+06
+Depth=      24 States=    8e+06 Transitions= 1.04e+07 Memory=    32.980	t=     7.22 R=   1e+06
+Depth=      24 States=    9e+06 Transitions= 1.18e+07 Memory=    32.980	t=     8.26 R=   1e+06
+Depth=      24 States=    1e+07 Transitions= 1.31e+07 Memory=    32.980	t=     9.35 R=   1e+06
+Depth=      24 States=  1.1e+07 Transitions= 1.45e+07 Memory=    32.980	t=     10.2 R=   1e+06
+Depth=      24 States=  1.2e+07 Transitions= 1.58e+07 Memory=    32.980	t=     11.1 R=   1e+06
+Depth=      24 States=  1.3e+07 Transitions= 1.72e+07 Memory=    32.980	t=     11.9 R=   1e+06
+Depth=      24 States=  1.4e+07 Transitions= 1.86e+07 Memory=    32.980	t=       13 R=   1e+06
+Depth=      24 States=  1.5e+07 Transitions= 2.01e+07 Memory=    32.980	t=     14.2 R=   1e+06
+Depth=      24 States=  1.6e+07 Transitions= 2.16e+07 Memory=    32.980	t=     15.2 R=   1e+06
+Depth=      24 States=  1.7e+07 Transitions= 2.31e+07 Memory=    32.980	t=     16.2 R=   1e+06
+Depth=      24 States=  1.8e+07 Transitions= 2.45e+07 Memory=    32.980	t=     17.2 R=   1e+06
+Depth=      24 States=  1.9e+07 Transitions= 2.61e+07 Memory=    32.980	t=     18.4 R=   1e+06
+Depth=      24 States=    2e+07 Transitions= 2.75e+07 Memory=    32.980	t=     19.4 R=   1e+06
+Depth=      24 States=  2.1e+07 Transitions= 2.91e+07 Memory=    32.980	t=     20.2 R=   1e+06
+Depth=      24 States=  2.2e+07 Transitions= 3.06e+07 Memory=    32.980	t=     20.9 R=   1e+06
+Depth=      24 States=  2.3e+07 Transitions= 3.21e+07 Memory=    32.980	t=     21.9 R=   1e+06
+Depth=      24 States=  2.4e+07 Transitions= 3.36e+07 Memory=    32.980	t=     22.9 R=   1e+06
+Depth=      24 States=  2.5e+07 Transitions= 3.52e+07 Memory=    32.980	t=       24 R=   1e+06
+Depth=      24 States=  2.6e+07 Transitions= 3.67e+07 Memory=    32.980	t=       25 R=   1e+06
+Depth=      24 States=  2.7e+07 Transitions= 3.83e+07 Memory=    32.980	t=     25.9 R=   1e+06
+Depth=      24 States=  2.8e+07 Transitions= 3.98e+07 Memory=    32.980	t=     26.9 R=   1e+06
+Depth=      24 States=  2.9e+07 Transitions= 4.14e+07 Memory=    32.980	t=     28.1 R=   1e+06
+Depth=      24 States=    3e+07 Transitions= 4.29e+07 Memory=    32.980	t=     29.2 R=   1e+06
+Depth=      24 States=  3.1e+07 Transitions= 4.45e+07 Memory=    32.980	t=     30.4 R=   1e+06
+Depth=      24 States=  3.2e+07 Transitions=  4.6e+07 Memory=    32.980	t=     31.5 R=   1e+06
+Depth=      24 States=  3.3e+07 Transitions= 4.76e+07 Memory=    32.980	t=     32.3 R=   1e+06
+Depth=      24 States=  3.4e+07 Transitions= 4.92e+07 Memory=    32.980	t=     33.2 R=   1e+06
+Depth=      24 States=  3.5e+07 Transitions= 5.08e+07 Memory=    32.980	t=     34.2 R=   1e+06
+Depth=      24 States=  3.6e+07 Transitions= 5.23e+07 Memory=    32.980	t=     35.4 R=   1e+06
+Depth=      24 States=  3.7e+07 Transitions= 5.39e+07 Memory=    32.980	t=     36.4 R=   1e+06
+Depth=      24 States=  3.8e+07 Transitions= 5.55e+07 Memory=    32.980	t=     37.4 R=   1e+06
+Depth=      24 States=  3.9e+07 Transitions= 5.71e+07 Memory=    32.980	t=     38.6 R=   1e+06
+Depth=      24 States=    4e+07 Transitions= 5.87e+07 Memory=    32.980	t=     39.9 R=   1e+06
+Depth=      24 States=  4.1e+07 Transitions= 6.03e+07 Memory=    32.980	t=     41.3 R=   1e+06
+Depth=      24 States=  4.2e+07 Transitions= 6.19e+07 Memory=    32.980	t=     42.3 R=   1e+06
+Depth=      24 States=  4.3e+07 Transitions= 6.35e+07 Memory=    32.980	t=     43.5 R=   1e+06
+
+(Spin Version 6.4.6 -- 2 December 2016)
+	+ Partial Order Reduction
+	+ Reverse Depth-First Search Order
+	+ Reverse Transition Ordering
+	+ Randomized Transition Ordering
+	+ Randomized Process Ordering
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 44 byte, depth reached 24, errors: 0
+ 43989532 states, stored
+ 21116153 states, matched
+ 65105685 transitions (= stored+matched)
+        0 atomic steps
+
+hash factor: 6.10226 (best if > 100.)
+
+bits set per state: 1 (-k1)
+random seed used: 0
+
+Stats on memory usage (in Megabytes):
+ 2684.908	equivalent memory usage for states (stored*(State-vector + overhead))
+   32.000	memory used for hash array (-w28)
+    0.076	memory used for bit stack
+    0.687	memory used for DFS stack (-m10000)
+   32.980	total actual memory usage
+
+
+unreached in init
+	multicore.pml:115, state 102, "-end-"
+	(1 of 102 states)
+
+pan: elapsed time 45.9 seconds
+pan: rate 958795.38 states/second
+Depth=      24 States=    1e+06 Transitions= 1.23e+06 Memory=    16.980	t=     1.23 R=   8e+05
+Depth=      24 States=    2e+06 Transitions= 2.48e+06 Memory=    16.980	t=     2.18 R=   9e+05
+Depth=      24 States=    3e+06 Transitions= 3.79e+06 Memory=    16.980	t=     3.06 R=   1e+06
+Depth=      24 States=    4e+06 Transitions= 5.13e+06 Memory=    16.980	t=     4.14 R=   1e+06
+Depth=      24 States=    5e+06 Transitions= 6.47e+06 Memory=    16.980	t=     5.83 R=   9e+05
+Depth=      24 States=    6e+06 Transitions= 7.82e+06 Memory=    16.980	t=     6.96 R=   9e+05
+Depth=      24 States=    7e+06 Transitions= 9.17e+06 Memory=    16.980	t=     7.82 R=   9e+05
+Depth=      24 States=    8e+06 Transitions= 1.05e+07 Memory=    16.980	t=     8.81 R=   9e+05
+Depth=      24 States=    9e+06 Transitions= 1.19e+07 Memory=    16.980	t=     9.79 R=   9e+05
+Depth=      24 States=    1e+07 Transitions= 1.33e+07 Memory=    16.980	t=     11.2 R=   9e+05
+Depth=      24 States=  1.1e+07 Transitions= 1.48e+07 Memory=    16.980	t=     12.4 R=   9e+05
+Depth=      24 States=  1.2e+07 Transitions= 1.62e+07 Memory=    16.980	t=     13.5 R=   9e+05
+Depth=      24 States=  1.3e+07 Transitions= 1.77e+07 Memory=    16.980	t=     14.6 R=   9e+05
+Depth=      24 States=  1.4e+07 Transitions= 1.92e+07 Memory=    16.980	t=     15.6 R=   9e+05
+Depth=      24 States=  1.5e+07 Transitions= 2.06e+07 Memory=    16.980	t=     17.2 R=   9e+05
+Depth=      24 States=  1.6e+07 Transitions= 2.21e+07 Memory=    16.980	t=     18.4 R=   9e+05
+Depth=      24 States=  1.7e+07 Transitions= 2.37e+07 Memory=    16.980	t=     19.4 R=   9e+05
+Depth=      24 States=  1.8e+07 Transitions= 2.52e+07 Memory=    16.980	t=     21.2 R=   8e+05
+Depth=      24 States=  1.9e+07 Transitions= 2.68e+07 Memory=    16.980	t=     22.4 R=   8e+05
+Depth=      24 States=    2e+07 Transitions= 2.83e+07 Memory=    16.980	t=     23.6 R=   8e+05
+Depth=      24 States=  2.1e+07 Transitions= 2.99e+07 Memory=    16.980	t=     24.7 R=   9e+05
+Depth=      24 States=  2.2e+07 Transitions= 3.15e+07 Memory=    16.980	t=     26.3 R=   8e+05
+Depth=      24 States=  2.3e+07 Transitions= 3.31e+07 Memory=    16.980	t=     27.5 R=   8e+05
+Depth=      24 States=  2.4e+07 Transitions= 3.47e+07 Memory=    16.980	t=     28.6 R=   8e+05
+Depth=      24 States=  2.5e+07 Transitions= 3.63e+07 Memory=    16.980	t=     29.9 R=   8e+05
+Depth=      24 States=  2.6e+07 Transitions= 3.79e+07 Memory=    16.980	t=       31 R=   8e+05
+Depth=      24 States=  2.7e+07 Transitions= 3.96e+07 Memory=    16.980	t=     32.2 R=   8e+05
+Depth=      24 States=  2.8e+07 Transitions= 4.12e+07 Memory=    16.980	t=     33.6 R=   8e+05
+Depth=      24 States=  2.9e+07 Transitions= 4.29e+07 Memory=    16.980	t=     34.9 R=   8e+05
+Depth=      24 States=    3e+07 Transitions= 4.45e+07 Memory=    16.980	t=       36 R=   8e+05
+
+(Spin Version 6.4.6 -- 2 December 2016)
+	+ Partial Order Reduction
+	+ Reverse Depth-First Search Order
+	+ Reverse Transition Ordering
+	+ Randomized Transition Ordering
+	+ Randomized Process Ordering
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 44 byte, depth reached 24, errors: 0
+ 30813462 states, stored
+ 15093601 states, matched
+ 45907063 transitions (= stored+matched)
+        0 atomic steps
+
+hash factor: 4.35581 (best if > 100.)
+
+bits set per state: 1 (-k1)
+random seed used: 0
+
+Stats on memory usage (in Megabytes):
+ 1880.704	equivalent memory usage for states (stored*(State-vector + overhead))
+   16.000	memory used for hash array (-w27)
+    0.076	memory used for bit stack
+    0.687	memory used for DFS stack (-m10000)
+   16.980	total actual memory usage
+
+
+unreached in init
+	multicore.pml:115, state 102, "-end-"
+	(1 of 102 states)
+
+pan: elapsed time 37 seconds
+pan: rate 833021.41 states/second
+Depth=      24 States=    1e+06 Transitions= 1.23e+06 Memory=     8.980	t=     1.18 R=   8e+05
+Depth=      24 States=    2e+06 Transitions= 2.49e+06 Memory=     8.980	t=     2.15 R=   9e+05
+Depth=      24 States=    3e+06 Transitions= 3.82e+06 Memory=     8.980	t=     3.11 R=   1e+06
+Depth=      24 States=    4e+06 Transitions= 5.17e+06 Memory=     8.980	t=        4 R=   1e+06
+Depth=      24 States=    5e+06 Transitions= 6.54e+06 Memory=     8.980	t=     4.86 R=   1e+06
+Depth=      24 States=    6e+06 Transitions= 7.92e+06 Memory=     8.980	t=     6.03 R=   1e+06
+Depth=      24 States=    7e+06 Transitions= 9.31e+06 Memory=     8.980	t=     7.29 R=   1e+06
+Depth=      24 States=    8e+06 Transitions= 1.07e+07 Memory=     8.980	t=     8.43 R=   9e+05
+Depth=      24 States=    9e+06 Transitions= 1.21e+07 Memory=     8.980	t=      9.3 R=   1e+06
+Depth=      24 States=    1e+07 Transitions= 1.36e+07 Memory=     8.980	t=     10.2 R=   1e+06
+Depth=      24 States=  1.1e+07 Transitions= 1.51e+07 Memory=     8.980	t=     11.3 R=   1e+06
+Depth=      24 States=  1.2e+07 Transitions= 1.67e+07 Memory=     8.980	t=     12.3 R=   1e+06
+Depth=      24 States=  1.3e+07 Transitions= 1.83e+07 Memory=     8.980	t=     13.3 R=   1e+06
+Depth=      24 States=  1.4e+07 Transitions= 1.99e+07 Memory=     8.980	t=     14.2 R=   1e+06
+Depth=      24 States=  1.5e+07 Transitions= 2.15e+07 Memory=     8.980	t=     15.3 R=   1e+06
+Depth=      24 States=  1.6e+07 Transitions= 2.31e+07 Memory=     8.980	t=     16.5 R=   1e+06
+Depth=      24 States=  1.7e+07 Transitions= 2.48e+07 Memory=     8.980	t=     17.5 R=   1e+06
+Depth=      24 States=  1.8e+07 Transitions= 2.65e+07 Memory=     8.980	t=     18.6 R=   1e+06
+Depth=      24 States=  1.9e+07 Transitions= 2.82e+07 Memory=     8.980	t=     19.6 R=   1e+06
+Depth=      24 States=    2e+07 Transitions= 2.99e+07 Memory=     8.980	t=     20.8 R=   1e+06
+
+(Spin Version 6.4.6 -- 2 December 2016)
+	+ Partial Order Reduction
+	+ Reverse Depth-First Search Order
+	+ Reverse Transition Ordering
+	+ Randomized Transition Ordering
+	+ Randomized Process Ordering
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 44 byte, depth reached 24, errors: 0
+ 20038799 states, stored
+  9973265 states, matched
+ 30012064 transitions (= stored+matched)
+        0 atomic steps
+
+hash factor: 3.34895 (best if > 100.)
+
+bits set per state: 1 (-k1)
+random seed used: 0
+
+Stats on memory usage (in Megabytes):
+ 1223.071	equivalent memory usage for states (stored*(State-vector + overhead))
+    8.000	memory used for hash array (-w26)
+    0.076	memory used for bit stack
+    0.687	memory used for DFS stack (-m10000)
+    8.980	total actual memory usage
+
+
+unreached in init
+	multicore.pml:115, state 102, "-end-"
+	(1 of 102 states)
+
+pan: elapsed time 20.8 seconds
+pan: rate 962478.34 states/second
+Depth=      24 States=    1e+06 Transitions= 1.24e+06 Memory=     4.980	t=     0.84 R=   1e+06
+Depth=      24 States=    2e+06 Transitions= 2.52e+06 Memory=     4.980	t=     1.66 R=   1e+06
+Depth=      24 States=    3e+06 Transitions= 3.87e+06 Memory=     4.980	t=     2.56 R=   1e+06
+Depth=      24 States=    4e+06 Transitions= 5.26e+06 Memory=     4.980	t=     3.37 R=   1e+06
+Depth=      24 States=    5e+06 Transitions= 6.69e+06 Memory=     4.980	t=     4.24 R=   1e+06
+Depth=      24 States=    6e+06 Transitions= 8.14e+06 Memory=     4.980	t=     5.15 R=   1e+06
+Depth=      24 States=    7e+06 Transitions= 9.64e+06 Memory=     4.980	t=     6.04 R=   1e+06
+Depth=      24 States=    8e+06 Transitions= 1.12e+07 Memory=     4.980	t=        7 R=   1e+06
+Depth=      24 States=    9e+06 Transitions= 1.28e+07 Memory=     4.980	t=     7.92 R=   1e+06
+Depth=      24 States=    1e+07 Transitions= 1.45e+07 Memory=     4.980	t=     8.93 R=   1e+06
+Depth=      24 States=  1.1e+07 Transitions= 1.63e+07 Memory=     4.980	t=     9.94 R=   1e+06
+Depth=      24 States=  1.2e+07 Transitions=  1.8e+07 Memory=     4.980	t=       11 R=   1e+06
+
+(Spin Version 6.4.6 -- 2 December 2016)
+	+ Partial Order Reduction
+	+ Reverse Depth-First Search Order
+	+ Reverse Transition Ordering
+	+ Randomized Transition Ordering
+	+ Randomized Process Ordering
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 44 byte, depth reached 24, errors: 0
+ 12047015 states, stored
+  6085769 states, matched
+ 18132784 transitions (= stored+matched)
+        0 atomic steps
+
+hash factor: 2.78529 (best if > 100.)
+
+bits set per state: 1 (-k1)
+random seed used: 0
+
+Stats on memory usage (in Megabytes):
+  735.291	equivalent memory usage for states (stored*(State-vector + overhead))
+    4.000	memory used for hash array (-w25)
+    0.076	memory used for bit stack
+    0.687	memory used for DFS stack (-m10000)
+    4.980	total actual memory usage
+
+
+unreached in init
+	multicore.pml:115, state 102, "-end-"
+	(1 of 102 states)
+
+pan: elapsed time 11 seconds
+pan: rate 1093195.6 states/second
+Depth=      24 States=    1e+06 Transitions= 1.25e+06 Memory=     2.980	t=     0.73 R=   1e+06
+Depth=      24 States=    2e+06 Transitions= 2.57e+06 Memory=     2.980	t=     1.38 R=   1e+06
+Depth=      24 States=    3e+06 Transitions= 3.99e+06 Memory=     2.980	t=     2.06 R=   1e+06
+Depth=      24 States=    4e+06 Transitions= 5.48e+06 Memory=     2.980	t=     2.96 R=   1e+06
+Depth=      24 States=    5e+06 Transitions= 7.08e+06 Memory=     2.980	t=     3.91 R=   1e+06
+Depth=      24 States=    6e+06 Transitions= 8.81e+06 Memory=     2.980	t=     4.88 R=   1e+06
+
+(Spin Version 6.4.6 -- 2 December 2016)
+	+ Partial Order Reduction
+	+ Reverse Depth-First Search Order
+	+ Reverse Transition Ordering
+	+ Randomized Transition Ordering
+	+ Randomized Process Ordering
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 44 byte, depth reached 24, errors: 0
+  6520679 states, stored
+  3237769 states, matched
+  9758448 transitions (= stored+matched)
+        0 atomic steps
+
+hash factor: 2.57292 (best if > 100.)
+
+bits set per state: 1 (-k1)
+random seed used: 0
+
+Stats on memory usage (in Megabytes):
+  397.991	equivalent memory usage for states (stored*(State-vector + overhead))
+    2.000	memory used for hash array (-w24)
+    0.076	memory used for bit stack
+    0.687	memory used for DFS stack (-m10000)
+    2.980	total actual memory usage
+
+
+unreached in init
+	multicore.pml:115, state 102, "-end-"
+	(1 of 102 states)
+
+pan: elapsed time 5.46 seconds
+pan: rate 1194263.6 states/second
+Depth=      24 States=    1e+06 Transitions= 1.27e+06 Memory=     1.980	t=      0.7 R=   1e+06
+Depth=      24 States=    2e+06 Transitions= 2.69e+06 Memory=     1.980	t=     1.55 R=   1e+06
+Depth=      24 States=    3e+06 Transitions=  4.3e+06 Memory=     1.980	t=     2.42 R=   1e+06
+
+(Spin Version 6.4.6 -- 2 December 2016)
+	+ Partial Order Reduction
+	+ Reverse Depth-First Search Order
+	+ Reverse Transition Ordering
+	+ Randomized Transition Ordering
+	+ Randomized Process Ordering
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 44 byte, depth reached 24, errors: 0
+  3962436 states, stored
+  2141545 states, matched
+  6103981 transitions (= stored+matched)
+        0 atomic steps
+
+hash factor: 2.11703 (best if > 100.)
+
+bits set per state: 1 (-k1)
+random seed used: 0
+
+Stats on memory usage (in Megabytes):
+  241.848	equivalent memory usage for states (stored*(State-vector + overhead))
+    1.000	memory used for hash array (-w23)
+    0.076	memory used for bit stack
+    0.687	memory used for DFS stack (-m10000)
+    1.980	total actual memory usage
+
+
+unreached in init
+	multicore.pml:115, state 102, "-end-"
+	(1 of 102 states)
+
+pan: elapsed time 3.39 seconds
+pan: rate 1168860.2 states/second
+Depth=      24 States=    1e+06 Transitions= 1.32e+06 Memory=     1.480	t=     0.78 R=   1e+06
+Depth=      24 States=    2e+06 Transitions= 3.04e+06 Memory=     1.480	t=     1.67 R=   1e+06
+
+(Spin Version 6.4.6 -- 2 December 2016)
+	+ Partial Order Reduction
+	+ Reverse Depth-First Search Order
+	+ Reverse Transition Ordering
+	+ Randomized Transition Ordering
+	+ Randomized Process Ordering
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 44 byte, depth reached 24, errors: 0
+  2209366 states, stored
+  1274073 states, matched
+  3483439 transitions (= stored+matched)
+        0 atomic steps
+
+hash factor: 1.89842 (best if > 100.)
+
+bits set per state: 1 (-k1)
+random seed used: 0
+
+Stats on memory usage (in Megabytes):
+  134.849	equivalent memory usage for states (stored*(State-vector + overhead))
+    0.500	memory used for hash array (-w22)
+    0.076	memory used for bit stack
+    0.687	memory used for DFS stack (-m10000)
+    1.480	total actual memory usage
+
+
+unreached in init
+	multicore.pml:115, state 102, "-end-"
+	(1 of 102 states)
+
+pan: elapsed time 1.89 seconds
+pan: rate 1168976.7 states/second
+Depth=      24 States=    1e+06 Transitions=  1.5e+06 Memory=     1.230	t=     0.67 R=   1e+06
+
+(Spin Version 6.4.6 -- 2 December 2016)
+	+ Partial Order Reduction
+	+ Reverse Depth-First Search Order
+	+ Reverse Transition Ordering
+	+ Randomized Transition Ordering
+	+ Randomized Process Ordering
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 44 byte, depth reached 24, errors: 0
+  1229881 states, stored
+   779153 states, matched
+  2009034 transitions (= stored+matched)
+        0 atomic steps
+
+hash factor: 1.70517 (best if > 100.)
+
+bits set per state: 1 (-k1)
+random seed used: 0
+
+Stats on memory usage (in Megabytes):
+   75.066	equivalent memory usage for states (stored*(State-vector + overhead))
+    0.250	memory used for hash array (-w21)
+    0.076	memory used for bit stack
+    0.687	memory used for DFS stack (-m10000)
+    1.230	total actual memory usage
+
+
+unreached in init
+	multicore.pml:115, state 102, "-end-"
+	(1 of 102 states)
+
+pan: elapsed time 0.88 seconds
+pan: rate   1397592 states/second
+
+(Spin Version 6.4.6 -- 2 December 2016)
+	+ Partial Order Reduction
+	+ Reverse Depth-First Search Order
+	+ Reverse Transition Ordering
+	+ Randomized Transition Ordering
+	+ Randomized Process Ordering
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 44 byte, depth reached 24, errors: 0
+   617647 states, stored
+   381145 states, matched
+   998792 transitions (= stored+matched)
+        0 atomic steps
+
+hash factor: 1.69769 (best if > 100.)
+
+bits set per state: 1 (-k1)
+random seed used: 0
+
+Stats on memory usage (in Megabytes):
+   37.698	equivalent memory usage for states (stored*(State-vector + overhead))
+    0.125	memory used for hash array (-w20)
+    0.076	memory used for bit stack
+    0.687	memory used for DFS stack (-m10000)
+    1.105	total actual memory usage
+
+
+unreached in init
+	multicore.pml:115, state 102, "-end-"
+	(1 of 102 states)
+
+pan: elapsed time 0.46 seconds
+pan: rate 1342710.9 states/second
+
+(Spin Version 6.4.6 -- 2 December 2016)
+	+ Partial Order Reduction
+	+ Reverse Depth-First Search Order
+	+ Reverse Transition Ordering
+	+ Randomized Transition Ordering
+	+ Randomized Process Ordering
+
+Bit statespace search for:
+	never claim         	- (none specified)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 44 byte, depth reached 24, errors: 0
+   320281 states, stored
+   204505 states, matched
+   524786 transitions (= stored+matched)
+        0 atomic steps
+
+hash factor: 1.63696 (best if > 100.)
+
+bits set per state: 1 (-k1)
+random seed used: 0
+
+Stats on memory usage (in Megabytes):
+   19.548	equivalent memory usage for states (stored*(State-vector + overhead))
+    0.062	memory used for hash array (-w19)
+    0.076	memory used for bit stack
+    0.687	memory used for DFS stack (-m10000)
+    0.980	total actual memory usage
+
+
+unreached in init
+	multicore.pml:115, state 102, "-end-"
+	(1 of 102 states)
+
+pan: elapsed time 0.21 seconds
+pan: rate 1525147.6 states/second

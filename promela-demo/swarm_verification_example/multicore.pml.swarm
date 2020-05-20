@@ -1,0 +1,409 @@
+#!/bin/sh
+
+## Swarm Version 3.2 -- 5 June 2017
+## source: http://www.spinroot.com/swarm
+## ./swarm -c8 -m512M -t1.0 -s250000 -u128 -d10000  -f multicore.pml
+
+# set -v
+
+PREP=1
+XEC=1
+S="script"
+
+while [ $# -gt 0 ]
+do
+	case "$1" in
+	prep)
+		echo "compiles and setup only"
+		XEC=0
+		;;
+	exec)
+		echo "script execution only"
+		PREP=0
+		;;
+	base)
+		if [ $# -gt 1 ]
+		then
+			S=$2
+			echo "using $S as script basename"
+			shift
+		else
+			echo "missing arg in: base name"
+			exit 1
+		fi
+		;;
+	*)	echo "bad arg $1, should be prep or exec"
+		exit 1
+		;;
+	esac
+	shift
+done
+
+if [ $PREP -eq 0 ] && [ $XEC -eq 0 ]
+then	echo "error: choose 'exec' or 'prep' (default is to do both)"
+	exit 0
+fi
+# exit 0
+
+wc -l *.trail > /dev/null 2>&1
+if [ $? -eq 0 ]
+then echo "remove .trail file first";
+     exit 1;
+fi
+if [ $PREP -eq 1 ]
+then
+	if [ -f multicore.pml ]
+	then	spin   -a multicore.pml
+		if [ $? -ne 0 ] ; then exit 1; fi
+		if [ -f pan.c ] ; then true; else echo "error: no pan.c"; exit 1; fi
+
+	fi
+	if [ -f pan.c ]
+	then
+		cc -DSAFETY  -DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE -DT_REVERSE -O2 -o pan1 pan.c
+		cc -DSAFETY  -DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE -O2 -o pan2 pan.c
+		cc -DSAFETY  -DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DT_REVERSE -O2 -o pan3 pan.c
+		cc -DSAFETY  -DBITSTATE -DPUTPID -DP_RAND -DT_RAND -O2 -o pan4 pan.c
+	else
+		echo "swarm: no pan.c; cannot proceed"
+		exit 1
+	fi
+	echo "#!/bin/sh" > ${S}0
+	echo "#!/bin/sh" > ${S}1
+	echo "#!/bin/sh" > ${S}2
+	echo "#!/bin/sh" > ${S}3
+	echo "#!/bin/sh" > ${S}4
+	echo "#!/bin/sh" > ${S}5
+	echo "#!/bin/sh" > ${S}6
+	echo "#!/bin/sh" > ${S}7
+
+	echo "./pan1 -k1 -w30 -m10000 -h93 -RS2745 	# 2863.3 sec (+ 2863.3 s, 128.0 MB)" >> ${S}0
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}0
+
+	echo "./pan2 -k2 -w30 -m10000 -h13 -RS49839 	# 5726.6 sec (+ 2863.3 s, 128.0 MB)" >> ${S}1
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}1
+
+	echo "./pan3 -k3 -w30 -m10000 -h73 -RS65803 	# 8589.9 sec (+ 2863.3 s, 128.0 MB)" >> ${S}2
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}2
+
+# fill up rest of time 2527 sec
+
+	echo "./pan4 -k1 -w29 -m10000 -h31 -RS227123 	# 10021.6 sec (+ 1431.7 s, 64.0 MB)" >> ${S}3
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}3
+
+	echo "./pan1 -k1 -w29 -m10000 -h95 -RS184338 	# 11453.2 sec (+ 1431.7 s, 64.0 MB)" >> ${S}4
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}4
+
+	echo "./pan2 -k1 -w29 -m10000 -h22 -RS33102 	# 12884.9 sec (+ 1431.7 s, 64.0 MB)" >> ${S}5
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}5
+
+	echo "./pan3 -k1 -w29 -m10000 -h26 -RS26631 	# 14316.6 sec (+ 1431.7 s, 64.0 MB)" >> ${S}6
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}6
+
+	echo "./pan4 -k1 -w29 -m10000 -h1 -RS34360 	# 15748.2 sec (+ 1431.7 s, 64.0 MB)" >> ${S}7
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}7
+
+	echo "./pan1 -k1 -w29 -m10000 -h24 -RS181059 	# 17179.9 sec (+ 1431.7 s, 64.0 MB)" >> ${S}0
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}0
+
+	echo "./pan2 -k1 -w29 -m10000 -h68 -RS138509 	# 18611.5 sec (+ 1431.7 s, 64.0 MB)" >> ${S}1
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}1
+
+	echo "./pan3 -k1 -w28 -m10000 -h91 -RS21239 	# 19327.4 sec (+ 715.8 s, 32.0 MB)" >> ${S}2
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}2
+
+	echo "./pan4 -k1 -w28 -m10000 -h16 -RS72131 	# 20043.2 sec (+ 715.8 s, 32.0 MB)" >> ${S}3
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}3
+
+	echo "./pan1 -k1 -w28 -m10000 -h81 -RS89172 	# 20759.0 sec (+ 715.8 s, 32.0 MB)" >> ${S}4
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}4
+
+	echo "./pan2 -k1 -w28 -m10000 -h9 -RS42557 	# 21474.8 sec (+ 715.8 s, 32.0 MB)" >> ${S}5
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}5
+
+	echo "./pan3 -k1 -w28 -m10000 -h7 -RS76017 	# 22190.7 sec (+ 715.8 s, 32.0 MB)" >> ${S}6
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}6
+
+	echo "./pan4 -k1 -w28 -m10000 -h46 -RS135576 	# 22906.5 sec (+ 715.8 s, 32.0 MB)" >> ${S}7
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}7
+
+	echo "./pan1 -k1 -w28 -m10000 -h93 -RS35318 	# 23622.3 sec (+ 715.8 s, 32.0 MB)" >> ${S}0
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}0
+
+	echo "./pan2 -k1 -w27 -m10000 -h65 -RS23102 	# 23980.2 sec (+ 357.9 s, 16.0 MB)" >> ${S}1
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}1
+
+	echo "./pan3 -k1 -w27 -m10000 -h99 -RS24360 	# 24338.1 sec (+ 357.9 s, 16.0 MB)" >> ${S}2
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}2
+
+	echo "./pan4 -k1 -w27 -m10000 -h91 -RS103059 	# 24696.1 sec (+ 357.9 s, 16.0 MB)" >> ${S}3
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}3
+
+	echo "./pan1 -k1 -w27 -m10000 -h76 -RS203358 	# 25054.0 sec (+ 357.9 s, 16.0 MB)" >> ${S}4
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}4
+
+	echo "./pan2 -k1 -w27 -m10000 -h78 -RS24949 	# 25411.9 sec (+ 357.9 s, 16.0 MB)" >> ${S}5
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}5
+
+	echo "./pan3 -k1 -w27 -m10000 -h16 -RS18059 	# 25769.8 sec (+ 357.9 s, 16.0 MB)" >> ${S}6
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}6
+
+	echo "./pan4 -k1 -w27 -m10000 -h48 -RS35394 	# 26127.7 sec (+ 357.9 s, 16.0 MB)" >> ${S}7
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}7
+
+	echo "./pan1 -k1 -w26 -m10000 -h72 -RS143869 	# 26306.7 sec (+ 179.0 s, 8.0 MB)" >> ${S}0
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}0
+
+	echo "./pan2 -k1 -w26 -m10000 -h85 -RS251461 	# 26485.6 sec (+ 179.0 s, 8.0 MB)" >> ${S}1
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}1
+
+	echo "./pan3 -k1 -w26 -m10000 -h48 -RS221887 	# 26664.6 sec (+ 179.0 s, 8.0 MB)" >> ${S}2
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}2
+
+	echo "./pan4 -k1 -w26 -m10000 -h85 -RS120615 	# 26843.5 sec (+ 179.0 s, 8.0 MB)" >> ${S}3
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}3
+
+	echo "./pan1 -k1 -w26 -m10000 -h58 -RS157400 	# 27022.5 sec (+ 179.0 s, 8.0 MB)" >> ${S}4
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}4
+
+	echo "./pan2 -k1 -w26 -m10000 -h31 -RS231197 	# 27201.5 sec (+ 179.0 s, 8.0 MB)" >> ${S}5
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}5
+
+	echo "./pan3 -k1 -w26 -m10000 -h17 -RS169467 	# 27380.4 sec (+ 179.0 s, 8.0 MB)" >> ${S}6
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}6
+
+	echo "./pan4 -k1 -w25 -m10000 -h26 -RS16455 	# 27469.9 sec (+ 89.5 s, 4.0 MB)" >> ${S}7
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}7
+
+	echo "./pan1 -k1 -w25 -m10000 -h39 -RS197024 	# 27559.4 sec (+ 89.5 s, 4.0 MB)" >> ${S}0
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}0
+
+	echo "./pan2 -k1 -w25 -m10000 -h16 -RS30932 	# 27648.9 sec (+ 89.5 s, 4.0 MB)" >> ${S}1
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}1
+
+	echo "./pan3 -k1 -w25 -m10000 -h80 -RS45933 	# 27738.3 sec (+ 89.5 s, 4.0 MB)" >> ${S}2
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}2
+
+	echo "./pan4 -k1 -w25 -m10000 -h15 -RS59097 	# 27827.8 sec (+ 89.5 s, 4.0 MB)" >> ${S}3
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}3
+
+	echo "./pan1 -k1 -w25 -m10000 -h84 -RS66377 	# 27917.3 sec (+ 89.5 s, 4.0 MB)" >> ${S}4
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}4
+
+	echo "./pan2 -k1 -w25 -m10000 -h1 -RS204738 	# 28006.8 sec (+ 89.5 s, 4.0 MB)" >> ${S}5
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}5
+
+	echo "./pan3 -k1 -w25 -m10000 -h7 -RS84073 	# 28096.2 sec (+ 89.5 s, 4.0 MB)" >> ${S}6
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}6
+
+	echo "./pan4 -k1 -w24 -m10000 -h34 -RS220251 	# 28141.0 sec (+ 44.7 s, 2.0 MB)" >> ${S}7
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}7
+
+	echo "./pan1 -k1 -w24 -m10000 -h68 -RS123882 	# 28185.7 sec (+ 44.7 s, 2.0 MB)" >> ${S}0
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}0
+
+	echo "./pan2 -k1 -w24 -m10000 -h11 -RS175757 	# 28230.5 sec (+ 44.7 s, 2.0 MB)" >> ${S}1
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}1
+
+	echo "./pan3 -k1 -w24 -m10000 -h80 -RS201893 	# 28275.2 sec (+ 44.7 s, 2.0 MB)" >> ${S}2
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}2
+
+	echo "./pan4 -k1 -w24 -m10000 -h13 -RS29182 	# 28319.9 sec (+ 44.7 s, 2.0 MB)" >> ${S}3
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}3
+
+	echo "./pan1 -k1 -w24 -m10000 -h89 -RS96663 	# 28364.7 sec (+ 44.7 s, 2.0 MB)" >> ${S}4
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}4
+
+	echo "./pan2 -k1 -w24 -m10000 -h98 -RS245742 	# 28409.4 sec (+ 44.7 s, 2.0 MB)" >> ${S}5
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}5
+
+	echo "./pan3 -k1 -w24 -m10000 -h13 -RS257155 	# 28454.2 sec (+ 44.7 s, 2.0 MB)" >> ${S}6
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}6
+
+	echo "./pan4 -k1 -w23 -m10000 -h74 -RS65243 	# 28476.5 sec (+ 22.4 s, 1.0 MB)" >> ${S}7
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}7
+
+	echo "./pan1 -k1 -w23 -m10000 -h43 -RS197516 	# 28498.9 sec (+ 22.4 s, 1.0 MB)" >> ${S}0
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}0
+
+	echo "./pan2 -k1 -w23 -m10000 -h97 -RS26838 	# 28521.3 sec (+ 22.4 s, 1.0 MB)" >> ${S}1
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}1
+
+	echo "./pan3 -k1 -w23 -m10000 -h74 -RS76825 	# 28543.6 sec (+ 22.4 s, 1.0 MB)" >> ${S}2
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}2
+
+	echo "./pan4 -k1 -w23 -m10000 -h51 -RS167229 	# 28566.0 sec (+ 22.4 s, 1.0 MB)" >> ${S}3
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}3
+
+	echo "./pan1 -k1 -w23 -m10000 -h69 -RS115167 	# 28588.4 sec (+ 22.4 s, 1.0 MB)" >> ${S}4
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}4
+
+	echo "./pan2 -k1 -w23 -m10000 -h59 -RS152679 	# 28610.7 sec (+ 22.4 s, 1.0 MB)" >> ${S}5
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}5
+
+	echo "./pan3 -k1 -w23 -m10000 -h99 -RS129310 	# 28633.1 sec (+ 22.4 s, 1.0 MB)" >> ${S}6
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}6
+
+	echo "./pan4 -k1 -w22 -m10000 -h69 -RS77501 	# 28644.3 sec (+ 11.2 s, 0.5 MB)" >> ${S}7
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}7
+
+	echo "./pan1 -k1 -w22 -m10000 -h82 -RS170375 	# 28655.5 sec (+ 11.2 s, 0.5 MB)" >> ${S}0
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}0
+
+	echo "./pan2 -k1 -w22 -m10000 -h24 -RS113009 	# 28666.7 sec (+ 11.2 s, 0.5 MB)" >> ${S}1
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}1
+
+	echo "./pan3 -k1 -w22 -m10000 -h59 -RS259014 	# 28677.9 sec (+ 11.2 s, 0.5 MB)" >> ${S}2
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}2
+
+	echo "./pan4 -k1 -w22 -m10000 -h9 -RS137058 	# 28689.0 sec (+ 11.2 s, 0.5 MB)" >> ${S}3
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}3
+
+	echo "./pan1 -k1 -w22 -m10000 -h63 -RS212091 	# 28700.2 sec (+ 11.2 s, 0.5 MB)" >> ${S}4
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}4
+
+	echo "./pan2 -k1 -w22 -m10000 -h27 -RS195883 	# 28711.4 sec (+ 11.2 s, 0.5 MB)" >> ${S}5
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}5
+
+	echo "./pan3 -k1 -w21 -m10000 -h79 -RS88191 	# 28717.0 sec (+ 5.6 s, 0.2 MB)" >> ${S}6
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}6
+
+	echo "./pan4 -k1 -w21 -m10000 -h63 -RS9724 	# 28722.6 sec (+ 5.6 s, 0.2 MB)" >> ${S}7
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}7
+
+	echo "./pan1 -k1 -w21 -m10000 -h42 -RS148629 	# 28728.2 sec (+ 5.6 s, 0.2 MB)" >> ${S}0
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}0
+
+	echo "./pan2 -k1 -w21 -m10000 -h38 -RS94707 	# 28733.8 sec (+ 5.6 s, 0.2 MB)" >> ${S}1
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}1
+
+	echo "./pan3 -k1 -w21 -m10000 -h15 -RS147209 	# 28739.4 sec (+ 5.6 s, 0.2 MB)" >> ${S}2
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}2
+
+	echo "./pan4 -k1 -w21 -m10000 -h28 -RS60970 	# 28745.0 sec (+ 5.6 s, 0.2 MB)" >> ${S}3
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}3
+
+	echo "./pan1 -k1 -w21 -m10000 -h58 -RS196658 	# 28750.6 sec (+ 5.6 s, 0.2 MB)" >> ${S}4
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}4
+
+	echo "./pan2 -k1 -w21 -m10000 -h26 -RS205602 	# 28756.1 sec (+ 5.6 s, 0.2 MB)" >> ${S}5
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}5
+
+	echo "./pan3 -k1 -w20 -m10000 -h71 -RS240717 	# 28758.9 sec (+ 2.8 s, 0.1 MB)" >> ${S}6
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}6
+
+	echo "./pan4 -k1 -w20 -m10000 -h16 -RS199123 	# 28761.7 sec (+ 2.8 s, 0.1 MB)" >> ${S}7
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}7
+
+	echo "./pan1 -k1 -w20 -m10000 -h58 -RS55496 	# 28764.5 sec (+ 2.8 s, 0.1 MB)" >> ${S}0
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}0
+
+	echo "./pan2 -k1 -w20 -m10000 -h84 -RS126851 	# 28767.3 sec (+ 2.8 s, 0.1 MB)" >> ${S}1
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}1
+
+	echo "./pan3 -k1 -w20 -m10000 -h49 -RS16263 	# 28770.1 sec (+ 2.8 s, 0.1 MB)" >> ${S}2
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}2
+
+	echo "./pan4 -k1 -w20 -m10000 -h84 -RS142830 	# 28772.9 sec (+ 2.8 s, 0.1 MB)" >> ${S}3
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}3
+
+	echo "./pan1 -k1 -w20 -m10000 -h80 -RS135112 	# 28775.7 sec (+ 2.8 s, 0.1 MB)" >> ${S}4
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}4
+
+	echo "./pan2 -k1 -w20 -m10000 -h46 -RS92896 	# 28778.5 sec (+ 2.8 s, 0.1 MB)" >> ${S}5
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}5
+
+	echo "./pan3 -k1 -w19 -m10000 -h31 -RS23229 	# 28779.9 sec (+ 1.4 s, 0.1 MB)" >> ${S}6
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}6
+
+	echo "./pan4 -k1 -w19 -m10000 -h68 -RS4487 	# 28781.3 sec (+ 1.4 s, 0.1 MB)" >> ${S}7
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}7
+
+	echo "./pan1 -k1 -w19 -m10000 -h69 -RS54648 	# 28782.7 sec (+ 1.4 s, 0.1 MB)" >> ${S}0
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}0
+
+	echo "./pan2 -k1 -w19 -m10000 -h82 -RS68483 	# 28784.1 sec (+ 1.4 s, 0.1 MB)" >> ${S}1
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}1
+
+	echo "./pan3 -k1 -w19 -m10000 -h75 -RS100277 	# 28785.5 sec (+ 1.4 s, 0.1 MB)" >> ${S}2
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}2
+
+	echo "./pan4 -k1 -w19 -m10000 -h39 -RS213112 	# 28786.9 sec (+ 1.4 s, 0.1 MB)" >> ${S}3
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}3
+
+	echo "./pan1 -k1 -w19 -m10000 -h65 -RS175417 	# 28788.3 sec (+ 1.4 s, 0.1 MB)" >> ${S}4
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}4
+
+	echo "./pan2 -k1 -w19 -m10000 -h99 -RS233776 	# 28789.7 sec (+ 1.4 s, 0.1 MB)" >> ${S}5
+	echo "if [ -f swarm_times_up ] ; then exit 1; fi" >> ${S}5
+
+	echo "date > swarm_done_s0" >> ${S}0
+	echo "exit 1" >> ${S}0
+
+	echo "date > swarm_done_s1" >> ${S}1
+	echo "exit 1" >> ${S}1
+
+	echo "date > swarm_done_s2" >> ${S}2
+	echo "exit 1" >> ${S}2
+
+	echo "date > swarm_done_s3" >> ${S}3
+	echo "exit 1" >> ${S}3
+
+	echo "date > swarm_done_s4" >> ${S}4
+	echo "exit 1" >> ${S}4
+
+	echo "date > swarm_done_s5" >> ${S}5
+	echo "exit 1" >> ${S}5
+
+	echo "date > swarm_done_s6" >> ${S}6
+	echo "exit 1" >> ${S}6
+
+	echo "date > swarm_done_s7" >> ${S}7
+	echo "exit 1" >> ${S}7
+fi
+# end of preparation
+
+if [ $XEC -eq 1 ]
+then
+	rm -f swarm_done_s*
+	rm -f swarm_times_up
+
+	case `hostname` in
+	*)
+		sh ./${S}0 > ${S}0.out &
+		sh ./${S}1 > ${S}1.out &
+		sh ./${S}2 > ${S}2.out &
+		sh ./${S}3 > ${S}3.out &
+		sh ./${S}4 > ${S}4.out &
+		sh ./${S}5 > ${S}5.out &
+		sh ./${S}6 > ${S}6.out &
+		sh ./${S}7 > ${S}7.out
+		;;
+	esac
+
+	tt=0
+	sd=0
+	while [ $sd -eq 0 ]
+	do
+		case `hostname` in
+		*)
+			if [ -f swarm_done_s0 ] && [ -f swarm_done_s1 ] && [ -f swarm_done_s2 ] && [ -f swarm_done_s3 ] && [ -f swarm_done_s4 ] && [ -f swarm_done_s5 ] && [ -f swarm_done_s6 ] && [ -f swarm_done_s7 ] 
+			then	sd=1; break
+			fi
+			;;
+		esac
+
+		if [ $tt -le 3600 ]
+		then
+			tt=`expr $tt + 10`
+			sleep 10
+		else
+			date > swarm_times_up
+			wait
+			rm -f swarm_times_up
+			break
+		fi
+	done
+	rm -f swarm_done_s* pan.? pan[0-9]*
+
+fi
