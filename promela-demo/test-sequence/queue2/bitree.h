@@ -41,3 +41,14 @@ static inline bool search(uint64_t val)
   }
   return (ptr->value == val2);
 }
+
+static inline bool seq_contains(uint64_t seq, uint8_t val)
+{
+  while (seq > 0) {
+    if ((seq & MASK) == val) {
+      return true;
+    }
+    seq >>= UNIT_BITS;
+  }
+  return false;
+}
