@@ -1,3 +1,19 @@
+#include "operations.h"
+
+/* open() flags */
+#define O_RDONLY    0
+#define O_WRONLY    1
+#define O_RDWR      2
+#define O_CREAT     64  /* 0100 */
+#define O_EXCL      128 /* 0200 */
+#define O_TRUNC     512 /* 01000 */
+#define O_APPEND    1024 /* 02000 */
+#define O_SYNC      1052672 /* 04010000 */
+
+int sequence;
+int openflags;
+bool openflags_used;
+
 c_code {
 \#include "fileutil.h"
 \#include "bitree.h"
@@ -8,24 +24,78 @@ char *basepaths[n_fs];
 char *testdirs[n_fs];
 char *testfiles[n_fs];
 
+int openflags;
 int rets[n_fs], errs[n_fs];
 int fds[n_fs] = {-1};
 int i;
 
 uint64_t state2;
+uint64_t key;
 bool duplicate;
 int count;
 };
 
-int sequence;
+inline select_open_flag(flag) {
+    openflags_used = 0;
+    /* O_RDONLY is 0 so there is no point writing an if-fi for it */
+    if
+        :: flag = flag | O_WRONLY;
+        :: skip;
+    fi
+    if
+        :: flag = flag | O_RDWR;
+        :: skip;
+    fi
+    if
+        :: flag = flag | O_CREAT;
+        :: skip;
+    fi
+    if
+        :: flag = flag | O_EXCL;
+        :: skip;
+    fi
+    if
+        :: flag = flag | O_TRUNC;
+        :: skip;
+    fi
+    if
+        :: flag = flag | O_APPEND;
+        :: skip;
+    fi
+    if
+        :: flag = flag | O_SYNC;
+        :: skip;
+    fi
+}
 
 inline dispatch_test() {
+    if
+        :: (openflags_used == 1) -> printf("select flag!\n"); select_open_flag(openflags);
+        :: else -> skip;
+    fi
     c_code {
         state2 = now.sequence;
-        duplicate = search(state2);
+        if (seq_contains(state2, OP_OPEN)) {
+            /* If the sequence contains open(), use (openflags | sequence) as the search key */
+            /* For this program there are 6 ops * 3 unit bits = 18 bits */
+            key = (now.openflags << 18) | state2;
+            openflags = now.openflags;
+            now.openflags_used = 1;
+        } else {
+            key = state2;
+        }
+        duplicate = search(key);
+        if (!duplicate) {
+            printf("proc = [%d], count = %d, sequence = %06lo", Pworker->_pid, count, state2);
+            if (seq_contains(state2, OP_OPEN)) {
+                printf(", openflags = (%d) ", openflags);
+                show_open_flags(openflags);
+            }
+            printf("\n");
+        }
         while (!duplicate && state2 > 0) {
             switch (state2 & 0x7) {
-            case 1:
+            case OP_MKDIR:
                 makelog("BEGIN: mkdir\n");
                 for (i = 0; i < n_fs; ++i) {
                     makecall(rets[i], errs[i], "%s, %o", mkdir, testdirs[i], 0755);
@@ -36,7 +106,7 @@ inline dispatch_test() {
                 makelog("END: mkdir\n");
                 break;
 
-            case 2:
+            case OP_RMDIR:
                 makelog("BEGIN: rmdir\n");
                 for (i = 0; i < n_fs; ++i) {
                     makecall(rets[i], errs[i], "%s", rmdir, testdirs[i]);
@@ -47,17 +117,17 @@ inline dispatch_test() {
                 makelog("END: rmdir\n");
                 break;
 
-            case 3:
+            case OP_OPEN:
                 makelog("BEGIN: open\n");
                 for (i = 0; i < n_fs; ++i) {
-                    makecall(fds[i], errs[i], "%s, %#x, %o", open, testfiles[i], O_RDWR | O_CREAT, 0644);
+                    makecall(fds[i], errs[i], "%s, %#x, %o", myopen, testfiles[i], openflags, 0644);
                 }
                 assert(compare_equality_fexists(fslist, n_fs, testdirs));
                 assert(compare_equality_values(fslist, n_fs, errs));
                 makelog("END: open\n");
                 break;
             
-            case 4:
+            case OP_WRITE:
                 makelog("BEGIN: write\n");
                 size_t writelen = pick_value(4096, 16384);
                 char *data = malloc(writelen);
@@ -72,7 +142,7 @@ inline dispatch_test() {
                 makelog("END: write\n");
                 break;
 
-            case 5:
+            case OP_CLOSE:
                 makelog("BEGIN: close\n");
                 for (i = 0; i < n_fs; ++i) {
                     makecall(rets[i], errs[i], "%d", close, fds[i]);
@@ -82,7 +152,7 @@ inline dispatch_test() {
                 makelog("END: close\n");
                 break;
 
-            case 6:
+            case OP_UNLINK:
                 makelog("BEGIN: unlink\n");
                 for (i = 0; i < n_fs; ++i) {
                     makecall(rets[i], errs[i], "%s", unlink, testfiles[i]);
@@ -96,13 +166,9 @@ inline dispatch_test() {
             state2 >>= 3;
         }
         if (!duplicate) {
-            insert_value(now.sequence);
+            insert_value(key);
             count++;
-            printf("Sequence count: %d\n", count);
-            /* cleanup : close all fds */
-            for (i = 0; i < n_fs; ++i) {
-                close(fds[i]);
-            }
+            cleanup();
         }
     }
 }
@@ -118,40 +184,34 @@ proctype worker()
 {
     /* Non-deterministic test loop */
     do 
-    :: d_step { 
+    :: atomic { 
         /* mkdir, check: retval, errno, existence */
-        enqueue_id(1);
-        printf("[%d] sequence = %o\n", _pid, sequence);
+        enqueue_id(OP_MKDIR);
         dispatch_test();
     };
-    :: d_step { 
+    :: atomic { 
         /* rmdir, check: retval, errno, existence */
-        enqueue_id(2);
-        printf("[%d] sequence = %o\n", _pid, sequence);
+        enqueue_id(OP_RMDIR);
         dispatch_test();
     };
-    :: d_step {
+    :: atomic {
         /* open, check: errno, existence */
-        enqueue_id(3);
-        printf("[%d] sequence = %o\n", _pid, sequence);
+        enqueue_id(OP_OPEN);
         dispatch_test();
     };
-    :: d_step {
+    :: atomic {
         /* write, check: retval, errno, content */
-        enqueue_id(4);
-        printf("[%d] sequence = %o\n", _pid, sequence);
+        enqueue_id(OP_WRITE);
         dispatch_test();
     };
-    :: d_step {
+    :: atomic {
         /* close, check: retval, errno */
-        enqueue_id(5);
-        printf("[%d] sequence = %o\n", _pid, sequence);
+        enqueue_id(OP_CLOSE);
         dispatch_test();
     };
-    :: d_step {
+    :: atomic {
         /* unlink, check: retval, errno, existence */
-        enqueue_id(6);
-        printf("[%d] sequence = %o\n", _pid, sequence);
+        enqueue_id(OP_UNLINK);
         dispatch_test();
     };
     od

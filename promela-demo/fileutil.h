@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #include "nanotiming.h"
+#include "operations.h"
 
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
@@ -21,6 +22,9 @@
 int cur_pid;
 char func[9];
 struct timespec begin_time;
+
+int _opened_files[1024];
+int _n_files;
 
 static inline int makelog(const char *format, ...)
 {
@@ -78,5 +82,9 @@ bool compare_equality_values(char **fses, int n_fs, int *nums);
 bool compare_equality_fexists(char **fses, int n_fs, char **fpaths);
 bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths, int *fds);
 int compare_file_content(int fd1, int fd2);
+
+void show_open_flags(uint64_t flags);
+int myopen(const char *pathname, int flags, mode_t mode);
+void cleanup();
 
 #endif

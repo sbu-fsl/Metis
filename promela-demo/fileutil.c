@@ -129,3 +129,53 @@ bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths, int *fds)
     return res;
 }
 
+void show_open_flags(uint64_t flags)
+{
+    /* RDONLY, WRONLY and RDWR */
+    if ((flags & O_ACCMODE) == 0) {
+        printf("O_RDONLY ");
+    } else {
+        if (flags & O_WRONLY)
+            printf("O_WRONLY ");
+        if (flags & O_RDWR)
+            printf("O_RDWR ");
+    }
+
+    if (flags & O_CREAT)
+        printf("O_CREAT ");
+    if (flags & O_EXCL)
+        printf("O_EXCL ");
+    if (flags & O_TRUNC)
+        printf("O_TRUNC ");
+    if (flags & O_APPEND)
+        printf("O_APPEND ");
+    if (flags & O_NONBLOCK)
+        printf("O_NONBLOCK ");
+    if (flags & O_SYNC)
+        printf("O_SYNC ");
+    if (flags & O_ASYNC)
+        printf("O_ASYNC ");
+}
+
+int myopen(const char *pathname, int flags, mode_t mode)
+{
+    int fd = open(pathname, flags, mode);
+    if (fd >= 0) {
+        _opened_files[_n_files] = fd;
+        _n_files++;
+    }
+    return fd;
+}
+
+/* The procedure that resets run-time states
+ * Currently we just close all opened files
+ */
+void cleanup()
+{
+    for (int i = 0; i < _n_files; ++i) {
+        close(_opened_files[i]);
+        _opened_files[i] = 0;
+    }
+    _n_files = 0;
+    errno = 0;
+}
