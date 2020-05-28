@@ -34,11 +34,15 @@ inline schedule_c_code() {
     c_code {
         state2 = now.state;
         if (seq_contains(state2, 2)) {
-            key = state2 | ((now.flag | 07000) << 9);
+            key = state2 | ((now.flag) << 9);
         } else {
             key = state2;
         }
         duplicate = search(key);
+        if (!duplicate) {
+            printf("Proc=[%d], count=%d, sequence=%o, flag=%03o\n",
+                Pworker->_pid, count, state2, now.flag);
+        }
         while (!duplicate && state2 > 0) {
             switch(state2 & 0x7) {
                 case 1:
@@ -78,17 +82,14 @@ active [1] proctype worker() {
     do
     :: atomic {
         enqueue_id(1);
-        printf("[%d] 1, state=%o, flag=%o\n", _pid, state, flag);
         schedule_c_code();
     };
     :: atomic {
         enqueue_id(2);
-        printf("[%d] 2, state=%o, flag=%o\n", _pid, state, flag);
         schedule_c_code();
     };
     :: atomic {
         enqueue_id(3);
-        printf("[%d] 3, state=%o, flag=%o\n", _pid, state, flag);
         schedule_c_code();
     };
     od
