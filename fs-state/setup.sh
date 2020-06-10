@@ -3,36 +3,58 @@
 IMGFILE="fs0.img"
 BLOCKSIZE=1k
 COUNT=256
+verbose=0
+
+generic_cleanup() {
+    if [ "$(mount | grep '/mnt/test-ext4')" ]; then
+        umount -f /mnt/test-ext4;
+    fi
+    if [ "$LOOPDEV" ]; then
+        losetup -d $LOOPDEV;
+    fi
+    if [ -f /tmp/$IMGFILE ]; then
+        rm -f /tmp/$IMGFILE;
+    fi
+}
+
+runcmd() {
+    if [ $verbose != "0" ]; then
+        echo ">>> $@" > /proc/self/fd/2;
+    fi
+    sleep 0.5;
+    $@;
+    ret=$?;
+    if [ $ret -ne 0 ]; then
+        echo "Command '$0' exited with error ($ret)." > /proc/self/fd/2;
+        generic_cleanup;
+        exit $ret;
+    fi
+}
 
 # Create disk image file
-sudo dd if=/dev/zero of=/tmp/$IMGFILE bs=$BLOCKSIZE count=$COUNT
+runcmd dd if=/dev/zero of=/tmp/$IMGFILE bs=$BLOCKSIZE count=$COUNT
 
 # Detach unmounted loop devices
-sudo losetup -D
+runcmd losetup -D
 
 # Setup loop device
-LOOPDEV=$(sudo losetup --show -f /tmp/$IMGFILE)
+LOOPDEV=$(runcmd losetup --show -f /tmp/$IMGFILE)
 
 # Format the image
-sudo mkfs.ext4 $LOOPDEV
+runcmd mkfs.ext4 $LOOPDEV
 
 # Mount
-sudo umount -f /mnt/test-ext4
-sudo rm -rf /mnt/test-ext4
-sudo mkdir -p /mnt/test-ext4
-sudo mount -t ext4 -o sync $LOOPDEV /mnt/test-ext4
+if [ "$(mount | grep '/mnt/test-ext4')" ]; then
+    runcmd umount -f /mnt/test-ext4;
+fi
+if [ -d /mnt/test-ext4 ]; then
+    runcmd rm -rf /mnt/test-ext4;
+    runcmd mkdir -p /mnt/test-ext4;
+fi
+runcmd mount -t ext4 -o sync,noatime $LOOPDEV /mnt/test-ext4
 
 # Run test program
-make
-sudo ./pan | tee output.log
+runcmd make
+./pan | tee output.log
 
-# Unset
-echo "unmount"
-sudo umount -f /mnt/test-ext4
-# Detach loop device
-echo "detach"
-sudo losetup -d $LOOPDEV
-# Remove image
-echo "rm"
-sudo rm /tmp/$IMGFILE
-
+generic_cleanup;
