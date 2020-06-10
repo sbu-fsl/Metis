@@ -1,5 +1,5 @@
 COMMON_DIR=../common
-override CFLAGS += -I../include -D PRINTF -D VECTORSZ=263000 # -D T_RAND -D P_RAND
+override CFLAGS += -g -I../include -D PRINTF -D VECTORSZ=263000 -lssl -lcrypto # -D T_RAND -D P_RAND
 
 all: demo.pml
 	spin -a demo.pml; \

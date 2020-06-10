@@ -60,7 +60,8 @@ proctype worker()
             /* open, check: errno, existence */
             makelog("BEGIN: open\n");
             for (i = 0; i < n_fs; ++i) {
-                makecall(fds[i], errs[i], "%s, %#x, %o", myopen, testfiles[i], O_RDWR | O_CREAT, 0644);
+                fsimg_checkpoint(basepaths[i]);
+                makecall(fds[i], errs[i], "%s, %#x, %o", open, testfiles[i], O_RDWR | O_CREAT, 0644);
             }
             assert(compare_equality_fexists(fslist, n_fs, testdirs));
             assert(compare_equality_values(fslist, n_fs, errs));
@@ -75,6 +76,7 @@ proctype worker()
             char *data = malloc(writelen);
 	        generate_data(data, writelen, 255);
             for (i = 0; i < n_fs; ++i) {
+                fsimg_checkpoint(basepaths[i]);
                 makecall(rets[i], errs[i], "%d, %p, %zu", write, fds[i], data, writelen);
             }
 
@@ -90,6 +92,7 @@ proctype worker()
         c_code {
             makelog("BEGIN: close\n");
             for (i = 0; i < n_fs; ++i) {
+                fsimg_checkpoint(basepaths[i]);
                 makecall(rets[i], errs[i], "%d", close, fds[i]);
             }
             assert(compare_equality_values(fslist, n_fs, rets));
@@ -102,6 +105,7 @@ proctype worker()
         c_code {
             makelog("BEGIN: unlink\n");
             for (i = 0; i < n_fs; ++i) {
+                fsimg_checkpoint(basepaths[i]);
                 makecall(rets[i], errs[i], "%s", unlink, testfiles[i]);
             }
             assert(compare_equality_fexists(fslist, n_fs, testdirs));
@@ -115,6 +119,7 @@ proctype worker()
         c_code {
             makelog("BEGIN: mkdir\n");
             for (i = 0; i < n_fs; ++i) {
+                fsimg_checkpoint(basepaths[i]);
                 makecall(rets[i], errs[i], "%s, %o", mkdir, testdirs[i], 0755);
             }
             assert(compare_equality_fexists(fslist, n_fs, testdirs));
@@ -128,6 +133,7 @@ proctype worker()
         c_code {
             makelog("BEGIN: rmdir\n");
             for (i = 0; i < n_fs; ++i) {
+                fsimg_checkpoint(basepaths[i]);
                 makecall(rets[i], errs[i], "%s", rmdir, testdirs[i]);
             }
             assert(compare_equality_fexists(fslist, n_fs, testdirs));
@@ -163,7 +169,11 @@ proctype driver(int nproc)
             snprintf(testfiles[i], len + 1, "%s/test.txt", basepaths[i]);
         }
         /* open and mmap the test f/s image */
+        vector_init(&fsimg_records, struct imghash, 512);
         fsfd = open("/tmp/fs0.img", O_RDWR);
+	    assert(fsfd);
+	    mnt_fd = open("/mnt/test-ext4", O_RDONLY);
+	    assert(mnt_fd);
         fsimg = mmap(NULL, fsize(fsfd), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd, 0);
         assert(fsimg != MAP_FAILED);
         atexit(cleanup);

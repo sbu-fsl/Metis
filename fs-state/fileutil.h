@@ -8,15 +8,19 @@
 #include <errno.h>
 #include <time.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <linux/limits.h>
+#include <linux/fs.h>
 #include <unistd.h>
+#include <openssl/md5.h>
 
 #include "nanotiming.h"
 #include "operations.h"
 #include "errnoname.h"
+#include "vector.h"
 
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
@@ -28,9 +32,16 @@ struct timespec begin_time;
 
 int _opened_files[1024];
 int _n_files;
-int fsfd;
+int fsfd, mnt_fd;
 void *fsimg;
 size_t count;
+
+struct imghash {
+    unsigned char md5[16];
+    size_t count;
+};
+
+struct vector fsimg_records;
 
 static inline int makelog(const char *format, ...)
 {
@@ -103,6 +114,7 @@ int compare_file_content(int fd1, int fd2);
 
 void show_open_flags(uint64_t flags);
 int myopen(const char *pathname, int flags, mode_t mode);
+void fsimg_checkpoint(const char *mntpoint);
 void cleanup();
 
 #endif
