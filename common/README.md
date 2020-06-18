@@ -1,6 +1,6 @@
-# common
+# common - commonly-used functionalities
 
-This directory contains some common-used C programs.
+This directory contains some commonly-used C programs.
 
 ## errnoname.c
 
