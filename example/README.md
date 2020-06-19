@@ -2,7 +2,7 @@
 
 This directory includes test.c and Makefile that runs sequence of filesystem syscalls and outputs the results to text and json files.
 
-## How to run
+## Usage
 
 To run this example, use `make; ./test`; to clean generated resources, use `make clean`.
 
