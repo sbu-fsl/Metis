@@ -5,3 +5,4 @@ test
 pan*
 *.trail
 .vscode/
+**/.DS_Store
