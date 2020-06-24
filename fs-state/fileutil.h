@@ -66,6 +66,10 @@ static inline int makelog(const char *format, ...)
 
 #define min(x, y) ((x >= y) ? y : x)
 
+#define expect(expr) if (!(expr)) { \
+    fprintf(stderr, "[COUNT=%zu] Expectation failed at %s:%d: " #expr "\n", \
+            count, __FILE__, __LINE__); }
+
 /* Randomly pick a value in the range of [min, max] */
 static inline size_t pick_value(size_t min, size_t max)
 {
