@@ -18,8 +18,8 @@ int fds[n_fs] = {-1};
 int i;
 };
 
-c_track "fsimg_ext4" "262144";
-c_track "fsimg_ext2" "262144";
+c_track "fsimg_ext4" "1048576";
+c_track "fsimg_ext2" "1048576";
 c_track "&errno" "sizeof(int)";
 
 inline select_open_flag(flag) {
@@ -72,12 +72,27 @@ proctype worker()
         }
     };
     :: atomic {
+        /* lseek */
+        c_code {
+            makelog("BEGIN: lseek\n");
+            off_t offset = pick_value(1, 32768);
+            for (i = 0; i < n_fs; ++i) {
+                makecall(rets[i], errs[i], "%d, %l, %d", lseek, fds[i], offset, SEEK_SET);
+            }
+
+            expect(compare_equality_values(fslist, n_fs, rets));
+            expect(compare_equality_values(fslist, n_fs, errs));
+            makelog("END: lseek\n");
+
+        }
+    };
+    :: atomic {
         /* write, check: retval, errno, content */
         c_code {
             makelog("BEGIN: write\n");
             size_t writelen = pick_value(1, 32768);
             char *data = malloc(writelen);
-	        generate_data(data, writelen, 255);
+	    generate_data(data, writelen, -1);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d, %p, %zu", write, fds[i], data, writelen);
             }
@@ -87,6 +102,22 @@ proctype worker()
             expect(compare_equality_values(fslist, n_fs, errs));
             expect(compare_equality_fcontent(fslist, n_fs, testfiles, fds));
             makelog("END: write\n");
+        }
+    };
+    :: atomic {
+        /* ftruncate, check: retval, errno, existence */
+        /* TODO: compare file length. Currently ftruncate is mainly
+           intended to avoid long term ENOSPC of write() */
+        c_code {
+            makelog("BEGIN: ftruncate\n");
+            off_t flen = pick_value(0, 200000);
+            for (i = 0; i < n_fs; ++i) {
+                makecall(rets[i], errs[i], "%d, %ld", ftruncate, fds[i], flen);
+            }
+            expect(compare_equality_fexists(fslist, n_fs, testfiles));
+            expect(compare_equality_values(fslist, n_fs, rets));
+            expect(compare_equality_values(fslist, n_fs, errs));
+            makelog("END: ftruncate\n");
         }
     };
     :: atomic {
@@ -140,6 +171,7 @@ proctype worker()
             makelog("END: rmdir\n");
         }
     };
+    
     od
 };
 
