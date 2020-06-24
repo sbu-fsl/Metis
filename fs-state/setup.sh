@@ -3,7 +3,7 @@
 FSLIST=(ext4 ext2)
 LOOPDEVS=()
 BLOCKSIZE=1k
-COUNT=256
+COUNT=1024
 verbose=0
 
 generic_cleanup() {
