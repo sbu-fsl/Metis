@@ -167,36 +167,6 @@ int myopen(const char *pathname, int flags, mode_t mode)
     return fd;
 }
 
-void fsimg_checkpoint(const char *mntpoint)
-{
-    struct imghash h;
-    struct imghash *ptr;
-    // int ret;
-
-    msync(fsimg, FSSIZE, MS_SYNC);
-    /* freeze the target file system */
-    // ioctl(mnt_fd, FIFREEZE, 0);
-    /* Calculate the hash of the whole fs image */
-    MD5(fsimg, FSSIZE, h.md5);
-    h.count = count;
-    /* print out */
-    printf("count = %zu, md5 hash of the current f/s image = ", count);
-    for (int i = 0; i < 16; ++i)
-        printf("%02x", h.md5[i]);
-    printf("\n");
-    /* Find if a backtracking occured */
-    vector_iter(&fsimg_records, struct imghash, ptr) {
-        if (memcmp(ptr->md5, h.md5, 16) == 0) {
-            printf("backtrack found: current image is the same as that at count = %zu\n", ptr->count);
-            break;
-        }
-    }
-    /* Add this hash value into the record vector */
-    vector_add(&fsimg_records, &h);
-    /* Unfreeze fs */
-    // ioctl(mnt_fd, FITHAW, 0);
-}
-
 /* The procedure that resets run-time states
  * Currently we just close all opened files
  */
@@ -207,6 +177,5 @@ void cleanup()
         _opened_files[i] = 0;
     }
     _n_files = 0;
-    munmap(fsimg, fsize(fsfd));
     errno = 0;
 }

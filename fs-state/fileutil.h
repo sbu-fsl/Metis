@@ -32,8 +32,6 @@ struct timespec begin_time;
 
 int _opened_files[1024];
 int _n_files;
-int fsfd, mnt_fd;
-void *fsimg;
 size_t count;
 
 struct imghash {
@@ -64,7 +62,6 @@ static inline int makelog(const char *format, ...)
     err = errno; \
     makelog("[PROC #%d, COUNT = %zu] %s (" argfmt ")", cur_pid, count, func, __VA_ARGS__); \
     printf(" -> ret = %d, err = %s\n", retvar, errnoname(errno)); \
-    msync(fsimg, FSSIZE, MS_SYNC); \
     errno = err;
 
 #define min(x, y) ((x >= y) ? y : x)
