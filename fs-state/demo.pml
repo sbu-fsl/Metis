@@ -64,7 +64,7 @@ proctype worker()
             /* open, check: errno, existence */
             makelog("BEGIN: open\n");
             for (i = 0; i < n_fs; ++i) {
-                makecall(fds[i], errs[i], "%s, %#x, %o", open, testfiles[i], O_RDWR | O_CREAT, 0644);
+                makecall(fds[i], errs[i], "%s, %#x, %o", myopen, testfiles[i], O_RDWR | O_CREAT, 0644);
             }
             expect(compare_equality_fexists(fslist, n_fs, testdirs));
             expect(compare_equality_values(fslist, n_fs, errs));
@@ -77,7 +77,7 @@ proctype worker()
             makelog("BEGIN: lseek\n");
             off_t offset = pick_value(1, 32768);
             for (i = 0; i < n_fs; ++i) {
-                makecall(rets[i], errs[i], "%d, %l, %d", lseek, fds[i], offset, SEEK_SET);
+                makecall(rets[i], errs[i], "%d, %ld, %d", lseek, fds[i], offset, SEEK_SET);
             }
 
             expect(compare_equality_values(fslist, n_fs, rets));
@@ -92,7 +92,7 @@ proctype worker()
             makelog("BEGIN: write\n");
             size_t writelen = pick_value(1, 32768);
             char *data = malloc(writelen);
-	    generate_data(data, writelen, -1);
+	    generate_data(data, writelen, 233);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d, %p, %zu", write, fds[i], data, writelen);
             }
@@ -121,14 +121,10 @@ proctype worker()
         }
     };
     :: atomic {
-        /* close, check: retval, errno */
+        /* close all opened files */
         c_code {
-            makelog("BEGIN: close\n");
-            for (i = 0; i < n_fs; ++i) {
-                makecall(rets[i], errs[i], "%d", close, fds[i]);
-            }
-            expect(compare_equality_values(fslist, n_fs, rets));
-            expect(compare_equality_values(fslist, n_fs, errs));
+            makelog("BEGIN: closeall\n");
+            closeall();
             makelog("END: close\n");
         }
     };

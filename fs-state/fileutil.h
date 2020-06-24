@@ -116,6 +116,7 @@ int compare_file_content(int fd1, int fd2);
 void show_open_flags(uint64_t flags);
 int myopen(const char *pathname, int flags, mode_t mode);
 void fsimg_checkpoint(const char *mntpoint);
+void closeall();
 void cleanup();
 
 #endif

@@ -168,6 +168,15 @@ int myopen(const char *pathname, int flags, mode_t mode)
     return fd;
 }
 
+void closeall()
+{
+    for (int i = _n_files - 1; i >= 0; --i) {
+        close(_opened_files[i]);
+	_opened_files[i] = 0;
+    }
+    _n_files = 0;
+}
+
 /* The procedure that resets run-time states
  * Currently we just close all opened files
  */
