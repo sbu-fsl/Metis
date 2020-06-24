@@ -10,5 +10,5 @@ run: all
 	rm -rf /mnt/test-*/test* || true; \
 
 clean:
-	rm -rf test test.txt pan* \
+	rm -rf test test.txt pan* *.log \
 	rm -rf /mnt/test-*/test*
