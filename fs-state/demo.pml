@@ -66,8 +66,8 @@ proctype worker()
             for (i = 0; i < n_fs; ++i) {
                 makecall(fds[i], errs[i], "%s, %#x, %o", open, testfiles[i], O_RDWR | O_CREAT, 0644);
             }
-            assert(compare_equality_fexists(fslist, n_fs, testdirs));
-            assert(compare_equality_values(fslist, n_fs, errs));
+            expect(compare_equality_fexists(fslist, n_fs, testdirs));
+            expect(compare_equality_values(fslist, n_fs, errs));
             makelog("END: open\n");
         }
     };
@@ -83,9 +83,9 @@ proctype worker()
             }
 
             free(data);
-            assert(compare_equality_values(fslist, n_fs, rets));
-            assert(compare_equality_values(fslist, n_fs, errs));
-            assert(compare_equality_fcontent(fslist, n_fs, testfiles, fds));
+            expect(compare_equality_values(fslist, n_fs, rets));
+            expect(compare_equality_values(fslist, n_fs, errs));
+            expect(compare_equality_fcontent(fslist, n_fs, testfiles, fds));
             makelog("END: write\n");
         }
     };
@@ -96,8 +96,8 @@ proctype worker()
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d", close, fds[i]);
             }
-            assert(compare_equality_values(fslist, n_fs, rets));
-            assert(compare_equality_values(fslist, n_fs, errs));
+            expect(compare_equality_values(fslist, n_fs, rets));
+            expect(compare_equality_values(fslist, n_fs, errs));
             makelog("END: close\n");
         }
     };
@@ -108,9 +108,9 @@ proctype worker()
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%s", unlink, testfiles[i]);
             }
-            assert(compare_equality_fexists(fslist, n_fs, testdirs));
-            assert(compare_equality_values(fslist, n_fs, rets));
-            assert(compare_equality_values(fslist, n_fs, errs));
+            expect(compare_equality_fexists(fslist, n_fs, testdirs));
+            expect(compare_equality_values(fslist, n_fs, rets));
+            expect(compare_equality_values(fslist, n_fs, errs));
             makelog("END: unlink\n");
         }
     };
@@ -121,9 +121,9 @@ proctype worker()
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%s, %o", mkdir, testdirs[i], 0755);
             }
-            assert(compare_equality_fexists(fslist, n_fs, testdirs));
-            assert(compare_equality_values(fslist, n_fs, rets));
-            assert(compare_equality_values(fslist, n_fs, errs));
+            expect(compare_equality_fexists(fslist, n_fs, testdirs));
+            expect(compare_equality_values(fslist, n_fs, rets));
+            expect(compare_equality_values(fslist, n_fs, errs));
             makelog("END: mkdir\n");
         }
     };
@@ -134,9 +134,9 @@ proctype worker()
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%s", rmdir, testdirs[i]);
             }
-            assert(compare_equality_fexists(fslist, n_fs, testdirs));
-            assert(compare_equality_values(fslist, n_fs, rets));
-            assert(compare_equality_values(fslist, n_fs, errs));
+            expect(compare_equality_fexists(fslist, n_fs, testdirs));
+            expect(compare_equality_values(fslist, n_fs, rets));
+            expect(compare_equality_values(fslist, n_fs, errs));
             makelog("END: rmdir\n");
         }
     };
