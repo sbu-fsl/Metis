@@ -68,7 +68,7 @@ done
 
 # Run test program
 runcmd make
-./pan #| tee output.log
+./pan 2>error.log | tee output.log
 
 generic_cleanup;
 
