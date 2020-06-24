@@ -1,20 +1,29 @@
-#/bin/bash
+#!/bin/bash
 
-IMGFILE="fs0.img"
+FSLIST=(ext4 ext2)
+LOOPDEVS=()
 BLOCKSIZE=1k
 COUNT=256
 verbose=0
 
 generic_cleanup() {
-    if [ "$(mount | grep '/mnt/test-ext4')" ]; then
-        umount -f /mnt/test-ext4;
-    fi
-    if [ "$LOOPDEV" ]; then
-        losetup -d $LOOPDEV;
-    fi
-    if [ -f /tmp/$IMGFILE ]; then
-        rm -f /tmp/$IMGFILE;
-    fi
+    for fs in ${FSLIST[@]}; do
+        if [ "$(mount | grep /mnt/test-$fs)" ]; then
+            umount -f /mnt/test-$fs;
+        fi
+    done
+
+    for device in ${LOOPDEVS[@]}; do
+        if [ "$device" ]; then
+            losetup -d $device;
+        fi
+    done
+
+    for fs in ${FSLIST[@]}; do
+        if [ -f /tmp/fs-$fs.img ]; then
+            rm -f /tmp/fs-$fs.img;
+        fi
+    done
 }
 
 runcmd() {
@@ -31,30 +40,35 @@ runcmd() {
     fi
 }
 
-# Create disk image file
-runcmd dd if=/dev/zero of=/tmp/$IMGFILE bs=$BLOCKSIZE count=$COUNT
+for fs in ${FSLIST[@]}; do
+    # Create disk image file
+    IMGFILE="fs-$fs.img";
+    runcmd dd if=/dev/zero of=/tmp/$IMGFILE bs=$BLOCKSIZE count=$COUNT
 
-# Detach unmounted loop devices
-runcmd losetup -D
+    # Detach unmounted loop devices
+    runcmd losetup -D
 
-# Setup loop device
-LOOPDEV=$(runcmd losetup --show -f /tmp/$IMGFILE)
+    # Setup loop device
+    LOOPDEV=$(runcmd losetup --show -f /tmp/$IMGFILE)
+    LOOPDEVS+=("$LOOPDEV")
 
-# Format the image
-runcmd mkfs.ext4 $LOOPDEV
+    # Format the image
+    runcmd mkfs.$fs $LOOPDEV
 
-# Mount
-if [ "$(mount | grep '/mnt/test-ext4')" ]; then
-    runcmd umount -f /mnt/test-ext4;
-fi
-if [ -d /mnt/test-ext4 ]; then
-    runcmd rm -rf /mnt/test-ext4;
-    runcmd mkdir -p /mnt/test-ext4;
-fi
-runcmd mount -t ext4 -o sync,noatime $LOOPDEV /mnt/test-ext4
+    # Mount
+    if [ "$(mount | grep /mnt/test-$fs)" ]; then
+        runcmd umount -f /mnt/test-$fs;
+    fi
+    if [ -d /mnt/test-$fs ]; then
+        runcmd rm -rf /mnt/test-$fs;
+    fi
+    runcmd mkdir -p /mnt/test-$fs;
+    runcmd mount -t $fs -o dirsync,noatime $LOOPDEV /mnt/test-$fs
+done
 
 # Run test program
 runcmd make
-./pan | tee output.log
+./pan #| tee output.log
 
 generic_cleanup;
+
