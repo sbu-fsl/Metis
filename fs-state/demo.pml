@@ -12,47 +12,47 @@ char *testfiles[n_fs];
 void *fsimg_ext4, *fsimg_ext2;
 int fsfd_ext4, fsfd_ext2;
 
-int openflags;
 int rets[n_fs], errs[n_fs];
 int fds[n_fs] = {-1};
 int i;
 };
 
-c_track "fsimg_ext4" "1048576";
-c_track "fsimg_ext2" "1048576";
+int openflags;
+c_track "fsimg_ext4" "262144";
+c_track "fsimg_ext2" "262144";
 c_track "&errno" "sizeof(int)";
 
 inline select_open_flag(flag) {
-    openflags_used = 0;
     /* O_RDONLY is 0 so there is no point writing an if-fi for it */
+//     if
+//         :: flag = flag | O_WRONLY;
+//         :: skip;
+//     fi
+    flag = 0;
     if
-        :: flag = flag | O_WRONLY;
+        :: flag = flag | c_expr {O_RDWR};
         :: skip;
     fi
     if
-        :: flag = flag | O_RDWR;
+        :: flag = flag | c_expr {O_CREAT};
         :: skip;
     fi
-    if
-        :: flag = flag | O_CREAT;
-        :: skip;
-    fi
-    if
-        :: flag = flag | O_EXCL;
-        :: skip;
-    fi
-    if
-        :: flag = flag | O_TRUNC;
-        :: skip;
-    fi
-    if
-        :: flag = flag | O_APPEND;
-        :: skip;
-    fi
-    if
-        :: flag = flag | O_SYNC;
-        :: skip;
-    fi
+//     if
+//         :: flag = flag | O_EXCL;
+//         :: skip;
+//     fi
+//     if
+//         :: flag = flag | O_TRUNC;
+//         :: skip;
+//     fi
+//     if
+//         :: flag = flag | O_APPEND;
+//         :: skip;
+//     fi
+//     if
+//         :: flag = flag | O_SYNC;
+//         :: skip;
+//     fi
 }
 
 proctype worker()
@@ -60,16 +60,17 @@ proctype worker()
     /* Non-deterministic test loop */
     do 
     :: atomic {
+        select_open_flag(openflags);
         c_code {
             /* open, check: errno, existence */
             makelog("BEGIN: open\n");
             for (i = 0; i < n_fs; ++i) {
-                makecall(fds[i], errs[i], "%s, %#x, %o", myopen, testfiles[i], O_RDWR | O_CREAT, 0644);
+                makecall(fds[i], errs[i], "%s, %#x, %o", myopen, testfiles[i], now.openflags, 0644);
             }
             expect(compare_equality_fexists(fslist, n_fs, testdirs));
             expect(compare_equality_values(fslist, n_fs, errs));
             makelog("END: open\n");
-        }
+        };
     };
     :: atomic {
         /* lseek */

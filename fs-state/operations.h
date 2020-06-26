@@ -7,4 +7,4 @@
 #define OP_UNLINK 6
 
 /* fs image size */
-#define FSSIZE 1048576
+#define FSSIZE 262144
