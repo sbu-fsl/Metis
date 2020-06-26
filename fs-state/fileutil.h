@@ -32,8 +32,6 @@ struct timespec begin_time;
 
 int _opened_files[1024];
 int _n_files;
-int fsfd, mnt_fd;
-void *fsimg;
 size_t count;
 
 struct imghash {
@@ -64,10 +62,13 @@ static inline int makelog(const char *format, ...)
     err = errno; \
     makelog("[PROC #%d, COUNT = %zu] %s (" argfmt ")", cur_pid, count, func, __VA_ARGS__); \
     printf(" -> ret = %d, err = %s\n", retvar, errnoname(errno)); \
-    msync(fsimg, FSSIZE, MS_SYNC); \
     errno = err;
 
 #define min(x, y) ((x >= y) ? y : x)
+
+#define expect(expr) if (!(expr)) { \
+    fprintf(stderr, "[COUNT=%zu] Expectation failed at %s:%d: " #expr "\n", \
+            count, __FILE__, __LINE__); }
 
 /* Randomly pick a value in the range of [min, max] */
 static inline size_t pick_value(size_t min, size_t max)
@@ -115,6 +116,7 @@ int compare_file_content(int fd1, int fd2);
 void show_open_flags(uint64_t flags);
 int myopen(const char *pathname, int flags, mode_t mode);
 void fsimg_checkpoint(const char *mntpoint);
+void closeall();
 void cleanup();
 
 #endif

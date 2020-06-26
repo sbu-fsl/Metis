@@ -9,20 +9,20 @@ int compare_file_content(int fd1, int fd2)
     /* Get file properties: Make sure equal file size */
     ret = fstat(fd1, &f1);
     if (ret) {
-        printf("[%d] cmp_file_content: fstat f1 failed (%d)\n",
-               cur_pid, errno);
+        fprintf(stderr, "[%d] cmp_file_content: fstat f1 failed (%d)\n",
+                cur_pid, errno);
         return -1;
     }
     ret = fstat(fd2, &f2);
     if (ret) {
-        printf("[%d] cmp_file_content: fstat f2 failed (%d)\n",
-               cur_pid, errno);
+        fprintf(stderr, "[%d] cmp_file_content: fstat f2 failed (%d)\n",
+                cur_pid, errno);
         return -1;
     }
     if (f1.st_size != f2.st_size) {
-        printf("[%d] cmp_file_content: f1 and f2 size differ. "
-               "f1 has %zu bytes and f2 has %zu.\n", cur_pid,
-               f1.st_size, f2.st_size);
+        fprintf(stderr, "[%d] cmp_file_content: f1 and f2 size differ. "
+                "f1 has %zu bytes and f2 has %zu.\n", cur_pid,
+                f1.st_size, f2.st_size);
         return 1;
     }
     /* Compare the file content */
@@ -31,16 +31,16 @@ int compare_file_content(int fd1, int fd2)
     lseek(fd2, 0, SEEK_SET);
     while ((r1 = read(fd1, buf1, bs)) > 0 && (r2 = read(fd2, buf2, bs)) > 0) {
         if (memcmp(buf1, buf2, r1) != 0) {
-            printf("[%d] cmp_file_content: f1 and f2 content is not equal.\n",
-                   cur_pid);
+		fprintf(stderr, "[%d] cmp_file_content: "
+			"f1 and f2 content is not equal.\n", cur_pid);
             return 1;
         }
     }
     lseek(fd1, 0, SEEK_SET);
     lseek(fd2, 0, SEEK_SET);
     if (r1 < 0 || r2 < 0) {
-        printf("[%d] cmp_file_content: error occurred when reading: %d\n",
-               cur_pid, errno);
+	    fprintf(stderr, "[%d] cmp_file_content: "
+		    "error occurred when reading: %d\n", cur_pid, errno);
     }
     return 0;
 }
@@ -56,9 +56,9 @@ bool compare_equality_values(char **fses, int n_fs, int *nums)
         }
     }
     if (!res) {
-        printf("[%d] Discrepancy in return values found:\n", cur_pid);
+        fprintf(stderr, "[%d] Discrepancy in return values found:\n", cur_pid);
         for (int i = 0; i < n_fs; ++i)
-            printf("[%d] [%s]: %d\n", cur_pid, fses[i], nums[i]);
+            fprintf(stderr, "[%d] [%s]: %d\n", cur_pid, fses[i], nums[i]);
     }
     return res;
 }
@@ -80,9 +80,10 @@ bool compare_equality_fexists(char **fses, int n_fs, char **fpaths)
         }
     }
     if (!res) {
-        printf("[%d] Discrepancy in existence of files found:\n", cur_pid);
+        fprintf(stderr, "[%d] Discrepancy in existence of files found:\n",
+		cur_pid);
         for (int i = 0; i < n_fs; ++i) {
-            printf("[%d] [%s]: %s: %d\n", cur_pid, fses[i], fpaths[i],
+            fprintf(stderr, "[%d] [%s]: %s: %d\n", cur_pid, fses[i], fpaths[i],
                     fexists[i]);
         }
     }
@@ -122,8 +123,8 @@ bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths, int *fds)
         if (compare_file_content(fds[i-1], fds[i]) != 0) {
             if (res)
                 res = false;
-            printf("[%d] [%s] (%s) is different from [%s] (%s)\n",
-                   cur_pid, fses[i-1], fpaths[i-1], fses[i], fpaths[i]);
+            fprintf(stderr, "[%d] [%s] (%s) is different from [%s] (%s)\n",
+                    cur_pid, fses[i-1], fpaths[i-1], fses[i], fpaths[i]);
         }
     }
     return res;
@@ -167,34 +168,13 @@ int myopen(const char *pathname, int flags, mode_t mode)
     return fd;
 }
 
-void fsimg_checkpoint(const char *mntpoint)
+void closeall()
 {
-    struct imghash h;
-    struct imghash *ptr;
-    // int ret;
-
-    msync(fsimg, FSSIZE, MS_SYNC);
-    /* freeze the target file system */
-    // ioctl(mnt_fd, FIFREEZE, 0);
-    /* Calculate the hash of the whole fs image */
-    MD5(fsimg, FSSIZE, h.md5);
-    h.count = count;
-    /* print out */
-    printf("count = %zu, md5 hash of the current f/s image = ", count);
-    for (int i = 0; i < 16; ++i)
-        printf("%02x", h.md5[i]);
-    printf("\n");
-    /* Find if a backtracking occured */
-    vector_iter(&fsimg_records, struct imghash, ptr) {
-        if (memcmp(ptr->md5, h.md5, 16) == 0) {
-            printf("backtrack found: current image is the same as that at count = %zu\n", ptr->count);
-            break;
-        }
+    for (int i = _n_files - 1; i >= 0; --i) {
+        close(_opened_files[i]);
+	_opened_files[i] = 0;
     }
-    /* Add this hash value into the record vector */
-    vector_add(&fsimg_records, &h);
-    /* Unfreeze fs */
-    // ioctl(mnt_fd, FITHAW, 0);
+    _n_files = 0;
 }
 
 /* The procedure that resets run-time states
@@ -207,6 +187,5 @@ void cleanup()
         _opened_files[i] = 0;
     }
     _n_files = 0;
-    munmap(fsimg, fsize(fsfd));
     errno = 0;
 }
