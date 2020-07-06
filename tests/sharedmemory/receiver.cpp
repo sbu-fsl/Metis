@@ -3,8 +3,6 @@
 #include <cstddef>
 #include <limits>
 #include <memory_resource>
-
-
 #include <stdio.h>
 #include <stdlib.h> 
 #include <string.h> 
@@ -43,6 +41,17 @@ void ShareMemoryRead() {
         perror("mmap failed\n");
         exit(errno);
     }
+    
+    // address of ptr
+    std::cout << "addr ptr from mmap: " << ptr << std::endl;
+
+    // size of vector and offset
+    int sizeVector = sizeof(std::pmr::vector<char>);
+    int offsetValue = sizeVector + 2;
+
+    // getting address of pool ptr and additional ptr
+    void* offsetPool = (std::byte*)ptr + sizeVector;  // where vector data is stored
+    void* offsetPtr = (std::byte*)ptr + offsetValue;  // where pointer is stored
 
     // accessing vector in shared memory - does not work, deallacation(?) occurs
     // this code causes a segfault
@@ -50,22 +59,14 @@ void ShareMemoryRead() {
     // std::cout << myVector -> at(0) << std::endl;
     // std::cout << "myVector addr: " << myVector << std::endl;
 
-    // getting a - doesn't work
-    void* valueAddrV1 = (std::byte*)(ptr) + 16;
-    char* valueV1 = (char*) valueAddrV1;
-    std::cout << "value addrV1: " << valueAddrV1 << std::endl;
+    // getting a - does work this time
+    char* valueV1 = (char*) offsetPool;
+    std::cout << "addr pool: " << offsetPool << std::endl;
     std::cout << "valueV1: " << *valueV1 << std::endl;
 
-    // getting b - doesnt't work
-    void* valueAddrV2 = (std::byte*)(ptr) + 17;
-    char* valueV2 = (char*) valueAddrV2;
-    std::cout << "value addrV2: " << valueAddrV2 << std::endl;
-    std::cout << "valueV2: " << *valueV2 << std::endl;
-
-    // accessing a char from the vector
-    void* valueAddr = (std::byte*)(ptr) + 18;
-    char* value = (char*) valueAddr;
-    std::cout << "value addr: " << valueAddr << std::endl;
+    // accessing other char ptr
+    char* value = (char*) offsetPtr;
+    std::cout << "addr additional ptr: " << offsetPtr << std::endl;
     std::cout << "value: " << *value << std::endl;
 
     // removes mappings

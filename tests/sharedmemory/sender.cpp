@@ -17,12 +17,6 @@
 // to compile/run: 
 // g++ -o sender sender.cpp -lrt -std=c++17 -Wall -Wextra -pedantic-errors
 
-/*
-Of note:
-    -we seem to have done it (allocate the data of the vector and the vector itself)
-    -I have no idea what memory is allocated for vector, which could be an issue (seemed to be 16 bytes for the vector 
-    itself and 2 bytes - which we allocated - for its contents)
-*/
 void ShareMemoryWrite() {
     printf("Producer called (vector version 7.0)\n");
 
@@ -65,23 +59,30 @@ void ShareMemoryWrite() {
         exit(errno);
     }
     
-    // offset for buffer and for intializing char ptr
-    void* offset = (std::byte*)ptr + 16;
-    void* offset2 = (std::byte*)ptr + 18;
+    // size of vector and offset
+    int sizeVector = sizeof(std::pmr::vector<char>);
+    int offsetValue = sizeVector + 2; // the extra 2 is for the chars stored in the vector
+    std::cout << "size of vector is: " << sizeVector << std::endl; // see what the size of the vector object is
 
-    // creating our vector in shared memory
-    std::byte* buf = new (offset) std::byte[2];
-    std::pmr::monotonic_buffer_resource pool(buf, sizeof buf, std::pmr::null_memory_resource());
+    // getting address of pool ptr and additional ptr
+    void* offsetPool = (std::byte*)ptr + sizeVector;  // where vector data is stored
+    void* offsetPtr = (std::byte*)ptr + offsetValue;  // where pointer is stored
+
+    // size of buffer
+    int sizeBuf = 2; // we will only put two chars in the vector so 2 bytes
+
+    // creating our vector in shared memory    
+    std::pmr::monotonic_buffer_resource pool(offsetPool, sizeBuf, std::pmr::null_memory_resource());
     std::pmr::vector<char>* myVector = new (ptr) std::pmr::vector<char>{{'a', 'b'}, &pool};
 
     // checking addresses
     std::cout << "myVector addr: " << myVector << std::endl;
     std::cout << "ptr addr: " << ptr << std::endl;
-    std::cout << "buf addr: " << buf << std::endl;
-    std::cout << "offset addr: " << offset << std::endl;
+    std::cout << "offset pool addr: " << offsetPool << std::endl;
+    std::cout << "offset ptr addr: " << offsetPtr << std::endl;
     
     // creating different type of ptr in shared memory
-    char* myChar = (char*)offset2;
+    char* myChar = (char*)offsetPtr;
     *myChar = 'c';
 
     // removes mappins
