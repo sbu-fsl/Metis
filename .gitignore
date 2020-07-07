@@ -6,3 +6,4 @@ pan*
 *.trail
 .vscode/
 **/.DS_Store
+**/test_script*
