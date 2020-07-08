@@ -2,10 +2,12 @@ CC = gcc
 #Cannot use -Werror because ‘__malloc_hook’ and other hooks are deprecated [-Wdeprecated-declarations]
 CFLAGS = -g -O2 -Wall -I./include
 BUILD = build
-#HEADER = $(wildcard ./include/*.h)
-OBJECTS = oneblock_hook mutliblock_hook test_heap
+OBJECTS = run_malloc
 
 all: $(BUILD) $(OBJECTS)
+
+run: all
+	./$(OBJECTS)
 
 $(OBJECTS): %: %.c $(BUILD)/my_malloc.o $(BUILD)/malloc_hook.o
 	$(CC) -o $@ $^ $(CFLAGS)
