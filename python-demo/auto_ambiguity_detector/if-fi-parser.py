@@ -4,6 +4,8 @@
 
 import sys
 import re
+import os
+import glob
 
 script_head = '''import random as rd
 
@@ -40,6 +42,11 @@ whole_condition_list = []
 tab = '    '
 
 if __name__ == "__main__":
+    # remove all test scripts generated last time
+    print('Removing test scripts generated last time.')
+    files = glob.glob('test_scripts/*')
+    for f in files:
+        os.remove(f)
     # input check
     if len(sys.argv) != 2:
         print('No file path given. Exit...')
