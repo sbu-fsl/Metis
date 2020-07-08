@@ -18,8 +18,9 @@ int main(int argc, char *argv[])
     print_new_block();
 
     /* allocate memory for first variable: a 20-length str */
+    printf("\n");
     char* str;
-    str = (char*)malloc(25);
+    str = (char*)malloc(21);
     if(str == NULL){
         printf("[str] No enough space, EXIT...\n");
         print_new_block();
@@ -30,6 +31,7 @@ int main(int argc, char *argv[])
     print_new_block();
 
     /* allocate memory for second variable: an integer array */
+    printf("\n");
     const int N = 10;
     int i;
     int* arr[N];
@@ -42,9 +44,16 @@ int main(int argc, char *argv[])
         }
         else{
             *arr[i] = i * 10 + 5;
-            printf("arr: %d\n", *arr[i]);
         }
     }
+    for (i = 0; i < N; i++){
+        printf("%d ", *arr[i]);
+    }
+    printf("\n");
     print_new_block();
+
+    /* Free this memory block except header*/
+    printf("\n");
+    free((void*)new_block->start_brk + HEADER_SIZE);
     return 0;
 }
