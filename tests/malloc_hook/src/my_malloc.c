@@ -25,6 +25,7 @@ int malloc_init(block_t** new_block, size_t block_size)
     (*new_block)->end_brk = (block_t *)sbrk(0);
     (*new_block)->size = new_size - HEADER_SIZE;
     (*new_block)->free_size = new_size - HEADER_SIZE;
+    memset((char*)(*new_block) + HEADER_SIZE, 0, block_size);
     return 0;
 }
 
@@ -37,6 +38,9 @@ void* my_malloc_helper(size_t alloc_size, block_t** new_block)
     void* orig_ptr = (*new_block)->curr_ptr;
     (*new_block)->curr_ptr += alloc_size;
     (*new_block)->free_size -= alloc_size;
+    if ((*new_block)->curr_ptr > (void*)((*new_block)->end_brk)){
+        return NULL;
+    }
     return orig_ptr;
 }
 
@@ -47,9 +51,9 @@ void *my_malloc(size_t size)
     {
         return NULL;
     }
-    void *ret;
-    ret = my_malloc_helper(size, &new_block);
-    return ret;
+    void *ret_ptr;
+    ret_ptr = my_malloc_helper(size, &new_block);
+    return ret_ptr;
 }
 
 
@@ -69,6 +73,6 @@ void my_free(void* ptr){
 
 void print_new_block()
 {
-    printf("total_size=%zu\t free_size=%zu\t  start_brk=%p\t end_brk=%p\t curr_ptr=%p\t data=%d\n", 
-        new_block->size, new_block->free_size, new_block->start_brk, new_block->end_brk, new_block->curr_ptr, (int)*new_block->data);
+    printf("total_size=%zu\t free_size=%zu\t  start_brk=%p\t end_brk=%p\t curr_ptr=%p\t header_size=%d\n", 
+        new_block->size, new_block->free_size, new_block->start_brk, new_block->end_brk, new_block->curr_ptr, HEADER_SIZE);
 }
