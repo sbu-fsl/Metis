@@ -13,10 +13,10 @@ static void *(*old_malloc_hook) (size_t, const void *);
 static void (*old_free_hook) (void*, const void *);
 
 /* Override initializing hook from the C library. */
-void (*__malloc_initialize_hook) (void) = my_init;
+void (*__malloc_initialize_hook) (void) = my_init_hook;
 
 void
-my_init (void)
+my_init_hook (void)
 {
   old_malloc_hook = __malloc_hook;
   old_free_hook = __free_hook;

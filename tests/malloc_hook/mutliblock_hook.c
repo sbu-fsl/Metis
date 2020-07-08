@@ -2,7 +2,7 @@
 
 int main(int argc, char *argv[])
 {
-    my_init();
+    my_init_hook();
     int* ptr;
     char* str;
     int* arr[10];
