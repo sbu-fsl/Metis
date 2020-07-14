@@ -71,7 +71,7 @@ if __name__ == "__main__":
         var_list = []
         conditions = re.findall(condition_regex, statment)
         # extract variables from the model
-        var_pattern = r'(?!\bif\b|\belse\b|\bfi\b)([a-zA-Z][a-zA-Z0-9_]*)'
+        var_pattern = r'(?!\bif\b|\belse\b|\bfi\b|\bskip\b)([a-zA-Z][a-zA-Z0-9_]*)'
         var_regex = re.compile(var_pattern)
         for condition in conditions:
             condition_list.append(condition.replace('::', '').replace('->', ''))
