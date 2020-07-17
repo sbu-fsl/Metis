@@ -19,7 +19,7 @@ if __name__ == '__main__':
     except(FileNotFoundError):
         print("File not found.\nExit...")
 
-    log = open('log.txt', 'w')
+    log = open('report.txt', 'w')
 
     # extract if-fi statements from the model
     parser = PromelaParser(text)
