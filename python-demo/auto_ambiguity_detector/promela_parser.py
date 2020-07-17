@@ -71,8 +71,8 @@ if __name__ == '__main__':
     parser = PromelaParser(text)
     print(parser._if_statements_list)
     print(parser.get_if_conditions(0))
-    print(parser.get_if_vars(0))
+    print(parser.get_if_statements_vars(0))
 
     print('------------')
     print(parser.get_if_conditions(1))
-    print(parser.get_if_vars(1))
+    print(parser.get_if_statements_vars(1))
