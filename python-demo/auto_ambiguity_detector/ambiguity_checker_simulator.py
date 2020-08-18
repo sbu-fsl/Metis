@@ -1,23 +1,52 @@
 # @author: Haolin Yu
 # nfs4mc ambiguity test script generator
-# version 0.1.1
+# version 0.1.4
 
 import sys
 import re
+import os
+import glob
 
 script_head = '''import random as rd
+
 def getRandom():
     return rd.randrange(10000)
-if __name__ == "__main__":
-    for i in range(1000):
-        if_count = 0
 
+record = {}
+
+if __name__ == "__main__":
+    for i in range(10000):
+        if_count = 0
+        cond_set = []
+        var_set = []
+        value_set = []
+
+'''
+
+script_tail = '''
+    for key in record.keys():
+        print('--------------')
+        print('condition:')
+        print(key)
+        r = record[key]
+        print('vars:')
+        print(r[0])
+        print('values:')
+        print(r[1])
+    print('--------------')
+    
 '''
 
 whole_var_list = []
 whole_condition_list = []
+tab = '    '
 
 if __name__ == "__main__":
+    # remove all test scripts generated last time
+    print('Removing test scripts generated last time.')
+    files = glob.glob('test_scripts/*')
+    for f in files:
+        os.remove(f)
     # input check
     if len(sys.argv) != 2:
         print('No file path given. Exit...')
@@ -42,7 +71,7 @@ if __name__ == "__main__":
         var_list = []
         conditions = re.findall(condition_regex, statment)
         # extract variables from the model
-        var_pattern = r'(?!\bif\b|\belse\b|\bfi\b)([a-zA-Z][a-zA-Z0-9_]*)'
+        var_pattern = r'(?!\bif\b|\belse\b|\bfi\b|\bskip\b)([a-zA-Z][a-zA-Z0-9_]*)'
         var_regex = re.compile(var_pattern)
         for condition in conditions:
             condition_list.append(condition.replace('::', '').replace('->', ''))
@@ -69,20 +98,23 @@ if __name__ == "__main__":
         script = script_head
         assign_random_value_text = ''
         if_statement_text = ''
-        message = '\'Ambiguity found with \''
         for var in var_set:
-            assign_random_value_text += '\t' + var + ' = ' + 'getRandom()\n'
-            message += ', \'%s\', %s' % (var, var)
+            assign_random_value_text += 2*tab + var + ' = ' + 'getRandom()\n'
+            assign_random_value_text += 2*tab + 'var_set.append(\'' + var +'\')\n'
+            assign_random_value_text += 2*tab + 'value_set.append(' + var + ')\n'
         for condition in condition_list:
-            if_statement_text += '\t' + 'if' + condition + ':\n\t    if_count += 1\n'
+            if_statement_text += 2*tab + 'if' + condition + ':\n' + 3*tab + 'if_count += 1\n' \
+                + 3*tab + 'cond_set.append(\'' + condition + '\')\n'
         # combine the text segements.
         script += assign_random_value_text + '\n' + if_statement_text
-        script += '\tif(if_count > 1):\n\t    print(' + message +')\n' + '\t    break'
+        # find if_count > 1, add the combination to the combination dict
+        script += 2*tab + 'if(if_count > 1):\n' + 3*tab + 'record[tuple(cond_set)] = (tuple(var_set), tuple(value_set))\n'
         # fix && ||
         script = script.replace('&&', ' and ')
         script = script.replace('&', ' and ')
         script = script.replace('||', ' or ')
         script = script.replace('|', ' or ')
+        script += script_tail
         script_name = 'test_scripts/test_script%d.py' %(index)
         with open(script_name, 'w') as sc:
             sc.write(script)
