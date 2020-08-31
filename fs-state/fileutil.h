@@ -26,20 +26,17 @@
 #define _FILEUTIL_H_
 
 /* State variables */
-int cur_pid;
-char func[9];
-struct timespec begin_time;
-
-int _opened_files[1024];
-int _n_files;
-size_t count;
+extern int cur_pid;
+extern char func[9];
+extern struct timespec begin_time;
+extern int _opened_files[1024];
+extern int _n_files;
+extern size_t count;
 
 struct imghash {
     unsigned char md5[16];
     size_t count;
 };
-
-struct vector fsimg_records;
 
 static inline int makelog(const char *format, ...)
 {

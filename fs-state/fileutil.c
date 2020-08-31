@@ -1,5 +1,13 @@
 #include "fileutil.h"
 
+int cur_pid;
+char func[9];
+struct timespec begin_time;
+
+int _opened_files[1024];
+int _n_files;
+size_t count;
+
 int compare_file_content(int fd1, int fd2)
 {
     const size_t bs = 4096;
