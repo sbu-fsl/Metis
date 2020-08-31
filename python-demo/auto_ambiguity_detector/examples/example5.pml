@@ -179,12 +179,6 @@ proctype NFS_SERVER(chan qrequest; chan qreply) {
         }
         ::else -> skip;
     fi
-    print("test");
-    if
-        ::(test1 > test2) -> {}
-        ::(test2 > test3) -> {}
-    fi
-    print("test");
     if 
         ::(offset >= file_len) -> {
             printf("Case 2: offset over file len, skip reading\n")

@@ -7,3 +7,5 @@ pan*
 .vscode/
 **/.DS_Store
 **/test_script*
+**/__pycache__*
+log.txt

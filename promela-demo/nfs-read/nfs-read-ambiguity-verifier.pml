@@ -10,7 +10,7 @@ inline addRecord() {
         int key = Pinit->offset + Pinit->file_len + Pinit->count;
         if(safeInsert(key, Pinit->offset, Pinit->count, Pinit->file_len, Pinit->type) == INSERT_FAIL) {
             printf("Ambiguity found with offset %d file_len %d count %d\n", Pinit->offset, Pinit->file_len, Pinit->count);
-            abort();
+            // abort();
         }
     }
 }
@@ -18,13 +18,13 @@ inline addRecord() {
 proctype getRand() {
     int offset, file_len, count;
     c_code {
-        PgetRand->offset = randnum(1, 10000);
+        PgetRand->offset = randnum(1, 5);
     };
     c_code {
-        PgetRand->file_len = randnum(1, 10000);
+        PgetRand->file_len = randnum(1, 5);
     };
     c_code {
-        PgetRand->count = randnum(1, 10000);
+        PgetRand->count = randnum(1, 5);
     };
     randr ! offset, file_len, count;
 }
@@ -35,7 +35,7 @@ init {
         srand(time(NULL));
     }
     int offset, file_len, count;
-    int loops = 20;
+    int loops = 100;
     int counter = 0;
     int type;
     do
