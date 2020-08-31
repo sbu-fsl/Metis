@@ -66,9 +66,19 @@ static inline int makelog(const char *format, ...)
 
 #define min(x, y) ((x >= y) ? y : x)
 
-#define expect(expr) if (!(expr)) { \
-    fprintf(stderr, "[COUNT=%zu] Expectation failed at %s:%d: " #expr "\n", \
-            count, __FILE__, __LINE__); }
+static inline void print_expect_failed(const char *expr, const char *file,
+                                       int line)
+{
+    fprintf(stderr, "[COUNT=%zu] Expectation failed at %s:%d: %s\n",
+            count, file, line, expr);
+}
+
+#define expect(expr) \
+    do { \
+        if (!(expr)) { \
+            print_expect_failed(#expr, __FILE__, __LINE__); \
+        } \
+    } while(0)
 
 /* Randomly pick a value in the range of [min, max] */
 static inline size_t pick_value(size_t min, size_t max)
