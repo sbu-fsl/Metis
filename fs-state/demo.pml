@@ -4,23 +4,28 @@ c_code {
 \#include "fileutil.h"
 
 char *fslist[] = {"ext4", "ext2"};
-#define n_fs 2 
+#define n_fs 2
 char *basepaths[n_fs];
 char *testdirs[n_fs];
 char *testfiles[n_fs];
 
 void *fsimg_ext4, *fsimg_ext2;
+void *fsmem_ext4, *fsmem_ext2;
 int fsfd_ext4, fsfd_ext2;
+int fsmemfd_ext4, fsmemfd_ext2;
 
 int rets[n_fs], errs[n_fs];
 int fds[n_fs] = {-1};
 int i;
+uint64_t absfs_signature;
 };
 
 int openflags;
-c_track "fsimg_ext4" "262144";
-c_track "fsimg_ext2" "262144";
-c_track "&errno" "sizeof(int)";
+c_track "fsimg_ext4" "1048576" "UnMatched";
+// c_track "fsmem_ext4" "1048576" "UnMatched";
+c_track "fsimg_ext2" "1048576" "UnMatched";
+// c_track "fsmem_ext2" "1048576" "UnMatched";
+c_track "&absfs_signature" "8";
 
 inline select_open_flag(flag) {
     /* O_RDONLY is 0 so there is no point writing an if-fi for it */
@@ -28,13 +33,13 @@ inline select_open_flag(flag) {
 //         :: flag = flag | O_WRONLY;
 //         :: skip;
 //     fi
-    flag = 0;
+    flag = c_expr {O_RDWR | O_CREAT};
     if
-        :: flag = flag | c_expr {O_RDWR};
+        :: flag = flag & c_expr {~O_RDWR};
         :: skip;
     fi
     if
-        :: flag = flag | c_expr {O_CREAT};
+        :: flag = flag & c_expr {~O_CREAT};
         :: skip;
     fi
 //     if
@@ -93,7 +98,7 @@ proctype worker()
             makelog("BEGIN: write\n");
             size_t writelen = pick_value(1, 32768);
             char *data = malloc(writelen);
-	    generate_data(data, writelen, 233);
+	        generate_data(data, writelen, 233);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d, %p, %zu", write, fds[i], data, writelen);
             }
@@ -195,16 +200,25 @@ proctype driver(int nproc)
             testfiles[i] = calloc(1, len + 1);
             snprintf(testfiles[i], len + 1, "%s/test.txt", basepaths[i]);
         }
-        /* open and mmap the test f/s image */
+        /* open and mmap the test f/s image as well as its heap memory */
         fsfd_ext4 = open("/tmp/fs-ext4.img", O_RDWR);
-	    assert(fsfd_ext4);
+	    assert(fsfd_ext4 >= 0);
 	    fsimg_ext4 = mmap(NULL, fsize(fsfd_ext4), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext4, 0);
         assert(fsimg_ext4 != MAP_FAILED);
+        // fsmemfd_ext4 = shm_open("fuse-ext4", O_RDWR, 0666);
+        // printf("fsmemfd_ext4 = %d, errno = %d\n", fsmemfd_ext4, errno);
+        // assert(fsmemfd_ext4 >= 0);
+        // fsmem_ext4 = mmap(NULL, fsize(fsmemfd_ext4), PROT_READ | PROT_WRITE, MAP_SHARED, fsmemfd_ext4, 0);
+        // assert(fsmem_ext4 != MAP_FAILED);
 
         fsfd_ext2 = open("/tmp/fs-ext2.img", O_RDWR);
-        assert(fsfd_ext2);
+        assert(fsfd_ext2 >= 0);
         fsimg_ext2 = mmap(NULL, fsize(fsfd_ext2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext2, 0);
         assert(fsimg_ext2 != MAP_FAILED);
+        // fsmemfd_ext2 = shm_open("fuse-ext2", O_RDWR, 0666);
+        // assert(fsmemfd_ext2 >= 0);
+        // fsmem_ext2 = mmap(NULL, fsize(fsmemfd_ext2), PROT_READ | PROT_WRITE, MAP_SHARED, fsmemfd_ext2, 0);
+        // assert(fsmem_ext2 != MAP_FAILED);
 
         atexit(cleanup);
     };
