@@ -9,3 +9,6 @@ pan*
 **/test_script*
 **/__pycache__*
 log.txt
+.gdb_history
+*.a
+absfs
