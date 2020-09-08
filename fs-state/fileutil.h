@@ -22,17 +22,18 @@
 #include "operations.h"
 #include "errnoname.h"
 #include "vector.h"
+#include "abstract_fs.h"
 
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
 
-/* State variables */
 extern int cur_pid;
 extern char func[9];
 extern struct timespec begin_time;
 extern int _opened_files[1024];
 extern int _n_files;
 extern size_t count;
+extern uint64_t absfs_signature;
 
 struct imghash {
     unsigned char md5[16];
@@ -50,6 +51,15 @@ static inline int makelog(const char *format, ...)
     return vprintf(format, args);
 }
 
+static void compute_abstract_state(const char *basepath)
+{
+    vector_t absfs;
+    init_abstract_fs(&absfs);
+    scan_abstract_fs(basepath, &absfs);
+    absfs_signature = get_abstract_fs_hash(&absfs);
+    destroy_abstract_fs(&absfs);
+}
+
 #define makecall(retvar, err, argfmt, funcname, ...) \
     count++; \
     memset(func, 0, 9); \
@@ -58,7 +68,9 @@ static inline int makelog(const char *format, ...)
     errno = 0; \
     retvar = funcname(__VA_ARGS__); \
     err = errno; \
-    makelog("[PROC #%d, COUNT = %zu] %s (" argfmt ")", cur_pid, count, func, __VA_ARGS__); \
+    compute_abstract_state(basepaths[0]); \
+    makelog("[PROC #%d, COUNT = %zu, absfs = %lx] %s (" argfmt ")", cur_pid, \
+            count, absfs_signature, func, __VA_ARGS__); \
     printf(" -> ret = %d, err = %s\n", retvar, errnoname(errno)); \
     errno = err;
 
