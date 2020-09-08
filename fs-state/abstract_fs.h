@@ -25,6 +25,11 @@ struct absfs_file {
     uint64_t datahash; // Hash value of the file content
 };
 
+static inline void init_abstract_fs(vector_t *absfs)
+{
+    vector_init(absfs, struct absfs_file);
+}
+
 int scan_abstract_fs(const char *basepath, vector_t *vec);
 uint64_t get_abstract_fs_hash(vector_t *absfs);
 void destroy_abstract_fs(vector_t *absfs);
