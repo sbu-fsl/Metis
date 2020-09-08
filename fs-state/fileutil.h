@@ -12,6 +12,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 #include <linux/limits.h>
 #include <linux/fs.h>
 #include <unistd.h>
@@ -112,7 +113,17 @@ static inline ssize_t fsize(int fd)
     int ret = fstat(fd, &info);
     if (ret != 0)
         return -1;
-    return info.st_size;
+    if (info.st_mode & S_IFREG) {
+        return info.st_size;
+    } else if (info.st_mode & S_IFBLK) {
+        size_t devsz;
+        ret = ioctl(fd, BLKGETSIZE64, &devsz);
+        if (ret == -1)
+            return 0;
+        return devsz;
+    } else {
+        return 0;
+    }
 }
 
 bool compare_equality_values(char **fses, int n_fs, int *nums);
