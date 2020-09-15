@@ -12,3 +12,4 @@ log.txt
 .gdb_history
 *.a
 absfs
+example
