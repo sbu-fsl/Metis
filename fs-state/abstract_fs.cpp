@@ -1,5 +1,6 @@
 #include "abstract_fs.h"
-#include "path_utils.h"
+
+#include <algorithm>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,31 +48,22 @@ static uint64_t hash_file_content(const char *fullpath)
 	return result.a;
 }
 
-static int walk(const char *path, vector_t *vec)
+static int walk(const char *path, AbstractFs *fs)
 {
-	char *pathbuf = malloc(PATH_MAX);
-	struct absfs_file file;
+  AbstractFile file;
 	struct stat fileinfo;
-	size_t pathlen;
 	int ret = 0;
 	// Avoid '.' or '..'
 	if (is_this_or_parent(path)) {
-		free(pathbuf);
 		return 0;
 	}
-	strncpy(pathbuf, path, PATH_MAX);
 
-	// Shrink pathbuf to its real length
-	pathlen = strnlen(pathbuf, PATH_MAX) + 1;
-	pathbuf[pathlen - 1] = 0;
-	pathbuf = realloc(pathbuf, pathlen);
-	file.fullpath = pathbuf;
+	file.fullpath = path;
 
 	// Stat the current file and add it to vector
-	ret = stat(pathbuf, &fileinfo);
+	ret = stat(path, &fileinfo);
 	if (ret != 0) {
-		printf("Walk error: cannot stat '%s' (%d)\n", pathbuf, errno);
-		free(pathbuf);
+		printf("Walk error: cannot stat '%s' (%d)\n", path, errno);
 		return -1;
 	}
 	file.attrs.mode = fileinfo.st_mode;
@@ -81,25 +73,22 @@ static int walk(const char *path, vector_t *vec)
 	file.attrs.gid = fileinfo.st_gid;
 	// Hash the content if it's a regular file
 	if (S_ISREG(file.attrs.mode)) {
-		file.datahash = hash_file_content(pathbuf);
+		file.datahash = hash_file_content(path);
 		if (file.datahash == (uint64_t) -1) {
-			printf("Walk: unable to hash '%s'\n", pathbuf);
-			// free(pathbuf);
-			// return -1;
+			printf("Walk: unable to hash '%s'\n", path);
 		}
 	} else {
 		file.datahash = 0;
 	}
 	// Add current file to vector
 	// printf("Adding %s to vector.\n", pathbuf);
-	vector_add(vec, &file);
+  fs->list.push_back(file);
 	// If this is a directory, recursively walk its children
 	if (S_ISDIR(file.attrs.mode)) {
-		DIR *dir = opendir(pathbuf);
+		DIR *dir = opendir(path);
 		if (!dir) {
 			printf("Walk: unable to opendir '%s'. (%d)\n",
-			       pathbuf, errno);
-			free(pathbuf);
+			       path, errno);
 			return -1;
 		}
 		struct dirent *child;
@@ -107,73 +96,76 @@ static int walk(const char *path, vector_t *vec)
 			if (is_this_or_parent(child->d_name)) {
 				continue;
 			}
-			char *childpath = malloc(PATH_MAX);
-			int newpath_len = tc_path_join(pathbuf, child->d_name,
-				childpath, PATH_MAX) + 1;
-			childpath[newpath_len - 1] = 0;
-			childpath = realloc(childpath, newpath_len);
-			ret = walk(childpath, vec);
+      fs::path childpath = file.fullpath / child->d_name;
+			ret = walk(childpath.c_str(), fs);
 			if (ret < 0) {
-				printf("Error when walking '%s'.\n", childpath);
-				free(childpath);
+				printf("Error when walking '%s'.\n", childpath.c_str());
 				closedir(dir);
 				return -1;
 			}
-			free(childpath);
 		}
 		closedir(dir);
 	}
 	return 0;
 }
 
-static int abs_file_compare(const void *f1, const void *f2) {
-	const struct absfs_file *file1 = f1;
-	const struct absfs_file *file2 = f2;
-	return strncmp(file1->fullpath, file2->fullpath, PATH_MAX);
+void init_abstract_fs(absfs_t *absfs) {
+  *absfs = (absfs_t) new AbstractFs();
 }
 
-int scan_abstract_fs(const char *basepath, vector_t *vec)
+bool cmp_abstract_files(const AbstractFile &a, const AbstractFile &b)
 {
-	int ret = walk(basepath, vec);
-	vector_sort(vec, abs_file_compare);
+  return a.fullpath < b.fullpath;
+}
+
+int scan_abstract_fs(absfs_t absfs, const char *basepath)
+{
+  AbstractFs *fs = (AbstractFs *)absfs;
+	int ret = walk(basepath, fs);
+  std::sort(fs->list.begin(), fs->list.end(), cmp_abstract_files);
 	return ret;
 }
 
-uint64_t get_abstract_fs_hash(vector_t *absfs)
+uint64_t get_abstract_fs_hash(absfs_t absfs)
 {
+  AbstractFs *fs = (AbstractFs *)absfs;
 	MD5_CTX md5ctx;
-	struct absfs_file *file;
 	struct md5sum result;
 	MD5_Init(&md5ctx);
 
-	vector_iter(absfs, struct absfs_file, file) {
-		size_t pathlen = strnlen(file->fullpath, PATH_MAX);
-		MD5_Update(&md5ctx, file->fullpath, pathlen);
-		MD5_Update(&md5ctx, &file->attrs, sizeof(file->attrs));
-		MD5_Update(&md5ctx, &file->datahash, sizeof(uint64_t));
-	}
+  for (auto it = fs->list.begin(); it != fs->list.end(); ++it) {
+		size_t pathlen = strnlen(it->fullpath.c_str(), PATH_MAX);
+		MD5_Update(&md5ctx, it->fullpath.c_str(), pathlen);
+		MD5_Update(&md5ctx, &it->attrs, sizeof(it->attrs));
+		MD5_Update(&md5ctx, &it->datahash, sizeof(uint64_t));
+  }
 	MD5_Final((unsigned char *)&result, &md5ctx);
 	return result.a;
 }
 
-void destroy_abstract_fs(vector_t *absfs)
+void destroy_abstract_fs(absfs_t absfs)
 {
-	struct absfs_file *file;
-	vector_iter(absfs, struct absfs_file, file) {
-		free(file->fullpath);
-	}
-	vector_destroy(absfs);
+  AbstractFs *fs = (AbstractFs *)absfs;
+  delete fs;
+}
+
+void print_abstract_fs(absfs_t absfs)
+{
+  AbstractFs *fs = (AbstractFs *)absfs;
+  for (auto it = fs->list.begin(); it != fs->list.end(); ++it) {
+		printf("%s, mode=%06o, size=%zu, nlink=%ld, uid=%d, gid=%d\n",
+		       it->fullpath.c_str(), it->attrs.mode, it->attrs.size,
+		       it->attrs.nlink, it->attrs.uid, it->attrs.gid);
+  }
 }
 
 #ifdef ABSFS_TEST
 
 int main(int argc, char **argv)
 {
-	vector_t absfs_vec;
+	absfs_t absfs;
 	char *basepath;
 	int ret;
-	struct absfs_file *file;
-	vector_init(&absfs_vec, struct absfs_file);
 
 	if (argc > 1) {
 		basepath = argv[1];
@@ -181,15 +173,11 @@ int main(int argc, char **argv)
 		basepath = getenv("HOME");
 	}
 
+  init_abstract_fs(&absfs);
+
 	printf("Iterating directory '%s'...\n", basepath);
 
-	ret = scan_abstract_fs(basepath, &absfs_vec);
-
-	vector_iter(&absfs_vec, struct absfs_file, file) {
-		printf("%s, mode=%06o, size=%zu, nlink=%ld, uid=%d, gid=%d\n",
-		       file->fullpath, file->attrs.mode, file->attrs.size,
-		       file->attrs.nlink, file->attrs.uid, file->attrs.gid);
-	}
+	ret = scan_abstract_fs(absfs, basepath);
 
 	if (ret) {
 		printf("Error occurred when iterating...\n");
@@ -197,6 +185,8 @@ int main(int argc, char **argv)
 		printf("Iteration complete. Abstract FS signature = %#lx\n",
 		       get_abstract_fs_hash(&absfs_vec));
 	}
+
+  print_abstract_fs(absfs);
 
 	return ret;
 }

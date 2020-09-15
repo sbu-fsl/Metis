@@ -3,7 +3,7 @@
 FSLIST=(ext4 ext2)
 LOOPDEVS=()
 BLOCKSIZE=1k
-COUNT=256
+COUNT=1024
 verbose=0
 
 generic_cleanup() {
@@ -50,6 +50,7 @@ for fs in ${FSLIST[@]}; do
 
     # Setup loop device
     LOOPDEV=$(runcmd losetup --show -f /tmp/$IMGFILE)
+    echo "Setup loop device $LOOPDEV to forward /tmp/$IMGFILE.";
     LOOPDEVS+=("$LOOPDEV")
 
     # Format the image
@@ -63,7 +64,11 @@ for fs in ${FSLIST[@]}; do
         runcmd rm -rf /mnt/test-$fs;
     fi
     runcmd mkdir -p /mnt/test-$fs;
-    runcmd mount -t $fs -o dirsync,noatime $LOOPDEV /mnt/test-$fs
+
+    # echo -n "Confirm >>>"; read;
+    runcmd mount -t $fs -o sync,noatime $LOOPDEV /mnt/test-$fs
+
+    # echo -n "Confirm >>>"; read;
 done
 
 # Run test program

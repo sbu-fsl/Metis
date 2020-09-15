@@ -53,11 +53,11 @@ static inline int makelog(const char *format, ...)
 
 static void compute_abstract_state(const char *basepath)
 {
-    vector_t absfs;
+    absfs_t absfs;
     init_abstract_fs(&absfs);
-    scan_abstract_fs(basepath, &absfs);
-    absfs_signature = get_abstract_fs_hash(&absfs);
-    destroy_abstract_fs(&absfs);
+    scan_abstract_fs(absfs, basepath);
+    absfs_signature = get_abstract_fs_hash(absfs);
+    destroy_abstract_fs(absfs);
 }
 
 #define makecall(retvar, err, argfmt, funcname, ...) \

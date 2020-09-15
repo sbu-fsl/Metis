@@ -1,7 +1,6 @@
 #ifndef _ABSTRACT_FS_H
 #define _ABSTRACT_FS_H
 
-#include "vector.h"
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -13,8 +12,16 @@
 #define PATH_MAX    4096
 #endif
 
-struct absfs_file {
-    char *fullpath;
+/* C++ declarations */
+#ifdef __cplusplus
+
+#include <vector>
+#include <experimental/filesystem>
+
+namespace fs = std::experimental::filesystem;
+
+struct AbstractFile {
+    fs::path fullpath;
     struct {
         mode_t mode;
         size_t size;
@@ -25,13 +32,29 @@ struct absfs_file {
     uint64_t datahash; // Hash value of the file content
 };
 
-static inline void init_abstract_fs(vector_t *absfs)
-{
-    vector_init(absfs, struct absfs_file);
-}
+struct AbstractFs {
+    std::vector<AbstractFile> list;
+};
 
-int scan_abstract_fs(const char *basepath, vector_t *vec);
-uint64_t get_abstract_fs_hash(vector_t *absfs);
-void destroy_abstract_fs(vector_t *absfs);
+#endif
+/* End of C++ declarations */
+
+/* Function prototypes and definitions for C programs */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct abstract_fs * absfs_t;
+
+void init_abstract_fs(absfs_t *absfs);
+int scan_abstract_fs(absfs_t absfs, const char *basepath);
+uint64_t get_abstract_fs_hash(absfs_t absfs);
+void destroy_abstract_fs(absfs_t absfs);
+void print_abstract_fs(absfs_t absfs);
+
+#ifdef __cplusplus
+}
+#endif
+/* End of prototypes and definitions for C programs */
 
 #endif // _ABSTRACT_FS_H
