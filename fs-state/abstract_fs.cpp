@@ -183,7 +183,7 @@ int main(int argc, char **argv)
 		printf("Error occurred when iterating...\n");
 	} else {
 		printf("Iteration complete. Abstract FS signature = %#lx\n",
-		       get_abstract_fs_hash(&absfs_vec));
+		       get_abstract_fs_hash(absfs));
 	}
 
   print_abstract_fs(absfs);
