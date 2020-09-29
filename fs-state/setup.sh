@@ -73,7 +73,8 @@ done
 
 # Run test program
 runcmd make
-./pan 2>error.log | tee output.log
+echo 'Running file system checker...';
+./pan 2>error.log > output.log
 
 generic_cleanup;
 

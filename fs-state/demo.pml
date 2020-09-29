@@ -1,31 +1,29 @@
 #include "operations.h"
 
-c_code {
+c_decl {
 \#include "fileutil.h"
 
 char *fslist[] = {"ext4", "ext2"};
-#define n_fs 2
+#define n_fs    nelem(fslist)
 char *basepaths[n_fs];
 char *testdirs[n_fs];
 char *testfiles[n_fs];
 
 void *fsimg_ext4, *fsimg_ext2;
-void *fsmem_ext4, *fsmem_ext2;
 int fsfd_ext4, fsfd_ext2;
-int fsmemfd_ext4, fsmemfd_ext2;
+uint64_t absfs[n_fs];
 
 int rets[n_fs], errs[n_fs];
 int fds[n_fs] = {-1};
 int i;
-uint64_t absfs_signature;
 };
 
 int openflags;
+/* The persistent content of the file systems */
 c_track "fsimg_ext4" "1048576" "UnMatched";
-// c_track "fsmem_ext4" "1048576" "UnMatched";
 c_track "fsimg_ext2" "1048576" "UnMatched";
-// c_track "fsmem_ext2" "1048576" "UnMatched";
-c_track "&absfs_signature" "8";
+/* Abstract state signatures of the file systems */
+c_track "absfs" "sizeof(absfs)";
 
 inline select_open_flag(flag) {
     /* O_RDONLY is 0 so there is no point writing an if-fi for it */
@@ -71,9 +69,11 @@ proctype worker()
             makelog("BEGIN: open\n");
             for (i = 0; i < n_fs; ++i) {
                 makecall(fds[i], errs[i], "%s, %#x, %o", myopen, testfiles[i], now.openflags, 0644);
+                absfs[i] = compute_abstract_state(basepaths[i]);
             }
             expect(compare_equality_fexists(fslist, n_fs, testdirs));
             expect(compare_equality_values(fslist, n_fs, errs));
+            expect(compare_equality_absfs(fslist, n_fs, absfs));
             makelog("END: open\n");
         };
     };
@@ -84,10 +84,12 @@ proctype worker()
             off_t offset = pick_value(1, 32768);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d, %ld, %d", lseek, fds[i], offset, SEEK_SET);
+                absfs[i] = compute_abstract_state(basepaths[i]);
             }
 
             expect(compare_equality_values(fslist, n_fs, rets));
             expect(compare_equality_values(fslist, n_fs, errs));
+            expect(compare_equality_absfs(fslist, n_fs, absfs));
             makelog("END: lseek\n");
 
         }
@@ -101,12 +103,14 @@ proctype worker()
 	        generate_data(data, writelen, 233);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d, %p, %zu", write, fds[i], data, writelen);
+                absfs[i] = compute_abstract_state(basepaths[i]);
             }
 
             free(data);
             expect(compare_equality_values(fslist, n_fs, rets));
             expect(compare_equality_values(fslist, n_fs, errs));
             expect(compare_equality_fcontent(fslist, n_fs, testfiles, fds));
+            expect(compare_equality_absfs(fslist, n_fs, absfs));
             makelog("END: write\n");
         }
     };
@@ -119,10 +123,12 @@ proctype worker()
             off_t flen = pick_value(0, 200000);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d, %ld", ftruncate, fds[i], flen);
+                absfs[i] = compute_abstract_state(basepaths[i]);
             }
             expect(compare_equality_fexists(fslist, n_fs, testfiles));
             expect(compare_equality_values(fslist, n_fs, rets));
             expect(compare_equality_values(fslist, n_fs, errs));
+            expect(compare_equality_absfs(fslist, n_fs, absfs));
             makelog("END: ftruncate\n");
         }
     };
@@ -140,10 +146,12 @@ proctype worker()
             makelog("BEGIN: unlink\n");
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%s", unlink, testfiles[i]);
+                absfs[i] = compute_abstract_state(basepaths[i]);
             }
             expect(compare_equality_fexists(fslist, n_fs, testdirs));
             expect(compare_equality_values(fslist, n_fs, rets));
             expect(compare_equality_values(fslist, n_fs, errs));
+            expect(compare_equality_absfs(fslist, n_fs, absfs));
             makelog("END: unlink\n");
         }
     };
@@ -153,10 +161,12 @@ proctype worker()
             makelog("BEGIN: mkdir\n");
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%s, %o", mkdir, testdirs[i], 0755);
+                absfs[i] = compute_abstract_state(basepaths[i]);
             }
             expect(compare_equality_fexists(fslist, n_fs, testdirs));
             expect(compare_equality_values(fslist, n_fs, rets));
             expect(compare_equality_values(fslist, n_fs, errs));
+            expect(compare_equality_absfs(fslist, n_fs, absfs));
             makelog("END: mkdir\n");
         }
     };
@@ -166,10 +176,12 @@ proctype worker()
             makelog("BEGIN: rmdir\n");
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%s", rmdir, testdirs[i]);
+                absfs[i] = compute_abstract_state(basepaths[i]);
             }
             expect(compare_equality_fexists(fslist, n_fs, testdirs));
             expect(compare_equality_values(fslist, n_fs, rets));
             expect(compare_equality_values(fslist, n_fs, errs));
+            expect(compare_equality_absfs(fslist, n_fs, absfs));
             makelog("END: rmdir\n");
         }
     };
@@ -205,20 +217,11 @@ proctype driver(int nproc)
 	    assert(fsfd_ext4 >= 0);
 	    fsimg_ext4 = mmap(NULL, fsize(fsfd_ext4), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext4, 0);
         assert(fsimg_ext4 != MAP_FAILED);
-        // fsmemfd_ext4 = shm_open("fuse-ext4", O_RDWR, 0666);
-        // printf("fsmemfd_ext4 = %d, errno = %d\n", fsmemfd_ext4, errno);
-        // assert(fsmemfd_ext4 >= 0);
-        // fsmem_ext4 = mmap(NULL, fsize(fsmemfd_ext4), PROT_READ | PROT_WRITE, MAP_SHARED, fsmemfd_ext4, 0);
-        // assert(fsmem_ext4 != MAP_FAILED);
 
         fsfd_ext2 = open("/tmp/fs-ext2.img", O_RDWR);
         assert(fsfd_ext2 >= 0);
         fsimg_ext2 = mmap(NULL, fsize(fsfd_ext2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext2, 0);
         assert(fsimg_ext2 != MAP_FAILED);
-        // fsmemfd_ext2 = shm_open("fuse-ext2", O_RDWR, 0666);
-        // assert(fsmemfd_ext2 >= 0);
-        // fsmem_ext2 = mmap(NULL, fsize(fsmemfd_ext2), PROT_READ | PROT_WRITE, MAP_SHARED, fsmemfd_ext2, 0);
-        // assert(fsmem_ext2 != MAP_FAILED);
 
         atexit(cleanup);
     };

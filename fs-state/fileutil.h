@@ -27,13 +27,14 @@
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
 
+#define nelem(array)  (sizeof(array) / sizeof(array[0]))
+
 extern int cur_pid;
 extern char func[9];
 extern struct timespec begin_time;
 extern int _opened_files[1024];
 extern int _n_files;
 extern size_t count;
-extern uint64_t absfs_signature;
 
 struct imghash {
     unsigned char md5[16];
@@ -51,13 +52,16 @@ static inline int makelog(const char *format, ...)
     return vprintf(format, args);
 }
 
-static void compute_abstract_state(const char *basepath)
+static inline uint64_t compute_abstract_state(const char *basepath)
 {
     absfs_t absfs;
+    uint64_t res;
+
     init_abstract_fs(&absfs);
     scan_abstract_fs(absfs, basepath);
-    absfs_signature = get_abstract_fs_hash(absfs);
+    res = get_abstract_fs_hash(absfs);
     destroy_abstract_fs(absfs);
+    return res;
 }
 
 #define makecall(retvar, err, argfmt, funcname, ...) \
@@ -68,9 +72,8 @@ static void compute_abstract_state(const char *basepath)
     errno = 0; \
     retvar = funcname(__VA_ARGS__); \
     err = errno; \
-    compute_abstract_state(basepaths[0]); \
-    makelog("[PROC #%d, COUNT = %zu, absfs = %lx] %s (" argfmt ")", cur_pid, \
-            count, absfs_signature, func, __VA_ARGS__); \
+    makelog("[PROC #%d, COUNT = %zu] %s (" argfmt ")", cur_pid, \
+            count, func, __VA_ARGS__); \
     printf(" -> ret = %d, err = %s\n", retvar, errnoname(errno)); \
     errno = err;
 
@@ -141,6 +144,7 @@ static inline ssize_t fsize(int fd)
 bool compare_equality_values(char **fses, int n_fs, int *nums);
 bool compare_equality_fexists(char **fses, int n_fs, char **fpaths);
 bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths, int *fds);
+bool compare_equality_absfs(char **fses, int n_fs, uint64_t *absfs);
 int compare_file_content(int fd1, int fd2);
 
 void show_open_flags(uint64_t flags);

@@ -71,6 +71,24 @@ bool compare_equality_values(char **fses, int n_fs, int *nums)
     return res;
 }
 
+bool compare_equality_absfs(char **fses, int n_fs, uint64_t *absfs)
+{
+    bool res = true;
+    uint64_t base = absfs[0];
+    for (int i = 0; i < n_fs; ++i) {
+        if (absfs[i] != base) {
+            res = false;
+            break;
+        }
+    }
+    if (!res) {
+        fprintf(stderr, "[%d] Discrepancy in return values found:\n", cur_pid);
+        for (int i = 0; i < n_fs; ++i)
+            fprintf(stderr, "[%d] [%s]: %lx\n", cur_pid, fses[i], absfs[i]);
+    }
+    return res;
+}
+
 bool compare_equality_fexists(char **fses, int n_fs, char **fpaths)
 {
     bool res = true;
