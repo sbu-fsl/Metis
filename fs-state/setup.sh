@@ -15,7 +15,7 @@ setup_ext() {
     if [ "$require_losetup" = "1" ]; then
         # Set up loop device if required
         DEVICE=$(runcmd losetup --show -f $IMGFILE);
-        echo "Setup loop device $LOOPDEV to forward $IMGFILE." >2;
+        echo "Setup loop device $LOOPDEV to forward $IMGFILE." >&2;
         LOOPDEVS+=("$DEVICE");
     else
         # Otherwise regard f/s image as the device
@@ -23,7 +23,7 @@ setup_ext() {
     fi
 
     # Format device
-    runcmd mkfs.$fstype $DEVICE >2;
+    runcmd mkfs.$fstype $DEVICE >&2;
 
     # Output is the device name
     echo $DEVICE;
@@ -33,7 +33,7 @@ setup_ext2() {
     IMGFILE='/tmp/fs-ext2.img';
     BLOCKSIZE=1k
     COUNT=256
-    runcmd dd if=/dev/zero of=$IMGFILE bs=$BLOCKSIZE count=$COUNT;
+    runcmd dd if=/dev/zero of=$IMGFILE bs=$BLOCKSIZE count=$COUNT status=none;
 
     setup_ext ext2 $IMGFILE 1;
 }
@@ -47,7 +47,7 @@ setup_ext4() {
     IMGFILE='/tmp/fs-ext4.img';
     BLOCKSIZE=1k
     COUNT=256
-    runcmd dd if=/dev/zero of=$IMGFILE bs=$BLOCKSIZE count=$COUNT;
+    runcmd dd if=/dev/zero of=$IMGFILE bs=$BLOCKSIZE count=$COUNT status=none;
 
     setup_ext ext4 $IMGFILE 1;
 }
@@ -100,13 +100,13 @@ generic_cleanup() {
 
 runcmd() {
     if [ $verbose != "0" ]; then
-        echo ">>> $@" > /proc/self/fd/2;
+        echo ">>> $@" >&2 ;
     fi
     sleep 0.5;
     $@;
     ret=$?;
     if [ $ret -ne 0 ]; then
-        echo "Command '$0' exited with error ($ret)." > /proc/self/fd/2;
+        echo "Command '$0' exited with error ($ret)." >&2;
         generic_cleanup;
         exit $ret;
     fi
