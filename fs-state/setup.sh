@@ -2,9 +2,60 @@
 
 FSLIST=(ext4 ext2)
 LOOPDEVS=()
-BLOCKSIZE=1k
-COUNT=1024
 verbose=0
+
+setup_ext() {
+    # First argument is the type of file system (ext2/ext3/ext4)
+    fstype=$1;
+    # Second arg is the path to file system image
+    IMGFILE=$2;
+    # Third arg: 1 if requires losetup
+    require_losetup=$3;
+
+    if [ "$require_losetup" = "1" ]; then
+        # Set up loop device if required
+        DEVICE=$(runcmd losetup --show -f $IMGFILE);
+        echo "Setup loop device $LOOPDEV to forward $IMGFILE." >2;
+        LOOPDEVS+=("$DEVICE");
+    else
+        # Otherwise regard f/s image as the device
+        DEVICE=$IMGFILE;
+    fi
+
+    # Format device
+    runcmd mkfs.$fstype $DEVICE >2;
+
+    # Output is the device name
+    echo $DEVICE;
+}
+
+setup_ext2() {
+    IMGFILE='/tmp/fs-ext2.img';
+    BLOCKSIZE=1k
+    COUNT=1024
+    runcmd dd if=/dev/zero of=$IMGFILE bs=$BLOCKSIZE count=$COUNT;
+
+    setup_ext ext2 $IMGFILE 1;
+}
+
+unset_ext2() {
+    IMGFILE='/tmp/fs-ext2.img';
+    runcmd rm -f $IMGFILE;
+}
+
+setup_ext4() {
+    IMGFILE='/tmp/fs-ext4.img';
+    BLOCKSIZE=1k
+    COUNT=1024
+    runcmd dd if=/dev/zero of=$IMGFILE bs=$BLOCKSIZE count=$COUNT;
+
+    setup_ext ext4 $IMGFILE 1;
+}
+
+unset_ext4() {
+    IMGFILE='/tmp/fs-ext4.img';
+    runcmd rm -f $IMGFILE;
+}
 
 generic_cleanup() {
     for fs in ${FSLIST[@]}; do
@@ -20,9 +71,7 @@ generic_cleanup() {
     done
 
     for fs in ${FSLIST[@]}; do
-        if [ -f /tmp/fs-$fs.img ]; then
-            rm -f /tmp/fs-$fs.img;
-        fi
+        unset_$fs;
     done
 }
 
@@ -40,21 +89,12 @@ runcmd() {
     fi
 }
 
+runcmd losetup -D
+
 for fs in ${FSLIST[@]}; do
-    # Create disk image file
-    IMGFILE="fs-$fs.img";
-    runcmd dd if=/dev/zero of=/tmp/$IMGFILE bs=$BLOCKSIZE count=$COUNT
 
-    # Detach unmounted loop devices
-    runcmd losetup -D
-
-    # Setup loop device
-    LOOPDEV=$(runcmd losetup --show -f /tmp/$IMGFILE)
-    echo "Setup loop device $LOOPDEV to forward /tmp/$IMGFILE.";
-    LOOPDEVS+=("$LOOPDEV")
-
-    # Format the image
-    runcmd mkfs.$fs $LOOPDEV
+    # Run individual file system setup scripts defined above
+    DEVICE=$(setup_$fs);
 
     # Mount
     if [ "$(mount | grep /mnt/test-$fs)" ]; then
@@ -66,7 +106,8 @@ for fs in ${FSLIST[@]}; do
     runcmd mkdir -p /mnt/test-$fs;
 
     # echo -n "Confirm >>>"; read;
-    runcmd mount -t $fs -o sync,noatime $LOOPDEV /mnt/test-$fs
+    echo "Mounting $DEVICE on /mnt/test-$fs";
+    runcmd mount -t $fs -o sync,noatime $DEVICE /mnt/test-$fs
 
     # echo -n "Confirm >>>"; read;
 done
