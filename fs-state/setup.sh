@@ -74,6 +74,7 @@ done
 # Run test program
 runcmd make
 echo 'Running file system checker...';
+echo 'Please check stdout in output.log, stderr in error.log';
 ./pan 2>error.log > output.log
 
 generic_cleanup;
