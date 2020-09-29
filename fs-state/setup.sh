@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FSLIST=(ext4 ext2)
+FSLIST=(ext4 ext2 xfs)
 LOOPDEVS=()
 verbose=0
 
@@ -55,6 +55,29 @@ setup_ext4() {
 unset_ext4() {
     IMGFILE='/tmp/fs-ext4.img';
     runcmd rm -f $IMGFILE;
+}
+
+setup_xfs() {
+    IMGFILE="/dev/ram0";
+    if ! [ -b $IMGFILE ]; then
+        echo "$IMGFILE is not found or is not a block device" >&2;
+        echo "Please use 'sudo modprobe brd rd_size=<n_kb>' to setup ramdisks" >&2;
+        return 1;
+    fi
+
+    ramdisk_sz=$(runcmd blockdev --getsize64 $IMGFILE);
+    if [ "$ramdisk_sz" -lt 16777216 ]; then
+        echo "XFS's minimum file system size is 16MB." >&2;
+        echo "Your ramdisk device ($IMGFILE)'s size is $ramdisk_sz" >&2;
+        return 1;
+    fi
+
+    runcmd mkfs.xfs -f $IMGFILE >&2;
+    echo $IMGFILE;
+}
+
+unset_xfs() {
+    :
 }
 
 generic_cleanup() {
