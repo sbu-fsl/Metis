@@ -107,8 +107,8 @@ static inline void generate_data(char *buffer, size_t len, int value)
         memset(buffer, value, len);
     } else {
         size_t i = 0, remaining = len;
+        int n = rand();
         while (remaining > 0) {
-            int n = rand();
             int *ptr = (int *)(buffer + i);
             *ptr = n;
             remaining -= min(sizeof(int), remaining);

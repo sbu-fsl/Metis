@@ -100,7 +100,7 @@ proctype worker()
             makelog("BEGIN: write\n");
             size_t writelen = pick_value(0, 32768, 2048);
             char *data = malloc(writelen);
-	        generate_data(data, writelen, 233);
+            generate_data(data, writelen, 0);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d, %p, %zu", write, fds[i], data, writelen);
                 absfs[i] = compute_abstract_state(basepaths[i]);
