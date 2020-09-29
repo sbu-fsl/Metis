@@ -32,7 +32,7 @@ setup_ext() {
 setup_ext2() {
     IMGFILE='/tmp/fs-ext2.img';
     BLOCKSIZE=1k
-    COUNT=1024
+    COUNT=256
     runcmd dd if=/dev/zero of=$IMGFILE bs=$BLOCKSIZE count=$COUNT;
 
     setup_ext ext2 $IMGFILE 1;
@@ -46,7 +46,7 @@ unset_ext2() {
 setup_ext4() {
     IMGFILE='/tmp/fs-ext4.img';
     BLOCKSIZE=1k
-    COUNT=1024
+    COUNT=256
     runcmd dd if=/dev/zero of=$IMGFILE bs=$BLOCKSIZE count=$COUNT;
 
     setup_ext ext4 $IMGFILE 1;

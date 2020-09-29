@@ -20,8 +20,8 @@ int i;
 
 int openflags;
 /* The persistent content of the file systems */
-c_track "fsimg_ext4" "1048576" "UnMatched";
-c_track "fsimg_ext2" "1048576" "UnMatched";
+c_track "fsimg_ext4" "262144" "UnMatched";
+c_track "fsimg_ext2" "262144" "UnMatched";
 /* Abstract state signatures of the file systems */
 c_track "absfs" "sizeof(absfs)";
 
