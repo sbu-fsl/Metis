@@ -3,14 +3,14 @@
 c_decl {
 \#include "fileutil.h"
 
-char *fslist[] = {"ext4", "ext2"};
+char *fslist[] = {"ext4", "ext2", "xfs"};
 #define n_fs    nelem(fslist)
 char *basepaths[n_fs];
 char *testdirs[n_fs];
 char *testfiles[n_fs];
 
-void *fsimg_ext4, *fsimg_ext2;
-int fsfd_ext4, fsfd_ext2;
+void *fsimg_ext4, *fsimg_ext2, *fsimg_xfs;
+int fsfd_ext4, fsfd_ext2, fsfd_xfs;
 uint64_t absfs[n_fs];
 
 int rets[n_fs], errs[n_fs];
@@ -22,6 +22,7 @@ int openflags;
 /* The persistent content of the file systems */
 c_track "fsimg_ext4" "262144" "UnMatched";
 c_track "fsimg_ext2" "262144" "UnMatched";
+c_track "fsimg_xfs" "16777216" "UnMatched";
 /* Abstract state signatures of the file systems */
 c_track "absfs" "sizeof(absfs)";
 
@@ -222,6 +223,11 @@ proctype driver(int nproc)
         assert(fsfd_ext2 >= 0);
         fsimg_ext2 = mmap(NULL, fsize(fsfd_ext2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext2, 0);
         assert(fsimg_ext2 != MAP_FAILED);
+
+        fsfd_xfs = open("/dev/ram0", O_RDWR);
+        assert(fsfd_xfs >= 0);
+        fsimg_xfs = mmap(NULL, fsize(fsfd_xfs), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_xfs, 0);
+        assert(fsimg_xfs != MAP_FAILED);
 
         atexit(cleanup);
     };
