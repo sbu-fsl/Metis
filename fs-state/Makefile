@@ -23,7 +23,7 @@ abstractfs: abstract_fs.cpp
 	ar rcs abstract_fs.a abstract_fs.o
 
 abstractfs-test: abstract_fs.cpp
-	g++ -o absfs abstract_fs.cpp -DABSFS_TEST -I../include -lssl -lcrypto -lrt -lstdc++ -lstdc++fs
+	g++ -g -o absfs abstract_fs.cpp -DABSFS_TEST -I../include -lssl -lcrypto -lrt -lstdc++ -lstdc++fs
 
 pathutils: $(COMMON_DIR)/path_utils.cpp
 	g++ -fPIC -I../include -o path_utils.o -c $(COMMON_DIR)/path_utils.cpp

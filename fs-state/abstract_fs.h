@@ -22,6 +22,8 @@ namespace fs = std::experimental::filesystem;
 
 struct AbstractFile {
     fs::path fullpath;
+    /* Abstract path is irrelevant to the basepath of the mount point */
+    fs::path abstract_path;
     struct {
         mode_t mode;
         size_t size;

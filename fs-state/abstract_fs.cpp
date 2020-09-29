@@ -25,7 +25,7 @@ static inline bool is_this_or_parent(const char *path)
 static uint64_t hash_file_content(const char *fullpath)
 {
 	int fd = open(fullpath, O_RDONLY);
-	char buffer[4096];
+	char buffer[4096] = {0};
 	ssize_t readsize;
 	struct md5sum result;
 	MD5_CTX md5ctx;
@@ -37,6 +37,7 @@ static uint64_t hash_file_content(const char *fullpath)
 	MD5_Init(&md5ctx);
 	while ((readsize = read(fd, buffer, 4096)) > 0) {
 		MD5_Update(&md5ctx, buffer, readsize);
+		memset(buffer, 0, sizeof(buffer));
 	}
 	if (readsize < 0) {
 		printf("hash error: read error on '%s' (%d)\n", fullpath, errno);
@@ -48,10 +49,10 @@ static uint64_t hash_file_content(const char *fullpath)
 	return result.a;
 }
 
-static int walk(const char *path, AbstractFs *fs)
+static int walk(const char *path, const char *abstract_path, AbstractFs *fs)
 {
   AbstractFile file;
-	struct stat fileinfo;
+	struct stat fileinfo = {0};
 	int ret = 0;
 	// Avoid '.' or '..'
 	if (is_this_or_parent(path)) {
@@ -59,6 +60,7 @@ static int walk(const char *path, AbstractFs *fs)
 	}
 
 	file.fullpath = path;
+	file.abstract_path = abstract_path;
 
 	// Stat the current file and add it to vector
 	ret = stat(path, &fileinfo);
@@ -66,6 +68,7 @@ static int walk(const char *path, AbstractFs *fs)
 		printf("Walk error: cannot stat '%s' (%d)\n", path, errno);
 		return -1;
 	}
+	memset(&file.attrs, 0, sizeof(file.attrs));
 	file.attrs.mode = fileinfo.st_mode;
 	file.attrs.size = fileinfo.st_size;
 	file.attrs.nlink = fileinfo.st_nlink;
@@ -97,7 +100,10 @@ static int walk(const char *path, AbstractFs *fs)
 				continue;
 			}
       fs::path childpath = file.fullpath / child->d_name;
-			ret = walk(childpath.c_str(), fs);
+      			fs::path child_abstract_path =
+				file.abstract_path / child->d_name;
+			ret = walk(childpath.c_str(),
+				   child_abstract_path.c_str(), fs);
 			if (ret < 0) {
 				printf("Error when walking '%s'.\n", childpath.c_str());
 				closedir(dir);
@@ -115,13 +121,13 @@ void init_abstract_fs(absfs_t *absfs) {
 
 bool cmp_abstract_files(const AbstractFile &a, const AbstractFile &b)
 {
-  return a.fullpath < b.fullpath;
+  return a.abstract_path < b.abstract_path;
 }
 
 int scan_abstract_fs(absfs_t absfs, const char *basepath)
 {
   AbstractFs *fs = (AbstractFs *)absfs;
-	int ret = walk(basepath, fs);
+	int ret = walk(basepath, "/", fs);
   std::sort(fs->list.begin(), fs->list.end(), cmp_abstract_files);
 	return ret;
 }
@@ -130,12 +136,12 @@ uint64_t get_abstract_fs_hash(absfs_t absfs)
 {
   AbstractFs *fs = (AbstractFs *)absfs;
 	MD5_CTX md5ctx;
-	struct md5sum result;
+	struct md5sum result = {0};
 	MD5_Init(&md5ctx);
 
   for (auto it = fs->list.begin(); it != fs->list.end(); ++it) {
-		size_t pathlen = strnlen(it->fullpath.c_str(), PATH_MAX);
-		MD5_Update(&md5ctx, it->fullpath.c_str(), pathlen);
+		size_t pathlen = strnlen(it->abstract_path.c_str(), PATH_MAX);
+		MD5_Update(&md5ctx, it->abstract_path.c_str(), pathlen);
 		MD5_Update(&md5ctx, &it->attrs, sizeof(it->attrs));
 		MD5_Update(&md5ctx, &it->datahash, sizeof(uint64_t));
   }
@@ -153,9 +159,9 @@ void print_abstract_fs(absfs_t absfs)
 {
   AbstractFs *fs = (AbstractFs *)absfs;
   for (auto it = fs->list.begin(); it != fs->list.end(); ++it) {
-		printf("%s, mode=%06o, size=%zu, nlink=%ld, uid=%d, gid=%d\n",
-		       it->fullpath.c_str(), it->attrs.mode, it->attrs.size,
-		       it->attrs.nlink, it->attrs.uid, it->attrs.gid);
+		printf("%s, mode=%06o, size=%zu, nlink=%ld, uid=%d, gid=%d, datahash=%lx\n",
+           it->abstract_path.c_str(), it->attrs.mode, it->attrs.size,
+		       it->attrs.nlink, it->attrs.uid, it->attrs.gid, it->datahash);
   }
 }
 
