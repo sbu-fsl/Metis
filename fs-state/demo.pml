@@ -81,7 +81,7 @@ proctype worker()
         /* lseek */
         c_code {
             makelog("BEGIN: lseek\n");
-            off_t offset = pick_value(1, 32768);
+            off_t offset = pick_value(0, 32768, 1024);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d, %ld, %d", lseek, fds[i], offset, SEEK_SET);
                 absfs[i] = compute_abstract_state(basepaths[i]);
@@ -98,7 +98,7 @@ proctype worker()
         /* write, check: retval, errno, content */
         c_code {
             makelog("BEGIN: write\n");
-            size_t writelen = pick_value(1, 32768);
+            size_t writelen = pick_value(0, 32768, 2048);
             char *data = malloc(writelen);
 	        generate_data(data, writelen, 233);
             for (i = 0; i < n_fs; ++i) {
@@ -120,7 +120,7 @@ proctype worker()
            intended to avoid long term ENOSPC of write() */
         c_code {
             makelog("BEGIN: ftruncate\n");
-            off_t flen = pick_value(0, 200000);
+            off_t flen = pick_value(0, 200000, 10000);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d, %ld", ftruncate, fds[i], flen);
                 absfs[i] = compute_abstract_state(basepaths[i]);

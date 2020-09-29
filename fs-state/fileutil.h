@@ -94,9 +94,9 @@ static inline void print_expect_failed(const char *expr, const char *file,
     } while(0)
 
 /* Randomly pick a value in the range of [min, max] */
-static inline size_t pick_value(size_t min, size_t max)
+static inline size_t pick_value(size_t min, size_t max, size_t step)
 {
-    return min + rand() * (max - min) / RAND_MAX;
+    return min + rand() / (RAND_MAX / (max - min + 1) + 1) / step * step;
 }
 
 /* Generate data into a given buffer.
