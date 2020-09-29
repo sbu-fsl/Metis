@@ -1,5 +1,5 @@
 COMMON_DIR=../common
-override CFLAGS += -g -I../include -D PRINTF -D VECTORSZ=4200000 -lssl -lcrypto -lrt -lstdc++ -lstdc++fs # -D T_RAND -D P_RAND
+override CFLAGS += -g -I../include -D PRINTF -lssl -lcrypto -lrt -lstdc++ -lstdc++fs # -D T_RAND -D P_RAND
 #set VECTORSZ=10486000 if test ramdisk (CONFIG_BLK_DEV_RAM) Default: 2100000
 
 all: demo.pml abstractfs
