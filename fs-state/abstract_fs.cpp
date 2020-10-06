@@ -169,20 +169,8 @@ int scan_abstract_fs(absfs_t *absfs, const char *basepath) {
   return ret;
 }
 
-uint64_t get_abstract_fs_hash(absfs_t absfs) {
-  AbstractFs *fs = (AbstractFs *)absfs;
-  MD5_CTX md5ctx;
-  struct md5sum result = {0};
-  MD5_Init(&md5ctx);
-
-  for (auto it = fs->list.begin(); it != fs->list.end(); ++it) {
-    size_t pathlen = strnlen(it->abstract_path.c_str(), PATH_MAX);
-    MD5_Update(&md5ctx, it->abstract_path.c_str(), pathlen);
-    MD5_Update(&md5ctx, &it->attrs, sizeof(it->attrs));
-    MD5_Update(&md5ctx, &it->datahash, sizeof(uint64_t));
-  }
-  MD5_Final((unsigned char *)&result, &md5ctx);
-  return result.a;
+void finalize_abstract_fs_state(absfs_t *absfs) {
+  MD5_Final(absfs->state, &absfs->ctx);
 }
 
 void destroy_abstract_fs(absfs_t absfs) {
