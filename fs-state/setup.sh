@@ -118,6 +118,9 @@ monitor() {
     echo "Monitor started.";
     while true; do
         mc_pid=$(pgrep pan);
+        if [ -z "$mc_pid" ] && [ "$counter" -gt 0 ]; then
+            return 0;
+        fi
         if [ -n "$mc_pid" ]; then
             counter=$(expr $counter + 1);
             echo -n "$counter," >> $output;
