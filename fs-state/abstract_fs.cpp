@@ -132,6 +132,28 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs) {
   return 0;
 }
 
+void AbstractFile::FeedHasher(MD5_CTX *ctx) {
+  const char *abspath = abstract_path.c_str();
+  size_t pathlen = strnlen(abspath, PATH_MAX);
+
+  /* We only take file sizes of regular files into consideration,
+   * because different file systems may have different behavior in
+   * reporting special files' sizes (especially directories), which
+   * is normal but will cause false discrepancy.
+   */
+  size_t fsize = attrs.size;
+  if (!S_ISREG(attrs.mode))
+    attrs.size = 0;
+
+  MD5_Update(ctx, abspath, pathlen);
+  MD5_Update(ctx, &attrs, sizeof(attrs));
+
+  hash_file_content(fullpath.c_str(), ctx);
+
+  /* Assign value back after use */
+  attrs.size = fsize;
+}
+
 /**
  * init_abstract_fs: Initialize the abstract file system state
  *
