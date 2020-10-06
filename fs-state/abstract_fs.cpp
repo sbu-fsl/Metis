@@ -100,7 +100,7 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs,
 
   if (verbose) {
     printf("%s, mode=", abstract_path);
-    print_filemode(file.attrs.mode);
+    print_filemode(stdout, file.attrs.mode);
     printf(", size=%zu", file.attrs.size);
     if (!S_ISREG(file.attrs.mode))
       printf(" (Ignored), ");
@@ -198,40 +198,41 @@ int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose) {
  * print_abstract_fs_state: Print the whole 128-bit abstract file
  *   system state signature
  *
- * @param[in] absfs: The abstract file system object
+ * @param[in] out:   The FILE object that the caller want to output into
+ * @param[in] state: The absfs_state_t value
  */
-void print_abstract_fs_state(absfs_t *absfs) {
+void print_abstract_fs_state(FILE *out, absfs_state_t state) {
   for (int i = 0; i < 16; ++i)
-    printf("%02x", absfs->state[i] & 0xff);
+    fprintf(out, "%02x", state[i] & 0xff);
 }
 
-void print_filemode(mode_t mode) {
-  putchar('<');
+void print_filemode(FILE *out, mode_t mode) {
+  fputc('<', out);
 
   /* file type */
   if (S_ISDIR(mode))
-    printf("dir ");
+    fprintf(out, "dir ");
   if (S_ISCHR(mode))
-    printf("chrdev ");
+    fprintf(out, "chrdev ");
   if (S_ISBLK(mode))
-    printf("blkdev ");
+    fprintf(out, "blkdev ");
   if (S_ISREG(mode))
-    printf("file ");
+    fprintf(out, "file ");
   if (S_ISLNK(mode))
-    printf("symlink ");
+    fprintf(out, "symlink ");
   if (S_ISSOCK(mode))
-    printf("socket ");
+    fprintf(out, "socket ");
   if (S_ISFIFO(mode))
-    printf("fifo ");
+    fprintf(out, "fifo ");
 
   /* permission */
   if (mode & S_ISUID)
-    printf("suid ");
+    fprintf(out, "suid ");
   if (mode & S_ISGID)
-    printf("sgid ");
+    fprintf(out, "sgid ");
   if (mode & S_ISVTX)
-    printf("sticky ");
-  printf("%03o>", mode & 0777);
+    fprintf(out, "sticky ");
+  fprintf(out, "%03o>", mode & 0777);
 }
 
 #ifdef ABSFS_TEST
@@ -257,7 +258,7 @@ int main(int argc, char **argv) {
     printf("Error occurred when iterating...\n");
   } else {
     printf("Iteration complete. Abstract FS signature = ");
-    print_abstract_fs_state(&absfs);
+    print_abstract_fs_state(stdout, absfs->state);
     printf("\n");
   }
 
