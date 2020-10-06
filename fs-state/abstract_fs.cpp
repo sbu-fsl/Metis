@@ -38,7 +38,7 @@ static int hash_file_content(const char *fullpath, MD5_CTX *md5ctx) {
   ssize_t readsize;
   int ret = 0;
   if (fd < 0) {
-    printf("hash error: cannot open '%s' (%d)\n", fullpath, errno);
+    fprintf(stderr, "hash error: cannot open '%s' (%d)\n", fullpath, errno);
     ret = -errno;
     goto end;
   }
@@ -60,7 +60,7 @@ static int hash_file_content(const char *fullpath, MD5_CTX *md5ctx) {
     }
   }
   if (readsize < 0) {
-    printf("hash error: read error on '%s' (%d)\n", fullpath, errno);
+    fprintf(stderr, "hash error: read error on '%s' (%d)\n", fullpath, errno);
     ret = -errno;
   }
 
@@ -84,7 +84,7 @@ static int walk(const char *path, const char *abstract_path, AbstractFs *fs) {
   // Stat the current file and add it to vector
   ret = stat(path, &fileinfo);
   if (ret != 0) {
-    printf("Walk error: cannot stat '%s' (%d)\n", path, errno);
+    fprintf(stderr, "Walk error: cannot stat '%s' (%d)\n", path, errno);
     return -1;
   }
   memset(&file.attrs, 0, sizeof(file.attrs));
@@ -97,7 +97,7 @@ static int walk(const char *path, const char *abstract_path, AbstractFs *fs) {
   if (S_ISREG(file.attrs.mode)) {
     file.datahash = hash_file_content(path);
     if (file.datahash == (uint64_t)-1) {
-      printf("Walk: unable to hash '%s'\n", path);
+      fprintf(stderr, "Walk: unable to hash '%s'\n", path);
     }
   } else {
     file.datahash = 0;
@@ -109,7 +109,7 @@ static int walk(const char *path, const char *abstract_path, AbstractFs *fs) {
   if (S_ISDIR(file.attrs.mode)) {
     DIR *dir = opendir(path);
     if (!dir) {
-      printf("Walk: unable to opendir '%s'. (%d)\n", path, errno);
+      fprintf(stderr, "Walk: unable to opendir '%s'. (%d)\n", path, errno);
       return -1;
     }
     struct dirent *child;
@@ -121,7 +121,7 @@ static int walk(const char *path, const char *abstract_path, AbstractFs *fs) {
       fs::path child_abstract_path = file.abstract_path / child->d_name;
       ret = walk(childpath.c_str(), child_abstract_path.c_str(), fs);
       if (ret < 0) {
-        printf("Error when walking '%s'.\n", childpath.c_str());
+        fprintf(stderr, "Error when walking '%s'.\n", childpath.c_str());
         closedir(dir);
         return -1;
       }
