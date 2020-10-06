@@ -31,7 +31,11 @@ struct AbstractFile {
         uid_t uid;
         gid_t gid;
     } attrs;
-    uint64_t datahash; // Hash value of the file content
+
+    /* Feed the attributes and content of the file described by
+     * this AbstractFile into MD5 hash calculator and update the
+     * MD5 context object. */
+    void FeedHasher(MD5_CTX *ctx);
 };
 
 #endif
