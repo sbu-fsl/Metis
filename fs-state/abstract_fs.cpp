@@ -173,11 +173,6 @@ void finalize_abstract_fs_state(absfs_t *absfs) {
   MD5_Final(absfs->state, &absfs->ctx);
 }
 
-void destroy_abstract_fs(absfs_t absfs) {
-  AbstractFs *fs = (AbstractFs *)absfs;
-  delete fs;
-}
-
 #ifdef ABSFS_TEST
 
 int main(int argc, char **argv) {
