@@ -98,7 +98,7 @@ generic_cleanup() {
     done
 
     login_user=$(who am i | cut -d ' ' -f 1)
-    chown -R $login_user:$login_user .:
+    chown -R $login_user:$login_user .
 }
 
 runcmd() {
