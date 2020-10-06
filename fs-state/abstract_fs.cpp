@@ -166,11 +166,8 @@ void init_abstract_fs(absfs_t *absfs) {
 
 int scan_abstract_fs(absfs_t *absfs, const char *basepath) {
   int ret = walk(basepath, "/", absfs);
-  return ret;
-}
-
-void finalize_abstract_fs_state(absfs_t *absfs) {
   MD5_Final(absfs->state, &absfs->ctx);
+  return ret;
 }
 
 #ifdef ABSFS_TEST
