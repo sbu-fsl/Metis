@@ -57,6 +57,7 @@ typedef struct abstract_fs absfs_t;
 void init_abstract_fs(absfs_t *absfs);
 int scan_abstract_fs(absfs_t *absfs, const char *basepath);
 void print_abstract_fs_state(absfs_t *absfs);
+void print_filemode(mode_t mode);
 
 /**
  * get_state_prefix: Get the 32-bit prefix of the "abstract file

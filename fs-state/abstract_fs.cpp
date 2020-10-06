@@ -191,6 +191,35 @@ void print_abstract_fs_state(absfs_t *absfs) {
     printf("%02x", absfs->state[i] & 0xff);
 }
 
+void print_filemode(mode_t mode) {
+  putchar('<');
+
+  /* file type */
+  if (mode & S_IFDIR)
+    printf("dir ");
+  if (mode & S_IFCHR)
+    printf("chrdev ");
+  if (mode & S_IFBLK)
+    printf("blkdev ");
+  if (mode & S_IFREG)
+    printf("file ");
+  if (mode & S_IFLNK)
+    printf("symlink ");
+  if (mode & S_IFSOCK)
+    printf("socket ");
+  if (mode & S_IFIFO)
+    printf("fifo ");
+
+  /* permission */
+  if (mode & S_ISUID)
+    printf("suid ");
+  if (mode & S_ISGID)
+    printf("sgid ");
+  if (mode & S_ISVTX)
+    printf("sticky ");
+  printf("%03o>", mode & 0777);
+}
+
 #ifdef ABSFS_TEST
 
 int main(int argc, char **argv) {
