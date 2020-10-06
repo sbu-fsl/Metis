@@ -22,30 +22,51 @@ static inline bool is_this_or_parent(const char *name) {
          (strncmp(name, "..", NAME_MAX) == 0);
 }
 
-static uint64_t hash_file_content(const char *fullpath) {
+/**
+ * hash_file_content: Feed the file content into MD5 calculator and update
+ *   an existing MD5 context object.
+ *
+ * @param[in] fullpath: Full absolute path to the file being hashed
+ * @param[in] md5ctx: Pointer to an initialized MD5_CTX object
+ *
+ * @return: 0 for success, +1 for MD5_Update failure,
+ *          negative number for error status of open() or read()
+ */
+static int hash_file_content(const char *fullpath, MD5_CTX *md5ctx) {
   int fd = open(fullpath, O_RDONLY);
   char buffer[4096] = {0};
   ssize_t readsize;
-  struct md5sum result;
-  MD5_CTX md5ctx;
+  int ret = 0;
   if (fd < 0) {
     printf("hash error: cannot open '%s' (%d)\n", fullpath, errno);
-    return (uint64_t)-1;
+    ret = -errno;
+    goto end;
   }
 
-  MD5_Init(&md5ctx);
   while ((readsize = read(fd, buffer, 4096)) > 0) {
-    MD5_Update(&md5ctx, buffer, readsize);
+    ret = MD5_Update(md5ctx, buffer, readsize);
     memset(buffer, 0, sizeof(buffer));
+    /* MD5_Update returns 0 for failure and 1 for success.
+     * However, we want 0 for success and other values for error.
+     */
+    if (ret == 0) {
+      /* This is special: If returned value is +1, then it indicates
+       * MD5_Update error. Minus number for error in open() and read() */
+      ret = 1;
+      fprintf(stderr, "MD5_Update failed on file '%s'\n", fullpath);
+      goto end;
+    } else {
+      ret = 0;
+    }
   }
   if (readsize < 0) {
     printf("hash error: read error on '%s' (%d)\n", fullpath, errno);
-    close(fd);
-    return (uint64_t)-1;
+    ret = -errno;
   }
-  MD5_Final((unsigned char *)&result, &md5ctx);
+
+end:
   close(fd);
-  return result.a;
+  return ret;
 }
 
 static int walk(const char *path, const char *abstract_path, AbstractFs *fs) {
