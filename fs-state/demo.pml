@@ -11,7 +11,7 @@ char *testfiles[n_fs];
 
 void *fsimg_ext4, *fsimg_ext2, *fsimg_xfs;
 int fsfd_ext4, fsfd_ext2, fsfd_xfs;
-uint64_t absfs[n_fs];
+absfs_state_t absfs[n_fs];
 
 int rets[n_fs], errs[n_fs];
 int fds[n_fs] = {-1};
@@ -70,7 +70,7 @@ proctype worker()
             makelog("BEGIN: open\n");
             for (i = 0; i < n_fs; ++i) {
                 makecall(fds[i], errs[i], "%s, %#x, %o", myopen, testfiles[i], now.openflags, 0644);
-                absfs[i] = compute_abstract_state(basepaths[i]);
+                compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, n_fs, testdirs));
             expect(compare_equality_values(fslist, n_fs, errs));
@@ -85,7 +85,7 @@ proctype worker()
             off_t offset = pick_value(0, 32768, 1024);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d, %ld, %d", lseek, fds[i], offset, SEEK_SET);
-                absfs[i] = compute_abstract_state(basepaths[i]);
+                compute_abstract_state(basepaths[i], absfs[i]);
             }
 
             expect(compare_equality_values(fslist, n_fs, rets));
@@ -104,7 +104,7 @@ proctype worker()
             generate_data(data, writelen, 0);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d, %p, %zu", write, fds[i], data, writelen);
-                absfs[i] = compute_abstract_state(basepaths[i]);
+                compute_abstract_state(basepaths[i], absfs[i]);
             }
 
             free(data);
@@ -124,7 +124,7 @@ proctype worker()
             off_t flen = pick_value(0, 200000, 10000);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d, %ld", ftruncate, fds[i], flen);
-                absfs[i] = compute_abstract_state(basepaths[i]);
+                compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, n_fs, testfiles));
             expect(compare_equality_values(fslist, n_fs, rets));
@@ -147,7 +147,7 @@ proctype worker()
             makelog("BEGIN: unlink\n");
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%s", unlink, testfiles[i]);
-                absfs[i] = compute_abstract_state(basepaths[i]);
+                compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, n_fs, testdirs));
             expect(compare_equality_values(fslist, n_fs, rets));
@@ -162,7 +162,7 @@ proctype worker()
             makelog("BEGIN: mkdir\n");
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%s, %o", mkdir, testdirs[i], 0755);
-                absfs[i] = compute_abstract_state(basepaths[i]);
+                compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, n_fs, testdirs));
             expect(compare_equality_values(fslist, n_fs, rets));
@@ -177,7 +177,7 @@ proctype worker()
             makelog("BEGIN: rmdir\n");
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%s", rmdir, testdirs[i]);
-                absfs[i] = compute_abstract_state(basepaths[i]);
+                compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, n_fs, testdirs));
             expect(compare_equality_values(fslist, n_fs, rets));
@@ -215,8 +215,8 @@ proctype driver(int nproc)
         }
         /* open and mmap the test f/s image as well as its heap memory */
         fsfd_ext4 = open("/tmp/fs-ext4.img", O_RDWR);
-	    assert(fsfd_ext4 >= 0);
-	    fsimg_ext4 = mmap(NULL, fsize(fsfd_ext4), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext4, 0);
+        assert(fsfd_ext4 >= 0);
+        fsimg_ext4 = mmap(NULL, fsize(fsfd_ext4), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext4, 0);
         assert(fsimg_ext4 != MAP_FAILED);
 
         fsfd_ext2 = open("/tmp/fs-ext2.img", O_RDWR);
