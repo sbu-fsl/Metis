@@ -105,8 +105,8 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs) {
     printf(" (Ignored), ");
   else
     printf(", ");
-  printf("nlink=%ld, uid=%d, gid=%d", files.attrs.nlink, files.attrs.uid,
-         files.attrs.gid);
+  printf("nlink=%ld, uid=%d, gid=%d\n", file.attrs.nlink, file.attrs.uid,
+         file.attrs.gid);
 #endif
 
   /* Update the MD5 signature of the abstract file system state */
@@ -159,8 +159,6 @@ void AbstractFile::FeedHasher(MD5_CTX *ctx) {
 
   MD5_Update(ctx, abspath, pathlen);
   MD5_Update(ctx, &attrs, sizeof(attrs));
-
-  hash_file_content(fullpath.c_str(), ctx);
 
   /* Assign value back after use */
   attrs.size = fsize;
