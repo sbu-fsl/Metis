@@ -180,6 +180,17 @@ int scan_abstract_fs(absfs_t *absfs, const char *basepath) {
   return ret;
 }
 
+/**
+ * print_abstract_fs_state: Print the whole 128-bit abstract file
+ *   system state signature
+ *
+ * @param[in] absfs: The abstract file system object
+ */
+void print_abstract_fs_state(absfs_t *absfs) {
+  for (int i = 0; i < 16; ++i)
+    printf("%02x", absfs->state[i] & 0xff);
+}
+
 #ifdef ABSFS_TEST
 
 int main(int argc, char **argv) {
@@ -197,13 +208,13 @@ int main(int argc, char **argv) {
 
   printf("Iterating directory '%s'...\n", basepath);
 
-  ret = scan_abstract_fs(absfs, basepath);
+  ret = scan_abstract_fs(&absfs, basepath);
 
   if (ret) {
     printf("Error occurred when iterating...\n");
   } else {
-    printf("Iteration complete. Abstract FS signature = %#lx\n",
-           get_abstract_fs_hash(absfs));
+    printf("Iteration complete. Abstract FS signature = ");
+    print_abstract_fs_state(&absfs);
   }
 
   return ret;
