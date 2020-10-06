@@ -69,7 +69,8 @@ end:
   return ret;
 }
 
-static int walk(const char *path, const char *abstract_path, absfs_t *fs) {
+static int walk(const char *path, const char *abstract_path, absfs_t *fs,
+                bool verbose) {
   AbstractFile file;
   struct stat fileinfo = {0};
   std::vector<std::string> children;
@@ -97,17 +98,17 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs) {
   file.attrs.uid = fileinfo.st_uid;
   file.attrs.gid = fileinfo.st_gid;
 
-#ifdef ABSFS_VERBOSE
-  printf("%s, mode=", abstract_path);
-  print_filemode(file.attrs.mode);
-  printf(", size=%zu", file.attrs.size);
-  if (!S_ISREG(file.attrs.mode))
-    printf(" (Ignored), ");
-  else
-    printf(", ");
-  printf("nlink=%ld, uid=%d, gid=%d\n", file.attrs.nlink, file.attrs.uid,
-         file.attrs.gid);
-#endif
+  if (verbose) {
+    printf("%s, mode=", abstract_path);
+    print_filemode(file.attrs.mode);
+    printf(", size=%zu", file.attrs.size);
+    if (!S_ISREG(file.attrs.mode))
+      printf(" (Ignored), ");
+    else
+      printf(", ");
+    printf("nlink=%ld, uid=%d, gid=%d\n", file.attrs.nlink, file.attrs.uid,
+           file.attrs.gid);
+  }
 
   /* Update the MD5 signature of the abstract file system state */
   file.FeedHasher(&fs->ctx);
@@ -135,7 +136,7 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs) {
   for (std::string filename : children) {
     fs::path childpath = file.fullpath / filename;
     fs::path child_abstract_path = file.abstract_path / filename;
-    ret = walk(childpath.c_str(), child_abstract_path.c_str(), fs);
+    ret = walk(childpath.c_str(), child_abstract_path.c_str(), fs, verbose);
     if (ret < 0) {
       fprintf(stderr, "Error when walking '%s'.\n", childpath.c_str());
       return -1;
@@ -187,8 +188,8 @@ void init_abstract_fs(absfs_t *absfs) {
  *
  * @return: 0 for success, and other values for errors.
  */
-int scan_abstract_fs(absfs_t *absfs, const char *basepath) {
-  int ret = walk(basepath, "/", absfs);
+int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose) {
+  int ret = walk(basepath, "/", absfs, verbose);
   MD5_Final(absfs->state, &absfs->ctx);
   return ret;
 }
@@ -250,7 +251,7 @@ int main(int argc, char **argv) {
 
   printf("Iterating directory '%s'...\n", basepath);
 
-  ret = scan_abstract_fs(&absfs, basepath);
+  ret = scan_abstract_fs(&absfs, basepath, true);
 
   if (ret) {
     printf("Error occurred when iterating...\n");

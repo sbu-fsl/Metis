@@ -24,7 +24,7 @@ abstractfs: abstract_fs.cpp
 
 abstractfs-test: abstract_fs.cpp
 	g++ -g -Wall -Werror -o absfs abstract_fs.cpp -DABSFS_TEST \
-		-DABSFS_VERBOSE -I../include -lssl -lcrypto -lrt -lstdc++ -lstdc++fs
+		-I../include -lssl -lcrypto -lrt -lstdc++ -lstdc++fs
 
 pathutils: $(COMMON_DIR)/path_utils.cpp
 	g++ -fPIC -I../include -o path_utils.o -c $(COMMON_DIR)/path_utils.cpp

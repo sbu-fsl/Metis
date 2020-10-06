@@ -2,6 +2,7 @@
 #define _ABSTRACT_FS_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <limits.h>
@@ -55,7 +56,7 @@ struct abstract_fs {
 typedef struct abstract_fs absfs_t;
 
 void init_abstract_fs(absfs_t *absfs);
-int scan_abstract_fs(absfs_t *absfs, const char *basepath);
+int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose);
 void print_abstract_fs_state(absfs_t *absfs);
 void print_filemode(mode_t mode);
 
