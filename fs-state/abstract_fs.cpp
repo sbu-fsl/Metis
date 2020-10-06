@@ -69,9 +69,10 @@ end:
   return ret;
 }
 
-static int walk(const char *path, const char *abstract_path, AbstractFs *fs) {
+static int walk(const char *path, const char *abstract_path, absfs_t *fs) {
   AbstractFile file;
   struct stat fileinfo = {0};
+  std::vector<std::string> children;
   int ret = 0;
   // Avoid '.' or '..'
   if (is_this_or_parent(path)) {
@@ -81,31 +82,27 @@ static int walk(const char *path, const char *abstract_path, AbstractFs *fs) {
   file.fullpath = path;
   file.abstract_path = abstract_path;
 
-  // Stat the current file and add it to vector
-  ret = stat(path, &fileinfo);
+  /* Stat the current file.
+   * Use lstat() because we want to see symbol links as concrete files */
+  ret = lstat(path, &fileinfo);
   if (ret != 0) {
     fprintf(stderr, "Walk error: cannot stat '%s' (%d)\n", path, errno);
     return -1;
   }
   memset(&file.attrs, 0, sizeof(file.attrs));
+  /* Assemble attributes of our interest */
   file.attrs.mode = fileinfo.st_mode;
   file.attrs.size = fileinfo.st_size;
   file.attrs.nlink = fileinfo.st_nlink;
   file.attrs.uid = fileinfo.st_uid;
   file.attrs.gid = fileinfo.st_gid;
-  // Hash the content if it's a regular file
-  if (S_ISREG(file.attrs.mode)) {
-    file.datahash = hash_file_content(path);
-    if (file.datahash == (uint64_t)-1) {
-      fprintf(stderr, "Walk: unable to hash '%s'\n", path);
-    }
-  } else {
-    file.datahash = 0;
-  }
-  // Add current file to vector
-  // printf("Adding %s to vector.\n", pathbuf);
-  fs->list.push_back(file);
-  // If this is a directory, recursively walk its children
+
+  /* Update the MD5 signature of the abstract file system state */
+  file.FeedHasher(&fs->ctx);
+
+  /* If the current file is a directory, read its entries and sort
+   * Sorting makes sure that the order of files and directories
+   * retrieved is deterministic.*/
   if (S_ISDIR(file.attrs.mode)) {
     DIR *dir = opendir(path);
     if (!dir) {
@@ -114,19 +111,23 @@ static int walk(const char *path, const char *abstract_path, AbstractFs *fs) {
     }
     struct dirent *child;
     while ((child = readdir(dir)) != NULL) {
-      if (is_this_or_parent(child->d_name)) {
+      if (is_this_or_parent(child->d_name))
         continue;
-      }
-      fs::path childpath = file.fullpath / child->d_name;
-      fs::path child_abstract_path = file.abstract_path / child->d_name;
-      ret = walk(childpath.c_str(), child_abstract_path.c_str(), fs);
-      if (ret < 0) {
-        fprintf(stderr, "Error when walking '%s'.\n", childpath.c_str());
-        closedir(dir);
-        return -1;
-      }
+      children.push_back(child->d_name);
     }
     closedir(dir);
+    std::sort(children.begin(), children.end());
+  }
+
+  /* Walk childrens if there is any */
+  for (std::string filename : children) {
+    fs::path childpath = file.fullpath / filename;
+    fs::path child_abstract_path = file.abstract_path / filename;
+    ret = walk(childpath.c_str(), child_abstract_path.c_str(), fs);
+    if (ret < 0) {
+      fprintf(stderr, "Error when walking '%s'.\n", childpath.c_str());
+      return -1;
+    }
   }
   return 0;
 }
