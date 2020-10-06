@@ -190,15 +190,6 @@ void destroy_abstract_fs(absfs_t absfs) {
   delete fs;
 }
 
-void print_abstract_fs(absfs_t absfs) {
-  AbstractFs *fs = (AbstractFs *)absfs;
-  for (auto it = fs->list.begin(); it != fs->list.end(); ++it) {
-    printf("%s, mode=%06o, size=%zu, nlink=%ld, uid=%d, gid=%d, datahash=%lx\n",
-           it->abstract_path.c_str(), it->attrs.mode, it->attrs.size,
-           it->attrs.nlink, it->attrs.uid, it->attrs.gid, it->datahash);
-  }
-}
-
 #ifdef ABSFS_TEST
 
 int main(int argc, char **argv) {
@@ -224,8 +215,6 @@ int main(int argc, char **argv) {
     printf("Iteration complete. Abstract FS signature = %#lx\n",
            get_abstract_fs_hash(absfs));
   }
-
-  print_abstract_fs(absfs);
 
   return ret;
 }
