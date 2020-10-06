@@ -96,6 +96,9 @@ generic_cleanup() {
     for fs in ${FSLIST[@]}; do
         unset_$fs;
     done
+
+    login_user=$(who am i | cut -d ' ' -f 1)
+    chmod -R $login_user:$login_user .:
 }
 
 runcmd() {
