@@ -4,7 +4,7 @@ int cur_pid;
 char func[9];
 struct timespec begin_time;
 
-int _opened_files[1024];
+int _opened_files[MAX_OPENED_FILES];
 int _n_files;
 size_t count;
 
@@ -213,7 +213,7 @@ void closeall()
 {
     for (int i = _n_files - 1; i >= 0; --i) {
         close(_opened_files[i]);
-	_opened_files[i] = 0;
+	_opened_files[i] = -1;
     }
     _n_files = 0;
 }

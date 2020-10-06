@@ -29,10 +29,14 @@
 
 #define nelem(array)  (sizeof(array) / sizeof(array[0]))
 
+/* This should be a multiple of n_fs
+ * in order to avoid false discrepancy in open() tests */
+#define MAX_OPENED_FILES 192
+
 extern int cur_pid;
 extern char func[9];
 extern struct timespec begin_time;
-extern int _opened_files[1024];
+extern int _opened_files[MAX_OPENED_FILES];
 extern int _n_files;
 extern size_t count;
 extern char *basepaths[];

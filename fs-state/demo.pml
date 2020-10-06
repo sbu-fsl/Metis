@@ -63,21 +63,24 @@ proctype worker()
 {
     /* Non-deterministic test loop */
     do 
-    :: atomic {
-        select_open_flag(openflags);
-        c_code {
-            /* open, check: errno, existence */
-            makelog("BEGIN: open\n");
-            for (i = 0; i < n_fs; ++i) {
-                makecall(fds[i], errs[i], "%s, %#x, %o", myopen, testfiles[i], now.openflags, 0644);
-                compute_abstract_state(basepaths[i], absfs[i]);
-            }
-            expect(compare_equality_fexists(fslist, n_fs, testdirs));
-            expect(compare_equality_values(fslist, n_fs, errs));
-            expect(compare_equality_absfs(fslist, n_fs, absfs));
-            makelog("END: open\n");
+    :: if
+        :: c_expr { _n_files >= MAX_OPENED_FILES } -> skip; 
+        :: else -> atomic {
+            select_open_flag(openflags);
+            c_code {
+                /* open, check: errno, existence */
+                makelog("BEGIN: open\n");
+                for (i = 0; i < n_fs; ++i) {
+                    makecall(fds[i], errs[i], "%s, %#x, %o", myopen, testfiles[i], now.openflags, 0644);
+                    compute_abstract_state(basepaths[i], absfs[i]);
+                }
+                expect(compare_equality_fexists(fslist, n_fs, testdirs));
+                expect(compare_equality_values(fslist, n_fs, errs));
+                expect(compare_equality_absfs(fslist, n_fs, absfs));
+                makelog("END: open\n");
+            };
         };
-    };
+        fi
     :: atomic {
         /* lseek */
         c_code {
