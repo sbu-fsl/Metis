@@ -208,19 +208,19 @@ void print_filemode(mode_t mode) {
   putchar('<');
 
   /* file type */
-  if (mode & S_IFDIR)
+  if (S_ISDIR(mode))
     printf("dir ");
-  if (mode & S_IFCHR)
+  if (S_ISCHR(mode))
     printf("chrdev ");
-  if (mode & S_IFBLK)
+  if (S_ISBLK(mode))
     printf("blkdev ");
-  if (mode & S_IFREG)
+  if (S_ISREG(mode))
     printf("file ");
-  if (mode & S_IFLNK)
+  if (S_ISLNK(mode))
     printf("symlink ");
-  if (mode & S_IFSOCK)
+  if (S_ISSOCK(mode))
     printf("socket ");
-  if (mode & S_IFIFO)
+  if (S_ISFIFO(mode))
     printf("fifo ");
 
   /* permission */
@@ -257,6 +257,7 @@ int main(int argc, char **argv) {
   } else {
     printf("Iteration complete. Abstract FS signature = ");
     print_abstract_fs_state(&absfs);
+    printf("\n");
   }
 
   return ret;
