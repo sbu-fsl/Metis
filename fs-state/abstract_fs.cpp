@@ -160,6 +160,9 @@ void AbstractFile::FeedHasher(MD5_CTX *ctx) {
   MD5_Update(ctx, abspath, pathlen);
   MD5_Update(ctx, &attrs, sizeof(attrs));
 
+  if (S_ISREG(attrs.mode))
+    hash_file_content(fullpath.c_str(), ctx);
+
   /* Assign value back after use */
   attrs.size = fsize;
 }
