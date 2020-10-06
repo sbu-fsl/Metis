@@ -149,11 +149,13 @@ for fs in ${FSLIST[@]}; do
     fi
     runcmd mkdir -p /mnt/test-$fs;
 
-    # echo -n "Confirm >>>"; read;
     echo "Mounting $DEVICE on /mnt/test-$fs";
     runcmd mount -t $fs -o sync,noatime $DEVICE /mnt/test-$fs
 
-    # echo -n "Confirm >>>"; read;
+    # Make sure the newly formatted & mounted file system is empty
+    # ext2/ext4 may create "lost+found" folder which we don't want
+    runcmd rm -rf /mnt/test-$fs/*
+
 done
 
 # Run test program
