@@ -52,16 +52,14 @@ static inline int makelog(const char *format, ...)
     return vprintf(format, args);
 }
 
-static inline uint64_t compute_abstract_state(const char *basepath)
+static inline void compute_abstract_state(const char *basepath,
+    absfs_state_t state)
 {
     absfs_t absfs;
-    uint64_t res;
 
     init_abstract_fs(&absfs);
-    scan_abstract_fs(absfs, basepath);
-    res = get_abstract_fs_hash(absfs);
-    destroy_abstract_fs(absfs);
-    return res;
+    scan_abstract_fs(&absfs, basepath, false);
+    memcpy(state, absfs.state, sizeof(absfs_state_t));
 }
 
 static inline void count_speed()
@@ -166,7 +164,7 @@ static inline ssize_t fsize(int fd)
 bool compare_equality_values(char **fses, int n_fs, int *nums);
 bool compare_equality_fexists(char **fses, int n_fs, char **fpaths);
 bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths, int *fds);
-bool compare_equality_absfs(char **fses, int n_fs, uint64_t *absfs);
+bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs);
 int compare_file_content(int fd1, int fd2);
 
 void show_open_flags(uint64_t flags);

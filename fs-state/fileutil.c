@@ -71,20 +71,25 @@ bool compare_equality_values(char **fses, int n_fs, int *nums)
     return res;
 }
 
-bool compare_equality_absfs(char **fses, int n_fs, uint64_t *absfs)
+bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs)
 {
     bool res = true;
-    uint64_t base = absfs[0];
-    for (int i = 0; i < n_fs; ++i) {
-        if (absfs[i] != base) {
+    absfs_state_t base;
+    memcpy(base, absfs[0], sizeof(absfs_state_t));
+    for (int i = 1; i < n_fs; ++i) {
+        if (memcmp(base, absfs[i], sizeof(absfs_state_t)) != 0) {
             res = false;
             break;
         }
     }
     if (!res) {
-        fprintf(stderr, "[%d] Discrepancy in return values found:\n", cur_pid);
-        for (int i = 0; i < n_fs; ++i)
-            fprintf(stderr, "[%d] [%s]: %lx\n", cur_pid, fses[i], absfs[i]);
+        fprintf(stderr,
+		"[seqid=%zu] Discrepancy in abstract states found:\n", count);
+	for (int i = 0; i < n_fs; ++i) {
+            fprintf(stderr, "[seqid=%zu, fs=%s]: ", count, fses[i]);
+	    print_abstract_fs_state(stderr, absfs[i]);
+	    fprintf(stderr, "\n");
+	}
     }
     return res;
 }
