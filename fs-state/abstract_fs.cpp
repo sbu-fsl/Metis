@@ -131,7 +131,15 @@ static int walk(const char *path, const char *abstract_path, AbstractFs *fs) {
   return 0;
 }
 
-void init_abstract_fs(absfs_t *absfs) { *absfs = (absfs_t) new AbstractFs(); }
+/**
+ * init_abstract_fs: Initialize the abstract file system state
+ *
+ * @param[in]: Pointer to an absfs_t object.
+ */
+void init_abstract_fs(absfs_t *absfs) {
+  MD5_Init(&absfs->ctx);
+  memset(absfs->state, 0, sizeof(absfs->state));
+}
 
 bool cmp_abstract_files(const AbstractFile &a, const AbstractFile &b) {
   return a.abstract_path < b.abstract_path;
