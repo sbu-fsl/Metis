@@ -164,6 +164,16 @@ void init_abstract_fs(absfs_t *absfs) {
   memset(absfs->state, 0, sizeof(absfs->state));
 }
 
+/**
+ * scan_abstract_fs: Walk the directory tree starting from the given
+ *   basepath, and calculate a MD5 hash as the "abstract file system
+ *   state".
+ *
+ * @param[in] absfs: The abstract file system object
+ * @param[in] basepath: The path to start traversing
+ *
+ * @return: 0 for success, and other values for errors.
+ */
 int scan_abstract_fs(absfs_t *absfs, const char *basepath) {
   int ret = walk(basepath, "/", absfs);
   MD5_Final(absfs->state, &absfs->ctx);
