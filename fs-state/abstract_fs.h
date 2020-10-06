@@ -34,10 +34,6 @@ struct AbstractFile {
     uint64_t datahash; // Hash value of the file content
 };
 
-struct AbstractFs {
-    std::vector<AbstractFile> list;
-};
-
 #endif
 /* End of C++ declarations */
 
@@ -46,7 +42,12 @@ struct AbstractFs {
 extern "C" {
 #endif
 
-typedef struct abstract_fs * absfs_t;
+struct abstract_fs {
+  MD5_CTX ctx;
+  unsigned char state[16];
+};
+
+typedef struct abstract_fs absfs_t;
 
 void init_abstract_fs(absfs_t *absfs);
 int scan_abstract_fs(absfs_t absfs, const char *basepath);
