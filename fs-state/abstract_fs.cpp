@@ -97,6 +97,18 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs) {
   file.attrs.uid = fileinfo.st_uid;
   file.attrs.gid = fileinfo.st_gid;
 
+#ifdef ABSFS_VERBOSE
+  printf("%s, mode=", abstract_path);
+  print_filemode(file.attrs.mode);
+  printf(", size=%zu", file.attrs.size);
+  if (!S_ISREG(file.attrs.mode))
+    printf(" (Ignored), ");
+  else
+    printf(", ");
+  printf("nlink=%ld, uid=%d, gid=%d", files.attrs.nlink, files.attrs.uid,
+         files.attrs.gid);
+#endif
+
   /* Update the MD5 signature of the abstract file system state */
   file.FeedHasher(&fs->ctx);
 
