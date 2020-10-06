@@ -164,14 +164,8 @@ void init_abstract_fs(absfs_t *absfs) {
   memset(absfs->state, 0, sizeof(absfs->state));
 }
 
-bool cmp_abstract_files(const AbstractFile &a, const AbstractFile &b) {
-  return a.abstract_path < b.abstract_path;
-}
-
-int scan_abstract_fs(absfs_t absfs, const char *basepath) {
-  AbstractFs *fs = (AbstractFs *)absfs;
-  int ret = walk(basepath, "/", fs);
-  std::sort(fs->list.begin(), fs->list.end(), cmp_abstract_files);
+int scan_abstract_fs(absfs_t *absfs, const char *basepath) {
+  int ret = walk(basepath, "/", absfs);
   return ret;
 }
 
