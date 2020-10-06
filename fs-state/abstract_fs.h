@@ -58,7 +58,8 @@ struct abstract_fs {
 typedef struct abstract_fs absfs_t;
 
 void init_abstract_fs(absfs_t *absfs);
-int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose);
+int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
+                     FILE *verbose_outf);
 void print_abstract_fs_state(FILE *out, absfs_state_t state);
 void print_filemode(FILE *out, mode_t mode);
 
