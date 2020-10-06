@@ -54,10 +54,7 @@ struct abstract_fs {
 typedef struct abstract_fs absfs_t;
 
 void init_abstract_fs(absfs_t *absfs);
-int scan_abstract_fs(absfs_t absfs, const char *basepath);
-uint64_t get_abstract_fs_hash(absfs_t absfs);
-void destroy_abstract_fs(absfs_t absfs);
-void print_abstract_fs(absfs_t absfs);
+int scan_abstract_fs(absfs_t *absfs, const char *basepath);
 
 #ifdef __cplusplus
 }
