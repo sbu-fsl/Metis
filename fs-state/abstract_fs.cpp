@@ -17,9 +17,9 @@ struct md5sum {
   uint64_t b;
 };
 
-static inline bool is_this_or_parent(const char *path) {
-  return (strncmp(path, ".", PATH_MAX) == 0) ||
-         (strncmp(path, "..", PATH_MAX) == 0);
+static inline bool is_this_or_parent(const char *name) {
+  return (strncmp(name, ".", NAME_MAX) == 0) ||
+         (strncmp(name, "..", NAME_MAX) == 0);
 }
 
 static uint64_t hash_file_content(const char *fullpath) {
