@@ -35,6 +35,7 @@ extern struct timespec begin_time;
 extern int _opened_files[1024];
 extern int _n_files;
 extern size_t count;
+extern char *basepaths[];
 
 struct imghash {
     unsigned char md5[16];
@@ -58,7 +59,7 @@ static inline void compute_abstract_state(const char *basepath,
     absfs_t absfs;
 
     init_abstract_fs(&absfs);
-    scan_abstract_fs(&absfs, basepath, false);
+    scan_abstract_fs(&absfs, basepath, false, NULL);
     memcpy(state, absfs.state, sizeof(absfs_state_t));
 }
 
@@ -106,10 +107,16 @@ static inline void print_expect_failed(const char *expr, const char *file,
             count, file, line, expr);
 }
 
+#ifndef ABORT_ON_FAIL
+#define ABORT_ON_FAIL 0
+#endif
 #define expect(expr) \
     do { \
         if (!(expr)) { \
             print_expect_failed(#expr, __FILE__, __LINE__); \
+        } \
+        if (ABORT_ON_FAIL) { \
+            exit(1); \
         } \
     } while(0)
 

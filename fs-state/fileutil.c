@@ -64,11 +64,18 @@ bool compare_equality_values(char **fses, int n_fs, int *nums)
         }
     }
     if (!res) {
-        fprintf(stderr, "[%d] Discrepancy in return values found:\n", cur_pid);
+        fprintf(stderr, "[%d] Discrepancy in values found:\n", cur_pid);
         for (int i = 0; i < n_fs; ++i)
             fprintf(stderr, "[%d] [%s]: %d\n", cur_pid, fses[i], nums[i]);
     }
     return res;
+}
+
+void dump_absfs(const char *basepath)
+{
+	absfs_t absfs;
+	init_abstract_fs(&absfs);
+	scan_abstract_fs(&absfs, basepath, true, stderr);
 }
 
 bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs)
@@ -86,7 +93,10 @@ bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs)
         fprintf(stderr,
 		"[seqid=%zu] Discrepancy in abstract states found:\n", count);
 	for (int i = 0; i < n_fs; ++i) {
-            fprintf(stderr, "[seqid=%zu, fs=%s]: ", count, fses[i]);
+	    fprintf(stderr, "[seqid=%zu, fs=%s]: Directory structure:\n",
+		    count, fses[i]);
+	    dump_absfs(basepaths[i]);
+            fprintf(stderr, "[seqid=%zu, fs=%s]: hash=", count, fses[i]);
 	    print_abstract_fs_state(stderr, absfs[i]);
 	    fprintf(stderr, "\n");
 	}
