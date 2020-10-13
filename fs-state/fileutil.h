@@ -97,7 +97,7 @@ static inline void count_speed()
     retvar = funcname(__VA_ARGS__); \
     err = errno; \
     count_speed(); \
-    makelog("[PROC #%d, COUNT = %zu] %s (" argfmt ")", cur_pid, \
+    makelog("[seqid = %zu] %s (" argfmt ")", \
             count, func, __VA_ARGS__); \
     printf(" -> ret = %d, err = %s\n", retvar, errnoname(errno)); \
     errno = err;
@@ -107,7 +107,7 @@ static inline void count_speed()
 static inline void print_expect_failed(const char *expr, const char *file,
                                        int line)
 {
-    fprintf(stderr, "[COUNT=%zu] Expectation failed at %s:%d: %s\n",
+    fprintf(stderr, "[seqid=%zu] Expectation failed at %s:%d: %s\n",
             count, file, line, expr);
 }
 
@@ -118,9 +118,10 @@ static inline void print_expect_failed(const char *expr, const char *file,
     do { \
         if (!(expr)) { \
             print_expect_failed(#expr, __FILE__, __LINE__); \
-        } \
-        if (ABORT_ON_FAIL) { \
-            exit(1); \
+            if (ABORT_ON_FAIL) { \
+                fflush(stderr); \
+                exit(1); \
+            } \
         } \
     } while(0)
 
