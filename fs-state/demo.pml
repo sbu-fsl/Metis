@@ -3,14 +3,14 @@
 c_decl {
 \#include "fileutil.h"
 
-char *fslist[] = {"ext4", "ext2"};
+char *fslist[] = {"ext4", "ext2", "jffs2"};
 #define n_fs    nelem(fslist)
 char *basepaths[n_fs];
 char *testdirs[n_fs];
 char *testfiles[n_fs];
 
-void *fsimg_ext4, *fsimg_ext2, *fsimg_xfs;
-int fsfd_ext4, fsfd_ext2, fsfd_xfs;
+void *fsimg_ext4, *fsimg_ext2, *fsimg_jffs2;
+int fsfd_ext4, fsfd_ext2, fsfd_jffs2;
 absfs_state_t absfs[n_fs];
 
 int rets[n_fs], errs[n_fs];
@@ -225,6 +225,11 @@ proctype driver(int nproc)
         assert(fsfd_ext2 >= 0);
         fsimg_ext2 = mmap(NULL, fsize(fsfd_ext2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext2, 0);
         assert(fsimg_ext2 != MAP_FAILED);
+
+        fsfd_jffs2 = open("/dev/mtdblock0", O_RDWR);
+        assert(fsfd_jffs2 >= 0);
+        fsimg_jffs2 = mmap(NULL, fsize(fsfd_jffs2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_jffs2, 0);
+        assert(fsimg_jffs2 != MAP_FAILED);
 
         atexit(cleanup);
     };

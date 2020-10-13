@@ -1,7 +1,7 @@
 #!/bin/bash
 
-FSLIST=(ext4 ext2)
-DEVLIST=(/dev/ram0 /dev/ram1)
+FSLIST=(ext4 ext2 jffs2)
+DEVLIST=(/dev/ram0 /dev/ram1 /dev/mtdblock0)
 LOOPDEVS=()
 verbose=0
 exclude_dirs=(
@@ -59,6 +59,27 @@ setup_ext4() {
 
 unset_ext4() {
     :
+}
+
+JFFS2_EMPTY_DIR=/tmp/_empty_dir_$RANDOM
+JFFS2_IMAGE=/tmp/jffs2.img
+JFFS2_SIZE=262144
+
+setup_jffs2() {
+    DEVICE=$1;
+    runcmd mkdir -p $JFFS2_EMPTY_DIR;
+    runcmd mkfs.jffs2 --pad=$JFFS2_SIZE --root $JFFS2_EMPTY_DIR -o $JFFS2_IMAGE;
+    runcmd dd if=$JFFS2_IMAGE of=$DEVICE;
+}
+
+unset_jffs2() {
+    runcmd rmdir $JFFS2_EMPTY_DIR;
+    runcmd rm -f $JFFS2_IMAGE;
+}
+
+setup_mtd() {
+    runcmd modprobe mtdram total_size=$(expr $JFFS2_SIZE / 1024);
+    runcmd modprobe mtdblock;
 }
 
 setup_xfs() {
