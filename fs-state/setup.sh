@@ -191,7 +191,7 @@ for i in $(seq 0 $(($n_fs-1))); do
 done
 
 # Run test program
-runcmd make CFLAGS='-DABORT_ON_FAIL=1'
+runcmd make CFLAGS='-DABORT_ON_FAIL=0'
 echo 'Running file system checker...';
 echo 'Please check stdout in output.log, stderr in error.log';
 monitor &
