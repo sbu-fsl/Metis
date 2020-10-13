@@ -1,6 +1,7 @@
 #!/bin/bash
 
-FSLIST=(ext4 ext2 xfs)
+FSLIST=(ext4 ext2)
+DEVLIST=(/dev/ram0 /dev/ram1)
 LOOPDEVS=()
 verbose=0
 exclude_dirs=(
@@ -35,50 +36,47 @@ setup_ext() {
 }
 
 setup_ext2() {
-    IMGFILE='/tmp/fs-ext2.img';
+    DEVFILE=$1;
     BLOCKSIZE=1k
     COUNT=256
-    runcmd dd if=/dev/zero of=$IMGFILE bs=$BLOCKSIZE count=$COUNT status=none;
+    runcmd dd if=/dev/zero of=$DEVFILE bs=$BLOCKSIZE count=$COUNT status=none;
 
-    setup_ext ext2 $IMGFILE 1;
+    setup_ext ext2 $DEVFILE 0;
 }
 
 unset_ext2() {
-    IMGFILE='/tmp/fs-ext2.img';
-    runcmd rm -f $IMGFILE;
+    :
 }
 
 setup_ext4() {
-    IMGFILE='/tmp/fs-ext4.img';
+    DEVFILE=$1;
     BLOCKSIZE=1k
     COUNT=256
-    runcmd dd if=/dev/zero of=$IMGFILE bs=$BLOCKSIZE count=$COUNT status=none;
+    runcmd dd if=/dev/zero of=$DEVFILE bs=$BLOCKSIZE count=$COUNT status=none;
 
-    setup_ext ext4 $IMGFILE 1;
+    setup_ext ext4 $DEVFILE 0;
 }
 
 unset_ext4() {
-    IMGFILE='/tmp/fs-ext4.img';
-    runcmd rm -f $IMGFILE;
+    :
 }
 
 setup_xfs() {
-    IMGFILE="/dev/ram0";
-    if ! [ -b $IMGFILE ]; then
-        echo "$IMGFILE is not found or is not a block device" >&2;
+    DEVFILE="/dev/ram0";
+    if ! [ -b $DEVFILE ]; then
+        echo "$DEVFILE is not found or is not a block device" >&2;
         echo "Please use 'sudo modprobe brd rd_size=<n_kb>' to setup ramdisks" >&2;
         return 1;
     fi
 
-    ramdisk_sz=$(runcmd blockdev --getsize64 $IMGFILE);
+    ramdisk_sz=$(runcmd blockdev --getsize64 $DEVFILE);
     if [ "$ramdisk_sz" -lt 16777216 ]; then
         echo "XFS's minimum file system size is 16MB." >&2;
-        echo "Your ramdisk device ($IMGFILE)'s size is $ramdisk_sz" >&2;
+        echo "Your ramdisk device ($DEVFILE)'s size is $ramdisk_sz" >&2;
         return 1;
     fi
 
-    runcmd mkfs.xfs -f $IMGFILE >&2;
-    echo $IMGFILE;
+    runcmd mkfs.xfs -f $DEVFILE >&2;
 }
 
 unset_xfs() {
@@ -140,10 +138,13 @@ monitor() {
 
 runcmd losetup -D
 
-for fs in ${FSLIST[@]}; do
+n_fs=${#FSLIST[@]};
+for i in $(seq 0 $(($n_fs-1))); do
 
     # Run individual file system setup scripts defined above
-    DEVICE=$(setup_$fs);
+    fs=${FSLIST[$i]};
+    DEVICE=${DEVLIST[$i]};
+    setup_$fs $DEVICE;
 
     # Mount
     if [ "$(mount | grep /mnt/test-$fs)" ]; then
