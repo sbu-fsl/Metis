@@ -3,6 +3,11 @@
 FSLIST=(ext4 ext2 xfs)
 LOOPDEVS=()
 verbose=0
+exclude_dirs=(
+    lost+found
+)
+
+exclude_files=()
 
 setup_ext() {
     # First argument is the type of file system (ext2/ext3/ext4)
@@ -152,9 +157,14 @@ for fs in ${FSLIST[@]}; do
     echo "Mounting $DEVICE on /mnt/test-$fs";
     runcmd mount -t $fs -o sync,noatime $DEVICE /mnt/test-$fs
 
-    # Make sure the newly formatted & mounted file system is empty
-    # ext2/ext4 may create "lost+found" folder which we don't want
-    runcmd rm -rf /mnt/test-$fs/*
+    # Remove FS-specific artifacts (e.g. lost+found folder in ext*)
+    # This ensures all file systems being tested have identical initial states
+    for dir in ${exclude_dirs[@]}; do
+        rmdir /mnt/test-$fs/$dir;
+    done
+    for file in ${exclude_files[@]}; do
+        rm -f /mnt/test-$fs/$file;
+    done
 
 done
 
