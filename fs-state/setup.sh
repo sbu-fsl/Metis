@@ -1,9 +1,14 @@
 #!/bin/bash
 
-FSLIST=(ext4 ext2 jffs2)
-DEVLIST=(/dev/ram0 /dev/ram1 /dev/mtdblock0)
+# FSLIST=(ext4 ext2 jffs2)
+# DEVLIST=(/dev/ram0 /dev/ram1 /dev/mtdblock0)
+FSLIST=(jffs2 xfs)
+DEVLIST=(/dev/mtdblock0 /dev/ram0)
 LOOPDEVS=()
 verbose=0
+POSITIONAL=()
+_CFLAGS=""
+KEEP_FS=0
 exclude_dirs=(
     lost+found
 )
@@ -83,7 +88,7 @@ setup_mtd() {
 }
 
 setup_xfs() {
-    DEVFILE="/dev/ram0";
+    DEVFILE="$1";
     if ! [ -b $DEVFILE ]; then
         echo "$DEVFILE is not found or is not a block device" >&2;
         echo "Please use 'sudo modprobe brd rd_size=<n_kb>' to setup ramdisks" >&2;
@@ -97,6 +102,7 @@ setup_xfs() {
         return 1;
     fi
 
+    runcmd dd if=/dev/zero of=$DEVFILE bs=4k count=$(expr $ramdisk_sz / 4096)
     runcmd mkfs.xfs -f $DEVFILE >&2;
 }
 
@@ -105,21 +111,23 @@ unset_xfs() {
 }
 
 generic_cleanup() {
-    for fs in ${FSLIST[@]}; do
-        if [ "$(mount | grep /mnt/test-$fs)" ]; then
-            umount -f /mnt/test-$fs;
-        fi
-    done
+    if [ "$KEEP_FS" = "0" ]; then
+        for fs in ${FSLIST[@]}; do
+            if [ "$(mount | grep /mnt/test-$fs)" ]; then
+                umount -f /mnt/test-$fs;
+            fi
+        done
 
-    for device in ${LOOPDEVS[@]}; do
-        if [ "$device" ]; then
-            losetup -d $device;
-        fi
-    done
+        for device in ${LOOPDEVS[@]}; do
+            if [ "$device" ]; then
+                losetup -d $device;
+            fi
+        done
 
-    for fs in ${FSLIST[@]}; do
-        unset_$fs;
-    done
+        for fs in ${FSLIST[@]}; do
+            unset_$fs;
+        done
+    fi
 
     login_user=$(who am i | cut -d ' ' -f 1)
     chown -R $login_user:$login_user .
@@ -157,6 +165,29 @@ monitor() {
     done
 }
 
+# Parse command line options
+while [[ $# -gt 0 ]]; do
+    key=$1;
+    case $key in
+        -a|--abort-on-discrepancy)
+            _CFLAGS="-DABORT_ON_FAIL=1";
+            shift
+            ;;
+        -k|--keep-fs)
+            KEEP_FS=1
+            shift
+            ;;
+        -v|--verbose)
+            verbose=1
+            shift
+            ;;
+        *)
+            POSITIONAL+=("$1")
+            shift
+            ;;
+    esac
+done
+
 runcmd losetup -D
 
 n_fs=${#FSLIST[@]};
@@ -191,7 +222,7 @@ for i in $(seq 0 $(($n_fs-1))); do
 done
 
 # Run test program
-runcmd make CFLAGS='-DABORT_ON_FAIL=0'
+runcmd make "CFLAGS=$_CFLAGS";
 echo 'Running file system checker...';
 echo 'Please check stdout in output.log, stderr in error.log';
 monitor &
