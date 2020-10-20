@@ -156,8 +156,10 @@ void AbstractFile::FeedHasher(MD5_CTX *ctx) {
    * is normal but will cause false discrepancy.
    */
   size_t fsize = attrs.size;
-  if (!S_ISREG(attrs.mode))
+  if (!S_ISREG(attrs.mode)) {
     attrs.size = 0;
+    attrs.nlink = 0;
+  }
 
   MD5_Update(ctx, abspath, pathlen);
   MD5_Update(ctx, &attrs, sizeof(attrs));

@@ -3,15 +3,17 @@
 c_decl {
 \#include "fileutil.h"
 
-char *fslist[] = {"ext4", "ext2", "jffs2"};
+char *fslist[] = {"xfs", "jffs2"};
 #define n_fs    nelem(fslist)
 char *basepaths[n_fs];
 char *testdirs[n_fs];
 char *testfiles[n_fs];
 
-void *fsimg_ext4, *fsimg_ext2, *fsimg_jffs2;
-int fsfd_ext4, fsfd_ext2, fsfd_jffs2;
+void *fsimg_ext4, *fsimg_ext2, *fsimg_jffs2, *fsimg_xfs;
+int fsfd_ext4, fsfd_ext2, fsfd_jffs2, fsfd_xfs;
 absfs_state_t absfs[n_fs];
+
+FILE *seqfp;
 
 int rets[n_fs], errs[n_fs];
 int fds[n_fs] = {-1};
@@ -20,8 +22,8 @@ int i;
 
 int openflags;
 /* The persistent content of the file systems */
-c_track "fsimg_ext4" "262144" "UnMatched";
-c_track "fsimg_ext2" "262144" "UnMatched";
+c_track "fsimg_jffs2" "262144" "UnMatched";
+c_track "fsimg_xfs" "16777216" "UnMatched";
 /* Abstract state signatures of the file systems */
 c_track "absfs" "sizeof(absfs)";
 
@@ -69,8 +71,10 @@ proctype worker()
             c_code {
                 /* open, check: errno, existence */
                 makelog("BEGIN: open\n");
+                /* log sequence: open:<path>:<flag>:<mode> */
+                fprintf(seqfp, "open:%s:%d:%d\n", testfiles[0], now.openflags, 0644);
                 for (i = 0; i < n_fs; ++i) {
-                    makecall(fds[i], errs[i], "%s, %#x, %o", myopen, testfiles[i], now.openflags, 0644);
+                    makecall(fds[i], errs[i], "%s, %#x, 0%o", myopen, testfiles[i], now.openflags, 0644);
                     compute_abstract_state(basepaths[i], absfs[i]);
                 }
                 expect(compare_equality_fexists(fslist, n_fs, testdirs));
@@ -85,6 +89,8 @@ proctype worker()
         c_code {
             makelog("BEGIN: lseek\n");
             off_t offset = pick_value(0, 32768, 1024);
+            /* log sequence: lseek:<offset>:<flag> */
+            fprintf(seqfp, "lseek:%ld:%d\n", fds[i], offset, SEEK_SET);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d, %ld, %d", lseek, fds[i], offset, SEEK_SET);
                 compute_abstract_state(basepaths[i], absfs[i]);
@@ -104,6 +110,8 @@ proctype worker()
             size_t writelen = pick_value(0, 32768, 2048);
             char *data = malloc(writelen);
             generate_data(data, writelen, 0);
+            /* log sequence: write:<writelen> */
+            fprintf(seqfp, "write:%zu\n", writelen);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d, %p, %zu", write, fds[i], data, writelen);
                 compute_abstract_state(basepaths[i], absfs[i]);
@@ -124,6 +132,8 @@ proctype worker()
         c_code {
             makelog("BEGIN: ftruncate\n");
             off_t flen = pick_value(0, 200000, 10000);
+            /* log sequence: ftruncate:<flen> */
+            fprintf(seqfp, "ftruncate:%ld\n", flen);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%d, %ld", ftruncate, fds[i], flen);
                 compute_abstract_state(basepaths[i], absfs[i]);
@@ -139,6 +149,8 @@ proctype worker()
         /* close all opened files */
         c_code {
             makelog("BEGIN: closeall\n");
+            /* log sequence: closeall */
+            fprintf(seqfp, "closeall\n");
             closeall();
             makelog("END: close\n");
         }
@@ -147,6 +159,8 @@ proctype worker()
         /* unlink, check: retval, errno, existence */
         c_code {
             makelog("BEGIN: unlink\n");
+            /* log sequence: unlink:<path> */
+            fprintf(seqfp, "unlink:%s\n", testfiles[0]);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%s", unlink, testfiles[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
@@ -162,8 +176,10 @@ proctype worker()
         /* mkdir, check: retval, errno, existence */
         c_code {
             makelog("BEGIN: mkdir\n");
+            /* log sequence: mkdir:<path> */
+            fprintf(seqfp, "mkdir:%s\n", testdirs[0]);
             for (i = 0; i < n_fs; ++i) {
-                makecall(rets[i], errs[i], "%s, %o", mkdir, testdirs[i], 0755);
+                makecall(rets[i], errs[i], "%s, 0%o", mkdir, testdirs[i], 0755);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, n_fs, testdirs));
@@ -172,11 +188,13 @@ proctype worker()
             expect(compare_equality_absfs(fslist, n_fs, absfs));
             makelog("END: mkdir\n");
         }
+        // assert(! c_expr{ errs[0] == EEXIST && errs[1] == EEXIST && errs[2] == 0 });
     };
     :: atomic {
         /* rmdir, check: retval, errno, existence */
         c_code {
             makelog("BEGIN: rmdir\n");
+            fprintf(seqfp, "rmdir:%s\n", testdirs[0]);
             for (i = 0; i < n_fs; ++i) {
                 makecall(rets[i], errs[i], "%s", rmdir, testdirs[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
@@ -215,21 +233,30 @@ proctype driver(int nproc)
             testfiles[i] = calloc(1, len + 1);
             snprintf(testfiles[i], len + 1, "%s/test.txt", basepaths[i]);
         }
-        /* open and mmap the test f/s image as well as its heap memory */
-        fsfd_ext4 = open("/dev/ram0", O_RDWR);
-        assert(fsfd_ext4 >= 0);
-        fsimg_ext4 = mmap(NULL, fsize(fsfd_ext4), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext4, 0);
-        assert(fsimg_ext4 != MAP_FAILED);
+        /* open sequence file */
+        seqfp = fopen("sequence.log", "w");
+        assert(seqfp);
 
-        fsfd_ext2 = open("/dev/ram1", O_RDWR);
-        assert(fsfd_ext2 >= 0);
-        fsimg_ext2 = mmap(NULL, fsize(fsfd_ext2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext2, 0);
-        assert(fsimg_ext2 != MAP_FAILED);
+        /* open and mmap the test f/s image as well as its heap memory */
+        // fsfd_ext4 = open("/dev/ram0", O_RDWR);
+        // assert(fsfd_ext4 >= 0);
+        // fsimg_ext4 = mmap(NULL, fsize(fsfd_ext4), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext4, 0);
+        // assert(fsimg_ext4 != MAP_FAILED);
+
+        // fsfd_ext2 = open("/dev/ram1", O_RDWR);
+        // assert(fsfd_ext2 >= 0);
+        // fsimg_ext2 = mmap(NULL, fsize(fsfd_ext2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext2, 0);
+        // assert(fsimg_ext2 != MAP_FAILED);
 
         fsfd_jffs2 = open("/dev/mtdblock0", O_RDWR);
         assert(fsfd_jffs2 >= 0);
         fsimg_jffs2 = mmap(NULL, fsize(fsfd_jffs2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_jffs2, 0);
         assert(fsimg_jffs2 != MAP_FAILED);
+
+        fsfd_xfs = open("/dev/ram0", O_RDWR);
+        assert(fsfd_xfs >= 0);
+        fsimg_xfs = mmap(NULL, fsize(fsfd_xfs), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_xfs, 0);
+        assert(fsimg_xfs != MAP_FAILED);
 
         atexit(cleanup);
     };
