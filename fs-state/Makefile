@@ -30,6 +30,9 @@ pathutils: $(COMMON_DIR)/path_utils.cpp
 	g++ -fPIC -I../include -o path_utils.o -c $(COMMON_DIR)/path_utils.cpp
 	ar rcs path_utils.a path_utils.o
 
+replayer: replay.c
+	gcc -I../include -o replay replay.c $(COMMON_DIR)/errnoname.c
+
 clean:
 	rm -rf test test.txt pan* *.log *.o *.a absfs *.trail \
 	rm -rf /mnt/test-*/test*
