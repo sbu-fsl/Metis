@@ -14,3 +14,9 @@ log.txt
 absfs
 example
 replay
+*.ko
+*.mod.*
+*.mod
+modules.order
+Module.symvers
+.*.cmd
