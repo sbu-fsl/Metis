@@ -3,7 +3,7 @@
 c_decl {
 \#include "fileutil.h"
 
-char *fslist[] = {"xfs", "jffs2"};
+char *fslist[] = {"ext4", "ext2", "jffs2"};
 #define n_fs    nelem(fslist)
 char *basepaths[n_fs];
 char *testdirs[n_fs];
@@ -22,8 +22,9 @@ int i;
 
 int openflags;
 /* The persistent content of the file systems */
+c_track "fsimg_ext4" "262144" "UnMatched";
+c_track "fsimg_ext2" "262144" "UnMatched";
 c_track "fsimg_jffs2" "262144" "UnMatched";
-c_track "fsimg_xfs" "16777216" "UnMatched";
 /* Abstract state signatures of the file systems */
 c_track "absfs" "sizeof(absfs)";
 
@@ -238,25 +239,20 @@ proctype driver(int nproc)
         assert(seqfp);
 
         /* open and mmap the test f/s image as well as its heap memory */
-        // fsfd_ext4 = open("/dev/ram0", O_RDWR);
-        // assert(fsfd_ext4 >= 0);
-        // fsimg_ext4 = mmap(NULL, fsize(fsfd_ext4), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext4, 0);
-        // assert(fsimg_ext4 != MAP_FAILED);
+        fsfd_ext4 = open("/dev/ram0", O_RDWR);
+        assert(fsfd_ext4 >= 0);
+        fsimg_ext4 = mmap(NULL, fsize(fsfd_ext4), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext4, 0);
+        assert(fsimg_ext4 != MAP_FAILED);
 
-        // fsfd_ext2 = open("/dev/ram1", O_RDWR);
-        // assert(fsfd_ext2 >= 0);
-        // fsimg_ext2 = mmap(NULL, fsize(fsfd_ext2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext2, 0);
-        // assert(fsimg_ext2 != MAP_FAILED);
+        fsfd_ext2 = open("/dev/ram1", O_RDWR);
+        assert(fsfd_ext2 >= 0);
+        fsimg_ext2 = mmap(NULL, fsize(fsfd_ext2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext2, 0);
+        assert(fsimg_ext2 != MAP_FAILED);
 
         fsfd_jffs2 = open("/dev/mtdblock0", O_RDWR);
         assert(fsfd_jffs2 >= 0);
         fsimg_jffs2 = mmap(NULL, fsize(fsfd_jffs2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_jffs2, 0);
         assert(fsimg_jffs2 != MAP_FAILED);
-
-        fsfd_xfs = open("/dev/ram0", O_RDWR);
-        assert(fsfd_xfs >= 0);
-        fsimg_xfs = mmap(NULL, fsize(fsfd_xfs), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_xfs, 0);
-        assert(fsimg_xfs != MAP_FAILED);
 
         atexit(cleanup);
     };
