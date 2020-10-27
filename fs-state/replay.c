@@ -6,6 +6,9 @@
 #include <assert.h>
 #include <sys/types.h>
 
+#define __USE_XOPEN_EXTENDED 1
+#include <ftw.h>
+
 #include "errnoname.h"
 #include "fileutil.h"
 
@@ -186,12 +189,26 @@ void ckpt_or_restore(const char *devpath, char *buffer, size_t size)
 	}
 }
 
+int on_each_file(const char *fpath, const struct stat *sb,
+		 int typeflag, struct FTW *ftwbuf)
+{
+	return 0;
+}
+
+bool fs_is_good()
+{
+	const char *mp = "/mnt/test-ext4";
+	int ret = nftw(mp, on_each_file, 16, FTW_PHYS);
+	return (ret == 0);
+}
+
 int main(int argc, char **argv)
 {
 	const char *devpath = "/dev/ram0";
 	const size_t devsize = 256 * 1024;
 	FILE *seqfp = fopen("sequence.log", "r");
-	size_t len, linecap = 0;
+	ssize_t len;
+	size_t linecap = 0;
 	char *linebuf = NULL;
 	char *fsimg = malloc(devsize);
 	if (!seqfp) {
@@ -231,6 +248,7 @@ int main(int argc, char **argv)
 		}
 		errno = 0;
 		free(line);
+		assert(fs_is_good());
 		ckpt_or_restore(devpath, fsimg, devsize);
 	}
 	fclose(seqfp);
