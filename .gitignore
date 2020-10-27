@@ -9,3 +9,14 @@ pan*
 **/test_script*
 **/__pycache__*
 log.txt
+.gdb_history
+*.a
+absfs
+example
+replay
+*.ko
+*.mod.*
+*.mod
+modules.order
+Module.symvers
+.*.cmd

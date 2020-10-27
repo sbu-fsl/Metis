@@ -16,6 +16,8 @@ struct vector {
     size_t capacity;
 };
 
+typedef struct vector vector_t;
+
 static inline void _vector_init(struct vector *vec, size_t unitsize, size_t initcap) {
     if (initcap < DEFAULT_INITCAP)
         initcap = DEFAULT_INITCAP;
@@ -69,6 +71,23 @@ static inline int vector_set(struct vector *vec, size_t index, void *el) {
     size_t offset = vec->unitsize * index;
     memcpy(vec->data + offset, el, vec->unitsize);
     return 0;
+}
+
+static inline int vector_erase(struct vector *vec, size_t index) {
+    if (index >= vec->len)
+        return ERANGE;
+    size_t dest_off = index * vec->unitsize;
+    size_t src_off = (index + 1) * vec->unitsize;
+    size_t count = (vec->len - index - 1) * vec->unitsize;
+    memmove(vec->data + dest_off, vec->data + src_off, count);
+    vec->len--;
+    return 0;
+}
+
+static inline void vector_sort(struct vector *vec,
+                               int (*comp)(const void *, const void *))
+{
+    qsort(vec->data, vec->len, vec->unitsize, comp);
 }
 
 static inline size_t vector_length(struct vector *vec) {
