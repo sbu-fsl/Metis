@@ -303,7 +303,7 @@ assert(fsimg_ext4 != MAP_FAILED);
 ```
 
 `fsize()` is a helper function that retrieves the size of an opened file or
-block device. Don't forget to comment out or remove the code that does the
+block device. Don't forget to comment out or remove the old code that does the
 same thing!
 
 #### 3. Save your modification
