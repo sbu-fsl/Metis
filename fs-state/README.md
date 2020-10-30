@@ -10,8 +10,8 @@
 
 #### Kernel modules
 
-- brd: RAM block device driver, see `kernel` folder in this repository mtdram: A
-- kernel driver that simulates a
+- brd: RAM block device driver, see `kernel` folder in this repository
+- mtdram: A kernel driver that simulates a
     [MTD device](http://www.linux-mtd.infradead.org/doc/general.html) using
     system RAM. Should have been shipped with your linux kernel
 - mtdblock: A kernel driver that creates regular block devices based on
@@ -19,7 +19,8 @@
 
 #### Packages
 
-- mtd-utils: Includes JFFS2 file system xfsprogs: XFS file system utilities
+- mtd-utils: Includes JFFS2 file system
+- xfsprogs: XFS file system utilities
 - libssl-dev: Required to calculate MD5 hash
 
 ### Preparations
@@ -42,7 +43,7 @@ the backend storage of the file systems to be tested. RAM block devices are even
 much faster than files in tmpfs! You will need to load the RAM block device
 driver (brd) using the following command:
 
-```bash
+```shell
 $ sudo modprobe brd rd_size=$SIZE rd_nr=$N
 ```
 
@@ -76,8 +77,9 @@ over MTD devices. By using the two modules, we can have the JFFS2 file system
 work without a physical MTD hardware. To set up such a device, load the modules
 using the following commands:
 
-```bash
-$ sudo modprobe mtd $ sudo modprobe mtdram total_size=256 erase_size=16
+```shell
+$ sudo modprobe mtd 
+$ sudo modprobe mtdram total_size=256 erase_size=16
 $ sudo modprobe mtdblock
 ```
 
@@ -301,7 +303,7 @@ assert(fsimg_ext4 != MAP_FAILED);
 ```
 
 `fsize()` is a helper function that retrieves the size of an opened file or
-block device. Don't forget to comment out or remove the code that does the
+block device. Don't forget to comment out or remove the old code that does the
 same thing!
 
 #### 3. Save your modification
