@@ -43,7 +43,7 @@ the backend storage of the file systems to be tested. RAM block devices are even
 much faster than files in tmpfs! You will need to load the RAM block device
 driver (brd) using the following command:
 
-```bash
+```shell
 $ sudo modprobe brd rd_size=$SIZE rd_nr=$N
 ```
 
@@ -77,8 +77,9 @@ over MTD devices. By using the two modules, we can have the JFFS2 file system
 work without a physical MTD hardware. To set up such a device, load the modules
 using the following commands:
 
-```bash
-$ sudo modprobe mtd $ sudo modprobe mtdram total_size=256 erase_size=16
+```shell
+$ sudo modprobe mtd 
+$ sudo modprobe mtdram total_size=256 erase_size=16
 $ sudo modprobe mtdblock
 ```
 
