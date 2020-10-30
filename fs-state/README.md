@@ -10,8 +10,8 @@
 
 #### Kernel modules
 
-- brd: RAM block device driver, see `kernel` folder in this repository mtdram: A
-- kernel driver that simulates a
+- brd: RAM block device driver, see `kernel` folder in this repository
+- mtdram: A kernel driver that simulates a
     [MTD device](http://www.linux-mtd.infradead.org/doc/general.html) using
     system RAM. Should have been shipped with your linux kernel
 - mtdblock: A kernel driver that creates regular block devices based on
@@ -19,7 +19,8 @@
 
 #### Packages
 
-- mtd-utils: Includes JFFS2 file system xfsprogs: XFS file system utilities
+- mtd-utils: Includes JFFS2 file system
+- xfsprogs: XFS file system utilities
 - libssl-dev: Required to calculate MD5 hash
 
 ### Preparations
