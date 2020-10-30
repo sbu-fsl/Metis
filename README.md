@@ -66,3 +66,51 @@ Common code that will be use all other projects in this repo.
     * `nanotiming.h`
     * `path_utils.h`
 
+## Common helper functions
+
+### Errno conversion
+
+```c
+// #include "errnoname.h"
+char const *errnoname(int errno_);
+```
+
+Convert the error code number into its macro name. For example, `2` will be
+converted to `"ENOENT"`.
+
+### Timing and benchmarking
+
+#### 1. Get current time in nanosecond precision
+
+```c
+// #include "nanotiming.h"
+void current_utc_time(struct timespec *ts);
+```
+
+`struct timespec` is in the following form:
+
+```c
+struct timespec {
+    time_t tv_sec;
+    long tv_nsec;
+};
+```
+
+### 2. Calculate the difference of two timespecs
+
+```c
+// #include "nanotiming.h"
+void timediff(struct timespec *res, struct timespec *end, struct timespec *start);
+```
+
+### 3. Benchmarking
+
+```c
+// #include "nanotiming.h"
+struct timespec benchmark(int (*func)(void *), void *arg);
+struct timespec benchmark_mt(int (*func)(void *), void *arg, unsigned int times);
+```
+
+`benchmark` will run `func(arg)` once and return the execution time.
+`benchmark_mt` will run `func(arg)` `times` times and return the average
+execution time.
