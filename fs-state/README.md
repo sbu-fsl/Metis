@@ -1,5 +1,38 @@
 # fs-state - Spin-based file system model checker
 
+## Table of Content
+
+- [fs-state - Spin-based file system model checker](#fs-state---spin-based-file-system-model-checker)
+  * [Usage](#usage)
+    + [Prerequisites](#prerequisites)
+      - [Software](#software)
+      - [Kernel modules](#kernel-modules)
+      - [Packages](#packages)
+    + [Preparations](#preparations)
+      - [1. Test directory for each file system](#1-test-directory-for-each-file-system)
+      - [2. Load RAM block device driver](#2-load-ram-block-device-driver)
+      - [3. Load mtdram driver for jffs2](#3-load-mtdram-driver-for-jffs2)
+      - [4. Create the JFFS2 file system.](#4-create-the-jffs2-file-system)
+    + [Run with automatic setup script](#run-with-automatic-setup-script)
+    + [Using Makefile](#using-makefile)
+      - [Other make rules](#other-make-rules)
+  * [Testing other file systems.](#testing-other-file-systems)
+      - [1. Setup Script (`setup.sh`)](#1-setup-script-setupsh)
+      - [2. The model checker code (`demo.pml`)](#2-the-model-checker-code-demopml)
+      - [3. Save your modification](#3-save-your-modification)
+  * [Discussions](#discussions)
+    + [Abstract file system states](#abstract-file-system-states)
+      - [Background](#background)
+      - [Design](#design)
+      - [Implementation](#implementation)
+      - [Demo](#demo)
+    + [Size of file systems](#size-of-file-systems)
+    + [RAM block devices or image files on tmpfs?](#ram-block-devices-or-image-files-on-tmpfs)
+    + [States of the file systems being tracked](#states-of-the-file-systems-being-tracked)
+  * [Other components](#other-components)
+    + [Replayer](#replayer)
+    + [Auto replayer script](#auto-replayer-script)
+
 ## Usage
 
 ### Prerequisites
