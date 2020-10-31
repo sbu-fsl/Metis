@@ -564,7 +564,8 @@ sudo mkdir /mnt/tmpfs-ext4
 sudo mount -t ext4 $LOOPDEV /mnt/tmpfs-ext4
 ```
 
-fio test of the ext4 file system over tmpfs:
+fio test of the ext4 file system over tmpfs: The average 1qd 4KB random I/O
+throughput is 6.47MB/s (2688 iops) in read, 6.47 MB/s (2638 iops) in write.
 
 ```
 $ sudo fio --directory=/mnt/tmpfs-ext4 --name=test --ioengine=libaio --iodepth=1 --rw=randrw --bs=4k --direct=1 --size=2500M --numjobs=1 --runtime=60 --loops=10
@@ -615,7 +616,8 @@ Disk stats (read/write):
 
 ```
 
-ext4 over ramdisk:
+ext4 over ramdisk: The average 1qd 4K random I/O throughput is 154MB/s
+(39.5k iops) in read, and 154MB/s (39.5k iops) in write.
 
 ```
 $ sudo fio --directory=/mnt/ramdisk-ext4 --name=test --ioengine=mmap --iodepth=1 --rw=randrw --bs=4k --direct=1 --size=2500M --numjobs=1 --runtime=60 --loops=10
@@ -667,8 +669,8 @@ Disk stats (read/write):
 ```
 
 From the test results we can see that the RAM block device can be faster than
-tmpfs images by two orders of magnitude. Therefore, we really should use
-ramdisks instead of tmpfs files.
+tmpfs images by 23 times. Therefore, we really should use ramdisks instead of
+tmpfs files.
 
 ### States of the file systems being tracked
 
