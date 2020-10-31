@@ -262,7 +262,7 @@ int main(int argc, char **argv) {
     printf("Error occurred when iterating...\n");
   } else {
     printf("Iteration complete. Abstract FS signature = ");
-    print_abstract_fs_state(stdout, absfs->state);
+    print_abstract_fs_state(stdout, absfs.state);
     printf("\n");
   }
 
