@@ -657,13 +657,35 @@ This replayer will do the following:
 - After each execution, the there's a probability (`prob_ckpt`) that the file
     system is checkpointed by taking a full snapshot of the ramdisk, and there
     is a probability (`prob_rest`) that the file system is restored to an
-    earlier snapshot by writing the ramdisk with the saved snapshot. This step
-    emulates what Spin does in state restoration. (See `ckpt_or_restore` func.)
+    earlier snapshot by writing the ramdisk with the saved snapshot (on
+    condition that there is one). This step emulates what Spin does in state
+    restoration. (See `ckpt_or_restore` func.)
 
 Before running the replayer, please open `sequence.log`: If the directory in it
 is not `/mnt/test-ext4/`, please change the directories to `/mnt/test-ext4`.
 Also if you want to run the replayer on other file systems, you will need to
 modify `init()` function in the code.
 
+Use `make replayer` to build the replayer. Usage:
+
+```
+./replayer [prob_ckpt] [prob_restore]
+```
+
+`prob_ckpt` and `prob_restore` are integers representing the percentage number
+of the probability of checkpointing and restoring respectively. They should be
+in range of 0 and 50.
+
+The replayer will output a line of message reporting sequence number, name of
+the operation and arguments every time it performs an operation. It will stop
+when encountering the bugs. Therefore the line count of the output can reflect
+how early the bug manifested --- The fewer, the earlier.
+
 ### Auto replayer script
+
+The script `./autoreplay.sh` will automatically replay the sequence of file
+system operations in `sequence.log` using varied probability of checkpointing
+and restoring. For each combination of the two probabilities, the script will
+repeat the replayer 10 times, collect the line counts of the outputs and report
+in CSV format.
 
