@@ -639,6 +639,52 @@ ramdisks instead of tmpfs files.
 
 ### States of the file systems being tracked
 
+Ideally, the model checker should be able to track **all** information
+related to the system being tracked. This might be quite easy and natural for
+CPS (cyber-physical system) applications and embedded file systems because there
+is no such things as "kernel" in those systems. However, this is not trivially
+possible for file systems running on regular operating systems, because they run
+in the kernel space of the operating system, and the model checker as a
+user-space application has no access to the kernel memory. Therefore, the
+Spin-based file system model checker cannot track the in-memory states of those
+file systems.
+
+FUSE allows us to develop file systems that run in user space, but the Spin
+model checker cannot track full in-memory states of FUSE-based file systems
+either for two reasons:
+
+- First, those FUSE-based file systems run as an independent process, and there
+  is no straightforward way for the model checker to track and restore all
+  mutable memory segments of an independent process. We tried to modify the
+  `morecore` interface in glibc's malloc library to delegate the FUSE-based file
+  system's heap to a shared memory object which the model checker can mmap,
+  track and restore. But then we found that only tracking & restoring the heap
+  will cause inconsistencies between the heap and other memory segments of the
+  process (such as data and bss segments where global and static variables
+  locate), thus crashing the file system process.
+
+- Second, FUSE based file systems also have some information maintained by the
+  kernel, such as opened files and mounting status.
+
+Besides, the availability of stable and well-maintained FUSE-based file systems
+is extremely limited --- most of these user-space file systems are toys or
+course projects that contain a lot of bugs and are likely to be incomplete. Very
+few popular in-kernel file systems have been ported to FUSE. One may port a
+in-kernel file system, such as xfs and btrfs, to FUSE, but there is no guarantee
+for bug-free or preseverance of original behavior.
+
+Therefore, at this moment we decide to track only persistent states (i.e.
+ramdisks or file system images) of the file systems being tested. We will
+attempt to address the challenge of tracking full states of in-kernel file
+systems later. Most of the file systems we model checked using this approach did
+not crash, but ext2/ext4 did manifest file system corruption bugs and we are
+investigating it.
+
+Furthermore, in the proposal we plan to use ramfs/tmpfs as the "reference file
+system" by virtue of its simplicity and compliance with POSIX. This is not
+feasible at this moment because all file data and metadata is located in the
+kernel memory.
+
 ## Other components
 
 ### Replayer
@@ -680,7 +726,8 @@ in range of 0 and 50.
 The replayer will output a line of message reporting sequence number, name of
 the operation and arguments every time it performs an operation. It will stop
 when encountering the bugs. Therefore the line count of the output can reflect
-how early the bug manifested --- The fewer, the earlier.
+how early the bug manifested --- The fewer the line count is, the earlier the
+bug is triggered.
 
 ### Auto replayer script
 
