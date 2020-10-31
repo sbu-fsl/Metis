@@ -713,12 +713,12 @@ ramdisks or file system images) of the file systems being tested. We will
 attempt to address the challenge of tracking full states of in-kernel file
 systems later. Most of the file systems we model checked using this approach did
 not crash, but ext2/ext4 did manifest file system corruption bugs and we are
-investigating it.
+investigating them.
 
 Furthermore, in the proposal we plan to use ramfs/tmpfs as the "reference file
 system" by virtue of its simplicity and compliance with POSIX. This is not
-feasible at this moment because all file data and metadata is located in the
-kernel memory.
+feasible at this moment because all file data and metadata in tmpfs is located
+in the kernel memory.
 
 ## Other components
 
