@@ -634,7 +634,8 @@ Disk stats (read/write):
 ```
 
 From the test results we can see that the RAM block device can be faster than
-tmpfs images by 
+tmpfs images by two orders of magnitude. Therefore, we really should use
+ramdisks instead of tmpfs files.
 
 ### States of the file systems being tracked
 
