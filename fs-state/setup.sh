@@ -72,8 +72,11 @@ JFFS2_SIZE=262144
 
 setup_jffs2() {
     DEVICE=$1;
+    if ! [ "$(lsmod | grep mtdram)" ]; then
+        setup_mtd;
+    fi
     runcmd mkdir -p $JFFS2_EMPTY_DIR;
-    runcmd mkfs.jffs2 --pad=$JFFS2_SIZE --root $JFFS2_EMPTY_DIR -o $JFFS2_IMAGE;
+    runcmd mkfs.jffs2 --pad=$JFFS2_SIZE --root=$JFFS2_EMPTY_DIR -o $JFFS2_IMAGE;
     runcmd dd if=$JFFS2_IMAGE of=$DEVICE;
 }
 
@@ -83,7 +86,7 @@ unset_jffs2() {
 }
 
 setup_mtd() {
-    runcmd modprobe mtdram total_size=$(expr $JFFS2_SIZE / 1024);
+    runcmd modprobe mtdram total_size=$(expr $JFFS2_SIZE / 1024) erase_size=16;
     runcmd modprobe mtdblock;
 }
 

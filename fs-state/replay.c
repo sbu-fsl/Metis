@@ -4,7 +4,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <assert.h>
+#include <sys/stat.h>
 #include <sys/types.h>
+
+#define __USE_XOPEN_EXTENDED 1
+#include <ftw.h>
 
 #include "errnoname.h"
 #include "fileutil.h"
@@ -126,6 +130,7 @@ int do_rmdir(const char *path)
 void init()
 {
 	srand(time(0));
+	system("umount -f /mnt/test-ext4");
 	system("dd if=/dev/zero of=/dev/ram0 bs=1k count=256");
 	system("mkfs.ext4 -F /dev/ram0");
 	system("mount -t ext4 -o rw,sync,noatime /dev/ram0 /mnt/test-ext4");
@@ -170,10 +175,11 @@ void restore(const char *devpath, char *buffer, size_t size)
 	close(devfd);
 }
 
+static float prob_ckpt = 0.1;
+static float prob_restore = 0.1;
+
 void ckpt_or_restore(const char *devpath, char *buffer, size_t size)
 {
-	const float prob_ckpt = 0.1;
-	const float prob_restore = 0.1;
 	static bool has_ckpt = false;
 	int rnd = rand();
 	float prob = 1.0 * rnd / RAND_MAX;
@@ -186,12 +192,53 @@ void ckpt_or_restore(const char *devpath, char *buffer, size_t size)
 	}
 }
 
+int file_count;
+int on_each_file(const char *fpath, const struct stat *sb,
+		 int typeflag, struct FTW *ftwbuf)
+{
+	struct stat stbf;
+	int ret = stat(fpath, &stbf);
+	if (ret != 0) {
+		printf("cannot stat %s: %s\n", fpath, errnoname(errno));
+		return ret;
+	}
+	file_count++;
+	return 0;
+}
+
+int how_many_files()
+{
+	const char *mp = "/mnt/test-ext4";
+	file_count = 0;
+	int ret = nftw(mp, on_each_file, 16, FTW_PHYS);
+	return (ret == 0) ? file_count : -1;
+}
+
+bool fs_is_good()
+{
+	const char *newdir = "/mnt/test-ext4/__testdir";
+	int filecnt = how_many_files();
+	if (filecnt < 0)
+		return false;
+	/* this means the directory is empty inside */
+	if (filecnt == 1) {
+		int ret = mkdir(newdir, 0755);
+		if (ret < 0) {
+			printf("Cannot mkdir: %s\n", errnoname(errno));
+			return false;
+		}
+		rmdir(newdir);
+	}
+	return true;
+}
+
 int main(int argc, char **argv)
 {
 	const char *devpath = "/dev/ram0";
 	const size_t devsize = 256 * 1024;
 	FILE *seqfp = fopen("sequence.log", "r");
-	size_t len, linecap = 0;
+	ssize_t len;
+	size_t linecap = 0;
 	char *linebuf = NULL;
 	char *fsimg = malloc(devsize);
 	if (!seqfp) {
@@ -199,6 +246,19 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	init();
+	/* probability of checkpoint and restore */
+	if (argc >= 2) {
+		int p1 = atoi(argv[1]);
+		if (p1 > 0)
+			prob_ckpt = 1.0 * p1 / 100;
+		printf("Prob. of checkpoint is %d %%.\n", p1);
+	}
+	if (argc >= 3) {
+		int p2 = atoi(argv[2]);
+		if (p2 > 0)
+			prob_restore = 1.0 * p2 / 100;
+		printf("Prob. of restore is %d %%.\n", p2);
+	}
 	while ((len = getline(&linebuf, &linecap, seqfp)) >= 0) {
 		char *line = malloc(len + 1);
 		line[len] = '\0';
@@ -231,6 +291,7 @@ int main(int argc, char **argv)
 		}
 		errno = 0;
 		free(line);
+		assert(fs_is_good());
 		ckpt_or_restore(devpath, fsimg, devsize);
 	}
 	fclose(seqfp);
