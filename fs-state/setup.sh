@@ -9,6 +9,7 @@ verbose=0
 POSITIONAL=()
 _CFLAGS=""
 KEEP_FS=0
+SETUP_ONLY=0
 exclude_dirs=(
     lost+found
 )
@@ -184,6 +185,11 @@ while [[ $# -gt 0 ]]; do
             verbose=1
             shift
             ;;
+        -s|--setup-only)
+            KEEP_FS=1
+            SETUP_ONLY=1
+            shift
+            ;;
         *)
             POSITIONAL+=("$1")
             shift
@@ -212,6 +218,7 @@ for i in $(seq 0 $(($n_fs-1))); do
 
     echo "Mounting $DEVICE on /mnt/test-$fs";
     runcmd mount -t $fs -o sync,noatime $DEVICE /mnt/test-$fs
+    df /mnt/test-$fs
 
     # Remove FS-specific artifacts (e.g. lost+found folder in ext*)
     # This ensures all file systems being tested have identical initial states
@@ -225,11 +232,14 @@ for i in $(seq 0 $(($n_fs-1))); do
 done
 
 # Run test program
-runcmd make "CFLAGS=$_CFLAGS";
-echo 'Running file system checker...';
-echo 'Please check stdout in output.log, stderr in error.log';
-monitor &
-./pan 2>error.log > output.log
+if [ "$SETUP_ONLY" != "1" ]; then
+    runcmd make "CFLAGS=$_CFLAGS";
+    echo 'Running file system checker...';
+    echo 'Please check stdout in output.log, stderr in error.log';
+    monitor &
+    ./pan 2>error.log > output.log
 
-generic_cleanup;
+    generic_cleanup;
+fi
+
 
