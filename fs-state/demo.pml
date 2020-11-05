@@ -60,13 +60,13 @@ proctype worker()
                 makelog("BEGIN: open\n");
                 /* log sequence: open:<path>:<flag>:<mode> */
                 fprintf(seqfp, "open:%s:%d:%d\n", testfiles[0], now.openflags, 0644);
-                for (i = 0; i < n_fs; ++i) {
+                for (i = 0; i < N_FS; ++i) {
                     makecall(fds[i], errs[i], "%s, %#x, 0%o", myopen, testfiles[i], now.openflags, 0644);
                     compute_abstract_state(basepaths[i], absfs[i]);
                 }
-                expect(compare_equality_fexists(fslist, n_fs, testdirs));
-                expect(compare_equality_values(fslist, n_fs, errs));
-                expect(compare_equality_absfs(fslist, n_fs, absfs));
+                expect(compare_equality_fexists(fslist, N_FS, testdirs));
+                expect(compare_equality_values(fslist, N_FS, errs));
+                expect(compare_equality_absfs(fslist, N_FS, absfs));
                 makelog("END: open\n");
             };
         };
@@ -78,14 +78,14 @@ proctype worker()
             off_t offset = pick_value(0, 32768, 1024);
             /* log sequence: lseek:<offset>:<flag> */
             fprintf(seqfp, "lseek:%ld:%d\n", fds[i], offset, SEEK_SET);
-            for (i = 0; i < n_fs; ++i) {
+            for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%d, %ld, %d", lseek, fds[i], offset, SEEK_SET);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
 
-            expect(compare_equality_values(fslist, n_fs, rets));
-            expect(compare_equality_values(fslist, n_fs, errs));
-            expect(compare_equality_absfs(fslist, n_fs, absfs));
+            expect(compare_equality_values(fslist, N_FS, rets));
+            expect(compare_equality_values(fslist, N_FS, errs));
+            expect(compare_equality_absfs(fslist, N_FS, absfs));
             makelog("END: lseek\n");
 
         }
@@ -99,16 +99,16 @@ proctype worker()
             generate_data(data, writelen, 0);
             /* log sequence: write:<writelen> */
             fprintf(seqfp, "write:%zu\n", writelen);
-            for (i = 0; i < n_fs; ++i) {
+            for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%d, %p, %zu", write, fds[i], data, writelen);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
 
             free(data);
-            expect(compare_equality_values(fslist, n_fs, rets));
-            expect(compare_equality_values(fslist, n_fs, errs));
-            expect(compare_equality_fcontent(fslist, n_fs, testfiles, fds));
-            expect(compare_equality_absfs(fslist, n_fs, absfs));
+            expect(compare_equality_values(fslist, N_FS, rets));
+            expect(compare_equality_values(fslist, N_FS, errs));
+            expect(compare_equality_fcontent(fslist, N_FS, testfiles, fds));
+            expect(compare_equality_absfs(fslist, N_FS, absfs));
             makelog("END: write\n");
         }
     };
@@ -121,14 +121,14 @@ proctype worker()
             off_t flen = pick_value(0, 200000, 10000);
             /* log sequence: ftruncate:<flen> */
             fprintf(seqfp, "ftruncate:%ld\n", flen);
-            for (i = 0; i < n_fs; ++i) {
+            for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%d, %ld", ftruncate, fds[i], flen);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
-            expect(compare_equality_fexists(fslist, n_fs, testfiles));
-            expect(compare_equality_values(fslist, n_fs, rets));
-            expect(compare_equality_values(fslist, n_fs, errs));
-            expect(compare_equality_absfs(fslist, n_fs, absfs));
+            expect(compare_equality_fexists(fslist, N_FS, testfiles));
+            expect(compare_equality_values(fslist, N_FS, rets));
+            expect(compare_equality_values(fslist, N_FS, errs));
+            expect(compare_equality_absfs(fslist, N_FS, absfs));
             makelog("END: ftruncate\n");
         }
     };
@@ -148,14 +148,14 @@ proctype worker()
             makelog("BEGIN: unlink\n");
             /* log sequence: unlink:<path> */
             fprintf(seqfp, "unlink:%s\n", testfiles[0]);
-            for (i = 0; i < n_fs; ++i) {
+            for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%s", unlink, testfiles[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
-            expect(compare_equality_fexists(fslist, n_fs, testdirs));
-            expect(compare_equality_values(fslist, n_fs, rets));
-            expect(compare_equality_values(fslist, n_fs, errs));
-            expect(compare_equality_absfs(fslist, n_fs, absfs));
+            expect(compare_equality_fexists(fslist, N_FS, testdirs));
+            expect(compare_equality_values(fslist, N_FS, rets));
+            expect(compare_equality_values(fslist, N_FS, errs));
+            expect(compare_equality_absfs(fslist, N_FS, absfs));
             makelog("END: unlink\n");
         }
     };
@@ -165,14 +165,14 @@ proctype worker()
             makelog("BEGIN: mkdir\n");
             /* log sequence: mkdir:<path> */
             fprintf(seqfp, "mkdir:%s\n", testdirs[0]);
-            for (i = 0; i < n_fs; ++i) {
+            for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%s, 0%o", mkdir, testdirs[i], 0755);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
-            expect(compare_equality_fexists(fslist, n_fs, testdirs));
-            expect(compare_equality_values(fslist, n_fs, rets));
-            expect(compare_equality_values(fslist, n_fs, errs));
-            expect(compare_equality_absfs(fslist, n_fs, absfs));
+            expect(compare_equality_fexists(fslist, N_FS, testdirs));
+            expect(compare_equality_values(fslist, N_FS, rets));
+            expect(compare_equality_values(fslist, N_FS, errs));
+            expect(compare_equality_absfs(fslist, N_FS, absfs));
             makelog("END: mkdir\n");
         }
         // assert(! c_expr{ errs[0] == EEXIST && errs[1] == EEXIST && errs[2] == 0 });
@@ -182,14 +182,14 @@ proctype worker()
         c_code {
             makelog("BEGIN: rmdir\n");
             fprintf(seqfp, "rmdir:%s\n", testdirs[0]);
-            for (i = 0; i < n_fs; ++i) {
+            for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%s", rmdir, testdirs[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
-            expect(compare_equality_fexists(fslist, n_fs, testdirs));
-            expect(compare_equality_values(fslist, n_fs, rets));
-            expect(compare_equality_values(fslist, n_fs, errs));
-            expect(compare_equality_absfs(fslist, n_fs, absfs));
+            expect(compare_equality_fexists(fslist, N_FS, testdirs));
+            expect(compare_equality_values(fslist, N_FS, rets));
+            expect(compare_equality_values(fslist, N_FS, errs));
+            expect(compare_equality_absfs(fslist, N_FS, absfs));
             makelog("END: rmdir\n");
         }
     };
@@ -204,14 +204,14 @@ proctype driver(int nproc)
         srand(time(0));
         current_utc_time(&begin_time);
         /* Initialize base paths */
-        printf("%d file systems to test.\n", n_fs);
-        for (int i = 0; i < n_fs; ++i) {
+        printf("%d file systems to test.\n", N_FS);
+        for (int i = 0; i < N_FS; ++i) {
             size_t len = snprintf(NULL, 0, "/mnt/test-%s", fslist[i]);
             basepaths[i] = calloc(1, len + 1);
             snprintf(basepaths[i], len + 1, "/mnt/test-%s", fslist[i]);
         }
         /* Initialize test dirs and files names */
-        for (int i = 0; i < n_fs; ++i) {
+        for (int i = 0; i < N_FS; ++i) {
             size_t len = snprintf(NULL, 0, "%s/testdir", basepaths[i]);
             testdirs[i] = calloc(1, len + 1);
             snprintf(testdirs[i], len + 1, "%s/testdir", basepaths[i]);
