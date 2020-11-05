@@ -6,6 +6,12 @@
 /* This should be a multiple of N_FS
  * in order to avoid false discrepancy in open() tests */
 #define MAX_OPENED_FILES 192
+/* The file name of or the path to the performance log */
+#define PERF_LOG_PATH    "perf.csv"
+/* The file name of or the path to the sequence log */
+#define SEQ_LOG_PATH     "sequence.log"
+/* Interval of perf metrics logging (in secs) */
+#define PERF_INTERVAL    5
 
 /* List of file systems: Modify this to experiment with other file systems */
 static char *fslist[] = {"xfs", "jffs2"};
