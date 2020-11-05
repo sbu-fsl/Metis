@@ -151,24 +151,6 @@ runcmd() {
     fi
 }
 
-monitor() {
-    output='pan_mem_stat.csv';
-    counter=0;
-    echo "Monitor started.";
-    while true; do
-        mc_pid=$(pgrep pan);
-        if [ -z "$mc_pid" ] && [ "$counter" -gt 0 ]; then
-            return 0;
-        fi
-        if [ -n "$mc_pid" ]; then
-            counter=$(expr $counter + 1);
-            echo -n "$counter," >> $output;
-            cat /proc/$mc_pid/stat | cut -d ' ' --output-delimiter=',' -f 1,2,3,24 >> $output;
-        fi
-        sleep 1;
-    done
-}
-
 # Parse command line options
 while [[ $# -gt 0 ]]; do
     key=$1;
@@ -236,7 +218,6 @@ if [ "$SETUP_ONLY" != "1" ]; then
     runcmd make "CFLAGS=$_CFLAGS";
     echo 'Running file system checker...';
     echo 'Please check stdout in output.log, stderr in error.log';
-    monitor &
     ./pan 2>error.log > output.log
 
     generic_cleanup;
