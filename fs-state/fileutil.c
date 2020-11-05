@@ -213,9 +213,28 @@ void closeall()
 {
     for (int i = _n_files - 1; i >= 0; --i) {
         close(_opened_files[i]);
-	_opened_files[i] = -1;
+        _opened_files[i] = -1;
     }
     _n_files = 0;
+}
+
+void __attribute__((constructor)) init()
+{
+    /* open and mmap the test f/s image as well as its heap memory */
+    fsfd_ext4 = open("/dev/ram0", O_RDWR);
+    assert(fsfd_ext4 >= 0);
+    fsimg_ext4 = mmap(NULL, fsize(fsfd_ext4), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext4, 0);
+    assert(fsimg_ext4 != MAP_FAILED);
+    
+    fsfd_ext2 = open("/dev/ram1", O_RDWR);
+    assert(fsfd_ext2 >= 0);
+    fsimg_ext2 = mmap(NULL, fsize(fsfd_ext2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext2, 0);
+    assert(fsimg_ext2 != MAP_FAILED);
+    
+    fsfd_jffs2 = open("/dev/mtdblock0", O_RDWR);
+    assert(fsfd_jffs2 >= 0);
+    fsimg_jffs2 = mmap(NULL, fsize(fsfd_jffs2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_jffs2, 0);
+    assert(fsimg_jffs2 != MAP_FAILED);
 }
 
 /* The procedure that resets run-time states

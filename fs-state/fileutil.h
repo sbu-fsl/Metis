@@ -23,15 +23,10 @@
 #include "errnoname.h"
 #include "vector.h"
 #include "abstract_fs.h"
+#include "config.h"
 
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
-
-#define nelem(array)  (sizeof(array) / sizeof(array[0]))
-
-/* This should be a multiple of n_fs
- * in order to avoid false discrepancy in open() tests */
-#define MAX_OPENED_FILES 192
 
 extern int cur_pid;
 extern char func[9];
