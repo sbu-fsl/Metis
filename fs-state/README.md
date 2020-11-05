@@ -137,6 +137,8 @@ The setup script provides the following options:
   a behavior discrepancy among the tested file systems.
 - `--keep-fs, -k`: Do not unmount the tested file systems when the model checker
   exits. This is useful for debugging.
+- `--setup-only, -s`: The script will only format and mount the file systems,
+  and won't run the model checker. This implies `--keep-fs`.
 - `--verbose, -v`: Be more verbose.
 
 This script will create a JFFS2 file system on /dev/mtdblock0 and a XFS file
@@ -181,7 +183,7 @@ It is not recommended to run the model checker via Makefile because you will
 have to set up the file systems manually, and you can't test other file systems
 by solely using `make`. However, there is an option doing so, provided that you
 have set up the RAM-backed block devices, formatted and mounted the file
-systems.
+systems (Of course, you can set up the file systems using `sudo ./setup.sh -s`).
 
 ```bash
 sudo make run
@@ -200,7 +202,8 @@ in the setup script. The generated files will remain owned by root.
 
 ## Testing other file systems.
 
-You will need to modify the setup script (`setup.sh`) and the model checker
+You will need to modify the setup script (`setup.sh`), configuration header
+(`config.h`), initialization code in `fileutil.c` and the model checker
 code (`demo.pml`) in order to have the model checker test other file systems.
 Here are the parts that need to be modified:
 
@@ -260,35 +263,37 @@ unset_nilfs2() {
 }
 ```
 
-#### 2. The model checker code (`demo.pml`)
+#### 2. The configuration header (`config.h`)
+
+The configuration header contains all global C variables required by the file
+system model checker. Most of the variables and arrays are fixed or
+automatically expanded according to the number of file systems, but you need to
+modify some fs-specific declarations in order for the model checker to work.
 
 To begin with, you will need to change the elements in the array `fslist[]` to
-the names of the file systems you want to test (in line 6). Besides, you need to
+the names of the file systems you want to test (in line 11). Besides, you need to
 declare a pointer `void *fsimg_$fs` and a integer variable `int fsfd_$fs` for
-each file system you would like to test inside this `c_decl` block. `$fs` is
-the name of the file system.
+each file system you would like to test, just like what is written in line 19
+and 21. `$fs` is the name of the file system. The pointer will point to the
+memory-mapped file system image and be tracked by the model checker as the
+concrete state.
 
-Then, you should have the model checker track the images of the file systems
-(or rather, the full content of the block devices which the file systems are
-built on). This is done by removing the existing `c_track` statements that
-tracks the images of jffs2 and xfs, and add your own `c_track` statements
-that look like this:
+#### 4. The initialization code in (`fileutil.c`)
 
-```promela
-c_track "fsimg_$fs" "$size" "UnMatched"
-```
+We want the pointers that are tracked by Spin and point to file system images to
+be valid as soon as or before the Spin model checker starts tracking states.
+Therefore, we decide to implement a initialization function called `init()`
+where the file system images (i.e. ramdisks, or block devices on which the file
+systems are built) are opened and memory-mapped outside the Promela code, and we
+want the function to be called before Spin starts tracking states. By taking
+advantage the `__attribute__((constructor))` extension supported by GCC, we can
+have the initialization function executed before `main()`.
 
-`fsimg_$fs` is the `void *` pointer you decleared in the previous step.
-`$size` is the size of the block device in bytes. `"UnMatched"` means that the
-image will only be used as concrete states for restoration, not abstract states
-for matching. The model checker uses a special utility function to calculate the
-abstract file system states on its own.
-
-The `void *` pointers should be initialized in `proctype driver()` via `mmap()`
-syscall. In the embedded C code block of this proctype, you need to open the
-block devices in read-write mode (`O_RDWR`) and then memory-map them. Assign
-the pointers with the addresses returned by `mmap()`. For example, if you want
-to model check ext2 and ext4, then the code should be as follows:
+`init()` is defined at the bottom of `fileutil.c`, in around line 221. Here,
+you need to open the block devices in read-write mode (`O_RDWR`) and then
+memory-map them. Assign the pointers with the addresses returned by `mmap()`.
+For example, if you want to experiment with ext2 and ext4, the code should
+be as follows:
 
 ```c
 fsfd_ext2 = open("/dev/ram0", O_RDWR);
@@ -305,6 +310,26 @@ assert(fsimg_ext4 != MAP_FAILED);
 `fsize()` is a helper function that retrieves the size of an opened file or
 block device. Don't forget to comment out or remove the old code that does the
 same thing!
+
+#### 3. The model checker code (`demo.pml`)
+
+Finally, you will let the model checker track the images of the file systems
+(or rather, the full content of the block devices which the file systems are
+built on). This is done by removing the existing `c_track` statements that
+tracks the images of jffs2 and xfs (in line 12 and 13), and add your own
+`c_track` statements that look like this:
+
+```promela
+c_track "fsimg_$fs" "$size" "UnMatched"
+```
+
+`fsimg_$fs` is the `void *` pointer you decleared in the previous step.
+`$size` is the size of the block device in bytes. `"UnMatched"` means that the
+image will only be used as concrete states for restoration, not abstract states
+for matching. The model checker uses a special utility function to calculate the
+abstract file system states on its own. The "abstract file system state" will be
+introduced in the "Discussions" section. 
+
 
 #### 3. Save your modification
 
@@ -515,7 +540,7 @@ devices, and the other is to use RAM block devices created by the `brd` kernel
 driver module.
 
 It seems that both options are OK, but in reality they aren't --- image files on
-tmpfs + loopback devices is MUCH slower than RAM block devices. Here are the
+tmpfs + loopback devices are MUCH slower than RAM block devices. Here are the
 experiments:
 
 ```bash
