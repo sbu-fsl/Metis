@@ -24,13 +24,13 @@ load this module.
 ## Building the kernel module
 
 ```bash
-make -C /lib/module/$(uname -r)/build M=$(pwd)
+make -C /lib/modules/$(uname -r)/build M=$(pwd)
 ```
 
 ## Usage
 
 ```bash
-sudo insmod brd.ko rd_nr=N, rd_sizes=size1,size2,size3,...,sizeN
+sudo insmod brd.ko rd_nr=N rd_sizes=size1,size2,size3,...,sizeN
 ```
 
 - This command will create N ramdisks at `/dev/ram0`, `/dev/ram1`, `/dev/ram2`,
