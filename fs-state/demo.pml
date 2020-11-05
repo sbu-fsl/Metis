@@ -1,23 +1,10 @@
 #include "operations.h"
 
 c_decl {
+/* The escaped '#' is intended to prevent Spin from expanding the headers
+ * when it's generating the C code */
 \#include "fileutil.h"
-
-char *fslist[] = {"xfs", "jffs2"};
-#define n_fs    nelem(fslist)
-char *basepaths[n_fs];
-char *testdirs[n_fs];
-char *testfiles[n_fs];
-
-void *fsimg_ext4, *fsimg_ext2, *fsimg_jffs2, *fsimg_xfs;
-int fsfd_ext4, fsfd_ext2, fsfd_jffs2, fsfd_xfs;
-absfs_state_t absfs[n_fs];
-
-FILE *seqfp;
-
-int rets[n_fs], errs[n_fs];
-int fds[n_fs] = {-1};
-int i;
+\#include "config.h"
 };
 
 int openflags;
