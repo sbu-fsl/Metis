@@ -82,7 +82,7 @@ setup_jffs2() {
 }
 
 unset_jffs2() {
-    runcmd rmdir $JFFS2_EMPTY_DIR;
+    runcmd rmdir /tmp/_empty_dir*;
     runcmd rm -f $JFFS2_IMAGE;
 }
 
@@ -184,15 +184,16 @@ runcmd losetup -D
 n_fs=${#FSLIST[@]};
 for i in $(seq 0 $(($n_fs-1))); do
 
+    # Mount first
+    if [ "$(mount | grep /mnt/test-$fs)" ]; then
+        runcmd umount -f /mnt/test-$fs;
+    fi
+
     # Run individual file system setup scripts defined above
     fs=${FSLIST[$i]};
     DEVICE=${DEVLIST[$i]};
     setup_$fs $DEVICE;
 
-    # Mount
-    if [ "$(mount | grep /mnt/test-$fs)" ]; then
-        runcmd umount -f /mnt/test-$fs;
-    fi
     if [ -d /mnt/test-$fs ]; then
         runcmd rm -rf /mnt/test-$fs;
     fi
