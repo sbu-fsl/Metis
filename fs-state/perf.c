@@ -1,4 +1,5 @@
 #include "fileutil.h"
+#include "swapperf.h"
 #include <sys/vfs.h>
 #include <pthread.h>
 
@@ -112,14 +113,27 @@ void record_performance()
     static bool inited = false;
     static size_t last_count = 0;
     static struct timespec last_ts = {0};
+    static struct iostat *last_swaps_stat;
+    static int n_swaps;
 
     struct timespec now, diff, epoch;
     current_utc_time(&now);
 
     if (!inited) {
         last_ts = now;
+        /* metrics about the model checker itself */
         fprintf(perflog_fp, "epoch,fsops_rate,proc_state,minor_flt,major_flt,"
                 "utime,ktime,num_threads,vmem_sz,pmem_sz,");
+        /* metrics of the swap devices activity */
+        n_swaps = num_swap_devices();
+        last_swaps_stat = malloc(n_swaps * sizeof(struct iostat));
+        assert(last_swaps_stat);
+        get_swapstats(last_swaps_stat);
+        for (int i = 0; i < n_swaps; ++i) {
+            fprintf(perflog_fp, "swap_%s_bytes_read,swap_%s_bytes_written,",
+                    last_swaps_stat[i].devname, last_swaps_stat[i].devname);
+        }
+        /* metrics of the file systems being tested */
         for (int i = 0; i < N_FS; ++i) {
             char *mp = fslist[i];
             fprintf(perflog_fp, "%s_capacity,%s_free,%s_inodes,%s_ifree,",
@@ -145,6 +159,19 @@ void record_performance()
             epoch.tv_sec, epoch.tv_nsec, rate, ps.state, ps.minflt, 
             ps.majflt, ps.utime, ps.ktime, ps.num_threads, ps.vsize,
             ps.psize);
+    /* Retrieve swap activity */
+    struct iostat *swaps_stat;
+    struct iostat *swaps_diff;
+    swaps_stat = malloc(2 * n_swaps * sizeof(struct iostat));
+    swaps_diff = swaps_stat + n_swaps;
+    get_swapstats(swaps_stat);
+    iostat_diff(swaps_diff, swaps_stat, last_swaps_stat);
+    for (int i = 0; i < n_swaps; ++i) {
+        fprintf(perflog_fp, "%zu,%zu,", swaps_diff[i].bytes_read,
+                swaps_diff[i].bytes_written);
+    }
+    memcpy(last_swaps_stat, swaps_stat, n_swaps * sizeof(struct iostat));
+    free(swaps_stat);
     /* Iterate each file system */
     for (int i = 0; i < N_FS; ++i) {
         char *mp = basepaths[i];
@@ -170,6 +197,7 @@ static void __attribute__((constructor)) perf_init()
 {
     pthread_attr_t attr;
     int ret;
+    get_swaps();
     current_utc_time(&begin_time);
     perflog_fp = fopen(PERF_LOG_PATH, "w");
     if (!perflog_fp) {
