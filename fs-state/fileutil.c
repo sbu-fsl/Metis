@@ -1,5 +1,9 @@
 #include "fileutil.h"
 
+#define __USE_XOPEN_EXTENDED 1
+#include <ftw.h>
+#include <sys/vfs.h>
+
 int cur_pid;
 char func[9];
 struct timespec begin_time;
@@ -169,6 +173,101 @@ bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths, int *fds)
         }
     }
     return res;
+}
+
+static int _file_count;
+int on_each_file(const char *fpath, const struct stat *sb,
+		 int typeflag, struct FTW *ftwbuf)
+{
+	struct stat stbf;
+	int ret = stat(fpath, &stbf);
+	if (ret != 0) {
+		fprintf(stderr, "cannot stat %s: %s\n", fpath, errnoname(errno));
+		return ret;
+	}
+	_file_count++;
+	return 0;
+}
+
+/* Walk the file system and count how many files there are.
+ * If the file system is corrupted in a way where an existing dentry does not
+ * have its corresponding inode, this will return -1
+ */
+static int how_many_files(const char *mountpoint)
+{
+	_file_count = 0;
+	int ret = nftw(mountpoint, on_each_file, 16, FTW_PHYS);
+    if (ret != 0) {
+        fprintf(stderr, "nftw failed, returned %d, errno = %s\n",
+                ret, errnoname(errno));
+    }
+	return (ret == 0) ? _file_count : -1;
+}
+
+static int try_create_testdir(const char *mp, const char *name)
+{
+    char dirpath[PATH_MAX] = {0};
+    snprintf(dirpath, PATH_MAX, "%s/%s", mp, name);
+    int ret = mkdir(dirpath, 0755);
+    if (ret != 0)
+        ret = errno;
+    rmdir(dirpath);
+    return ret;
+}
+
+static bool check_capacity(const char *mountpoint)
+{
+    struct statfs st;
+    int ret = statfs(mountpoint, &st);
+    if (ret < 0) {
+        fprintf(stderr, "Cannot stat file system %s: %d\n", mountpoint, errno);
+        return false;
+    }
+    /* Try make a directory if statfs says there's free space or the file system
+     * is empty */
+    char dirpath[PATH_MAX] = {0};
+    if (st.f_bfree > 0) {
+        ret = try_create_testdir(mountpoint, "__testdir");
+        if (ret != 0) {
+            fprintf(stderr, "There is free space but mkdir returns %s.\n",
+                    errnoname(ret));
+            return false;
+        }
+    } else if (_file_count <= 0) {
+        ret = try_create_testdir(mountpoint, "__testdir2");
+        if (ret != 0) {
+            fprintf(stderr, "File system is empty but mkdir returns %s.\n",
+                    errnoname(ret));
+            return false;
+        }
+    }
+    return true;
+}
+
+bool filesystems_are_good()
+{
+    bool result = true;
+    if (ABORT_ON_BADFS == 0)
+        return result;
+    for (int i = 0; i < N_FS; ++i) {
+        int ret = how_many_files(basepaths[i]);
+        if (ret < 0) { 
+            fprintf(stderr, "File system <%s> at %s is corrupted due to "
+                    "a dangling dentry without corresponding inode.\n",
+                    fslist[i], basepaths[i]);
+            result = false;
+            continue;
+        }
+        bool ret2 = check_capacity(basepaths[i]);
+        if (!ret2) {
+            fprintf(stderr, "File system <%s> at %s is corrupted because "
+                    "it falsely claims no-space error.\n", fslist[i],
+                    basepaths[i]);
+            result = false;
+            continue;
+        }
+    }
+    return result;
 }
 
 void show_open_flags(uint64_t flags)
