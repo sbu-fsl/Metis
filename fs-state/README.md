@@ -16,6 +16,7 @@
     + [Run with automatic setup script](#run-with-automatic-setup-script)
     + [Using Makefile](#using-makefile)
       - [Other make rules](#other-make-rules)
+  * [Performance Metrics](#performance-metrics)
   * [Testing other file systems.](#testing-other-file-systems)
       - [1. Setup Script (`setup.sh`)](#1-setup-script-setupsh)
       - [2. The model checker code (`demo.pml`)](#2-the-model-checker-code-demopml)
@@ -194,17 +195,6 @@ There will also be a `sequence.log` that records the sequence of file system
 operations that have been performed by model checker in a easy-to-parse format.
 This is intended for the replayer to use.
 
-The setup script will fork a child shell process that monitors the memory usage
-of the model checker process (`./pan`). The monitor generates `pan_mem_stat.csv`
-in the following format:
-
-```
-epoch_secs,pid,proc_name,proc_state,phys_mem_in_pages
-```
-
-For the meaning of `proc_state`, see `man proc` and search for
-`/proc/[pid]/stat`.
-
 You can wait till the model checker ends or press Ctrl+C to abort the program
 half-way. When the model checker exits, the ownership of all resources
 (including logs, generated C code and compiled binaries) will be given back
@@ -223,8 +213,7 @@ sudo make run
 ```
 
 This will compile and execute the model checker. All outputs will printed to
-the terminal, and there won't be the memory usage monitor as it's a component
-in the setup script. The generated files will remain owned by root.
+the terminal, and the generated files will remain owned by root.
 
 #### Other make rules
 
@@ -232,6 +221,8 @@ in the setup script. The generated files will remain owned by root.
 - `make abstractfs-test`: Compile the demo program that computes the "abstract
     file system state" of a directory or a file system
 - `make replayer`: Compile the file system operations sequence replayer
+
+## Performance metrics
 
 ## Testing other file systems.
 
