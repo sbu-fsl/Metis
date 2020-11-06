@@ -231,14 +231,16 @@ static bool check_capacity(const char *mountpoint)
         if (ret != 0) {
             fprintf(stderr, "There is free space but mkdir returns %s.\n",
                     errnoname(ret));
-            return false;
+            if (errno == ENOSPC)
+                return false;
         }
     } else if (_file_count <= 0) {
         ret = try_create_testdir(mountpoint, "__testdir2");
         if (ret != 0) {
             fprintf(stderr, "File system is empty but mkdir returns %s.\n",
                     errnoname(ret));
-            return false;
+            if (errno == ENOSPC)
+                return false;
         }
     }
     return true;
