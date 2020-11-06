@@ -62,27 +62,6 @@ static inline void compute_abstract_state(const char *basepath,
     memcpy(state, absfs.state, sizeof(absfs_state_t));
 }
 
-static inline void count_speed()
-{
-    static size_t last_count = 0;
-    static time_t last_ts = 0;
-    const time_t interval = 10;
-
-    time_t now = time(0);
-
-    if (last_ts == 0) {
-        last_ts = now;
-    }
-
-    if (now - last_ts >= interval) {
-        float rate = (count - last_count) / (now - last_ts);
-        last_ts = now;
-        last_count = count;
-        fprintf(stderr, "%zu file system operations has been performed, "
-                "test rate is %.2f ops/sec\n", count, rate);
-    }
-}
-
 #define makecall(retvar, err, argfmt, funcname, ...) \
     count++; \
     memset(func, 0, 9); \
@@ -91,7 +70,6 @@ static inline void count_speed()
     errno = 0; \
     retvar = funcname(__VA_ARGS__); \
     err = errno; \
-    count_speed(); \
     makelog("[seqid = %zu] %s (" argfmt ")", \
             count, func, __VA_ARGS__); \
     printf(" -> ret = %d, err = %s\n", retvar, errnoname(errno)); \

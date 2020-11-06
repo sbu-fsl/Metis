@@ -20,3 +20,4 @@ replay
 modules.order
 Module.symvers
 .*.cmd
+*.csv
