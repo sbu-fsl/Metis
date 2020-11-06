@@ -4,6 +4,7 @@
 struct iostat {
     int major;
     int minor;
+    bool _malloced_name;
     char *devname;
     size_t reads_success;
     size_t reads_merged;
@@ -20,6 +21,7 @@ struct iostat {
 void iostat_diff(struct iostat *diff, struct iostat *a, struct iostat *b);
 const char *nextfield(const char *line, char **fieldbuf, size_t *fieldlen);
 void get_swapstats(struct iostat *stats);
+void put_swapstats(struct iostat *stats);
 int num_swap_devices();
 void get_swaps();
 

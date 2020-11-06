@@ -81,6 +81,7 @@ static void parse_diskstat_line(const char *line, struct iostat *st)
         } else if (i == 2) {
             st->minor = atoi(fieldbuf);
         } else if (i == 3) {
+            st->_malloced_name = true;
             st->devname = strdup_(fieldbuf);
         } else if (i == 4) {
             st->reads_success = atol(fieldbuf);
@@ -151,6 +152,17 @@ void get_swapstats(struct iostat *stats)
     }
 }
 
+/* Release ->devname to avoid memory leak
+ * This does NOT free *stats itself */
+void put_swapstats(struct iostat *stats)
+{
+    for (int i = 0; i < n_swaps; ++i) {
+        if (stats[i]._malloced_name) {
+            free(stats[i].devname);
+        }
+    }
+}
+
 int num_swap_devices()
 {
     return n_swaps;
@@ -191,7 +203,7 @@ void get_swaps()
     size_t n = 0;
     ssize_t ret;
     while ((ret = getline(&linebuf, &n, fp)) >= 0) {
-        /* Though it's rare to have more than 9 swap devices, we'd still better
+        /* Though it's rare to have more than 10 swap devices, we'd still better
          * consider this corner case */
         if (n_swaps >= swaps_len) {
             swaps_len *= 2;
@@ -214,3 +226,10 @@ void get_swaps()
     }
 }
 
+static void __attribute__((destructor)) swapperf_exit()
+{
+    for (int i = 0; i < n_swaps; ++i) {
+        free(swapdevs[i]);
+    }
+    free(swapdevs);
+}

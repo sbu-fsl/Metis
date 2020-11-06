@@ -170,6 +170,8 @@ void record_performance()
         fprintf(perflog_fp, "%zu,%zu,", swaps_diff[i].bytes_read,
                 swaps_diff[i].bytes_written);
     }
+    /* Free last_swaps_stat[i].devname to avoid memory leak */
+    put_swapstats(last_swaps_stat);
     memcpy(last_swaps_stat, swaps_stat, n_swaps * sizeof(struct iostat));
     free(swaps_stat);
     /* Iterate each file system */
