@@ -184,14 +184,15 @@ runcmd losetup -D
 n_fs=${#FSLIST[@]};
 for i in $(seq 0 $(($n_fs-1))); do
 
+    # Run individual file system setup scripts defined above
+    fs=${FSLIST[$i]};
+    DEVICE=${DEVLIST[$i]};
+
     # Mount first
     if [ "$(mount | grep /mnt/test-$fs)" ]; then
         runcmd umount -f /mnt/test-$fs;
     fi
 
-    # Run individual file system setup scripts defined above
-    fs=${FSLIST[$i]};
-    DEVICE=${DEVLIST[$i]};
     setup_$fs $DEVICE;
 
     if [ -d /mnt/test-$fs ]; then
