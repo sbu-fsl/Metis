@@ -167,8 +167,9 @@ void record_performance()
     get_swapstats(swaps_stat);
     iostat_diff(swaps_diff, swaps_stat, last_swaps_stat);
     for (int i = 0; i < n_swaps; ++i) {
-        fprintf(perflog_fp, "%zu,%zu,", swaps_diff[i].bytes_read,
-                swaps_diff[i].bytes_written);
+        double read_rate = swaps_diff[i].bytes_read / timediff;
+        double write_rate = swaps_diff[i].bytes_written / timediff;
+        fprintf(perflog_fp, "%.2f,%.2f,", read_rate, write_rate);
     }
     /* Free last_swaps_stat[i].devname to avoid memory leak */
     put_swapstats(last_swaps_stat);
