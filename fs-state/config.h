@@ -12,6 +12,8 @@
 #define SEQ_LOG_PATH     "sequence.log"
 /* Interval of perf metrics logging (in secs) */
 #define PERF_INTERVAL    5
+/* Abort the model checking process as soon as the file system is corrupted */
+#define ABORT_ON_BADFS   1
 
 /* List of file systems: Modify this to experiment with other file systems */
 static char *fslist[] = {"ext4", "ext2", "jffs2"};

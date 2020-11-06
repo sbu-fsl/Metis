@@ -70,6 +70,7 @@ proctype worker()
                 expect(compare_equality_absfs(fslist, N_FS, absfs));
                 makelog("END: open\n");
             };
+            assert(c_expr{filesystems_are_good()});
         };
         fi
     :: atomic {
@@ -89,7 +90,8 @@ proctype worker()
             expect(compare_equality_absfs(fslist, N_FS, absfs));
             makelog("END: lseek\n");
 
-        }
+        };
+        assert(c_expr{filesystems_are_good()});
     };
     :: atomic {
         /* write, check: retval, errno, content */
@@ -111,7 +113,8 @@ proctype worker()
             expect(compare_equality_fcontent(fslist, N_FS, testfiles, fds));
             expect(compare_equality_absfs(fslist, N_FS, absfs));
             makelog("END: write\n");
-        }
+        };
+        assert(c_expr{filesystems_are_good()});
     };
     :: atomic {
         /* ftruncate, check: retval, errno, existence */
@@ -131,7 +134,8 @@ proctype worker()
             expect(compare_equality_values(fslist, N_FS, errs));
             expect(compare_equality_absfs(fslist, N_FS, absfs));
             makelog("END: ftruncate\n");
-        }
+        };
+        assert(c_expr{filesystems_are_good()});
     };
     :: atomic {
         /* close all opened files */
@@ -142,6 +146,7 @@ proctype worker()
             closeall();
             makelog("END: close\n");
         }
+        assert(c_expr{filesystems_are_good()});
     };
     :: atomic {
         /* unlink, check: retval, errno, existence */
@@ -159,6 +164,7 @@ proctype worker()
             expect(compare_equality_absfs(fslist, N_FS, absfs));
             makelog("END: unlink\n");
         }
+        assert(c_expr{filesystems_are_good()});
     };
     :: atomic {
         /* mkdir, check: retval, errno, existence */
@@ -176,6 +182,7 @@ proctype worker()
             expect(compare_equality_absfs(fslist, N_FS, absfs));
             makelog("END: mkdir\n");
         }
+        assert(c_expr{filesystems_are_good()});
         // assert(! c_expr{ errs[0] == EEXIST && errs[1] == EEXIST && errs[2] == 0 });
     };
     :: atomic {
@@ -193,6 +200,7 @@ proctype worker()
             expect(compare_equality_absfs(fslist, N_FS, absfs));
             makelog("END: rmdir\n");
         }
+        assert(c_expr{filesystems_are_good()});
     };
     
     od
