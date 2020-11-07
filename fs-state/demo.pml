@@ -209,7 +209,6 @@ proctype driver(int nproc)
 {
     int i;
     c_code {
-        srand(time(0));
         /* Initialize base paths */
         printf("%d file systems to test.\n", N_FS);
         for (int i = 0; i < N_FS; ++i) {

@@ -196,10 +196,26 @@ void* perf_logger(void *arg)
     return NULL;
 }
 
+void seed_rand_with_urandom()
+{
+    int randfd = open("/dev/urandom", O_RDONLY);
+    /* Will fall back to timestamp if the rand device is not available */
+    unsigned seed = time(0);
+    if (randfd < 0) {
+        fprintf(stderr, "Failed to open /dev/urandom: %d. Will use timestamp "
+                "to seed rand() RNG instead.\n", errno);
+    } else {
+        read(randfd, &seed, sizeof(unsigned));
+        close(randfd);
+    }
+    srand(seed);
+}
+
 static void __attribute__((constructor)) perf_init()
 {
     pthread_attr_t attr;
     int ret;
+    seed_rand_with_urandom();
     get_swaps();
     current_utc_time(&begin_time);
     perflog_fp = fopen(PERF_LOG_PATH, "w");
