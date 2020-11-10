@@ -347,8 +347,8 @@ err:
 
 void unmount_all()
 {
-    // close all opened files before unmounting
-    close_all_opened_files();
+    // close all opened fds before unmounting
+    close_all_opened_fds();
     bool has_failure = false;
     for (int i = 0; i < N_FS; ++i) {
         int ret = umount2(basepaths[i], MNT_FORCE);
@@ -455,12 +455,22 @@ void reopen_all_opened_files() {
     }
 }
 
-void close_all_opened_files() {
+void close_all_opened_fds() {
     for(int i = 0; i < N_FS; i++) {
         for(int j = 0; j <= opened_files[i].count; j++) {
             close(opened_files[i].files[j]._fd);
             opened_files[i].files[j]._isOpen = 0;
         }
+    }
+}
+
+void close_all_opened_files() {
+    for(int i = 0; i < N_FS; i++) {
+        for(int j = 0; j <= opened_files[i].count; j++) {
+            close(opened_files[i].files[j]._fd);
+            //opened_files[i].files[j]._isOpen = 0;
+        }
+	opened_files[i].count = -1;
     }
 }
 

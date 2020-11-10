@@ -184,5 +184,6 @@ int my_open(int n_fs, char* path, int flag, int permission);
 int my_lseek(int n_fs, char* path, off_t offset, int whence);
 void my_close(int n_fs, char* path);
 void reopen_all_opened_files();
+void close_all_opened_fds();
 void close_all_opened_files();
 #endif
