@@ -380,8 +380,10 @@ void print_file_state(struct FileState fs){
     printf("Path : %s isOpen : %d flag : %d fd : %d _pos : %d", fs._path, fs._isOpen, fs._flag, fs._fd, fs._pos);
 }
 
-void my_open(int n_fs, char* path, int flag, int permission){
+int my_open(int n_fs, char* path, int flag, int permission){
     int fd = open(path, flag);
+    if(fd<0)
+	return -1;
     struct FileState fs = create_file_state(path, flag, fd);
     struct fs_opened_files fs_open_state = opened_files[n_fs]; 
     print_file_state(fs);
@@ -389,8 +391,10 @@ void my_open(int n_fs, char* path, int flag, int permission){
         fs_open_state.files[++fs_open_state.count] = fs;
     } else {
         printf("Cannot open file: %s. Reached max number of files\n", path);
+	return -1;
     }
     opened_files[n_fs] = fs_open_state;
+    return fd;
 }
 
 int find_idx(struct fs_opened_files fs_open_state, char* path) {
@@ -402,24 +406,25 @@ int find_idx(struct fs_opened_files fs_open_state, char* path) {
     return -1;
 }
 
-void my_lseek(int n_fs, char* path, off_t offset, int whence) {
+int my_lseek(int n_fs, char* path, off_t offset, int whence) {
     // find the state of this file
     struct fs_opened_files fs_open_state = opened_files[n_fs];
     int idx = find_idx(fs_open_state, path);
     int fd = -1, curr_pos = 0;
     if (idx == -1) {
         printf("File %s not in opened state\n", path);
+	return -1;
     } else {
         fd = fs_open_state.files[idx]._fd;
         curr_pos = fs_open_state.files[idx]._pos;
     }
     lseek(fd, curr_pos + offset, whence);
+    
     // update the current seek position of the opened file.
-    if(idx != -1) {
-        fs_open_state.files[idx]._pos = lseek(fs_open_state.files[idx]._fd, 0, SEEK_CUR);
-        print_file_state(fs_open_state.files[idx]);
-    }
+    fs_open_state.files[idx]._pos = lseek(fs_open_state.files[idx]._fd, 0, SEEK_CUR);
+    print_file_state(fs_open_state.files[idx]);
     opened_files[n_fs] = fs_open_state;
+    return 0;
 }
 
 void my_close(int n_fs, char* path) {
