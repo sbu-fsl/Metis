@@ -27,6 +27,7 @@
 
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
+#define MAX_FILES 10
 
 extern int cur_pid;
 extern char func[9];
@@ -35,6 +36,19 @@ extern int _opened_files[1024];
 extern int _n_files;
 extern size_t count;
 extern char *basepaths[];
+
+struct FileState{
+    char _path[100];
+    int _isOpen;
+    int _flag;
+    int _fd;
+    long int _pos;
+};
+
+struct fs_opened_files {
+	struct FileState files[MAX_FILES];
+	int count;
+};
 
 struct imghash {
     unsigned char md5[16];
@@ -160,5 +174,6 @@ void mountall();
 void unmount_all();
 void closeall();
 void cleanup();
-
+struct FileState create_file_state(char* path, int flag, int fd);
+void print_file_state(struct FileState fs);
 #endif

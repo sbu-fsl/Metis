@@ -8,6 +8,7 @@ int cur_pid;
 char func[9];
 struct timespec begin_time;
 
+struct fs_opened_files opened_files[N_FS];
 int _opened_files[1024];
 int _n_files;
 size_t count;
@@ -354,6 +355,80 @@ void unmount_all()
         }
     }
     assert(!has_failure);
+}
+
+void init_opened_files_state() {
+    for(int i = 0; i < N_FS; i++) {
+        opened_files[i].count = -1;
+    }
+}	
+struct FileState create_file_state(char* path, int flag, int fd) {
+    struct FileState fs;
+    strcpy(fs._path, path);
+    fs._isOpen = 1;
+    fs._flag = flag;
+    fs._fd = fd;
+    fs._pos = 0;
+    return fs;
+}
+
+void print_file_state(struct FileState fs){
+    printf("Path : %s isOpen : %d flag : %d fd : %d _pos : %d", fs._path, fs._isOpen, fs._flag, fs._fd, fs._pos);
+}
+
+void my_open(int n_fs, char* path, int flag){
+    int fd = open(path, flag);
+    struct FileState fs = create_file_state(path, flag, fd);
+    struct fs_opened_files fs_open_state = opened_files[n_fs]; 
+    printme(fs);
+    if(fs_open_state.count < MAX_FILES-1) {
+        fs_open_state.files[++fs_open_state.count] = fs;
+    } else {
+        printf("Cannot open file: %s. Reached max number of files\n", path);
+    }
+    opened_files[n_fs] = fs_open_state;
+}
+
+int find_idx(struct fs_opened_files fs_open_state, char* path) {
+    for (int i = 0; i <= fs_open_state.count; i++) {
+        if (strcmp(fs_open_state.files[i]._path, path) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void my_lseek(int n_fs, char* path, int offset, int whence) {
+    // find the state of this file
+    struct fs_opened_files fs_open_state = opened_files[n_fs];
+    int idx = find_idx(fs_open_state, path);
+    int fd = -1, curr_pos = 0;
+    if (idx == -1) {
+        printf("File %s not in opened state\n", path);
+    } else {
+        fd = fs_open_state.files[idx]._fd;
+        curr_pos = fs_open_state.files[idx]._pos;
+    }
+    lseek(fd, curr_pos + offset, whence);
+    // update the current seek position of the opened file.
+    if(idx != -1) {
+        fs_open_state.files[idx]._pos = lseek(fs_open_state.files[idx]._fd, 0, SEEK_CUR);
+        print_file_state(fs_open_state.files[idx]);
+    }
+    opened_files[n_fs] = fs_open_state;
+}
+
+void my_close(int n_fs, char* path) {
+    struct fs_opened_files fs_open_state = opened_files[n_fs];
+    int idx = find_idx(fs_open_state, path);
+    if (idx != -1) {
+        close(fs_open_state.files[idx]._fd);
+	for(int i = idx; i <= fs_open_state.count; i++) {
+            fs_open_state.files[i] = fs_open_state.files[i+1];
+	}
+	fs_open_state.count--;
+    }
+    opened_files[n_fs] = fs_open_state;
 }
 
 void __attribute__((constructor)) init()
