@@ -14,7 +14,8 @@
 #define PERF_INTERVAL    5
 
 /* List of file systems: Modify this to experiment with other file systems */
-static char *fslist[] = {"ext4", "ext2", "jffs2"};
+static const char *fslist[] = {"ext4", "ext2", "jffs2"};
+static const char *devlist[] = {"/dev/ram0", "/dev/ram1", "/dev/mtdblock0"};
 #define N_FS    nelem(fslist)
 char *basepaths[N_FS];
 char *testdirs[N_FS];
