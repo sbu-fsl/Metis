@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/mount.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -157,5 +158,7 @@ int myopen(const char *pathname, int flags, mode_t mode);
 void fsimg_checkpoint(const char *mntpoint);
 void closeall();
 void cleanup();
+void mountall();
+void unmount_all();
 
 #endif

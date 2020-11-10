@@ -218,6 +218,43 @@ void closeall()
     _n_files = 0;
 }
 
+void mountall()
+{
+    int failpos, err;
+    for (int i = 0; i < N_FS; ++i) {
+        /* mount(source, target, fstype, mountflags, option_str) */
+        int ret = mount(devlist[i], basepaths[i], fslist[i], MS_NOATIME, "");
+        if (ret != 0) {
+            failpos = i;
+            err = errno;
+            goto err;
+        }
+    }
+err:
+    /* undo mounts */
+    for (int i = 0; i < failpos; ++i) {
+        umount2(basepaths[i], MNT_FORCE);
+    }
+    fprintf(stderr, "Could not mount file system %s in %s at %s (%s)\n",
+            fslist[failpos], devlist[failpos], basepaths[failpos],
+            errnoname(err));
+    abort();
+}
+
+void unmount_all()
+{
+    bool has_failure = false;
+    for (int i = 0; i < N_FS; ++i) {
+        int ret = umount2(basepaths[i], MNT_FORCE);
+        if (ret != 0) {
+            fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
+                    fslist[i], basepaths[i], errnoname(errno));
+            has_failure = true;
+        }
+    }
+    assert(!has_failure);
+}
+
 void __attribute__((constructor)) init()
 {
     /* open and mmap the test f/s image as well as its heap memory */
