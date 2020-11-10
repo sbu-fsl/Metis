@@ -12,7 +12,7 @@ struct fs_opened_files opened_files[N_FS];
 int _opened_files[1024];
 int _n_files;
 size_t count;
-char* devlist[] = {"/dev/ram0", "/dev/ram1" };
+//char* devlist[] = {"/dev/ram0", "/dev/ram1" };
 
 int compare_file_content(int fd1, int fd2)
 {
@@ -326,23 +326,18 @@ void mountall()
     int failpos, err;
     for (int i = 0; i < N_FS; ++i) {
         /* mount(source, target, fstype, mountflags, option_str) */
-        int ret = mount(devlist[i], basepaths[i], fslist[i], MS_NOATIME, "");
+	//fprintf(stderr, "Before mounting: mount file system %s in %s at %s \n",
+        //    fslist[i], devlist[i], basepaths[i]);
+        int ret = mount(devlist[i], basepaths[i], fslist[i], 0, "");
+	fprintf(stderr, "Mounted file system %s in %s at %s: return value %d \n",
+            fslist[i], devlist[i], basepaths[i], ret);
         if (ret != 0) {
-            failpos = i;
-            err = errno;
-            goto err;
+            fprintf(stderr, "Could not mount file system %s in %s at %s (%s)\n",
+            fslist[i], devlist[i], basepaths[i], errnoname(errno));
+	    abort();
         }
     }
     reopen_all_opened_files();
-err:
-    /* undo mounts */
-    for (int i = 0; i < failpos; ++i) {
-        umount2(basepaths[i], MNT_FORCE);
-    }
-    fprintf(stderr, "Could not mount file system %s in %s at %s (%s)\n",
-            fslist[failpos], devlist[failpos], basepaths[failpos],
-            errnoname(err));
-    abort();
 }
 
 void unmount_all()

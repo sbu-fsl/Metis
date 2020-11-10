@@ -17,6 +17,7 @@
 
 /* List of file systems: Modify this to experiment with other file systems */
 static char *fslist[] = {"ext2", "ext4"};
+static char* devlist[] = {"/dev/ram0", "/dev/ram1" };
 #define N_FS    nelem(fslist)
 char *basepaths[N_FS];
 char *testdirs[N_FS];

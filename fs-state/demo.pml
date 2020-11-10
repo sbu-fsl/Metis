@@ -152,7 +152,6 @@ proctype worker()
             mountall();
             /* log sequence: closeall */
             fprintf(seqfp, "closeall\n");
-            //closeall();
 	    close_all_opened_files();
             unmount_all();
             makelog("END: close\n");
