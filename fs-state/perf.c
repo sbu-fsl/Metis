@@ -108,6 +108,20 @@ static int get_fs_stat(const char *mp, struct fs_stat *st)
     return ret;
 }
 
+static struct fs_stat fsinfos[N_FS];
+static pthread_mutex_t fsinfo_lock;
+
+void record_fs_stat()
+{
+    struct fs_stat my_fsstats[N_FS];
+    for (int i = 0; i < N_FS; ++i) {
+        get_fs_stat(basepaths[i], &my_fsstats[i]);
+    }
+    pthread_mutex_lock(&fsinfo_lock);
+    memcpy(fsinfos, my_fsstats, sizeof(struct fs_stat) * N_FS);
+    pthread_mutex_unlock(&fsinfo_lock);
+}
+
 void record_performance()
 {
     static bool inited = false;
@@ -135,7 +149,7 @@ void record_performance()
         }
         /* metrics of the file systems being tested */
         for (int i = 0; i < N_FS; ++i) {
-            char *mp = fslist[i];
+            const char *mp = fslist[i];
             fprintf(perflog_fp, "%s_capacity,%s_free,%s_inodes,%s_ifree,",
                     mp, mp, mp, mp);
         }
@@ -176,12 +190,14 @@ void record_performance()
     memcpy(last_swaps_stat, swaps_stat, n_swaps * sizeof(struct iostat));
     free(swaps_stat);
     /* Iterate each file system */
+    struct fs_stat cur_fsstats[N_FS];
+    pthread_mutex_lock(&fsinfo_lock);
+    memcpy(cur_fsstats, fsinfos, sizeof(struct fs_stat) * N_FS);
+    pthread_mutex_unlock(&fsinfo_lock);
     for (int i = 0; i < N_FS; ++i) {
-        char *mp = basepaths[i];
-        struct fs_stat fs = {0};
-        get_fs_stat(mp, &fs);
-        fprintf(perflog_fp, "%zu,%zu,%zu,%zu,", fs.capacity, fs.bytes_free,
-                fs.total_inodes, fs.free_inodes);
+        struct fs_stat *fs = cur_fsstats + i;
+        fprintf(perflog_fp, "%zu,%zu,%zu,%zu,", fs->capacity, fs->bytes_free,
+                fs->total_inodes, fs->free_inodes);
     }
     fprintf(perflog_fp, "\n");
     fflush(perflog_fp);
@@ -213,12 +229,14 @@ static void __attribute__((constructor)) perf_init()
     assert(ret == 0);
     ret = pthread_create(&perf_logger_id, &attr, perf_logger, NULL);
     assert(ret == 0);
+    pthread_mutex_init(&fsinfo_lock, NULL);
 }
 
 static void __attribute__((destructor)) perf_exit()
 {
     perf_logger_stop = 1;
     pthread_join(perf_logger_id, NULL);
+    pthread_mutex_destroy(&fsinfo_lock);
     if (perflog_fp)
         fclose(perflog_fp);
 }
