@@ -431,6 +431,14 @@ void my_close(int n_fs, char* path) {
     opened_files[n_fs] = fs_open_state;
 }
 
+void close_all_opened_files() {
+    for(int i = 0; i < N_FS; i++) {
+        for(int j = 0; j <= opened_files[i].count; j++) {
+            close(opened_files[i].files[j]._fd);
+        }
+    }
+}
+
 void __attribute__((constructor)) init()
 {
     fsfd_jffs2 = open("/dev/mtdblock0", O_RDWR);

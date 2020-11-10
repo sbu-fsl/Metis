@@ -174,6 +174,8 @@ void mountall();
 void unmount_all();
 void closeall();
 void cleanup();
+void init_opened_files();
 struct FileState create_file_state(char* path, int flag, int fd);
 void print_file_state(struct FileState fs);
+void close_all_opened_files();
 #endif
