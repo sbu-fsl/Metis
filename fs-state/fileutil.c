@@ -12,6 +12,7 @@ struct fs_opened_files opened_files[N_FS];
 int _opened_files[1024];
 int _n_files;
 size_t count;
+char* devlist[] = {"/dev/ram0", "/dev/ram1" };
 
 int compare_file_content(int fd1, int fd2)
 {
@@ -345,6 +346,8 @@ err:
 
 void unmount_all()
 {
+    // close all opened files before unmounting
+    close_all_opened_files();
     bool has_failure = false;
     for (int i = 0; i < N_FS; ++i) {
         int ret = umount2(basepaths[i], MNT_FORCE);
@@ -435,6 +438,7 @@ void close_all_opened_files() {
     for(int i = 0; i < N_FS; i++) {
         for(int j = 0; j <= opened_files[i].count; j++) {
             close(opened_files[i].files[j]._fd);
+	    opened_files[i].files[j]._isOpen = 0;
         }
     }
 }

@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <sys/mount.h>
 #include <linux/limits.h>
 #include <linux/fs.h>
 #include <unistd.h>
