@@ -224,6 +224,7 @@ void closeall()
 
 void mountall()
 {
+    bool inited = false;
     int failpos, err;
     for (int i = 0; i < N_FS; ++i) {
         /* mount(source, target, fstype, mountflags, option_str) */
@@ -234,6 +235,20 @@ void mountall()
             goto err;
         }
     }
+    if (inited)
+        return;
+    /* remove all folders specified in the exclusion list in config.h */
+    int n = 0;
+    const char *folder;
+    char fullpath[PATH_MAX];
+    while ((folder = exclude_dirs[n])) {
+        for (int i = 0; i < N_FS; ++i) {
+            snprintf(fullpath, PATH_MAX, "%s/%s", basepaths[i], folder);
+            rmdir(fullpath);
+        }
+        n++;
+    }
+    inited = true;
     return;
 err:
     /* undo mounts */
