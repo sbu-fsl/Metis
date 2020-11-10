@@ -156,6 +156,8 @@ bool filesystems_are_good();
 void show_open_flags(uint64_t flags);
 int myopen(const char *pathname, int flags, mode_t mode);
 void fsimg_checkpoint(const char *mntpoint);
+void mountall();
+void unmount_all();
 void closeall();
 void cleanup();
 
