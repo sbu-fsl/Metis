@@ -4,7 +4,7 @@ override CFLAGS += -g -I../include -D PRINTF -lssl -lcrypto -lrt -lstdc++ -lstdc
 
 all: demo.pml abstractfs
 	spin -a demo.pml; \
-	gcc -o pan pan.c fileutil.c swapperf.c perf.c $(COMMON_DIR)/*.c abstract_fs.a $(CFLAGS); \
+	gcc -o pan pan.c fileutil.c swapperf.c perf.c operations.c $(COMMON_DIR)/*.c abstract_fs.a $(CFLAGS); \
 
 run: all
 	./pan | less -N; \
