@@ -160,5 +160,6 @@ void closeall();
 void cleanup();
 void mountall();
 void unmount_all();
+void record_fs_stat();
 
 #endif

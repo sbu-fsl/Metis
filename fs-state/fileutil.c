@@ -234,6 +234,7 @@ void mountall()
             goto err;
         }
     }
+    return;
 err:
     /* undo mounts */
     for (int i = 0; i < failpos; ++i) {
@@ -248,6 +249,7 @@ err:
 void unmount_all()
 {
     bool has_failure = false;
+    record_fs_stat();
     for (int i = 0; i < N_FS; ++i) {
         int ret = umount2(basepaths[i], MNT_FORCE);
         if (ret != 0) {
