@@ -9,8 +9,8 @@ c_decl {
 
 int openflags;
 /* The persistent content of the file systems */
-c_track "fsimg_jffs2" "262144" "UnMatched";
-c_track "fsimg_xfs" "16777216" "UnMatched";
+c_track "fsimg_ext2" "262144" "UnMatched";
+c_track "fsimg_ext4" "262144" "UnMatched";
 /* Abstract state signatures of the file systems */
 c_track "absfs" "sizeof(absfs)";
 
