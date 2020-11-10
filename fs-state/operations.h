@@ -1,10 +1,9 @@
-/* Operation numbers */
-#define OP_MKDIR  1
-#define OP_RMDIR  2
-#define OP_OPEN   3
-#define OP_WRITE  4
-#define OP_CLOSE  5
-#define OP_UNLINK 6
+#include <sys/types.h>
 
-/* fs image size */
-#define FSSIZE 262144
+#ifndef _OPERATIONS_H
+#define _OPERATIONS_H
+
+int create_file(const char *path, int flags, int mode);
+int write_file(const char *path, void *data, off_t offset, size_t length);
+
+#endif // _OPERATIONS_H

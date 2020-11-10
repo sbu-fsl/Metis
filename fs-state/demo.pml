@@ -1,5 +1,3 @@
-#include "operations.h"
-
 c_decl {
 /* The escaped '#' is intended to prevent Spin from expanding the headers
  * when it's generating the C code */
