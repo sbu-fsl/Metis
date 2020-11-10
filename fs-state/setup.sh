@@ -13,6 +13,7 @@ SETUP_ONLY=0
 exclude_dirs=(
     lost+found
 )
+LOGPATH=/home/yifei/zram_test
 
 exclude_files=()
 
@@ -220,7 +221,7 @@ if [ "$SETUP_ONLY" != "1" ]; then
     runcmd make "CFLAGS=$_CFLAGS";
     echo 'Running file system checker...';
     echo 'Please check stdout in output.log, stderr in error.log';
-    ./pan 2>error.log > output.log
+    ./pan 2>$LOGPATH/error.log > $LOGPATH/output.log
 
     generic_cleanup;
 fi

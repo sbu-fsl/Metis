@@ -61,7 +61,20 @@ proctype worker()
                 /* log sequence: open:<path>:<flag>:<mode> */
                 fprintf(seqfp, "open:%s:%d:%d\n", testfiles[0], now.openflags, 0644);
                 for (i = 0; i < N_FS; ++i) {
-                    makecall(fds[i], errs[i], "%s, %#x, 0%o", myopen, testfiles[i], now.openflags, 0644);
+                    /* If filesystem is freezed, then unfreeze it */
+                    if (isFsfreezed[i] == 1){
+                        int ret = system(fsunfreeze_comms[i]);
+                        if (ret == -1){
+                            fprintf(stderr, "fsfreeze/unfreeze failed for %s", fsunfreeze_comms[i]);
+                            exit(EXIT_FAILURE);
+                        }
+                        makecall(fds[i], errs[i], "%s, %#x, 0%o", myopen, testfiles[i], now.openflags, 0644);
+                        ret = system(fsfreeze_comms[i]);
+                        if (ret == -1){
+                            fprintf(stderr, "fsfreeze/unfreeze failed for %s", fsunfreeze_comms[i]);
+                            exit(EXIT_FAILURE);
+                        }
+                    }
                     compute_abstract_state(basepaths[i], absfs[i]);
                 }
                 expect(compare_equality_fexists(fslist, N_FS, testdirs));
@@ -225,6 +238,27 @@ proctype driver(int nproc)
             len = snprintf(NULL, 0, "%s/test.txt", basepaths[i]);
             testfiles[i] = calloc(1, len + 1);
             snprintf(testfiles[i], len + 1, "%s/test.txt", basepaths[i]);
+        }
+        /* Initialize fsfreeze/fsunfreeze commands */
+        for (int i = 0; i < N_FS; ++i) {
+            size_t len = snprintf(NULL, 0, "fsfreeze -f %s", basepaths[i]);
+            fsfreeze_comms[i] = calloc(1, len + 1);
+            snprintf(fsfreeze_comms[i], len + 1, "fsfreeze -f %s", basepaths[i]);
+
+            len = snprintf(NULL, 0, "fsfreeze -u %s", basepaths[i]);
+            fsunfreeze_comms[i] = calloc(1, len + 1);
+            snprintf(fsunfreeze_comms[i], len + 1, "fsfreeze -u %s", basepaths[i]);
+        }
+        /* Freeze all the filesystems at the beginning */
+        for (int i = 0; i < N_FS; ++i) {
+            int ret = system(fsfreeze_comms[i]);
+            if (ret == -1){
+                exit(EXIT_FAILURE);
+            }          
+        }
+        /* Initialize fsfreeze flags as 1 (all freezed) */
+        for (int i = 0; i < N_FS; ++i) {
+            isFsfreezed[i] = 1;
         }
         /* open sequence file */
         seqfp = fopen("sequence.log", "w");

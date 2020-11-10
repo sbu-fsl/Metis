@@ -21,6 +21,10 @@ static char *fslist[] = {"xfs", "jffs2"};
 char *basepaths[N_FS];
 char *testdirs[N_FS];
 char *testfiles[N_FS];
+/* isFsfreezed = 0: filesystem is not freezed; isFsfreezed = 1: filesystem is freezed*/
+int isFsfreezed[N_FS];
+char *fsfreeze_comms[N_FS];
+char *fsunfreeze_comms[N_FS];
 
 /* Modify those to experiment with other file systems */
 /* Pointer to memory-mapped file system images */
