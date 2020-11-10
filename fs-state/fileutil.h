@@ -149,9 +149,9 @@ static inline ssize_t fsize(int fd)
 
 bool compare_equality_values(char **fses, int n_fs, int *nums);
 bool compare_equality_fexists(char **fses, int n_fs, char **fpaths);
-bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths, int *fds);
+bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths);
 bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs);
-int compare_file_content(int fd1, int fd2);
+int compare_file_content(const char *path1, const char *path2);
 
 void show_open_flags(uint64_t flags);
 int myopen(const char *pathname, int flags, mode_t mode);

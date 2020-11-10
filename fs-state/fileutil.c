@@ -8,30 +8,47 @@ int _opened_files[1024];
 int _n_files;
 size_t count;
 
-int compare_file_content(int fd1, int fd2)
+int compare_file_content(const char *path1, const char *path2)
 {
     const size_t bs = 4096;
     char buf1[bs], buf2[bs];
     struct stat f1, f2;
-    int ret = 0;
+    int fd1 = -1, fd2 = -1, ret = 0;
+    /* Open the two files */
+    fd1 = open(path1, O_RDONLY);
+    if (fd1 < 0) {
+        fprintf(stderr, "[seqid=%zu] %s: cannot open %s (%s)\n",
+                count, __func__, path1, errnoname(errno));
+        return -1;
+    }
+    fd2 = open(path2, O_RDONLY);
+    if (fd2 < 0) {
+        fprintf(stderr, "[seqid=%zu] %s: cannot open %s (%s)\n",
+                count, __func__, path1, errnoname(errno));
+        close(fd1);
+        return -1;
+    }
     /* Get file properties: Make sure equal file size */
     ret = fstat(fd1, &f1);
     if (ret) {
-        fprintf(stderr, "[%d] cmp_file_content: fstat f1 failed (%d)\n",
-                cur_pid, errno);
-        return -1;
+        fprintf(stderr, "[seqid=%zu] %s: fstat '%s' failed (%s)\n",
+                count, __func__, path1, errnoname(errno));
+        ret = -1;
+        goto end;
     }
     ret = fstat(fd2, &f2);
     if (ret) {
-        fprintf(stderr, "[%d] cmp_file_content: fstat f2 failed (%d)\n",
-                cur_pid, errno);
-        return -1;
+        fprintf(stderr, "[seqid=%zu] %s: fstat '%s' failed (%s)\n",
+                count, __func__, path2, errnoname(errno));
+        ret = -1;
+        goto end;
     }
     if (f1.st_size != f2.st_size) {
-        fprintf(stderr, "[%d] cmp_file_content: f1 and f2 size differ. "
-                "f1 has %zu bytes and f2 has %zu.\n", cur_pid,
-                f1.st_size, f2.st_size);
-        return 1;
+        fprintf(stderr, "[seqid=%zu] %s: '%s' and '%s' size differ. "
+                "'%s' has %zu bytes and '%s' has %zu.\n", count, __func__,
+                path1, path2, path1, f1.st_size, path2, f2.st_size);
+        ret = 1;
+        goto end;
     }
     /* Compare the file content */
     int r1, r2;
@@ -39,18 +56,22 @@ int compare_file_content(int fd1, int fd2)
     lseek(fd2, 0, SEEK_SET);
     while ((r1 = read(fd1, buf1, bs)) > 0 && (r2 = read(fd2, buf2, bs)) > 0) {
         if (memcmp(buf1, buf2, r1) != 0) {
-		fprintf(stderr, "[%d] cmp_file_content: "
-			"f1 and f2 content is not equal.\n", cur_pid);
-            return 1;
+            fprintf(stderr, "[seqid=%zu] %s: content in '%s' and '%s' "
+                    "is not equal.\n", count, __func__, path1, path2);
+            ret = -1;
         }
     }
-    lseek(fd1, 0, SEEK_SET);
-    lseek(fd2, 0, SEEK_SET);
     if (r1 < 0 || r2 < 0) {
-	    fprintf(stderr, "[%d] cmp_file_content: "
-		    "error occurred when reading: %d\n", cur_pid, errno);
+        fprintf(stderr, "[seqid=%zu] %s: error occurred when reading: %s\n",
+                count, __func__, errnoname(errno));
+        ret = -1;
     }
-    return 0;
+end:
+    if (fd1 >= 0)
+        close(fd1);
+    if (fd2 >= 0)
+        close(fd2);
+    return ret;
 }
 
 bool compare_equality_values(char **fses, int n_fs, int *nums)
@@ -64,18 +85,19 @@ bool compare_equality_values(char **fses, int n_fs, int *nums)
         }
     }
     if (!res) {
-        fprintf(stderr, "[%d] Discrepancy in values found:\n", cur_pid);
+        fprintf(stderr, "[seqid=%zu] %s: discrepancy in values found:\n",
+                count, __func__);
         for (int i = 0; i < n_fs; ++i)
-            fprintf(stderr, "[%d] [%s]: %d\n", cur_pid, fses[i], nums[i]);
+            fprintf(stderr, "[%s]: %d\n", fses[i], nums[i]);
     }
     return res;
 }
 
 void dump_absfs(const char *basepath)
 {
-	absfs_t absfs;
-	init_abstract_fs(&absfs);
-	scan_abstract_fs(&absfs, basepath, true, stderr);
+    absfs_t absfs;
+    init_abstract_fs(&absfs);
+    scan_abstract_fs(&absfs, basepath, true, stderr);
 }
 
 bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs)
@@ -90,16 +112,16 @@ bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs)
         }
     }
     if (!res) {
-        fprintf(stderr,
-		"[seqid=%zu] Discrepancy in abstract states found:\n", count);
-	for (int i = 0; i < n_fs; ++i) {
-	    fprintf(stderr, "[seqid=%zu, fs=%s]: Directory structure:\n",
-		    count, fses[i]);
-	    dump_absfs(basepaths[i]);
+        fprintf(stderr, "[seqid=%zu] Discrepancy in abstract states found:\n",
+                count);
+        for (int i = 0; i < n_fs; ++i) {
+            fprintf(stderr, "[seqid=%zu, fs=%s]: Directory structure:\n",
+                    count, fses[i]);
+            dump_absfs(basepaths[i]);
             fprintf(stderr, "[seqid=%zu, fs=%s]: hash=", count, fses[i]);
-	    print_abstract_fs_state(stderr, absfs[i]);
-	    fprintf(stderr, "\n");
-	}
+            print_abstract_fs_state(stderr, absfs[i]);
+            fprintf(stderr, "\n");
+        }
     }
     return res;
 }
@@ -121,31 +143,16 @@ bool compare_equality_fexists(char **fses, int n_fs, char **fpaths)
         }
     }
     if (!res) {
-        fprintf(stderr, "[%d] Discrepancy in existence of files found:\n",
-		cur_pid);
+        fprintf(stderr, "[%zu] Discrepancy in existence of files found:\n",
+                count);
         for (int i = 0; i < n_fs; ++i) {
-            fprintf(stderr, "[%d] [%s]: %s: %d\n", cur_pid, fses[i], fpaths[i],
-                    fexists[i]);
+            fprintf(stderr, "[%s]: %s: %d\n", fses[i], fpaths[i], fexists[i]);
         }
     }
     return res;
 }
 
-bool is_all_fd_invalid(int *fds, int n_fs)
-{
-    bool res = true;
-    for (int i = 0; i < n_fs; ++i) {
-        errno = 0;
-        /* Stop if any of the fd is valid */
-        if (fcntl(fds[i], F_GETFD) != -1) {
-            res = false;
-            break;
-        }
-    }
-    return res;
-}
-
-bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths, int *fds)
+bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths)
 {
     bool res = true;
 
@@ -156,16 +163,13 @@ bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths, int *fds)
     if (check_file_existence(fpaths[0]) == false)
         return true;
 
-    /* If all fds are not valid, return TRUE */
-    if (is_all_fd_invalid(fds, n_fs))
-        return true;
-
     for (int i = 1; i < n_fs; ++i) {
-        if (compare_file_content(fds[i-1], fds[i]) != 0) {
+        if (compare_file_content(fpaths[i-1], fpaths[i]) != 0) {
             if (res)
                 res = false;
-            fprintf(stderr, "[%d] [%s] (%s) is different from [%s] (%s)\n",
-                    cur_pid, fses[i-1], fpaths[i-1], fses[i], fpaths[i]);
+            fprintf(stderr, "[seqid=%zu] [%s] (%s) is different from [%s] "
+                    "(%s)\n", count, fses[i-1], fpaths[i-1], fses[i],
+                    fpaths[i]);
         }
     }
     return res;

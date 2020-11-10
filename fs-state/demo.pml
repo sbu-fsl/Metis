@@ -61,7 +61,7 @@ proctype worker()
                 /* log sequence: open:<path>:<flag>:<mode> */
                 fprintf(seqfp, "open:%s:%d:%d\n", testfiles[0], now.openflags, 0644);
                 for (i = 0; i < N_FS; ++i) {
-                    makecall(fds[i], errs[i], "%s, %#x, 0%o", create_file, testfiles[i], now.openflags, 0644);
+                    makecall(rets[i], errs[i], "%s, %#x, 0%o", create_file, testfiles[i], now.openflags, 0644);
                     compute_abstract_state(basepaths[i], absfs[i]);
                 }
                 expect(compare_equality_fexists(fslist, N_FS, testdirs));
@@ -91,7 +91,7 @@ proctype worker()
             free(data);
             expect(compare_equality_values(fslist, N_FS, rets));
             expect(compare_equality_values(fslist, N_FS, errs));
-            expect(compare_equality_fcontent(fslist, N_FS, testfiles, fds));
+            expect(compare_equality_fcontent(fslist, N_FS, testfiles));
             expect(compare_equality_absfs(fslist, N_FS, absfs));
             unmount_all();
             makelog("END: write\n");

@@ -32,7 +32,6 @@ absfs_state_t absfs[N_FS];
 FILE *seqfp;
 
 int rets[N_FS], errs[N_FS];
-static int fds[N_FS] = {-1};
 int i;
 
 #endif // _FSSTATE_CONFIG_H_
