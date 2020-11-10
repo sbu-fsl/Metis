@@ -380,7 +380,7 @@ void my_open(int n_fs, char* path, int flag){
     int fd = open(path, flag);
     struct FileState fs = create_file_state(path, flag, fd);
     struct fs_opened_files fs_open_state = opened_files[n_fs]; 
-    printme(fs);
+    print_file_state(fs);
     if(fs_open_state.count < MAX_FILES-1) {
         fs_open_state.files[++fs_open_state.count] = fs;
     } else {

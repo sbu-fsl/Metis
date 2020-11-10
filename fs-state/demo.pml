@@ -13,6 +13,7 @@ c_track "fsimg_jffs2" "262144" "UnMatched";
 c_track "fsimg_xfs" "16777216" "UnMatched";
 /* Abstract state signatures of the file systems */
 c_track "absfs" "sizeof(absfs)";
+c_track "&opened_files" "sizeof(opened_files)";
 
 inline select_open_flag(flag) {
     /* O_RDONLY is 0 so there is no point writing an if-fi for it */
@@ -226,6 +227,7 @@ proctype driver(int nproc)
     int i;
     c_code {
         /* Initialize base paths */
+        init_opened_files_state();
         printf("%d file systems to test.\n", N_FS);
         for (int i = 0; i < N_FS; ++i) {
             size_t len = snprintf(NULL, 0, "/mnt/test-%s", fslist[i]);

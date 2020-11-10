@@ -36,6 +36,7 @@ extern int _opened_files[1024];
 extern int _n_files;
 extern size_t count;
 extern char *basepaths[];
+//extern struct fs_opened_files opened_files[N_FS];
 
 struct FileState{
     char _path[100];
@@ -55,6 +56,7 @@ struct imghash {
     size_t count;
 };
 
+extern struct fs_opened_files opened_files[N_FS];
 static inline int makelog(const char *format, ...)
 {
     struct timespec now, diff;
@@ -174,7 +176,7 @@ void mountall();
 void unmount_all();
 void closeall();
 void cleanup();
-void init_opened_files();
+void init_opened_files_state();
 struct FileState create_file_state(char* path, int flag, int fd);
 void print_file_state(struct FileState fs);
 void close_all_opened_files();
