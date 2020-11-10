@@ -333,6 +333,7 @@ void mountall()
             goto err;
         }
     }
+    reopen_all_opened_files();
 err:
     /* undo mounts */
     for (int i = 0; i < failpos; ++i) {
@@ -401,7 +402,7 @@ int find_idx(struct fs_opened_files fs_open_state, char* path) {
     return -1;
 }
 
-void my_lseek(int n_fs, char* path, int offset, int whence) {
+void my_lseek(int n_fs, char* path, off_t offset, int whence) {
     // find the state of this file
     struct fs_opened_files fs_open_state = opened_files[n_fs];
     int idx = find_idx(fs_open_state, path);
@@ -434,11 +435,26 @@ void my_close(int n_fs, char* path) {
     opened_files[n_fs] = fs_open_state;
 }
 
+void reopen_all_opened_files() {
+    for(int i = 0; i < N_FS; i++) {
+        for(int j = 0; j <= opened_files[i].count; j++) {
+            /*
+	     * all opened files' descriptors were closed before unmount. Hence after remount, reinitialize all the
+	     * descriptors with open() call.
+	     *
+	     * TODO: Find if there is a way to restore the file descriptors across mounts.
+	     */
+            opened_files[i].files[j]._fd = open(opened_files[i].files[j]._path, opened_files[i].files[j]._flag);
+	    opened_files[i].files[j]._isOpen = 1;
+        }
+    }
+}
+
 void close_all_opened_files() {
     for(int i = 0; i < N_FS; i++) {
         for(int j = 0; j <= opened_files[i].count; j++) {
             close(opened_files[i].files[j]._fd);
-	    opened_files[i].files[j]._isOpen = 0;
+            opened_files[i].files[j]._isOpen = 0;
         }
     }
 }
