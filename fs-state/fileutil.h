@@ -180,7 +180,7 @@ void cleanup();
 void init_opened_files_state();
 struct FileState create_file_state(char* path, int flag, int fd);
 void print_file_state(struct FileState fs);
-void my_open(int n_fs, char* path, int flag);
+void my_open(int n_fs, char* path, int flag, int permission);
 void my_lseek(int n_fs, char* path, off_t offset, int whence);
 void my_close(int n_fs, char* path);
 void reopen_all_opened_files();
