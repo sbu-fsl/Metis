@@ -56,12 +56,12 @@ proctype worker()
             select_open_flag(openflags);
             c_code {
                 /* open, check: errno, existence */
-                makelog("BEGIN: open\n");
+                makelog("BEGIN: create_file\n");
                 mountall();
                 /* log sequence: open:<path>:<flag>:<mode> */
                 fprintf(seqfp, "open:%s:%d:%d\n", testfiles[0], now.openflags, 0644);
                 for (i = 0; i < N_FS; ++i) {
-                    makecall(fds[i], errs[i], "%s, %#x, 0%o", myopen, testfiles[i], now.openflags, 0644);
+                    makecall(fds[i], errs[i], "%s, %#x, 0%o", create_file, testfiles[i], now.openflags, 0644);
                     compute_abstract_state(basepaths[i], absfs[i]);
                 }
                 expect(compare_equality_fexists(fslist, N_FS, testdirs));
@@ -96,15 +96,16 @@ proctype worker()
     :: atomic {
         /* write, check: retval, errno, content */
         c_code {
-            makelog("BEGIN: write\n");
+            makelog("BEGIN: write_file\n");
             mountall();
+            off_t offset = pick_value(0, 32768, 1024);
             size_t writelen = pick_value(0, 32768, 2048);
             char *data = malloc(writelen);
             generate_data(data, writelen, 0);
             /* log sequence: write:<writelen> */
             fprintf(seqfp, "write:%zu\n", writelen);
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%d, %p, %zu", write, fds[i], data, writelen);
+                makecall(rets[i], errs[i], "%d, %p, %zu", write_file, testfiles[i], data, offset, writelen);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
 
@@ -122,13 +123,13 @@ proctype worker()
         /* TODO: compare file length. Currently ftruncate is mainly
            intended to avoid long term ENOSPC of write() */
         c_code {
-            makelog("BEGIN: ftruncate\n");
+            makelog("BEGIN: truncate\n");
             mountall();
             off_t flen = pick_value(0, 200000, 10000);
             /* log sequence: ftruncate:<flen> */
-            fprintf(seqfp, "ftruncate:%ld\n", flen);
+            fprintf(seqfp, "truncate:%ld\n", flen);
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%d, %ld", ftruncate, fds[i], flen);
+                makecall(rets[i], errs[i], "%d, %ld", truncate, testfiles[i], flen);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, N_FS, testfiles));
