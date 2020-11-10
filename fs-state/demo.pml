@@ -73,27 +73,6 @@ proctype worker()
         };
         fi
     :: atomic {
-        /* lseek */
-        c_code {
-            makelog("BEGIN: lseek\n");
-            mountall();
-            off_t offset = pick_value(0, 32768, 1024);
-            /* log sequence: lseek:<offset>:<flag> */
-            fprintf(seqfp, "lseek:%ld:%d\n", fds[i], offset, SEEK_SET);
-            for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%d, %ld, %d", lseek, fds[i], offset, SEEK_SET);
-                compute_abstract_state(basepaths[i], absfs[i]);
-            }
-
-            expect(compare_equality_values(fslist, N_FS, rets));
-            expect(compare_equality_values(fslist, N_FS, errs));
-            expect(compare_equality_absfs(fslist, N_FS, absfs));
-            unmount_all();
-            makelog("END: lseek\n");
-
-        }
-    };
-    :: atomic {
         /* write, check: retval, errno, content */
         c_code {
             makelog("BEGIN: write_file\n");
@@ -138,18 +117,6 @@ proctype worker()
             expect(compare_equality_absfs(fslist, N_FS, absfs));
             unmount_all();
             makelog("END: ftruncate\n");
-        }
-    };
-    :: atomic {
-        /* close all opened files */
-        c_code {
-            makelog("BEGIN: closeall\n");
-            mountall();
-            /* log sequence: closeall */
-            fprintf(seqfp, "closeall\n");
-            closeall();
-            unmount_all();
-            makelog("END: close\n");
         }
     };
     :: atomic {
