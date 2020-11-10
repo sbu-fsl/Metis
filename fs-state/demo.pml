@@ -95,7 +95,7 @@ proctype worker()
             expect(compare_equality_absfs(fslist, N_FS, absfs));
             unmount_all();
             makelog("END: write\n");
-        }
+        };
     };
     :: atomic {
         /* ftruncate, check: retval, errno, existence */
@@ -117,7 +117,7 @@ proctype worker()
             expect(compare_equality_absfs(fslist, N_FS, absfs));
             unmount_all();
             makelog("END: ftruncate\n");
-        }
+        };
     };
     :: atomic {
         /* unlink, check: retval, errno, existence */
