@@ -63,7 +63,7 @@ proctype worker()
                 /* log sequence: open:<path>:<flag>:<mode> */
                 fprintf(seqfp, "open:%s:%d:%d\n", testfiles[0], now.openflags, 0644);
                 for (i = 0; i < N_FS; ++i) {
-                    makecall(fds[i], errs[i], "%s, %#x, 0%o", myopen, testfiles[i], now.openflags, 0644);
+                    makecall(fds[i], errs[i], "%s, %#x, 0%o", my_open, i, testfiles[i], now.openflags, 0644);
                     compute_abstract_state(basepaths[i], absfs[i]);
                 }
                 expect(compare_equality_fexists(fslist, N_FS, testdirs));
@@ -84,7 +84,7 @@ proctype worker()
             /* log sequence: lseek:<offset>:<flag> */
             fprintf(seqfp, "lseek:%ld:%d\n", fds[i], offset, SEEK_SET);
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%d, %ld, %d", lseek, fds[i], offset, SEEK_SET);
+                makecall(rets[i], errs[i], "%d, %ld, %d", my_lseek, i, fds[i], offset, SEEK_SET);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
 
@@ -97,54 +97,54 @@ proctype worker()
         };
         assert(c_expr{filesystems_are_good()});
     };
-    :: atomic {
-        /* write, check: retval, errno, content */
-        c_code {
-            makelog("BEGIN: write\n");
-            mountall();
-            size_t writelen = pick_value(0, 32768, 2048);
-            char *data = malloc(writelen);
-            generate_data(data, writelen, 0);
-            /* log sequence: write:<writelen> */
-            fprintf(seqfp, "write:%zu\n", writelen);
-            for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%d, %p, %zu", write, fds[i], data, writelen);
-                compute_abstract_state(basepaths[i], absfs[i]);
-            }
+   // :: atomic {
+   //     /* write, check: retval, errno, content */
+   //     c_code {
+   //         makelog("BEGIN: write\n");
+   //         mountall();
+   //         size_t writelen = pick_value(0, 32768, 2048);
+   //         char *data = malloc(writelen);
+   //         generate_data(data, writelen, 0);
+   //         /* log sequence: write:<writelen> */
+   //         fprintf(seqfp, "write:%zu\n", writelen);
+   //         for (i = 0; i < N_FS; ++i) {
+   //             makecall(rets[i], errs[i], "%d, %p, %zu", write, fds[i], data, writelen);
+   //             compute_abstract_state(basepaths[i], absfs[i]);
+   //         }
 
-            free(data);
-            expect(compare_equality_values(fslist, N_FS, rets));
-            expect(compare_equality_values(fslist, N_FS, errs));
-            expect(compare_equality_fcontent(fslist, N_FS, testfiles, fds));
-            expect(compare_equality_absfs(fslist, N_FS, absfs));
-            unmount_all();
-            makelog("END: write\n");
-        };
-        assert(c_expr{filesystems_are_good()});
-    };
-    :: atomic {
-        /* ftruncate, check: retval, errno, existence */
-        /* TODO: compare file length. Currently ftruncate is mainly
-           intended to avoid long term ENOSPC of write() */
-        c_code {
-            makelog("BEGIN: ftruncate\n");
-            mountall();
-            off_t flen = pick_value(0, 200000, 10000);
-            /* log sequence: ftruncate:<flen> */
-            fprintf(seqfp, "ftruncate:%ld\n", flen);
-            for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%d, %ld", ftruncate, fds[i], flen);
-                compute_abstract_state(basepaths[i], absfs[i]);
-            }
-            expect(compare_equality_fexists(fslist, N_FS, testfiles));
-            expect(compare_equality_values(fslist, N_FS, rets));
-            expect(compare_equality_values(fslist, N_FS, errs));
-            expect(compare_equality_absfs(fslist, N_FS, absfs));
-            unmount_all();
-            makelog("END: ftruncate\n");
-        };
-        assert(c_expr{filesystems_are_good()});
-    };
+   //         free(data);
+   //         expect(compare_equality_values(fslist, N_FS, rets));
+   //         expect(compare_equality_values(fslist, N_FS, errs));
+   //         expect(compare_equality_fcontent(fslist, N_FS, testfiles, fds));
+   //         expect(compare_equality_absfs(fslist, N_FS, absfs));
+   //         unmount_all();
+   //         makelog("END: write\n");
+   //     };
+   //     assert(c_expr{filesystems_are_good()});
+   // };
+   // :: atomic {
+   //     /* ftruncate, check: retval, errno, existence */
+   //     /* TODO: compare file length. Currently ftruncate is mainly
+   //        intended to avoid long term ENOSPC of write() */
+   //     c_code {
+   //         makelog("BEGIN: ftruncate\n");
+   //         mountall();
+   //         off_t flen = pick_value(0, 200000, 10000);
+   //         /* log sequence: ftruncate:<flen> */
+   //         fprintf(seqfp, "ftruncate:%ld\n", flen);
+   //         for (i = 0; i < N_FS; ++i) {
+   //             makecall(rets[i], errs[i], "%d, %ld", ftruncate, fds[i], flen);
+   //             compute_abstract_state(basepaths[i], absfs[i]);
+   //         }
+   //         expect(compare_equality_fexists(fslist, N_FS, testfiles));
+   //         expect(compare_equality_values(fslist, N_FS, rets));
+   //         expect(compare_equality_values(fslist, N_FS, errs));
+   //         expect(compare_equality_absfs(fslist, N_FS, absfs));
+   //         unmount_all();
+   //         makelog("END: ftruncate\n");
+   //     };
+   //     assert(c_expr{filesystems_are_good()});
+   // };
     :: atomic {
         /* close all opened files */
         c_code {
@@ -152,72 +152,73 @@ proctype worker()
             mountall();
             /* log sequence: closeall */
             fprintf(seqfp, "closeall\n");
-            closeall();
+            //closeall();
+	    close_all_opened_files();
             unmount_all();
             makelog("END: close\n");
         }
         assert(c_expr{filesystems_are_good()});
     };
-    :: atomic {
-        /* unlink, check: retval, errno, existence */
-        c_code {
-            makelog("BEGIN: unlink\n");
-            mountall();
-            /* log sequence: unlink:<path> */
-            fprintf(seqfp, "unlink:%s\n", testfiles[0]);
-            for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s", unlink, testfiles[i]);
-                compute_abstract_state(basepaths[i], absfs[i]);
-            }
-            expect(compare_equality_fexists(fslist, N_FS, testdirs));
-            expect(compare_equality_values(fslist, N_FS, rets));
-            expect(compare_equality_values(fslist, N_FS, errs));
-            expect(compare_equality_absfs(fslist, N_FS, absfs));
-            unmount_all();
-            makelog("END: unlink\n");
-        }
-        assert(c_expr{filesystems_are_good()});
-    };
-    :: atomic {
-        /* mkdir, check: retval, errno, existence */
-        c_code {
-            makelog("BEGIN: mkdir\n");
-            mountall();
-            /* log sequence: mkdir:<path> */
-            fprintf(seqfp, "mkdir:%s\n", testdirs[0]);
-            for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s, 0%o", mkdir, testdirs[i], 0755);
-                compute_abstract_state(basepaths[i], absfs[i]);
-            }
-            expect(compare_equality_fexists(fslist, N_FS, testdirs));
-            expect(compare_equality_values(fslist, N_FS, rets));
-            expect(compare_equality_values(fslist, N_FS, errs));
-            expect(compare_equality_absfs(fslist, N_FS, absfs));
-            unmount_all();
-            makelog("END: mkdir\n");
-        }
-        assert(c_expr{filesystems_are_good()});
-        // assert(! c_expr{ errs[0] == EEXIST && errs[1] == EEXIST && errs[2] == 0 });
-    };
-    :: atomic {
-        /* rmdir, check: retval, errno, existence */
-        c_code {
-            makelog("BEGIN: rmdir\n");
-            mountall();
-            fprintf(seqfp, "rmdir:%s\n", testdirs[0]);
-            for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s", rmdir, testdirs[i]);
-                compute_abstract_state(basepaths[i], absfs[i]);
-            }
-            expect(compare_equality_fexists(fslist, N_FS, testdirs));
-            expect(compare_equality_values(fslist, N_FS, rets));
-            expect(compare_equality_values(fslist, N_FS, errs));
-            expect(compare_equality_absfs(fslist, N_FS, absfs));
-            unmount_all();
-            makelog("END: rmdir\n");
-        }
-        assert(c_expr{filesystems_are_good()});
-    };
+   // :: atomic {
+   //     /* unlink, check: retval, errno, existence */
+   //     c_code {
+   //         makelog("BEGIN: unlink\n");
+   //         mountall();
+   //         /* log sequence: unlink:<path> */
+   //         fprintf(seqfp, "unlink:%s\n", testfiles[0]);
+   //         for (i = 0; i < N_FS; ++i) {
+   //             makecall(rets[i], errs[i], "%s", unlink, testfiles[i]);
+   //             compute_abstract_state(basepaths[i], absfs[i]);
+   //         }
+   //         expect(compare_equality_fexists(fslist, N_FS, testdirs));
+   //         expect(compare_equality_values(fslist, N_FS, rets));
+   //         expect(compare_equality_values(fslist, N_FS, errs));
+   //         expect(compare_equality_absfs(fslist, N_FS, absfs));
+   //         unmount_all();
+   //         makelog("END: unlink\n");
+   //     }
+   //     assert(c_expr{filesystems_are_good()});
+   // };
+   // :: atomic {
+   //     /* mkdir, check: retval, errno, existence */
+   //     c_code {
+   //         makelog("BEGIN: mkdir\n");
+   //         mountall();
+   //         /* log sequence: mkdir:<path> */
+   //         fprintf(seqfp, "mkdir:%s\n", testdirs[0]);
+   //         for (i = 0; i < N_FS; ++i) {
+   //             makecall(rets[i], errs[i], "%s, 0%o", mkdir, testdirs[i], 0755);
+   //             compute_abstract_state(basepaths[i], absfs[i]);
+   //         }
+   //         expect(compare_equality_fexists(fslist, N_FS, testdirs));
+   //         expect(compare_equality_values(fslist, N_FS, rets));
+   //         expect(compare_equality_values(fslist, N_FS, errs));
+   //         expect(compare_equality_absfs(fslist, N_FS, absfs));
+   //         unmount_all();
+   //         makelog("END: mkdir\n");
+   //     }
+   //     assert(c_expr{filesystems_are_good()});
+   //     // assert(! c_expr{ errs[0] == EEXIST && errs[1] == EEXIST && errs[2] == 0 });
+   // };
+   // :: atomic {
+   //     /* rmdir, check: retval, errno, existence */
+   //     c_code {
+   //         makelog("BEGIN: rmdir\n");
+   //         mountall();
+   //         fprintf(seqfp, "rmdir:%s\n", testdirs[0]);
+   //         for (i = 0; i < N_FS; ++i) {
+   //             makecall(rets[i], errs[i], "%s", rmdir, testdirs[i]);
+   //             compute_abstract_state(basepaths[i], absfs[i]);
+   //         }
+   //         expect(compare_equality_fexists(fslist, N_FS, testdirs));
+   //         expect(compare_equality_values(fslist, N_FS, rets));
+   //         expect(compare_equality_values(fslist, N_FS, errs));
+   //         expect(compare_equality_absfs(fslist, N_FS, absfs));
+   //         unmount_all();
+   //         makelog("END: rmdir\n");
+   //     }
+   //     assert(c_expr{filesystems_are_good()});
+   // };
     
     od
 };

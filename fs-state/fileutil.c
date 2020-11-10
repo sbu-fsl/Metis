@@ -380,7 +380,7 @@ void print_file_state(struct FileState fs){
     printf("Path : %s isOpen : %d flag : %d fd : %d _pos : %d", fs._path, fs._isOpen, fs._flag, fs._fd, fs._pos);
 }
 
-void my_open(int n_fs, char* path, int flag){
+void my_open(int n_fs, char* path, int flag, int permission){
     int fd = open(path, flag);
     struct FileState fs = create_file_state(path, flag, fd);
     struct fs_opened_files fs_open_state = opened_files[n_fs]; 
