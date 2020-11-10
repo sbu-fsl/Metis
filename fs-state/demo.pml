@@ -53,8 +53,7 @@ proctype worker()
     /* Non-deterministic test loop */
     do 
     :: if
-        :: c_expr { _n_files >= MAX_OPENED_FILES } -> skip; 
-        :: else -> atomic {
+        ::atomic {
             select_open_flag(openflags);
             c_code {
                 /* open, check: errno, existence */
@@ -63,7 +62,8 @@ proctype worker()
                 /* log sequence: open:<path>:<flag>:<mode> */
                 fprintf(seqfp, "open:%s:%d:%d\n", testfiles[0], now.openflags, 0644);
                 for (i = 0; i < N_FS; ++i) {
-                    makecall(fds[i], errs[i], "%s, %#x, 0%o", my_open, i, testfiles[i], now.openflags, 0644);
+		    errs[i] = my_open(i, testfiles[i], now.openflags, 0644);
+                    //makecall(fds[i], errs[i], "%s, %#x, 0%o", my_open, i, testfiles[i], now.openflags, 0644);
                     compute_abstract_state(basepaths[i], absfs[i]);
                 }
                 expect(compare_equality_fexists(fslist, N_FS, testdirs));
@@ -72,7 +72,7 @@ proctype worker()
                 unmount_all();
                 makelog("END: open\n");
             };
-            assert(c_expr{filesystems_are_good()});
+            //assert(c_expr{filesystems_are_good()});
         };
         fi
     :: atomic {
@@ -84,7 +84,8 @@ proctype worker()
             /* log sequence: lseek:<offset>:<flag> */
             fprintf(seqfp, "lseek:%ld:%d\n", fds[i], offset, SEEK_SET);
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%d, %ld, %d", my_lseek, i, fds[i], offset, SEEK_SET);
+		rets[i] = my_lseek(i, testfiles[i], offset, SEEK_SET);
+                //makecall(rets[i], errs[i], "%d, %ld, %d", my_lseek, i, fds[i], offset, SEEK_SET);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
 
@@ -156,7 +157,7 @@ proctype worker()
             unmount_all();
             makelog("END: close\n");
         }
-        assert(c_expr{filesystems_are_good()});
+        //assert(c_expr{filesystems_are_good()});
     };
    // :: atomic {
    //     /* unlink, check: retval, errno, existence */
