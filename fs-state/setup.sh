@@ -196,19 +196,6 @@ for i in $(seq 0 $(($n_fs-1))); do
     fi
     runcmd mkdir -p /mnt/test-$fs;
 
-    echo "Mounting $DEVICE on /mnt/test-$fs";
-    runcmd mount -t $fs -o sync,noatime $DEVICE /mnt/test-$fs
-    df /mnt/test-$fs
-
-    # Remove FS-specific artifacts (e.g. lost+found folder in ext*)
-    # This ensures all file systems being tested have identical initial states
-    for dir in ${exclude_dirs[@]}; do
-        rmdir /mnt/test-$fs/$dir;
-    done
-    for file in ${exclude_files[@]}; do
-        rm -f /mnt/test-$fs/$file;
-    done
-
 done
 
 # Run test program
@@ -220,5 +207,4 @@ if [ "$SETUP_ONLY" != "1" ]; then
 
     generic_cleanup;
 fi
-
 
