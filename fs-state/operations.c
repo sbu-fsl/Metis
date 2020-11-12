@@ -33,6 +33,10 @@ int write_file(const char *path, void *data, off_t offset, size_t length)
         err = errno;
         goto exit_err;
     }
+    if (writesz < length) {
+        fprintf(stderr, "Note: less data written than expected (%ld < %zu)\n",
+                writesz, length);
+    }
     close(fd);
     return 0;
 

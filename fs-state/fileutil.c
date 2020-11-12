@@ -1,7 +1,7 @@
 #include "fileutil.h"
 
 int cur_pid;
-char func[9];
+char func[FUNC_NAME_LEN + 1];
 struct timespec begin_time;
 
 int _opened_files[1024];
@@ -59,6 +59,7 @@ int compare_file_content(const char *path1, const char *path2)
             fprintf(stderr, "[seqid=%zu] %s: content in '%s' and '%s' "
                     "is not equal.\n", count, __func__, path1, path2);
             ret = -1;
+	    break;
         }
     }
     if (r1 < 0 || r2 < 0) {
@@ -266,7 +267,7 @@ void unmount_all()
     bool has_failure = false;
     record_fs_stat();
     for (int i = 0; i < N_FS; ++i) {
-        int ret = umount2(basepaths[i], MNT_FORCE);
+        int ret = umount2(basepaths[i], 0);
         if (ret != 0) {
             fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
                     fslist[i], basepaths[i], errnoname(errno));

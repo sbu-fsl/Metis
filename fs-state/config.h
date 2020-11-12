@@ -12,6 +12,10 @@
 #define SEQ_LOG_PATH     "sequence.log"
 /* Interval of perf metrics logging (in secs) */
 #define PERF_INTERVAL    5
+/* Max length of function name in log */
+#define FUNC_NAME_LEN    16
+/* Abort the whole program when expect() fails */
+#define ABORT_ON_FAIL    1
 
 /* List of folders to be excluded */
 static const char *exclude_dirs[] = {"lost+found", NULL};

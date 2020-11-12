@@ -128,7 +128,7 @@ void get_swapstats(struct iostat *stats)
 {
     FILE *fp = fopen("/proc/diskstats", "r");
     if (!fp) {
-        fprintf(stderr, "Cannot open /proc/diskstats (%d)\n", errno);
+        fprintf(stderr, "Cannot open /proc/diskstats (%s)\n", errnoname(errno));
         exit(1);
     }
     
@@ -150,6 +150,7 @@ void get_swapstats(struct iostat *stats)
         linebuf = NULL;
         n = 0;
     }
+    fclose(fp);
 }
 
 /* Release ->devname to avoid memory leak
@@ -224,6 +225,7 @@ void get_swaps()
         linebuf = NULL;
         n = 0;
     }
+    fclose(fp);
 }
 
 static void __attribute__((destructor)) swapperf_exit()

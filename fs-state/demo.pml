@@ -5,7 +5,7 @@ c_decl {
 \#include "config.h"
 };
 
-int openflags;
+int openflags = 0;
 /* The persistent content of the file systems */
 c_track "fsimg_ext4" "262144" "UnMatched";
 c_track "fsimg_ext2" "262144" "UnMatched";
@@ -19,13 +19,13 @@ inline select_open_flag(flag) {
 //         :: flag = flag | O_WRONLY;
 //         :: skip;
 //     fi
-    flag = c_expr {O_RDWR | O_CREAT};
+    flag = 0;
     if
-        :: flag = flag & c_expr {~O_RDWR};
+        :: flag = flag | c_expr {O_RDWR};
         :: skip;
     fi
     if
-        :: flag = flag & c_expr {~O_CREAT};
+        :: flag = flag | c_expr {O_TRUNC};
         :: skip;
     fi
 //     if
@@ -53,13 +53,11 @@ proctype worker()
     :: if
         :: c_expr { _n_files >= MAX_OPENED_FILES } -> skip; 
         :: else -> atomic {
-            select_open_flag(openflags);
+            // select_open_flag(openflags);
             c_code {
                 /* open, check: errno, existence */
                 makelog("BEGIN: create_file\n");
                 mountall();
-                /* log sequence: open:<path>:<flag>:<mode> */
-                fprintf(seqfp, "open:%s:%d:%d\n", testfiles[0], now.openflags, 0644);
                 for (i = 0; i < N_FS; ++i) {
                     makecall(rets[i], errs[i], "%s, %#x, 0%o", create_file, testfiles[i], now.openflags, 0644);
                     compute_abstract_state(basepaths[i], absfs[i]);
@@ -68,7 +66,7 @@ proctype worker()
                 expect(compare_equality_values(fslist, N_FS, errs));
                 expect(compare_equality_absfs(fslist, N_FS, absfs));
                 unmount_all();
-                makelog("END: open\n");
+                makelog("END: create_file\n");
             };
         };
         fi
@@ -81,10 +79,8 @@ proctype worker()
             size_t writelen = pick_value(0, 32768, 2048);
             char *data = malloc(writelen);
             generate_data(data, writelen, 0);
-            /* log sequence: write:<writelen> */
-            fprintf(seqfp, "write:%zu\n", writelen);
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%d, %p, %zu", write_file, testfiles[i], data, offset, writelen);
+                makecall(rets[i], errs[i], "%s, %p, %ld, %zu", write_file, testfiles[i], data, offset, writelen);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
 
@@ -105,10 +101,8 @@ proctype worker()
             makelog("BEGIN: truncate\n");
             mountall();
             off_t flen = pick_value(0, 200000, 10000);
-            /* log sequence: ftruncate:<flen> */
-            fprintf(seqfp, "truncate:%ld\n", flen);
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%d, %ld", truncate, testfiles[i], flen);
+                makecall(rets[i], errs[i], "%s, %ld", truncate, testfiles[i], flen);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, N_FS, testfiles));
@@ -116,7 +110,7 @@ proctype worker()
             expect(compare_equality_values(fslist, N_FS, errs));
             expect(compare_equality_absfs(fslist, N_FS, absfs));
             unmount_all();
-            makelog("END: ftruncate\n");
+            makelog("END: truncate\n");
         };
     };
     :: atomic {
@@ -124,8 +118,6 @@ proctype worker()
         c_code {
             makelog("BEGIN: unlink\n");
             mountall();
-            /* log sequence: unlink:<path> */
-            fprintf(seqfp, "unlink:%s\n", testfiles[0]);
             for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%s", unlink, testfiles[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
@@ -143,8 +135,6 @@ proctype worker()
         c_code {
             makelog("BEGIN: mkdir\n");
             mountall();
-            /* log sequence: mkdir:<path> */
-            fprintf(seqfp, "mkdir:%s\n", testdirs[0]);
             for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%s, 0%o", mkdir, testdirs[i], 0755);
                 compute_abstract_state(basepaths[i], absfs[i]);
@@ -163,7 +153,6 @@ proctype worker()
         c_code {
             makelog("BEGIN: rmdir\n");
             mountall();
-            fprintf(seqfp, "rmdir:%s\n", testdirs[0]);
             for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%s", rmdir, testdirs[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);

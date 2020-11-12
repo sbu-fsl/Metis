@@ -79,6 +79,7 @@ static void get_proc_stat(struct proc_stat *st)
         free(fieldbuf);
     }
     st->pid = curpid;
+    fclose(statfp);
 }
 
 struct fs_stat {

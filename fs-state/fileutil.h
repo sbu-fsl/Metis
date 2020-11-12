@@ -30,7 +30,7 @@
 #define _FILEUTIL_H_
 
 extern int cur_pid;
-extern char func[9];
+extern char func[FUNC_NAME_LEN + 1];
 extern struct timespec begin_time;
 extern int _opened_files[1024];
 extern int _n_files;
@@ -65,8 +65,8 @@ static inline void compute_abstract_state(const char *basepath,
 
 #define makecall(retvar, err, argfmt, funcname, ...) \
     count++; \
-    memset(func, 0, 9); \
-    strncpy(func, #funcname, 9); \
+    memset(func, 0, FUNC_NAME_LEN + 1); \
+    strncpy(func, #funcname, FUNC_NAME_LEN); \
     cur_pid = Pworker->_pid; \
     errno = 0; \
     retvar = funcname(__VA_ARGS__); \
