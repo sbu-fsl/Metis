@@ -5,9 +5,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-int create_file(const char *path, int flags, int mode)
+int create_file(const char *path, int mode)
 {
-    int fd = open(path, flags | O_CREAT, mode);
+    int fd = creat(path, mode);
     int err = errno;
     if (fd >= 0) {
         close(fd);
