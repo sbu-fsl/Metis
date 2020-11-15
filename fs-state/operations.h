@@ -4,6 +4,6 @@
 #define _OPERATIONS_H
 
 int create_file(const char *path, int mode);
-int write_file(const char *path, void *data, off_t offset, size_t length);
+ssize_t write_file(const char *path, void *data, off_t offset, size_t length);
 
 #endif // _OPERATIONS_H

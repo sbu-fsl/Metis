@@ -16,7 +16,7 @@ int create_file(const char *path, int mode)
     return (err == 0) ? 0 : -1;
 }
 
-int write_file(const char *path, void *data, off_t offset, size_t length)
+ssize_t write_file(const char *path, void *data, off_t offset, size_t length)
 {
     int fd = open(path, O_RDWR);
     int err;
@@ -38,7 +38,7 @@ int write_file(const char *path, void *data, off_t offset, size_t length)
                 writesz, length);
     }
     close(fd);
-    return 0;
+    return writesz;
 
 exit_err:
     close(fd);
