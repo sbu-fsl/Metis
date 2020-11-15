@@ -53,6 +53,13 @@ static inline int makelog(const char *format, ...)
     return vprintf(format, args);
 }
 
+static inline int record_seq(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    return vfprintf(seqfp, format, args);
+}
+
 static inline void compute_abstract_state(const char *basepath,
     absfs_state_t state)
 {
@@ -71,6 +78,7 @@ static inline void compute_abstract_state(const char *basepath,
     errno = 0; \
     retvar = funcname(__VA_ARGS__); \
     err = errno; \
+    record_seq("%s, " argfmt "\n", func, __VA_ARGS__); \
     makelog("[seqid = %zu] %s (" argfmt ")", \
             count, func, __VA_ARGS__); \
     printf(" -> ret = %d, err = %s\n", retvar, errnoname(errno)); \
@@ -161,5 +169,6 @@ void cleanup();
 void mountall();
 void unmount_all();
 void record_fs_stat();
+bool do_fsck();
 
 #endif
