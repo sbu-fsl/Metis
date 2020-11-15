@@ -8,6 +8,7 @@ POSITIONAL=()
 _CFLAGS=""
 KEEP_FS=0
 SETUP_ONLY=0
+REPLAY=0
 exclude_dirs=(
     lost+found
 )
@@ -170,6 +171,12 @@ while [[ $# -gt 0 ]]; do
             SETUP_ONLY=1
             shift
             ;;
+        -r|--replay)
+            REPLAY=1
+            SETUP_ONLY=1
+            KEEP_FS=1
+            shift
+            ;;
         *)
             POSITIONAL+=("$1")
             shift
@@ -208,5 +215,11 @@ if [ "$SETUP_ONLY" != "1" ]; then
     ./pan 2>error.log > output.log
 
     generic_cleanup;
+fi
+
+# Run replayer
+if [ "$REPLAY" = "1" ]; then
+    runcmd make replayer
+    ./replay 2>&1 > replay.log
 fi
 

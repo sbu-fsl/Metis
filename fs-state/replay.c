@@ -12,96 +12,84 @@
 
 #include "errnoname.h"
 #include "fileutil.h"
+#include "operations.h"
+#include "vector.h"
 
-int curfd = -1;
-int opened_files[1024];
-int _n_files = 0;
 int seq = 0;
 
-char *nextfield(char *base, char delim)
+void extract_fields(vector_t *fields_vec, char *line, const char *delim)
 {
-	char *res;
-	if (!base || *base == '\0')
-		return NULL;
+	vector_init(fields_vec, char *);
+	char *field = strtok(line, delim);
+	while (field) {
+		size_t flen = strlen(field);
+		char *field_copy = malloc(flen + 1);
+		assert(field_copy);
+		field_copy[flen] = '\0';
+		strncpy(field_copy, field, flen);
+		vector_add(fields_vec, &field_copy);
+		field = strtok(NULL, ", ");
+	}
+}
 
-	for (res = base; *res != delim; ++res);
-	*res++ = '\0';
+void destroy_fields(vector_t *fields_vec)
+{
+	char **field;
+	vector_iter(fields_vec, char *, field) {
+		free(*field);
+	}
+	vector_destroy(fields_vec);
+}
+
+int do_create_file(vector_t *argvec)
+{
+	char *filepath = *vector_get(argvec, char *, 1);
+	char *modestr = *vector_get(argvec, char *, 2);
+	char *endptr;
+	int mode = (int)strtol(modestr, &endptr, 8);
+	int res = create_file(filepath, mode);
+	printf("create_file(%s, 0%o) -> ret=%d, errno=%s\n",
+	       filepath, mode, res, errnoname(errno));
 	return res;
 }
 
-int do_open(char *argstr)
+int do_write_file(vector_t *argvec)
 {
-	char *filepath = argstr;
-	char *flagstr = nextfield(filepath, ':');
-	char *modestr = nextfield(flagstr, ':');
-	assert(filepath && flagstr && modestr);
-
-	int openflag = atoi(flagstr), mode = atoi(modestr), fd, err;
-	fd = open(filepath, openflag, mode);
-	err = errno;
-	printf("open(%s, %x, 0%o) -> fd=%d, errno=%s\n",
-	       filepath, openflag, mode, fd, errnoname(err));
-	if (fd >= 0) {
-		curfd = fd;
-		opened_files[_n_files] = fd;
-		_n_files++;
-	}
-	return fd;
-}
-
-int do_lseek(char *argstr)
-{
-	char *offset_str = argstr;
-	char *flag_str = nextfield(offset_str, ':');
-	assert(offset_str && flag_str);
-
-	off_t offset = atol(offset_str);
-	int flag = atoi(flag_str);
-	int ret = lseek(curfd, offset, flag);
-	int err = errno;
-	printf("lseek(%d, %ld, %d) -> ret=%d, errno=%s\n",
-	       curfd, offset, flag, ret, errnoname(err));
-	return ret;
-}
-
-int do_write(char *argstr)
-{
+	char *filepath = *vector_get(argvec, char *, 1);
+	char *offset_str = *vector_get(argvec, char *, 3);
+	char *len_str = *vector_get(argvec, char *, 4);
 	char *endp;
-	size_t writelen = strtoul(argstr, &endp, 10);
+	off_t offset = strtol(offset_str, &endp, 10);
+	size_t writelen = strtoul(len_str, &endp, 10);
+	assert(offset != LONG_MAX);
 	assert(writelen != ULONG_MAX);
 	
 	char *buffer = malloc(writelen);
 	assert(buffer != NULL);
 	generate_data(buffer, writelen, -1);
-	int ret = write(curfd, buffer, writelen);
+	int ret = write_file(filepath, buffer, offset, writelen);
 	int err = errno;
-	printf("write(%d, %p, %lu) -> ret=%d, errno=%s\n",
-	       curfd, buffer, writelen, ret, errnoname(err));
+	printf("write_file(%s, %ld, %lu) -> ret=%d, errno=%s\n",
+	       filepath, offset, writelen, ret, errnoname(err));
 	return ret;
 }
 
-int do_ftruncate(char *argstr)
+int do_truncate(vector_t *argvec)
 {
-	off_t flen = atol(argstr);
+	char *filepath = *vector_get(argvec, char *, 1);
+	char *len_str = *vector_get(argvec, char *, 2);
+	off_t flen = atol(len_str);
 	
-	int ret = ftruncate(curfd, flen);
+	int ret = truncate(filepath, flen);
 	int err = errno;
-	printf("ftruncate(%d, %ld) -> ret=%d, errno=%s\n",
-	       curfd, flen, ret, errnoname(err));
+	printf("truncate(%s, %ld) -> ret=%d, errno=%s\n",
+	       filepath, flen, ret, errnoname(err));
 	return ret;
 }
 
-void do_closeall(void)
+int do_unlink(vector_t *argvec)
 {
-	for (int i = 0; i < _n_files; ++i) {
-		close(opened_files[i]);
-	}
-	_n_files = 0;
-	printf("closeall()\n");
-}
-
-int do_unlink(const char *path)
-{
+	char *path = *vector_get(argvec, char *, 1);
 	int ret = unlink(path);
 	int err = errno;
 	printf("unlink(%s) -> ret=%d, errno=%s\n",
@@ -109,17 +97,22 @@ int do_unlink(const char *path)
 	return ret;
 }
 
-int do_mkdir(const char *path)
+int do_mkdir(vector_t *argvec)
 {
-	int ret = mkdir(path, 0755);
+	char *path = *vector_get(argvec, char *, 1);
+	char *modestr = *vector_get(argvec, char *, 2);
+	char *endp;
+	int mode = (int)strtol(modestr, &endp, 8);
+	int ret = mkdir(path, mode);
 	int err = errno;
-	printf("mkdir(%s) -> ret=%d, errno=%s\n",
-	       path, ret, errnoname(err));
+	printf("mkdir(%s, 0%o) -> ret=%d, errno=%s\n",
+	       path, mode, ret, errnoname(err));
 	return ret;
 }
 
-int do_rmdir(const char *path)
+int do_rmdir(vector_t *argvec)
 {
+	char *path = *vector_get(argvec, char *, 1);
 	int ret = rmdir(path);
 	int err = errno;
 	printf("rmdir(%s) -> ret=%d, errno=%s\n",
@@ -127,14 +120,10 @@ int do_rmdir(const char *path)
 	return ret;
 }
 
+/* Now I would expect the setup script to setup file systems instead. */
 void init()
 {
 	srand(time(0));
-	system("umount -f /mnt/test-ext4");
-	system("dd if=/dev/zero of=/dev/ram0 bs=1k count=256");
-	system("mkfs.ext4 -F /dev/ram0");
-	system("mount -t ext4 -o rw,sync,noatime /dev/ram0 /mnt/test-ext4");
-	system("rmdir /mnt/test-ext4/lost+found");
 }
 
 void checkpoint(const char *devpath, char *buffer, size_t size)
@@ -192,61 +181,19 @@ void ckpt_or_restore(const char *devpath, char *buffer, size_t size)
 	}
 }
 
-int file_count;
-int on_each_file(const char *fpath, const struct stat *sb,
-		 int typeflag, struct FTW *ftwbuf)
-{
-	struct stat stbf;
-	int ret = stat(fpath, &stbf);
-	if (ret != 0) {
-		printf("cannot stat %s: %s\n", fpath, errnoname(errno));
-		return ret;
-	}
-	file_count++;
-	return 0;
-}
-
-int how_many_files()
-{
-	const char *mp = "/mnt/test-ext4";
-	file_count = 0;
-	int ret = nftw(mp, on_each_file, 16, FTW_PHYS);
-	return (ret == 0) ? file_count : -1;
-}
-
-bool fs_is_good()
-{
-	const char *newdir = "/mnt/test-ext4/__testdir";
-	int filecnt = how_many_files();
-	if (filecnt < 0)
-		return false;
-	/* this means the directory is empty inside */
-	if (filecnt == 1) {
-		int ret = mkdir(newdir, 0755);
-		if (ret < 0) {
-			printf("Cannot mkdir: %s\n", errnoname(errno));
-			return false;
-		}
-		rmdir(newdir);
-	}
-	return true;
-}
-
 int main(int argc, char **argv)
 {
-	const char *devpath = "/dev/ram0";
-	const size_t devsize = 256 * 1024;
 	FILE *seqfp = fopen("sequence.log", "r");
 	ssize_t len;
 	size_t linecap = 0;
 	char *linebuf = NULL;
-	char *fsimg = malloc(devsize);
 	if (!seqfp) {
 		printf("Cannot open sequence.log. Does it exist?\n");
 		exit(1);
 	}
 	init();
 	/* probability of checkpoint and restore */
+	/*
 	if (argc >= 2) {
 		int p1 = atoi(argv[1]);
 		if (p1 > 0)
@@ -259,6 +206,7 @@ int main(int argc, char **argv)
 			prob_restore = 1.0 * p2 / 100;
 		printf("Prob. of restore is %d %%.\n", p2);
 	}
+	*/
 	while ((len = getline(&linebuf, &linecap, seqfp)) >= 0) {
 		char *line = malloc(len + 1);
 		line[len] = '\0';
@@ -267,32 +215,30 @@ int main(int argc, char **argv)
 		if (line[len - 1] == '\n')
 			line[len - 1] = '\0';
 		printf("seq=%d ", seq++);
-		/* break func name and args by ':' */
-		char *funcname = line;
-		char *argstr = nextfield(line, ':');
-		if (strncmp(funcname, "open", len) == 0) {
-			do_open(argstr);
-		} else if (strncmp(funcname, "lseek", len) == 0) {
-			do_lseek(argstr);
-		} else if (strncmp(funcname, "write", len) == 0) {
-			do_write(argstr);
-		} else if (strncmp(funcname, "ftruncate", len) == 0) {
-			do_ftruncate(argstr);
-		} else if (strncmp(funcname, "closeall", len) == 0) {
-			do_closeall();
+		/* parse the line */
+		vector_t argvec;
+		extract_fields(&argvec, line, ", ");
+		char *funcname = *vector_get(&argvec, char *, 0);
+		if (strncmp(funcname, "create_file", len) == 0) {
+			do_create_file(&argvec);
+		} else if (strncmp(funcname, "write_file", len) == 0) {
+			do_write_file(&argvec);
+		} else if (strncmp(funcname, "truncate", len) == 0) {
+			do_truncate(&argvec);
 		} else if (strncmp(funcname, "unlink", len) == 0) {
-			do_unlink(argstr);
+			do_unlink(&argvec);
 		} else if (strncmp(funcname, "mkdir", len) == 0) {
-			do_mkdir(argstr);
+			do_mkdir(&argvec);
 		} else if (strncmp(funcname, "rmdir", len) == 0) {
-			do_rmdir(argstr);
+			do_rmdir(&argvec);
 		} else {
 			printf("Unrecognized op: %s\n", funcname);
 		}
 		errno = 0;
 		free(line);
-		assert(fs_is_good());
-		ckpt_or_restore(devpath, fsimg, devsize);
+		destroy_fields(&argvec);
+		// assert(do_fsck());
+		// ckpt_or_restore(devpath, fsimg, devsize);
 	}
 	fclose(seqfp);
 	free(linebuf);
