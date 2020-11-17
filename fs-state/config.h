@@ -16,7 +16,7 @@
 #define ABORT_ON_BADFS   1
 
 /* List of file systems: Modify this to experiment with other file systems */
-static char *fslist[] = {"xfs", "jffs2"};
+static char *fslist[] = {"ext4", "xfs"};
 #define N_FS    nelem(fslist)
 char *basepaths[N_FS];
 char *testdirs[N_FS];
@@ -28,9 +28,9 @@ char *fsunfreeze_comms[N_FS];
 
 /* Modify those to experiment with other file systems */
 /* Pointer to memory-mapped file system images */
-void *fsimg_jffs2, *fsimg_xfs;
+void *fsimg_ext4, *fsimg_xfs;
 /* File descriptors of the opened f/s images */
-int fsfd_jffs2, fsfd_xfs;
+int fsfd_ext4, fsfd_xfs;
 
 absfs_state_t absfs[N_FS];
 
