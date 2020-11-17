@@ -378,6 +378,15 @@ void print_file_state(struct FileState fs){
     fprintf(stderr, "Path : %s isOpen : %d flag : %d fd : %d _pos : %d \n", fs._path, fs._isOpen, fs._flag, fs._fd, fs._pos);
 }
 
+void print_opened_files_state() {
+    fprintf(stderr, "In print_opened_files_state\n");
+    for(int i = 0; i < N_FS; i++) {
+        fprintf(stderr, "File system: %d, No. of opened files : %d\n", i, opened_files[i].count);
+        for(int j = 0; j <= opened_files[i].count; j++) {
+            print_file_state(opened_files[i].files[j]);
+        }
+    }
+}
 int my_open(int n_fs, char* path, int flag, mode_t permission){
     fprintf(stderr, "my_open called file path : %s, flag: %d, permission: %d\n", path, flag, permission);
     int fd = open(path, O_CREAT, permission);
@@ -395,6 +404,7 @@ int my_open(int n_fs, char* path, int flag, mode_t permission){
 	return -1;
     }
     //opened_files[n_fs] = fs_open_state;
+    print_opened_files_state();
     return fd;
 }
 
@@ -476,9 +486,9 @@ void close_all_opened_files() {
     for(int i = 0; i < N_FS; i++) {
         for(int j = 0; j <= opened_files[i].count; j++) {
             close(opened_files[i].files[j]._fd);
-            //opened_files[i].files[j]._isOpen = 0;
+            opened_files[i].files[j]._isOpen = 0;
         }
-	//opened_files[i].count = -1;
+	opened_files[i].count = -1;
     }
 }
 

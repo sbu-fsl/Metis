@@ -13,7 +13,7 @@ c_track "fsimg_ext2" "262144" "UnMatched";
 c_track "fsimg_ext4" "262144" "UnMatched";
 /* Abstract state signatures of the file systems */
 c_track "absfs" "sizeof(absfs)";
-//c_track "&opened_files" "sizeof(opened_files)";
+c_track "&opened_files" "sizeof(opened_files)";
 
 inline select_open_flag(flag) {
     /* O_RDONLY is 0 so there is no point writing an if-fi for it */
