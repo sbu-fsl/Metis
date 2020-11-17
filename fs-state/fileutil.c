@@ -398,15 +398,14 @@ int my_open(int n_fs, char* path, int flag, mode_t permission){
         fprintf(stderr, "Cannot open file: %s. Reached max number of files\n", path);
 	return -1;
     }
-    int fd = open(path, O_CREAT, permission);
+    int fd = open(path, flag, permission);
     if(fd<0){
     	fprintf(stderr, "fd is <0 return \n");
 	return -1;
     }
     struct FileState fs = create_file_state(path, flag, fd); 
     opened_files[n_fs].files[++opened_files[n_fs].count] = fs;
-    if(n_fs==1)
-    	print_opened_files_state();
+    print_opened_files_state();
     return 0;
 }
 
@@ -438,8 +437,7 @@ int my_lseek(int n_fs, char* path, off_t offset, int whence) {
     opened_files[n_fs].files[idx]._pos = lseek(opened_files[n_fs].files[idx]._fd, 0, SEEK_CUR);
     //print_file_state(fs_open_state.files[idx]);
     //opened_files[n_fs] = fs_open_state;
-    if(n_fs==1)
-        print_opened_files_state();
+    print_opened_files_state();
     return 0;
 }
 
@@ -487,7 +485,7 @@ void close_all_opened_fds() {
 }
 
 void close_all_opened_files() {
-    fprintf(stderr, "Closing all opened files\n");
+    fprintf(stderr, "CLOSE_ALL opened files\n");
     for(int i = 0; i < N_FS; i++) {
         for(int j = 0; j <= opened_files[i].count; j++) {
             close(opened_files[i].files[j]._fd);

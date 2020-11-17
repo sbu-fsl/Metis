@@ -30,6 +30,8 @@
 #define _FILEUTIL_H_
 #define MAX_FILES 10
 
+#define MAX_FILENAME_SIZE 4096
+
 extern int cur_pid;
 extern char func[9];
 extern struct timespec begin_time;
@@ -40,7 +42,7 @@ extern char *basepaths[];
 //extern struct fs_opened_files opened_files[N_FS];
 
 struct FileState{
-    char _path[100];
+    char _path[MAX_FILENAME_SIZE];
     int _isOpen;
     int _flag;
     int _fd;
