@@ -150,6 +150,15 @@ runcmd() {
     fi
 }
 
+mount_all() {
+    n_fs=${#FSLIST[@]};
+    for i in $(seq 0 $(($n_fs-1))); do
+        fs=${FSLIST[$i]};
+        DEVICE=${DEVLIST[$i]};
+        runcmd mount -t $fs $DEVICE /mnt/test-$fs;
+    done
+}
+
 # Parse command line options
 while [[ $# -gt 0 ]]; do
     key=$1;
@@ -175,6 +184,11 @@ while [[ $# -gt 0 ]]; do
             REPLAY=1
             SETUP_ONLY=1
             KEEP_FS=1
+            shift
+            ;;
+        -m|--mount-all)
+            mount_all;
+            exit 0;
             shift
             ;;
         *)
@@ -220,6 +234,9 @@ fi
 # Run replayer
 if [ "$REPLAY" = "1" ]; then
     runcmd make replayer
+    echo 'Running the replayer...';
+    echo 'The output is in replay.log';
     ./replay 2>&1 > replay.log
+    mount_all;
 fi
 
