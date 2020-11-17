@@ -359,6 +359,7 @@ void unmount_all()
 }
 
 void init_opened_files_state() {
+    //opened_files = malloc(N_FS*sizeof(struct fs_opened_files));
     for(int i = 0; i < N_FS; i++) {
         opened_files[i].count = -1;
     }
@@ -377,23 +378,23 @@ void print_file_state(struct FileState fs){
     fprintf(stderr, "Path : %s isOpen : %d flag : %d fd : %d _pos : %d \n", fs._path, fs._isOpen, fs._flag, fs._fd, fs._pos);
 }
 
-int my_open(int n_fs, char* path, int flag, int permission){
-    fprintf(stderr, "my_open called \n");
-    int fd = open(path, flag);
+int my_open(int n_fs, char* path, int flag, mode_t permission){
+    fprintf(stderr, "my_open called file path : %s, flag: %d, permission: %d\n", path, flag, permission);
+    int fd = open(path, O_CREAT, permission);
     if(fd<0){
     	fprintf(stderr, "fd is <0 return \n");
 	return -1;
     }
     struct FileState fs = create_file_state(path, flag, fd);
-    struct fs_opened_files fs_open_state = opened_files[n_fs]; 
+    //struct fs_opened_files fs_open_state = opened_files[n_fs]; 
     print_file_state(fs);
-    if(fs_open_state.count < MAX_FILES-1) {
-        fs_open_state.files[++fs_open_state.count] = fs;
+    if(opened_files[n_fs].count < MAX_FILES-1) {
+        opened_files[n_fs].files[++opened_files[n_fs].count] = fs;
     } else {
         fprintf(stderr, "Cannot open file: %s. Reached max number of files\n", path);
 	return -1;
     }
-    opened_files[n_fs] = fs_open_state;
+    //opened_files[n_fs] = fs_open_state;
     return fd;
 }
 
@@ -443,8 +444,9 @@ void my_close(int n_fs, char* path) {
 }
 
 void reopen_all_opened_files() {
-    fprintf(stderr, "reopen_all_opened_files called\n");
+    fprintf(stderr, "reopen_all_opened_files called: %d\n", sizeof(opened_files[i]));
     for(int i = 0; i < N_FS; i++) {
+        fprintf("File system : %d has %d opened files %d\n", i, opened_files[0].count);
         for(int j = 0; j <= opened_files[i].count; j++) {
             /*
 	     * all opened files' descriptors were closed before unmount. Hence after remount, reinitialize all the
@@ -452,6 +454,7 @@ void reopen_all_opened_files() {
 	     *
 	     * TODO: Find if there is a way to restore the file descriptors across mounts.
 	     */
+            fprintf("Opening files of file system : %d\n", i);
             opened_files[i].files[j]._fd = open(opened_files[i].files[j]._path, opened_files[i].files[j]._flag);
 	    opened_files[i].files[j]._isOpen = 1;
         }
@@ -475,7 +478,7 @@ void close_all_opened_files() {
             close(opened_files[i].files[j]._fd);
             //opened_files[i].files[j]._isOpen = 0;
         }
-	opened_files[i].count = -1;
+	//opened_files[i].count = -1;
     }
 }
 
