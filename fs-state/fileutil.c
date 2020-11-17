@@ -339,6 +339,7 @@ void mountall()
         }
     }
     reopen_all_opened_files();
+    print_opened_files_state();
 }
 
 void unmount_all()
@@ -356,6 +357,7 @@ void unmount_all()
         }
     }
     assert(!has_failure);
+    print_opened_files_state();
 }
 
 void init_opened_files_state() {
@@ -375,20 +377,23 @@ struct FileState create_file_state(char* path, int flag, int fd) {
 }
 
 void print_file_state(struct FileState fs){
-    fprintf(stderr, "Path : %s isOpen : %d flag : %d fd : %d _pos : %d \n", fs._path, fs._isOpen, fs._flag, fs._fd, fs._pos);
+    fprintf(stderr, "Path : %s, isOpen : %d, flag : %d, fd : %d, _pos : %d \n", fs._path, fs._isOpen, fs._flag, fs._fd, fs._pos);
 }
 
 void print_opened_files_state() {
-    fprintf(stderr, "In print_opened_files_state\n");
+    //fprintf(stderr, "In print_opened_files_state\n");
+    fprintf(stderr, "\n\n\n++++++++++++++++ State of opened files of all filesystems +++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
     for(int i = 0; i < N_FS; i++) {
-        fprintf(stderr, "File system: %d, No. of opened files : %d\n", i, opened_files[i].count);
+        fprintf(stderr, "File system: %d, No. of opened files : %d\n", i, opened_files[i].count + 1);
+	fprintf(stderr, "-------------------------------------------------------------------------------------------------------\n");
         for(int j = 0; j <= opened_files[i].count; j++) {
             print_file_state(opened_files[i].files[j]);
         }
+	fprintf(stderr, "-------------------------------------------------------------------------------------------------------\n\n");
     }
 }
 int my_open(int n_fs, char* path, int flag, mode_t permission){
-    fprintf(stderr, "my_open called file path : %s, flag: %d, permission: %d\n", path, flag, permission);
+    fprintf(stderr, "open() called file path : %s, flag: %d, permission: %d\n", path, flag, permission);
     if(opened_files[n_fs].count >= MAX_FILES-1) {
         fprintf(stderr, "Cannot open file: %s. Reached max number of files\n", path);
 	return -1;
@@ -399,7 +404,7 @@ int my_open(int n_fs, char* path, int flag, mode_t permission){
 	return -1;
     }
     struct FileState fs = create_file_state(path, flag, fd); 
-    print_file_state(fs);
+    //print_file_state(fs);
     opened_files[n_fs].files[++opened_files[n_fs].count] = fs;
     print_opened_files_state();
     return 0;
@@ -415,29 +420,30 @@ int find_idx(struct fs_opened_files fs_open_state, char* path) {
 }
 
 int my_lseek(int n_fs, char* path, off_t offset, int whence) {
-    fprintf(stderr, "mylseek called\n");
+    fprintf(stderr, "lseek() called: path %s, offset: %d\n", path, offset);
     // find the state of this file
-    struct fs_opened_files fs_open_state = opened_files[n_fs];
-    int idx = find_idx(fs_open_state, path);
+    //struct fs_opened_files fs_open_state = opened_files[n_fs];
+    int idx = find_idx(opened_files[n_fs], path);
     int fd = -1, curr_pos = 0;
     if (idx == -1) {
         printf("File %s not in opened state\n", path);
 	return -1;
     } else {
-        fd = fs_open_state.files[idx]._fd;
-        curr_pos = fs_open_state.files[idx]._pos;
+        fd = opened_files[n_fs].files[idx]._fd;
+        curr_pos = opened_files[n_fs].files[idx]._pos;
     }
     lseek(fd, curr_pos + offset, whence);
     
     // update the current seek position of the opened file.
-    fs_open_state.files[idx]._pos = lseek(fs_open_state.files[idx]._fd, 0, SEEK_CUR);
-    print_file_state(fs_open_state.files[idx]);
-    opened_files[n_fs] = fs_open_state;
+    opened_files[n_fs].files[idx]._pos = lseek(opened_files[n_fs].files[idx]._fd, 0, SEEK_CUR);
+    //print_file_state(fs_open_state.files[idx]);
+    //opened_files[n_fs] = fs_open_state;
+    print_opened_files_state();
     return 0;
 }
 
 void my_close(int n_fs, char* path) {
-    fprintf(stderr, "my_close called\n");
+    fprintf(stderr, "close() called\n");
     struct fs_opened_files fs_open_state = opened_files[n_fs];
     int idx = find_idx(fs_open_state, path);
     if (idx != -1) {
@@ -451,9 +457,9 @@ void my_close(int n_fs, char* path) {
 }
 
 void reopen_all_opened_files() {
-    fprintf(stderr, "reopen_all_opened_files called: %d\n", sizeof(opened_files[i]));
+    //fprintf(stderr, "reopen_all_opened_files called: %d\n", sizeof(opened_files[i]));
     for(int i = 0; i < N_FS; i++) {
-        fprintf(stderr, "File system : %d has %d opened files\n", i, opened_files[0].count);
+        //fprintf(stderr, "File system : %d has %d opened files\n", i, opened_files[0].count);
         for(int j = 0; j <= opened_files[i].count; j++) {
             /*
 	     * all opened files' descriptors were closed before unmount. Hence after remount, reinitialize all the
@@ -469,18 +475,18 @@ void reopen_all_opened_files() {
 }
 
 void close_all_opened_fds() {
-    fprintf(stderr, "close_all_opened_fds called\n");
+    fprintf(stderr, "Closing open file descriptors before unmounting......\n");
     for(int i = 0; i < N_FS; i++) {
         for(int j = 0; j <= opened_files[i].count; j++) {
             close(opened_files[i].files[j]._fd);
             opened_files[i].files[j]._isOpen = 0;
         }
     }
-    print_opened_files_state();
+    //print_opened_files_state();
 }
 
 void close_all_opened_files() {
-    fprintf(stderr, "close_all_opened_files called\n");
+    fprintf(stderr, "Closing all opened files\n");
     for(int i = 0; i < N_FS; i++) {
         for(int j = 0; j <= opened_files[i].count; j++) {
             close(opened_files[i].files[j]._fd);
