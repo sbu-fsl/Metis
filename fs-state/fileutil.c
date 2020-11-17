@@ -398,11 +398,9 @@ int my_open(int n_fs, char* path, int flag, mode_t permission){
     	fprintf(stderr, "fd is <0 return \n");
 	return -1;
     }
-    struct FileState fs = create_file_state(path, flag, fd);
-    //struct fs_opened_files fs_open_state = opened_files[n_fs]; 
+    struct FileState fs = create_file_state(path, flag, fd); 
     print_file_state(fs);
     opened_files[n_fs].files[++opened_files[n_fs].count] = fs;
-    //opened_files[n_fs] = fs_open_state;
     print_opened_files_state();
     return 0;
 }
