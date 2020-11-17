@@ -456,7 +456,7 @@ void my_close(int n_fs, char* path) {
 void reopen_all_opened_files() {
     fprintf(stderr, "reopen_all_opened_files called: %d\n", sizeof(opened_files[i]));
     for(int i = 0; i < N_FS; i++) {
-        fprintf("File system : %d has %d opened files %d\n", i, opened_files[0].count);
+        fprintf(stderr, "File system : %d has %d opened files\n", i, opened_files[0].count);
         for(int j = 0; j <= opened_files[i].count; j++) {
             /*
 	     * all opened files' descriptors were closed before unmount. Hence after remount, reinitialize all the
@@ -464,10 +464,10 @@ void reopen_all_opened_files() {
 	     *
 	     * TODO: Find if there is a way to restore the file descriptors across mounts.
 	     */
-            fprintf("Opening files of file system : %d\n", i);
+	    fprintf(stderr, "Opening files of file system : %d, file : %d, isOpen flag %d path %s\n", i, j, opened_files[i].files[j]._isOpen,opened_files[i].files[j]._path );
             opened_files[i].files[j]._fd = open(opened_files[i].files[j]._path, opened_files[i].files[j]._flag);
 	    opened_files[i].files[j]._isOpen = 1;
-        }
+       }
     }
 }
 
@@ -479,6 +479,7 @@ void close_all_opened_fds() {
             opened_files[i].files[j]._isOpen = 0;
         }
     }
+    print_opened_files_state();
 }
 
 void close_all_opened_files() {
