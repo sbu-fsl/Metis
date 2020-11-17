@@ -8,12 +8,10 @@
 int create_file(const char *path, int mode)
 {
     int fd = creat(path, mode);
-    int err = errno;
     if (fd >= 0) {
         close(fd);
     }
-    errno = err;
-    return (err == 0) ? 0 : -1;
+    return (fd >= 0) ? 0 : -1;
 }
 
 ssize_t write_file(const char *path, void *data, off_t offset, size_t length)
