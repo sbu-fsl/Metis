@@ -4,7 +4,7 @@ override CFLAGS += -g -I../include -D PRINTF -lssl -lcrypto -lrt -lstdc++ -lstdc
 
 all: demo.pml abstractfs
 	spin -a demo.pml; \
-	gcc -o pan pan.c fileutil.c swapperf.c perf.c operations.c $(COMMON_DIR)/*.c abstract_fs.a $(CFLAGS); \
+	gcc -o pan pan.c fileutil.c swapperf.c perf.c operations.c mount.c $(COMMON_DIR)/*.c abstract_fs.a $(CFLAGS); \
 
 run: all
 	./pan | less -N; \
@@ -30,8 +30,9 @@ pathutils: $(COMMON_DIR)/path_utils.cpp
 	g++ -fPIC -I../include -o path_utils.o -c $(COMMON_DIR)/path_utils.cpp
 	ar rcs path_utils.a path_utils.o
 
-replayer: replay.c operations.c
-	gcc -g -I../include -o replay replay.c operations.c $(COMMON_DIR)/errnoname.c
+replayer: replay.c operations.c mount.c
+	gcc -o replay replay.c operations.c mount.c \
+		-DNO_FS_STAT $(COMMON_DIR)/*.c $(CFLAGS)
 
 clean:
 	rm -rf test test.txt pan* *.log *.o *.a absfs *.trail \

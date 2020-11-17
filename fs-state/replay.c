@@ -17,6 +17,13 @@
 
 int seq = 0;
 
+typedef struct concrete_state {
+	int seqid;
+	char *images[N_FS];
+} fs_state_t;
+
+vector_t states;
+
 void extract_fields(vector_t *fields_vec, char *line, const char *delim)
 {
 	vector_init(fields_vec, char *);
@@ -66,7 +73,10 @@ int do_write_file(vector_t *argvec)
 	
 	char *buffer = malloc(writelen);
 	assert(buffer != NULL);
-	generate_data(buffer, writelen, -1);
+	/* This is to make sure data written to all file systems in the same
+	 * group of operations is the same */
+	int integer_to_write = seq / N_FS;
+	generate_data(buffer, writelen, integer_to_write);
 	int ret = write_file(filepath, buffer, offset, writelen);
 	int err = errno;
 	printf("write_file(%s, %ld, %lu) -> ret=%d, errno=%s\n",
@@ -121,18 +131,30 @@ int do_rmdir(vector_t *argvec)
 }
 
 /* Now I would expect the setup script to setup file systems instead. */
-void init()
+void replayer_init()
 {
 	srand(time(0));
+	for (int i = 0; i < N_FS; ++i) {
+		size_t len = snprintf(NULL, 0, "/mnt/test-%s", fslist[i]);
+		basepaths[i] = calloc(1, len + 1);
+		snprintf(basepaths[i], len + 1, "/mnt/test-%s", fslist[i]);
+	}
+	vector_init(&states, fs_state_t);
 }
 
-void checkpoint(const char *devpath, char *buffer, size_t size)
+static void do_checkpoint(const char *devpath, char **bufptr)
 {
 	int devfd = open(devpath, O_RDONLY);
 	assert(devfd >= 0);
-	char *ptr = buffer;
-	size_t remaining = size;
+	size_t fs_size = fsize(devfd);
+	char *buffer, *ptr;
+	size_t remaining = fs_size;
 	const size_t bs = 4096;
+
+	buffer = malloc(fs_size);
+	assert(buffer);
+	*bufptr = buffer;
+	ptr = buffer;
 
 	while (remaining > 0) {
 		size_t readsz = (remaining > bs) ? bs : remaining;
@@ -145,10 +167,22 @@ void checkpoint(const char *devpath, char *buffer, size_t size)
 	close(devfd);
 }
 
-void restore(const char *devpath, char *buffer, size_t size)
+void checkpoint()
+{
+	fs_state_t state;
+	state.seqid = seq;
+	for (int i = 0; i < N_FS; ++i) {
+		do_checkpoint(devlist[i], &state.images[i]);
+	}
+	vector_add(&states, &state);
+	printf("checkpoint\n");
+}
+
+static void do_restore(const char *devpath, char *buffer)
 {
 	int devfd = open(devpath, O_WRONLY);
 	assert(devfd >= 0);
+	size_t size = fsize(devfd);
 	char *ptr = buffer;
 	size_t remaining = size;
 	const size_t bs = 4096;
@@ -164,21 +198,16 @@ void restore(const char *devpath, char *buffer, size_t size)
 	close(devfd);
 }
 
-static float prob_ckpt = 0.1;
-static float prob_restore = 0.1;
-
-void ckpt_or_restore(const char *devpath, char *buffer, size_t size)
+void restore()
 {
-	static bool has_ckpt = false;
-	int rnd = rand();
-	float prob = 1.0 * rnd / RAND_MAX;
-
-	if (prob <= prob_ckpt) {
-		checkpoint(devpath, buffer, size);
-		has_ckpt = true;
-	} else if (prob >= (1.0 - prob_restore) && has_ckpt) {
-		restore(devpath, buffer, size);
+	fs_state_t *state = vector_peek_top(&states, fs_state_t);
+	if (!state)
+		return;
+	for (int i = 0; i < N_FS; ++i) {
+		do_restore(devlist[i], state->images[i]);
 	}
+	vector_pop_back(&states);
+	printf("restore (to the state just before seqid = %d)\n", state->seqid);
 }
 
 int main(int argc, char **argv)
@@ -191,22 +220,7 @@ int main(int argc, char **argv)
 		printf("Cannot open sequence.log. Does it exist?\n");
 		exit(1);
 	}
-	init();
-	/* probability of checkpoint and restore */
-	/*
-	if (argc >= 2) {
-		int p1 = atoi(argv[1]);
-		if (p1 > 0)
-			prob_ckpt = 1.0 * p1 / 100;
-		printf("Prob. of checkpoint is %d %%.\n", p1);
-	}
-	if (argc >= 3) {
-		int p2 = atoi(argv[2]);
-		if (p2 > 0)
-			prob_restore = 1.0 * p2 / 100;
-		printf("Prob. of restore is %d %%.\n", p2);
-	}
-	*/
+	replayer_init();
 	while ((len = getline(&linebuf, &linecap, seqfp)) >= 0) {
 		char *line = malloc(len + 1);
 		line[len] = '\0';
@@ -214,11 +228,13 @@ int main(int argc, char **argv)
 		/* remove the newline character */
 		if (line[len - 1] == '\n')
 			line[len - 1] = '\0';
-		printf("seq=%d ", seq++);
+		printf("seq=%d ", seq);
 		/* parse the line */
 		vector_t argvec;
 		extract_fields(&argvec, line, ", ");
 		char *funcname = *vector_get(&argvec, char *, 0);
+		bool flag_ckpt = false, flag_restore = false;
+		mountall();
 		if (strncmp(funcname, "create_file", len) == 0) {
 			do_create_file(&argvec);
 		} else if (strncmp(funcname, "write_file", len) == 0) {
@@ -231,14 +247,24 @@ int main(int argc, char **argv)
 			do_mkdir(&argvec);
 		} else if (strncmp(funcname, "rmdir", len) == 0) {
 			do_rmdir(&argvec);
+		} else if (strncmp(funcname, "checkpoint", len) == 0) {
+			flag_ckpt = true;
+			seq--;
+		} else if (strncmp(funcname, "restore", len) == 0) {
+			flag_restore = true;
+			seq--;
 		} else {
 			printf("Unrecognized op: %s\n", funcname);
 		}
+		seq++;
+		unmount_all();
+		if (flag_ckpt)
+			checkpoint();
+		if (flag_restore)
+			restore();
 		errno = 0;
 		free(line);
 		destroy_fields(&argvec);
-		// assert(do_fsck());
-		// ckpt_or_restore(devpath, fsimg, devsize);
 	}
 	fclose(seqfp);
 	free(linebuf);
