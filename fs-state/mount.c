@@ -91,13 +91,23 @@ err:
 void unmount_all()
 {
     bool has_failure = false;
+    int ret;
 #ifndef NO_FS_STAT
     record_fs_stat();
 #endif
     assert(do_fsck());
     for (int i = 0; i < N_FS; ++i) {
-        int ret = umount2(basepaths[i], 0);
+        int retry_limit = 10;
+try_unmount:
+        ret = umount2(basepaths[i], 0);
         if (ret != 0) {
+            /* If unmounting failed due to device being busy, wait 1ms and
+             * try again up to retry_limit times */
+            if (errno == EBUSY && retry_limit > 0) {
+                usleep(1000);
+                retry_limit--;
+                goto try_unmount;
+            }
             fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
                     fslist[i], basepaths[i], errnoname(errno));
             has_failure = true;
