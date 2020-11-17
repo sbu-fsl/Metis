@@ -62,7 +62,7 @@ proctype worker()
                 /* log sequence: open:<path>:<flag>:<mode> */
                 fprintf(seqfp, "open:%s:%d:%d\n", testfiles[0], now.openflags, 0644);
                 for (i = 0; i < N_FS; ++i) {
-		    errs[i] = my_open(i, testfiles[i], O_CREAT, 0644);
+		    errs[i] = my_open(i, testfiles[i], now.openflags, 0644);
                     //makecall(fds[i], errs[i], "%s, %#x, 0%o", my_open, i, testfiles[i], O_CREAT, 0644);
                     compute_abstract_state(basepaths[i], absfs[i]);
                 }
@@ -75,29 +75,29 @@ proctype worker()
             //assert(c_expr{filesystems_are_good()});
         };
       fi
-  // :: atomic {
-  //      /* lseek */
-  //      c_code {
-  //          makelog("BEGIN: lseek\n");
-  //          mountall();
-  //          off_t offset = pick_value(0, 32768, 1024);
-  //          /* log sequence: lseek:<offset>:<flag> */
-  //          fprintf(seqfp, "lseek:%ld:%d\n", fds[i], offset, SEEK_SET);
-  //          for (i = 0; i < N_FS; ++i) {
-  //      	rets[i] = my_lseek(i, testfiles[i], offset, SEEK_SET);
-  //              //makecall(rets[i], errs[i], "%d, %ld, %d", my_lseek, i, fds[i], offset, SEEK_SET);
-  //              compute_abstract_state(basepaths[i], absfs[i]);
-  //          }
+  :: atomic {
+       /* lseek */
+       c_code {
+           makelog("BEGIN: lseek\n");
+           mountall();
+           off_t offset = pick_value(0, 32768, 1024);
+           /* log sequence: lseek:<offset>:<flag> */
+           fprintf(seqfp, "lseek:%ld:%d\n", fds[i], offset, SEEK_SET);
+           for (i = 0; i < N_FS; ++i) {
+       	rets[i] = my_lseek(i, testfiles[i], offset, SEEK_SET);
+               //makecall(rets[i], errs[i], "%d, %ld, %d", my_lseek, i, fds[i], offset, SEEK_SET);
+               compute_abstract_state(basepaths[i], absfs[i]);
+           }
 
-  //          expect(compare_equality_values(fslist, N_FS, rets));
-  //          expect(compare_equality_values(fslist, N_FS, errs));
-  //          expect(compare_equality_absfs(fslist, N_FS, absfs));
-  //          unmount_all();
-  //          makelog("END: lseek\n");
+           expect(compare_equality_values(fslist, N_FS, rets));
+           expect(compare_equality_values(fslist, N_FS, errs));
+           expect(compare_equality_absfs(fslist, N_FS, absfs));
+           unmount_all();
+           makelog("END: lseek\n");
 
-  //      };
-  //      assert(c_expr{filesystems_are_good()});
-  //  };
+       };
+        assert(c_expr{filesystems_are_good()});
+    };
    // :: atomic {
    //     /* write, check: retval, errno, content */
    //     c_code {
