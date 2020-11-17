@@ -404,7 +404,7 @@ int my_open(int n_fs, char* path, int flag, mode_t permission){
     opened_files[n_fs].files[++opened_files[n_fs].count] = fs;
     //opened_files[n_fs] = fs_open_state;
     print_opened_files_state();
-    return fd;
+    return 0;
 }
 
 int find_idx(struct fs_opened_files fs_open_state, char* path) {
