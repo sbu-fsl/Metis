@@ -223,109 +223,23 @@ void closeall()
     _n_files = 0;
 }
 
-static char *receive_output(FILE *cmdfp, size_t *length)
+static void checkpoint_before_hook(unsigned char *ptr)
 {
-    const size_t block = 4096;
-    char *buffer = malloc(block);
-    size_t readsz = 0, bufsz = block;
-    assert(buffer);
-    while (!feof(cmdfp)) {
-        if (readsz + block > bufsz) {
-            char *newbuf = realloc(buffer, bufsz + block);
-            if (!newbuf) {
-                fprintf(stderr, "%s encountes out-of-memory issue, command "
-                        "output is truncated at %zu bytes.\n", __func__,
-                        readsz);
-                break;
-            }
-            bufsz += block;
-            buffer = newbuf;
-        }
-        char *ptr = buffer + readsz;
-        readsz += fread(ptr, 1, block, cmdfp);
-    }
-    *length = readsz;
-    return buffer;
+    fprintf(seqfp, "checkpoint\n");
 }
 
-bool do_fsck()
+static void restore_before_hook(unsigned char *ptr)
 {
-    char cmdbuf[ARG_MAX];
-    bool isgood = true;
-    for (int i = 0; i < N_FS; ++i) {
-        snprintf(cmdbuf, ARG_MAX, "fsck -N -t %s %s 2>&1", fslist[i],
-                 basepaths[i]);
-        FILE *cmdfp = popen(cmdbuf, "r");
-        size_t outlen = 0;
-        char *output = receive_output(cmdfp, &outlen);
-        int ret = pclose(cmdfp);
-        if (ret != 0) {
-            fprintf(stderr, "fsck %s failed and returned %d, %s may have been "
-                    "corrupted.\n", basepaths[i], ret, fslist[i]);
-            fprintf(stderr, "Here's the output: \n");
-            fwrite(output, 1, outlen, stderr);
-            fprintf(stderr, "\n");
-            isgood = false;
-        }
-        free(output);
-    }
-    return isgood;
+    fprintf(seqfp, "restore\n");
 }
 
-void mountall()
+static void restore_after_hook(unsigned char *ptr)
 {
-    bool inited = false;
-    int failpos, err;
-    for (int i = 0; i < N_FS; ++i) {
-        /* mount(source, target, fstype, mountflags, option_str) */
-        int ret = mount(devlist[i], basepaths[i], fslist[i], MS_NOATIME, "");
-        if (ret != 0) {
-            failpos = i;
-            err = errno;
-            goto err;
-        }
-    }
-    if (inited)
-        return;
-    /* remove all folders specified in the exclusion list in config.h */
-    int n = 0;
-    const char *folder;
-    char fullpath[PATH_MAX];
-    while ((folder = exclude_dirs[n])) {
-        for (int i = 0; i < N_FS; ++i) {
-            snprintf(fullpath, PATH_MAX, "%s/%s", basepaths[i], folder);
-            rmdir(fullpath);
-        }
-        n++;
-    }
-    inited = true;
-    return;
-err:
-    /* undo mounts */
-    for (int i = 0; i < failpos; ++i) {
-        umount2(basepaths[i], MNT_FORCE);
-    }
-    fprintf(stderr, "Could not mount file system %s in %s at %s (%s)\n",
-            fslist[failpos], devlist[failpos], basepaths[failpos],
-            errnoname(err));
-    abort();
 }
 
-void unmount_all()
-{
-    bool has_failure = false;
-    record_fs_stat();
-    assert(do_fsck());
-    for (int i = 0; i < N_FS; ++i) {
-        int ret = umount2(basepaths[i], 0);
-        if (ret != 0) {
-            fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
-                    fslist[i], basepaths[i], errnoname(errno));
-            has_failure = true;
-        }
-    }
-    assert(!has_failure);
-}
+extern void (*c_stack_before)(unsigned char *);
+extern void (*c_unstack_before)(unsigned char *);
+extern void (*c_unstack_after)(unsigned char *);
 
 void __attribute__((constructor)) init()
 {
@@ -343,7 +257,16 @@ void __attribute__((constructor)) init()
     fsfd_jffs2 = open("/dev/mtdblock0", O_RDWR);
     assert(fsfd_jffs2 >= 0);
     fsimg_jffs2 = mmap(NULL, fsize(fsfd_jffs2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_jffs2, 0);
+    printf("fsimg_jffs2 size = %zu\n", fsize(fsfd_jffs2));
     assert(fsimg_jffs2 != MAP_FAILED);
+
+    /* open sequence file */
+    seqfp = fopen("sequence.log", "w");
+    assert(seqfp);
+
+    c_stack_before = checkpoint_before_hook;
+    c_unstack_before = restore_before_hook;
+    c_unstack_after = restore_after_hook;
 }
 
 /* The procedure that resets run-time states

@@ -153,9 +153,6 @@ proctype driver(int nproc)
             testfiles[i] = calloc(1, len + 1);
             snprintf(testfiles[i], len + 1, "%s/test.txt", basepaths[i]);
         }
-        /* open sequence file */
-        seqfp = fopen("sequence.log", "w");
-        assert(seqfp);
 
         atexit(cleanup);
     };
