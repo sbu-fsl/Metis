@@ -389,6 +389,10 @@ void print_opened_files_state() {
 }
 int my_open(int n_fs, char* path, int flag, mode_t permission){
     fprintf(stderr, "my_open called file path : %s, flag: %d, permission: %d\n", path, flag, permission);
+    if(opened_files[n_fs].count >= MAX_FILES-1) {
+        fprintf(stderr, "Cannot open file: %s. Reached max number of files\n", path);
+	return -1;
+    }
     int fd = open(path, O_CREAT, permission);
     if(fd<0){
     	fprintf(stderr, "fd is <0 return \n");
@@ -397,12 +401,7 @@ int my_open(int n_fs, char* path, int flag, mode_t permission){
     struct FileState fs = create_file_state(path, flag, fd);
     //struct fs_opened_files fs_open_state = opened_files[n_fs]; 
     print_file_state(fs);
-    if(opened_files[n_fs].count < MAX_FILES-1) {
-        opened_files[n_fs].files[++opened_files[n_fs].count] = fs;
-    } else {
-        fprintf(stderr, "Cannot open file: %s. Reached max number of files\n", path);
-	return -1;
-    }
+    opened_files[n_fs].files[++opened_files[n_fs].count] = fs;
     //opened_files[n_fs] = fs_open_state;
     print_opened_files_state();
     return fd;
@@ -464,7 +463,7 @@ void reopen_all_opened_files() {
 	     *
 	     * TODO: Find if there is a way to restore the file descriptors across mounts.
 	     */
-	    fprintf(stderr, "Opening files of file system : %d, file : %d, isOpen flag %d path %s\n", i, j, opened_files[i].files[j]._isOpen,opened_files[i].files[j]._path );
+//	    fprintf(stderr, "Opening files of file system : %d, file : %d, isOpen flag %d path %s\n", i, j, opened_files[i].files[j]._isOpen,opened_files[i].files[j]._path );
             opened_files[i].files[j]._fd = open(opened_files[i].files[j]._path, opened_files[i].files[j]._flag);
 	    opened_files[i].files[j]._isOpen = 1;
        }
