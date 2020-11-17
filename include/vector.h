@@ -63,7 +63,31 @@ static inline void *_vector_get(struct vector *vec, size_t index) {
     return (void *)(vec->data + index * vec->unitsize);
 }
 #define vector_get(vec, type, index) \
-    (type *)_vector_get(vec, index);
+    (type *)_vector_get(vec, index)
+
+static inline void *_vector_peek_top(struct vector *vec) {
+    if (vec->len == 0)
+        return NULL;
+    return (void *)(vec->data + (vec->len - 1) * vec->unitsize);
+}
+#define vector_peek_top(vec, type) \
+    (type *)_vector_peek_top(vec)
+
+static inline void vector_try_shrink(struct vector *vec) {
+    if (vec->len >= vec->capacity / 2)
+        return;
+    if (vec->len <= DEFAULT_INITCAP)
+        return;
+    size_t newcap = vec->capacity / 2 * vec->unitsize;
+    vec->data = (unsigned char *)realloc(vec->data, newcap);
+}
+
+static inline void vector_pop_back(struct vector *vec) {
+    if (vec->len == 0)
+        return;
+    vec->len--;
+    vector_try_shrink(vec);
+}
 
 static inline int vector_set(struct vector *vec, size_t index, void *el) {
     if (index < 0 || index >= vec->len)
@@ -81,6 +105,7 @@ static inline int vector_erase(struct vector *vec, size_t index) {
     size_t count = (vec->len - index - 1) * vec->unitsize;
     memmove(vec->data + dest_off, vec->data + src_off, count);
     vec->len--;
+    vector_try_shrink(vec);
     return 0;
 }
 
