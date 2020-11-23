@@ -1,7 +1,7 @@
 #!/bin/bash
 
-FSLIST=(ext4 ext2 jffs2)
-DEVLIST=(/dev/ram0 /dev/ram1 /dev/mtdblock0)
+FSLIST=(ext4 jffs2)
+DEVLIST=(/dev/ram0 /dev/mtdblock0)
 LOOPDEVS=()
 verbose=0
 POSITIONAL=()

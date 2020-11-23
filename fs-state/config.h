@@ -20,18 +20,17 @@
 /* List of folders to be excluded */
 static const char *exclude_dirs[] = {"lost+found", NULL};
 /* List of file systems: Modify this to experiment with other file systems */
-static const char *fslist[] = {"ext4", "ext2", "jffs2"};
-static const char *devlist[] = {"/dev/ram0", "/dev/ram1", "/dev/mtdblock0"};
+static const char *fslist[] = {"ext4", "jffs2"};
+static const char *devlist[] = {"/dev/ram0", "/dev/mtdblock0"};
 #define N_FS    nelem(fslist)
 char *basepaths[N_FS];
 char *testdirs[N_FS];
 char *testfiles[N_FS];
 
-/* Modify those to experiment with other file systems */
 /* Pointer to memory-mapped file system images */
-void *fsimg_ext4, *fsimg_ext2, *fsimg_jffs2;
+void *fsimgs[N_FS];
 /* File descriptors of the opened f/s images */
-int fsfd_ext4, fsfd_ext2, fsfd_jffs2;
+int fsfds[N_FS];
 
 absfs_state_t absfs[N_FS];
 

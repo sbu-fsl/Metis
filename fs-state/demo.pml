@@ -6,9 +6,9 @@ c_decl {
 };
 
 /* The persistent content of the file systems */
-c_track "fsimg_ext4" "262144" "UnMatched";
-c_track "fsimg_ext2" "262144" "UnMatched";
-c_track "fsimg_jffs2" "262144" "UnMatched";
+c_track "fsimgs[0]" "262144" "UnMatched";
+// c_track "fsimg_xfs" "16777216" "UnMatched";
+c_track "fsimgs[1]" "262144" "UnMatched";
 /* Abstract state signatures of the file systems */
 c_track "absfs" "sizeof(absfs)";
 
@@ -52,7 +52,7 @@ proctype worker()
             expect(compare_equality_fcontent(fslist, N_FS, testfiles));
             expect(compare_equality_absfs(fslist, N_FS, absfs));
             unmount_all();
-            makelog("END: write\n");
+            makelog("END: write_file\n");
         };
     };
     :: atomic {
@@ -135,7 +135,7 @@ proctype driver(int nproc)
 {
     int i;
     c_code {
-        srand(time(0));
+        start_perf_metrics_thread();
         /* Initialize base paths */
         printf("%d file systems to test.\n", N_FS);
         for (int i = 0; i < N_FS; ++i) {
