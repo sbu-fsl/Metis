@@ -213,10 +213,18 @@ void* perf_logger(void *arg)
     return NULL;
 }
 
-static void __attribute__((constructor)) perf_init()
+void start_perf_metrics_thread()
 {
     pthread_attr_t attr;
-    int ret;
+    int ret = pthread_attr_init(&attr);
+    assert(ret == 0);
+    ret = pthread_create(&perf_logger_id, &attr, perf_logger, NULL);
+    assert(ret == 0);
+    pthread_mutex_init(&fsinfo_lock, NULL);
+}
+
+static void __attribute__((constructor)) perf_init()
+{
     get_swaps();
     current_utc_time(&begin_time);
     perflog_fp = fopen(PERF_LOG_PATH, "w");
@@ -226,11 +234,6 @@ static void __attribute__((constructor)) perf_init()
         abort();
     }
     curpid = getpid();
-    ret = pthread_attr_init(&attr);
-    assert(ret == 0);
-    ret = pthread_create(&perf_logger_id, &attr, perf_logger, NULL);
-    assert(ret == 0);
-    pthread_mutex_init(&fsinfo_lock, NULL);
 }
 
 static void __attribute__((destructor)) perf_exit()

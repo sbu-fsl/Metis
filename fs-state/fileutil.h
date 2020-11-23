@@ -169,6 +169,7 @@ void cleanup();
 void mountall();
 void unmount_all();
 void record_fs_stat();
+void start_perf_metrics_thread();
 bool do_fsck();
 
 #endif
