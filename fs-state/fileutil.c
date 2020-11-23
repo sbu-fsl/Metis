@@ -1,4 +1,5 @@
 #include "fileutil.h"
+#include <sys/wait.h>
 
 int cur_pid;
 char func[FUNC_NAME_LEN + 1];
@@ -223,48 +224,165 @@ void closeall()
     _n_files = 0;
 }
 
+static int ensure_dump_dir(const char *folder)
+{
+    struct stat st;
+    int ret = stat(folder, &st);
+    /* Try creating the folder if it doesn't exist */
+    if (ret < 0 && errno == ENOENT) {
+        ret = mkdir(folder, 0755);
+        if (ret < 0) {
+            fprintf(stderr, "%s: cannot create folder %s (%s)\n", __func__,
+                    folder, errnoname(errno));
+            return -errno;
+        }
+    } else if (ret < 0) {
+        fprintf(stderr, "%s: failed to stat %s, error is %s\n", __func__,
+                folder, errnoname(errno));
+        return -errno;
+    } else {
+        if (!S_ISDIR(st.st_mode)) {
+            fprintf(stderr, "%s: folder %s is not a directory.\n", __func__,
+                    folder);
+            return -ENOTDIR;
+        }
+    }
+    return 0;
+}
+
+static void dump_mmaped(const char *outpath, int fsfd, void *fsimg)
+{
+    const size_t bs = 4096;
+    int dmpfd = open(outpath, O_CREAT | O_RDWR | O_TRUNC, 0666);
+    if (dmpfd < 0) {
+        fprintf(stderr, "%s: cannot create file %s (%s)\n", __func__,
+                outpath, errnoname(errno));
+        return;
+    }
+    size_t remaining = fsize(fsfd);
+    char *ptr = fsimg;
+    while (remaining > 0) {
+        size_t writelen = (remaining >= bs) ? bs : remaining;
+        ssize_t writeres = write(dmpfd, ptr, writelen);
+        if (writeres < 0) {
+            fprintf(stderr, "%s: cannot write data to image dump %s (%s)\n",
+                    __func__, outpath, errnoname(errno));
+            close(dmpfd);
+            break;
+        }
+        ptr += writeres;
+        remaining -= writeres;
+    }
+    close(dmpfd);
+}
+
+static void dump_device(const char *devname, const char *folder,
+        const char *fsname)
+{
+    char cmd[ARG_MAX] = {0};
+    snprintf(cmd, ARG_MAX, "dd if=%s of=%s/%s-dev-%zu.img bs=4k status=none",
+             devname, folder, fsname, count);
+    int status = system(cmd);
+    if (WIFEXITED(status)) {
+        if (WEXITSTATUS(status) != 0) {
+            fprintf(stderr, "%s: Cannot dump %s on %s, dd exited with %d.\n",
+                    __func__, fsname, devname, WEXITSTATUS(status));
+        }
+    } else if (WIFSIGNALED(status)) {
+        fprintf(stderr, "%s: Cannot dump %s on %s, dd was terminated by signal "
+                "%d.\n", __func__, fsname, devname, WTERMSIG(status));
+    } else {
+        fprintf(stderr, "%s: Cannot dump %s on %s, dd has exit code %d.\n",
+                __func__, fsname, devname, status);
+    }
+}
+
+static void dump_fs_images(const char *folder)
+{
+    char fullpath[PATH_MAX] = {0};
+    assert(ensure_dump_dir(folder) == 0);
+    for (int i = 0; i < N_FS; ++i) {
+        /* Dump the mmap'ed object */
+        snprintf(fullpath, PATH_MAX, "%s/%s-mmap-%zu.img", folder,
+                 fslist[i], count);
+        dump_mmaped(fullpath, fsfds[i], fsimgs[i]);
+        /* Dump the device by direct copying */
+        dump_device(devlist[i], folder, fslist[i]);
+    }
+}
+
+static void mmap_devices()
+{
+    for (int i = 0; i < N_FS; ++i) {
+        int fsfd = open(devlist[i], O_RDWR);
+        assert(fsfd >= 0);
+        void *fsimg = mmap(NULL, fsize(fsfd), PROT_READ | PROT_WRITE,
+                MAP_SHARED, fsfd, 0);
+        assert(fsimg != MAP_FAILED);
+        fsfds[i] = fsfd;
+        fsimgs[i] = fsimg;
+    }
+}
+
+static void unmap_devices()
+{
+    for (int i = 0; i < N_FS; ++i) {
+        munmap(fsimgs[i], fsize(fsfds[i]));
+        close(fsfds[i]);
+    }
+}
+
 static void checkpoint_before_hook(unsigned char *ptr)
 {
     fprintf(seqfp, "checkpoint\n");
+    makelog("[seqid = %d] checkpoint\n", count);
+    // assert(do_fsck());
+}
+
+static void checkpoint_after_hook(unsigned char *ptr)
+{
+    assert(do_fsck());
+    // dump_fs_images("snapshots");
 }
 
 static void restore_before_hook(unsigned char *ptr)
 {
     fprintf(seqfp, "restore\n");
+    makelog("[seqid = %d] restore\n", count);
+    // assert(do_fsck());
 }
 
 static void restore_after_hook(unsigned char *ptr)
 {
+    // assert(do_fsck());
+    // dump_fs_images("after-restore");
 }
 
 extern void (*c_stack_before)(unsigned char *);
+extern void (*c_stack_after)(unsigned char *);
 extern void (*c_unstack_before)(unsigned char *);
 extern void (*c_unstack_after)(unsigned char *);
 
 void __attribute__((constructor)) init()
 {
-    /* open and mmap the test f/s image as well as its heap memory */
-    fsfd_ext4 = open("/dev/ram0", O_RDWR);
-    assert(fsfd_ext4 >= 0);
-    fsimg_ext4 = mmap(NULL, fsize(fsfd_ext4), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext4, 0);
-    assert(fsimg_ext4 != MAP_FAILED);
-    
-    fsfd_ext2 = open("/dev/ram1", O_RDWR);
-    assert(fsfd_ext2 >= 0);
-    fsimg_ext2 = mmap(NULL, fsize(fsfd_ext2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext2, 0);
-    assert(fsimg_ext2 != MAP_FAILED);
-    
-    fsfd_jffs2 = open("/dev/mtdblock0", O_RDWR);
-    assert(fsfd_jffs2 >= 0);
-    fsimg_jffs2 = mmap(NULL, fsize(fsfd_jffs2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_jffs2, 0);
-    printf("fsimg_jffs2 size = %zu\n", fsize(fsfd_jffs2));
-    assert(fsimg_jffs2 != MAP_FAILED);
-
+    /* open and mmap the test f/s images */
+    for (int i = 0; i < N_FS; ++i) {
+        int fsfd = open(devlist[i], O_RDWR);
+        assert(fsfd >= 0);
+        void *fsimg = mmap(NULL, fsize(fsfd), PROT_READ | PROT_WRITE,
+                MAP_SHARED, fsfd, 0);
+        assert(fsimg != MAP_FAILED);
+        fsfds[i] = fsfd;
+        fsimgs[i] = fsimg;
+    }
+ 
     /* open sequence file */
     seqfp = fopen("sequence.log", "w");
     assert(seqfp);
 
+    /* Register hooks */
     c_stack_before = checkpoint_before_hook;
+    c_stack_after = checkpoint_after_hook;
     c_unstack_before = restore_before_hook;
     c_unstack_after = restore_after_hook;
 }
@@ -277,6 +395,10 @@ void cleanup()
     for (int i = 0; i < _n_files; ++i) {
         close(_opened_files[i]);
         _opened_files[i] = 0;
+    }
+    for (int i = 0; i < N_FS; ++i) {
+        munmap(fsimgs[i], fsize(fsfds[i]));
+        close(fsfds[i]);
     }
     _n_files = 0;
     errno = 0;
