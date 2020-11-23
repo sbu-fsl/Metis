@@ -76,7 +76,7 @@ end:
     return ret;
 }
 
-bool compare_equality_values(char **fses, int n_fs, int *nums)
+bool compare_equality_values(const char **fses, int n_fs, int *nums)
 {
     bool res = true;
     int base = nums[0];
@@ -102,7 +102,7 @@ void dump_absfs(const char *basepath)
     scan_abstract_fs(&absfs, basepath, true, stderr);
 }
 
-bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs)
+bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
 {
     bool res = true;
     absfs_state_t base;
@@ -128,7 +128,7 @@ bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs)
     return res;
 }
 
-bool compare_equality_fexists(char **fses, int n_fs, char **fpaths)
+bool compare_equality_fexists(const char **fses, int n_fs, char **fpaths)
 {
     bool res = true;
     bool fexists[n_fs];
@@ -154,7 +154,7 @@ bool compare_equality_fexists(char **fses, int n_fs, char **fpaths)
     return res;
 }
 
-bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths)
+bool compare_equality_fcontent(const char **fses, int n_fs, char **fpaths)
 {
     bool res = true;
 

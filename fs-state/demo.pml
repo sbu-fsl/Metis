@@ -136,7 +136,7 @@ proctype driver(int nproc)
     c_code {
         start_perf_metrics_thread();
         /* Initialize base paths */
-        printf("%d file systems to test.\n", N_FS);
+        printf("%ld file systems to test.\n", N_FS);
         for (int i = 0; i < N_FS; ++i) {
             size_t len = snprintf(NULL, 0, "/mnt/test-%s", fslist[i]);
             basepaths[i] = calloc(1, len + 1);
