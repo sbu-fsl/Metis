@@ -31,14 +31,14 @@ bool do_fsck()
     bool isgood = true;
     for (int i = 0; i < N_FS; ++i) {
         snprintf(cmdbuf, ARG_MAX, "fsck -N -t %s %s 2>&1", fslist[i],
-                 basepaths[i]);
+                 devlist[i]);
         FILE *cmdfp = popen(cmdbuf, "r");
         size_t outlen = 0;
         char *output = receive_output(cmdfp, &outlen);
         int ret = pclose(cmdfp);
         if (ret != 0) {
             fprintf(stderr, "fsck %s failed and returned %d, %s may have been "
-                    "corrupted.\n", basepaths[i], ret, fslist[i]);
+                    "corrupted.\n", devlist[i], ret, fslist[i]);
             fprintf(stderr, "Here's the output: \n");
             fwrite(output, 1, outlen, stderr);
             fprintf(stderr, "\n");
@@ -51,7 +51,7 @@ bool do_fsck()
 
 void mountall()
 {
-    bool inited = false;
+    static bool inited = false;
     int failpos, err;
     for (int i = 0; i < N_FS; ++i) {
         /* mount(source, target, fstype, mountflags, option_str) */
@@ -95,7 +95,6 @@ void unmount_all()
 #ifndef NO_FS_STAT
     record_fs_stat();
 #endif
-    assert(do_fsck());
     for (int i = 0; i < N_FS; ++i) {
         int retry_limit = 10;
 try_unmount:
