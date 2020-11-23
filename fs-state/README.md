@@ -40,7 +40,20 @@
 
 #### Software
 
-- [SPIN](http://spinroot.com/spin/whatispin.html) model checker
+[SPIN](http://spinroot.com/spin/whatispin.html) model checker. To run the file
+system model checker, please build and install the modified version of Spin at
+[this link](https://github.com/sbu-fsl/fsl-spin), which provides required event
+hooks before and after concrete states capture and restoration. If you have
+already installed the original version of Spin, please remove that first.
+
+Use the following commands to download and build and install from source code:
+
+```bash
+$ git clone git@github.com:sbu-fsl/fsl-spin.git
+$ cd fsl-spin
+$ make
+$ sudo make install
+```
 
 #### Kernel modules
 
@@ -100,9 +113,19 @@ The modified brd driver in `kernel` folder of this repository allows setting
 sizes for individual block devices, so please compile and load that if you would
 like to test file systems of varied sizes.
 
+With the modified RAM block device driver, you can use the parameter `rd_sizes`
+to specify individual size to each device it creates. For example, if you would
+like to create one block device of 256KB for ext4 and another of 16MB for xfs,
+then you can use the following command:
+
+```bash
+$ sudo insmod brd.ko rd_nr=2 rd_sizes=256,16384
+```
+
 #### 3. Load mtdram driver for jffs2
 
-jffs2 only works with
+If you would like to test JFFS2, you will need to take care of this step,
+because JFFS2 only works with
 [MTD devices](http://www.linux-mtd.infradead.org/doc/general.html), which
 represent raw unmanaged flash chips and are different from regular block devices.
 Fortunately, there is a kernel module `mtdram` that can simulate a MTD device
@@ -169,18 +192,17 @@ The setup script provides the following options:
 
 - `--abort-on-discrepancy, -a`: Abort the model checker whenever it encounters
   a behavior discrepancy among the tested file systems.
-- `--keep-fs, -k`: Do not unmount the tested file systems when the model checker
-  exits. This is useful for debugging.
-- `--setup-only, -s`: The script will only format and mount the file systems,
-  and won't run the model checker. This implies `--keep-fs`.
+- `--setup-only, -s`: The script will only format the file systems,
+  and won't run the model checker.
+- `--replay, -r`: After setting up the file systems, the script will build and
+  run the replayer instead of the main model checker.
+- `--mount-all, -m`: The model checker will just mount all tested file systems
+  listed in `$FSLIST`.
 - `--verbose, -v`: Be more verbose.
 
-This script will create a JFFS2 file system on /dev/mtdblock0 and a XFS file
-system on /dev/ram0. The model checker assumes that the size of /dev/mtdblock0
-is 256KB and that of /dev/ram0 is 16MB. It is recommended that you have no less
-than 64GB of physical RAM to run this model checker, or you need to create have
-a large enough swap space. Otherwise the model checker will fail midway with
-out-of-memory error. Later we will discuss how to modify the script and the
+This script will create a JFFS2 file system on /dev/mtdblock0 and a ext4 file
+system on /dev/ram0. The model checker assumes that their sizes are 256KB.
+Later we will discuss how to modify the script and the
 model checker to test other file systems.
 
 As the model checker is running, the standard output is redirected to
@@ -224,12 +246,47 @@ the terminal, and the generated files will remain owned by root.
 
 ## Performance metrics
 
+While the model checker is running, it will spawn a separate thread (called
+"perf metrics thread") that collects performance statistics regularly and
+record them in `perf.csv`. By default metrics are collected and logged every
+5 seconds, and you can modify the value of `PERF_INTERVAL` macro in `config.h`
+to change this interval. The metrics include information regarding test speed,
+memory and swap activities as well as statistics about the file systems being
+tested. The resulting CSV file has the following fields:
+
+- `epoch`: The time past since the model checker started, in seconds.
+- `fsops_rate`: Current test speed, measured by number of file system operations
+    performed per second.
+- `proc_state`: The state of the model checker process. See `/proc/[pid]/stat`
+    directive of `man proc`.
+- `minor_flt`: Number of minor faults that haven't required loading a memory
+     page from disk.
+- `major_flt`: Number of major faults that did require loading a page from disk.
+- `utime`: Amount of time that the model checker process has been scheduled in
+    user mode, measurd in clock ticks (divide by sysconf(_SC_CLK_TCK)).
+- `ktime`: Amount of time that the model checker process has been scheeduled in
+    kernel mode, measured in clock ticks (divide by sysconf(_SC_CLK_TCK)).
+- `num_threads`: Number of threads that this process has (Normally this should
+    always be 2).
+- `vmem_sz`: Virtual memory size in bytes.
+- `pmem_sz`: Bytes of physical memory that the model checker process uses.
+- `swap_$dev_bytes_read`, `swap_$dev_bytes_written`: Bytes read from and written
+    into the swap device(s) per second. `$dev` is the name of the device that
+    serves as the swap. To be probed by the perf metrics thread, you need to
+    have a block device in `/dev` folder to serve as the swap. Regular files
+    that serve as swap spaces cannot be stat'ed. If there are more than one
+    devices serving as the swap spaces, there would be multiple such fields in
+    the CSV.
+- `$fs_capacity`, `$fs_free`, `$fs_inodes`, `$fs_ifree`: Total capacity, free
+    space, total inodes and number of free inodes of the file systems being
+    tested. There are four such fields for each file system being tested by the
+    model checker.
+
 ## Testing other file systems.
 
 You will need to modify the setup script (`setup.sh`), configuration header
-(`config.h`), initialization code in `fileutil.c` and the model checker
-code (`demo.pml`) in order to have the model checker test other file systems.
-Here are the parts that need to be modified:
+(`config.h`) and the model checker code (`demo.pml`) in order to have the model
+checker test other file systems.  Here are the parts that need to be modified:
 
 #### 1. Setup Script (`setup.sh`)
 
@@ -292,63 +349,43 @@ unset_nilfs2() {
 The configuration header contains all global C variables required by the file
 system model checker. Most of the variables and arrays are fixed or
 automatically expanded according to the number of file systems, but you need to
-modify some fs-specific declarations in order for the model checker to work.
+provide the list of file system names and corresponding paths to the underlying
+storage devices in order for the model checker to work.
 
 To begin with, you will need to change the elements in the array `fslist[]` to
-the names of the file systems you want to test (in line 11). Besides, you need to
-declare a pointer `void *fsimg_$fs` and a integer variable `int fsfd_$fs` for
-each file system you would like to test, just like what is written in line 19
-and 21. `$fs` is the name of the file system. The pointer will point to the
-memory-mapped file system image and be tracked by the model checker as the
-concrete state.
+the names of the file systems you want to test (in line 23). `$fs` is the name
+of the file system. You also need to modify `devlist[]` which lists the paths to
+devices where these file systems store correspondingly.
 
-#### 4. The initialization code in (`fileutil.c`)
-
-We want the pointers that are tracked by Spin and point to file system images to
-be valid as soon as or before the Spin model checker starts tracking states.
-Therefore, we decide to implement a initialization function called `init()`
-where the file system images (i.e. ramdisks, or block devices on which the file
-systems are built) are opened and memory-mapped outside the Promela code, and we
-want the function to be called before Spin starts tracking states. By taking
-advantage the `__attribute__((constructor))` extension supported by GCC, we can
-have the initialization function executed before `main()`.
-
-`init()` is defined at the bottom of `fileutil.c`, in around line 221. Here,
-you need to open the block devices in read-write mode (`O_RDWR`) and then
-memory-map them. Assign the pointers with the addresses returned by `mmap()`.
-For example, if you want to experiment with ext2 and ext4, the code should
-be as follows:
-
-```c
-fsfd_ext2 = open("/dev/ram0", O_RDWR);
-assert(fdfd_ext2 >= 0);
-fsimg_ext2 = mmap(NULL, fsize(fsfd_ext2), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext2, 0);
-assert(fsimg_ext2 != MAP_FAILED);
-
-fsfd_ext4 = open("/dev/ram1", O_RDWR);
-assert(fdfd_ext4 >= 0);
-fsimg_ext4 = mmap(NULL, fsize(fsfd_ext4), PROT_READ | PROT_WRITE, MAP_SHARED, fsfd_ext4, 0);
-assert(fsimg_ext4 != MAP_FAILED);
-```
-
-`fsize()` is a helper function that retrieves the size of an opened file or
-block device. Don't forget to comment out or remove the old code that does the
-same thing!
+The latest version of file system model checker declares the file descriptors of
+and pointers to the file system images in arrays whose lengths are equal to the
+number of file systems listed in `fslist[]`, so there is no need to hardcode
+them anymore.
 
 #### 3. The model checker code (`demo.pml`)
 
 Finally, you will let the model checker track the images of the file systems
 (or rather, the full content of the block devices which the file systems are
-built on). This is done by removing the existing `c_track` statements that
-tracks the images of jffs2 and xfs (in line 12 and 13), and add your own
-`c_track` statements that look like this:
+built on). This is done by modifying the `c_track` statements that
+tracks the images of ext4 and jffs2 (in line 9 and 10) that look like this:
 
 ```promela
-c_track "fsimg_$fs" "$size" "UnMatched"
+c_track "fsimgs[$i]" "$size" "UnMatched";
 ```
 
-`fsimg_$fs` is the `void *` pointer you decleared in the previous step.
-`$size` is the size of the block device in bytes. `"UnMatched"` means that the
+`fsimgs[]` is an array of `void *` pointers whose length is equal to the number
+of file systems listed in `fslist[]` in `config.h`. That array stores pointers
+to the file system images in the same order as what are listed in `fslist[]`.
+For instance, if your `fslist[]` is initialized as `{"ext4", "xfs", "btrfs"}`,
+you should put the following `c_track` statements in `demo.pml`:
+
+```promela
+c_track "fsimgs[0]" "$size_ext4" "UnMatched";
+c_track "fsimgs[1]" "$size_xfs" "UnMatched";
+c_track "fsimgs[2]" "$size_btrfs" "UnMatched";
+```
+
+`$size_*` is the size of the block device in bytes. `"UnMatched"` means that the
 image will only be used as concrete states for restoration, not abstract states
 for matching. The model checker uses a special utility function to calculate the
 abstract file system states on its own. The "abstract file system state" will be
