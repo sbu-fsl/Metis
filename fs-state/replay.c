@@ -144,26 +144,22 @@ void replayer_init()
 
 static void do_checkpoint(const char *devpath, char **bufptr)
 {
-	int devfd = open(devpath, O_RDONLY);
+	int devfd = open(devpath, O_RDWR);
 	assert(devfd >= 0);
 	size_t fs_size = fsize(devfd);
 	char *buffer, *ptr;
-	size_t remaining = fs_size;
-	const size_t bs = 4096;
+	// size_t remaining = fs_size;
+	// const size_t bs = 4096;
 
+	ptr = mmap(NULL, fs_size, PROT_READ | PROT_WRITE, MAP_SHARED, devfd, 0);
+	assert(ptr != MAP_FAILED);
 	buffer = malloc(fs_size);
 	assert(buffer);
+
+	memcpy(buffer, ptr, fs_size);
 	*bufptr = buffer;
-	ptr = buffer;
 
-	while (remaining > 0) {
-		size_t readsz = (remaining > bs) ? bs : remaining;
-		ssize_t res = read(devfd, ptr, readsz);
-		assert(res >= 0);
-		ptr += res;
-		remaining -= res;
-	}
-
+	munmap(ptr, fs_size);
 	close(devfd);
 }
 
@@ -180,21 +176,17 @@ void checkpoint()
 
 static void do_restore(const char *devpath, char *buffer)
 {
-	int devfd = open(devpath, O_WRONLY);
+	int devfd = open(devpath, O_RDWR);
 	assert(devfd >= 0);
 	size_t size = fsize(devfd);
-	char *ptr = buffer;
-	size_t remaining = size;
-	const size_t bs = 4096;
+	char *ptr;
 
-	while (remaining > 0) {
-		size_t writesz = (remaining > bs) ? bs : remaining;
-		ssize_t res = write(devfd, ptr, writesz);
-		assert(res >= 0);
-		ptr += res;
-		remaining -= res;
-	}
+	ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, devfd, 0);
+	assert(ptr != MAP_FAILED);
+	
+	memcpy(ptr, buffer, size);
 
+	munmap(ptr, size);
 	close(devfd);
 }
 
