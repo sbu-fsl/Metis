@@ -20,8 +20,8 @@
 /* List of folders to be excluded */
 static const char *exclude_dirs[] = {"lost+found", NULL};
 /* List of file systems: Modify this to experiment with other file systems */
-static const char *fslist[] = {"ext4", "jffs2"};
-static const char *devlist[] = {"/dev/ram0", "/dev/mtdblock0"};
+static const char *fslist[] = {"ext4", "f2fs"};
+static const char *devlist[] = {"/dev/ram0", "/dev/ram1"};
 #define N_FS    nelem(fslist)
 char *basepaths[N_FS];
 char *testdirs[N_FS];

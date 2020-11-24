@@ -55,6 +55,7 @@ void mountall()
     int failpos, err;
     for (int i = 0; i < N_FS; ++i) {
         /* mount(source, target, fstype, mountflags, option_str) */
+	fprintf(stderr, "Mounting source:%s, target:%s, fstype:%s\n", devlist[i], basepaths[i], fslist[i]);
         int ret = mount(devlist[i], basepaths[i], fslist[i], MS_NOATIME, "");
         if (ret != 0) {
             failpos = i;
@@ -110,7 +111,9 @@ try_unmount:
             fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
                     fslist[i], basepaths[i], errnoname(errno));
             has_failure = true;
-        }
+        } else {
+		fprintf(stderr, "Unmounted : %s\n", basepaths[i]);
+	}
     }
     assert(!has_failure);
 }

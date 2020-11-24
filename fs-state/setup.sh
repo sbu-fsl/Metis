@@ -1,7 +1,7 @@
 #!/bin/bash
 
-FSLIST=(ext4 jffs2)
-DEVLIST=(/dev/ram0 /dev/mtdblock0)
+FSLIST=(ext4 f2fs)
+DEVLIST=(/dev/ram0 /dev/ram1)
 LOOPDEVS=()
 verbose=0
 POSITIONAL=()
@@ -53,6 +53,28 @@ unset_ext2() {
     :
 }
 
+setup_btrfs() {
+    DEVFILE=$1;
+    BLOCKSIZE=1k
+    COUNT=112640
+    runcmd dd if=/dev/zero of=$DEVFILE bs=$BLOCKSIZE count=$COUNT status=none;
+
+    mkfs.btrfs $DEVFILE;
+}
+unset_btrfs() {
+        :
+}
+setup_f2fs() {
+    DEVFILE=$1;
+    BLOCKSIZE=1k
+    COUNT=40960
+    runcmd dd if=/dev/zero of=$DEVFILE bs=$BLOCKSIZE count=$COUNT status=none;
+
+    mkfs.f2fs $DEVFILE;
+}
+unset_f2fs() {
+	:
+}
 setup_ext4() {
     DEVFILE=$1;
     BLOCKSIZE=1k
