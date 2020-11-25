@@ -336,11 +336,13 @@ static void checkpoint_before_hook(unsigned char *ptr)
 {
     fprintf(seqfp, "checkpoint\n");
     makelog("[seqid = %d] checkpoint\n", count);
+    mmap_devices();
     // assert(do_fsck());
 }
 
 static void checkpoint_after_hook(unsigned char *ptr)
 {
+    unmap_devices();
     assert(do_fsck());
     // dump_fs_images("snapshots");
 }
@@ -349,11 +351,13 @@ static void restore_before_hook(unsigned char *ptr)
 {
     fprintf(seqfp, "restore\n");
     makelog("[seqid = %d] restore\n", count);
+    mmap_devices();
     // assert(do_fsck());
 }
 
 static void restore_after_hook(unsigned char *ptr)
 {
+    unmap_devices();
     // assert(do_fsck());
     // dump_fs_images("after-restore");
 }
@@ -365,17 +369,6 @@ extern void (*c_unstack_after)(unsigned char *);
 
 void __attribute__((constructor)) init()
 {
-    /* open and mmap the test f/s images */
-    for (int i = 0; i < N_FS; ++i) {
-        int fsfd = open(devlist[i], O_RDWR);
-        assert(fsfd >= 0);
-        void *fsimg = mmap(NULL, fsize(fsfd), PROT_READ | PROT_WRITE,
-                MAP_SHARED, fsfd, 0);
-        assert(fsimg != MAP_FAILED);
-        fsfds[i] = fsfd;
-        fsimgs[i] = fsimg;
-    }
- 
     /* open sequence file */
     seqfp = fopen("sequence.log", "w");
     assert(seqfp);
@@ -395,10 +388,6 @@ void cleanup()
     for (int i = 0; i < _n_files; ++i) {
         close(_opened_files[i]);
         _opened_files[i] = 0;
-    }
-    for (int i = 0; i < N_FS; ++i) {
-        munmap(fsimgs[i], fsize(fsfds[i]));
-        close(fsfds[i]);
     }
     _n_files = 0;
     errno = 0;
