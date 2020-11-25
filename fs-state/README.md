@@ -270,6 +270,8 @@ tested. The resulting CSV file has the following fields:
     always be 2).
 - `vmem_sz`: Virtual memory size in bytes.
 - `pmem_sz`: Bytes of physical memory that the model checker process uses.
+- `swap_bytes_used`: Total bytes of swap space used by the system. This is the
+    same number you can get with `free -b` command.
 - `swap_$dev_bytes_read`, `swap_$dev_bytes_written`: Bytes read from and written
     into the swap device(s) per second. `$dev` is the name of the device that
     serves as the swap. To be probed by the perf metrics thread, you need to
@@ -300,7 +302,8 @@ device for other file systems.
 
 Each file system should have the corresponding setup and unset functions in the
 script called `setup_$fs()` and `unset_$fs()` respectively. If you would like to
-test ext2(256K), ext4(256K), jffs2(256K) or xfs(16M) file systems, that's all
+test ext2(256K), ext4(256K), jffs2(256K), xfs(16M) or f2fs(40M) file systems,
+that's all
 you need to do with the setup script because their setup and unset functions are
 already provided. If you want different sizes then you'll need to modify these
 setup functions (e.g. you need at least 2MB to enable journaling in ext4).
@@ -778,46 +781,38 @@ in the kernel memory.
 ### Replayer
 
 The replayer replays the file system operations executed by the Spin mode
-checker recorded in `sequence.log`. The purpose of this replayer is to replicate
-the file system corruption bugs in ext2/ext4 we discussed in the meetings.
+checker recorded in `sequence.log`. The purpose of this replayer was to replicate
+the file system corruption bugs in ext2/ext4 we discussed in the meetings. Now
+the replayer can be used to debug any anomaly we encounter when running the
+model checker.
 
 This replayer will do the following:
 
-- Initialize a clean ext4 file system on a ramdisk and mount it on
-    `/mnt/test-ext4`. See `void init()` in the code
-- Parse `sequence.log` line by line, and execute the file system operation with
-    given arguments.
-- After each execution, check if the file system is in good state by testing the
-    two bugs we discussed (See `bool fs_is_good()`).
-- After each execution, the there's a probability (`prob_ckpt`) that the file
-    system is checkpointed by taking a full snapshot of the ramdisk, and there
-    is a probability (`prob_rest`) that the file system is restored to an
-    earlier snapshot by writing the ramdisk with the saved snapshot (on
-    condition that there is one). This step emulates what Spin does in state
-    restoration. (See `ckpt_or_restore` func.)
+- Do some initializations such as preparing mounting point pathnames and seeding
+    the random number. Note that now the replayer expects that the file systems
+    should be prepared by the setup script. See `void replayer_init()`.
+- Parse `sequence.log` line by line, and execute the file system operation
+    with given arguments, as well as checkpoint and restore operations.
+- Before and after performing a file system operation, the replayer uses
+    `mountall()` and `unmount_all()` functions provided in `mount.c` to remount
+    and unmount the file system.
+- When countering a line called `checkpoint` or `restore` in the sequence, the
+    replayer captures or restores the file system images just as what the model
+    checker does (see `checkpoint()` and `restore()`).
 
-Before running the replayer, please open `sequence.log`: If the directory in it
-is not `/mnt/test-ext4/`, please change the directories to `/mnt/test-ext4`.
-Also if you want to run the replayer on other file systems, you will need to
-modify `init()` function in the code.
-
-Use `make replayer` to build the replayer. Usage:
-
-```
-./replayer [prob_ckpt] [prob_restore]
-```
-
-`prob_ckpt` and `prob_restore` are integers representing the percentage number
-of the probability of checkpointing and restoring respectively. They should be
-in range of 0 and 50.
+Use `make replayer` to build the replayer, and use `sudo ./setup.sh -r` to
+format file systems and run the replayer. Usage:
 
 The replayer will output a line of message reporting sequence number, name of
-the operation and arguments every time it performs an operation. It will stop
-when encountering the bugs. Therefore the line count of the output can reflect
-how early the bug manifested --- The fewer the line count is, the earlier the
-bug is triggered.
+the operation and arguments every time it performs an operation. After finishing
+running the replayer, you can use `sudo ./setup.sh -m` to mount these tested
+file systems to check what's in there.
 
 ### Auto replayer script
+
+**Note**: This is deprecated because the replayer no longer uses probablisitic
+method to checkpoint and restore file system images, and we have worked around
+the cache incoherency problem.
 
 The script `./autoreplay.sh` will automatically replay the sequence of file
 system operations in `sequence.log` using varied probability of checkpointing
