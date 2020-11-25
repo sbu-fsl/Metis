@@ -57,7 +57,9 @@ static inline int record_seq(const char *format, ...)
 {
     va_list args;
     va_start(args, format);
-    return vfprintf(seqfp, format, args);
+    int ret = vfprintf(seqfp, format, args);
+    fflush(seqfp);
+    return ret;
 }
 
 static inline void compute_abstract_state(const char *basepath,
