@@ -332,40 +332,44 @@ static void unmap_devices()
     }
 }
 
-static void checkpoint_before_hook(unsigned char *ptr)
+static long checkpoint_before_hook(unsigned char *ptr)
 {
     fprintf(seqfp, "checkpoint\n");
     makelog("[seqid = %d] checkpoint\n", count);
     mmap_devices();
     // assert(do_fsck());
+    return 0;
 }
 
-static void checkpoint_after_hook(unsigned char *ptr)
+static long checkpoint_after_hook(unsigned char *ptr)
 {
     unmap_devices();
     assert(do_fsck());
     // dump_fs_images("snapshots");
+    return 0;
 }
 
-static void restore_before_hook(unsigned char *ptr)
+static long restore_before_hook(unsigned char *ptr)
 {
     fprintf(seqfp, "restore\n");
     makelog("[seqid = %d] restore\n", count);
     mmap_devices();
     // assert(do_fsck());
+    return 0;
 }
 
-static void restore_after_hook(unsigned char *ptr)
+static long restore_after_hook(unsigned char *ptr)
 {
     unmap_devices();
     // assert(do_fsck());
     // dump_fs_images("after-restore");
+    return 0;
 }
 
-extern void (*c_stack_before)(unsigned char *);
-extern void (*c_stack_after)(unsigned char *);
-extern void (*c_unstack_before)(unsigned char *);
-extern void (*c_unstack_after)(unsigned char *);
+extern long (*c_stack_before)(unsigned char *);
+extern long (*c_stack_after)(unsigned char *);
+extern long (*c_unstack_before)(unsigned char *);
+extern long (*c_unstack_after)(unsigned char *);
 
 void __attribute__((constructor)) init()
 {
