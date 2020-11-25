@@ -1,6 +1,7 @@
 #include "fileutil.h"
 #include "swapperf.h"
 #include <sys/vfs.h>
+#include <sys/sysinfo.h>
 #include <pthread.h>
 
 static FILE *perflog_fp;
@@ -144,6 +145,7 @@ void record_performance()
         last_swaps_stat = malloc(n_swaps * sizeof(struct iostat));
         assert(last_swaps_stat);
         get_swapstats(last_swaps_stat);
+	fprintf(perflog_fp, "swap_bytes_used,");
         for (int i = 0; i < n_swaps; ++i) {
             fprintf(perflog_fp, "swap_%s_bytes_read,swap_%s_bytes_written,",
                     last_swaps_stat[i].devname, last_swaps_stat[i].devname);
@@ -177,6 +179,13 @@ void record_performance()
     /* Retrieve swap activity */
     struct iostat *swaps_stat;
     struct iostat *swaps_diff;
+    struct sysinfo info;
+    int ret = sysinfo(&info);
+    if (ret != 0) {
+        fprintf(stderr, "Cannot get sysinfo: %s\n", errnoname(errno));
+        exit(1);
+    }
+    fprintf(perflog_fp, "%lu,", info.totalswap - info.freeswap);
     swaps_stat = malloc(2 * n_swaps * sizeof(struct iostat));
     swaps_diff = swaps_stat + n_swaps;
     get_swapstats(swaps_stat);
