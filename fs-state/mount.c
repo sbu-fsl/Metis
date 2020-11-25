@@ -85,7 +85,7 @@ err:
     fprintf(stderr, "Could not mount file system %s in %s at %s (%s)\n",
             fslist[failpos], devlist[failpos], basepaths[failpos],
             errnoname(err));
-    abort();
+    exit(1);
 }
 
 void unmount_all()
@@ -112,6 +112,7 @@ try_unmount:
             has_failure = true;
         }
     }
-    assert(!has_failure);
+    if (has_failure)
+        exit(1);
 }
 

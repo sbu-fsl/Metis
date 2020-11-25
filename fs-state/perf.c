@@ -43,7 +43,7 @@ static void get_proc_stat(struct proc_stat *st)
     if (!statfp) {
         fprintf(stderr, "Cannot open %s - what's wrong? (%d)\n",
                 statpath, errno);
-        abort();
+        exit(1);
     }
 
     ssize_t readsz = 0;
