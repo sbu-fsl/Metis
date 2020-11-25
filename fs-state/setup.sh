@@ -40,6 +40,30 @@ setup_ext() {
     echo $DEVICE;
 }
 
+# Check if the given file is a block device and meets the size requirement
+# If it's OK, the function will return the size of the device in bytes.
+# Usage: verify_device <path> <fstype> <minimum_size_bytes>
+verify_device() {
+    DEVFILE=$1
+    FSTYPE=$2
+    MINSZ=$3
+
+    if ! [ -b "$DEVFILE" ]; then
+        echo "$DEVFILE is not found or is not a block device" >&2;
+        return 1;
+    fi
+
+    ramdisk_sz=$(runcmd blockdev --getsize64 $DEVFILE);
+    if [ "$ramdisk_sz" -lt "$MINSZ" ]; then
+        echo "$FSTYPE's minimum file system size is $MINSZ bytes." >&2;
+        echo "Your ramdisk device ($DEVFILE)'s size is $ramdisk_sz bytes." >&2;
+        return 1;
+    fi
+
+    echo $ramdisk_sz;
+    return 0;
+}
+
 setup_ext2() {
     DEVFILE=$1;
     BLOCKSIZE=1k
@@ -85,6 +109,18 @@ unset_jffs2() {
     runcmd rm -f $JFFS2_IMAGE;
 }
 
+setup_f2fs() {
+    DEVFILE=$1;
+
+    devsize=$(runcmd verify_device $DEVFILE f2fs $(expr 40 \* 1024 \* 1024))
+    runcmd dd if=/dev/zero of=$DEVFILE bs=1k count=$(expr $devsize / 1024)
+    runcmd mkfs.f2fs -f $DEVFILE >&2;
+}
+
+unset_f2fs() {
+    :
+}
+
 setup_mtd() {
     runcmd modprobe mtdram total_size=$(expr $JFFS2_SIZE / 1024) erase_size=16;
     runcmd modprobe mtdblock;
@@ -92,20 +128,9 @@ setup_mtd() {
 
 setup_xfs() {
     DEVFILE="$1";
-    if ! [ -b $DEVFILE ]; then
-        echo "$DEVFILE is not found or is not a block device" >&2;
-        echo "Please use 'sudo modprobe brd rd_size=<n_kb>' to setup ramdisks" >&2;
-        return 1;
-    fi
 
-    ramdisk_sz=$(runcmd blockdev --getsize64 $DEVFILE);
-    if [ "$ramdisk_sz" -lt 16777216 ]; then
-        echo "XFS's minimum file system size is 16MB." >&2;
-        echo "Your ramdisk device ($DEVFILE)'s size is $ramdisk_sz" >&2;
-        return 1;
-    fi
-
-    runcmd dd if=/dev/zero of=$DEVFILE bs=4k count=$(expr $ramdisk_sz / 4096)
+    devsize=$(runcmd verify_device $DEVFILE xfs $(expr 16 \* 1024 \* 1024))
+    runcmd dd if=/dev/zero of=$DEVFILE bs=1k count=$(expr $devsize / 1024)
     runcmd mkfs.xfs -f $DEVFILE >&2;
 }
 
