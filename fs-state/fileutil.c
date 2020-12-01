@@ -358,7 +358,7 @@ static void restore_before_hook(unsigned char *ptr)
 static void restore_after_hook(unsigned char *ptr)
 {
     unmap_devices();
-    assert(do_fsck());
+    //assert(do_fsck());
     // dump_fs_images("after-restore");
 }
 
