@@ -19,11 +19,11 @@ run_ramdisk: ramdisk
 	rm -rf /mnt/test-ramdisk-*/test* || true; \	
 
 abstractfs: abstract_fs.cpp
-	g++ -fPIC -I../include -o abstract_fs.o -c abstract_fs.cpp
+	g++ -std=c++11 -fPIC -I../include -o abstract_fs.o -c abstract_fs.cpp
 	ar rcs abstract_fs.a abstract_fs.o
 
 abstractfs-test: abstract_fs.cpp
-	g++ -g -Wall -Werror -o absfs abstract_fs.cpp -DABSFS_TEST \
+	g++ -std=c++11 -g -Wall -Werror -o absfs abstract_fs.cpp -DABSFS_TEST \
 		-I../include -lssl -lcrypto -lrt -lstdc++ -lstdc++fs
 
 pathutils: $(COMMON_DIR)/path_utils.cpp
