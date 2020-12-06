@@ -121,6 +121,18 @@ unset_f2fs() {
     :
 }
 
+setup_btrfs() {
+    DEVFILE=$1;
+
+    devsize=$(runcmd verify_device $DEVFILE btrfs 114294784);
+    runcmd dd if=/dev/zero of=$DEVFILE bs=1k count=$(expr $devsize / 1024)
+    runcmd mkfs.btrfs -f $DEVFILE >&2;
+}
+
+unset_btrfs() {
+    :
+}
+
 setup_mtd() {
     runcmd modprobe mtdram total_size=$(expr $JFFS2_SIZE / 1024) erase_size=16;
     runcmd modprobe mtdblock;
