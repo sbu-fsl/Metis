@@ -384,15 +384,13 @@ void __attribute__((constructor)) init()
     c_unstack_after = restore_after_hook;
 }
 
-/* The procedure that resets run-time states
- * Currently we just close all opened files
+/*
+ * This cleanup procedure will be called when the program exits.
  */
-void cleanup()
+void __attribute__((destructor)) cleanup()
 {
-    for (int i = 0; i < _n_files; ++i) {
-        close(_opened_files[i]);
-        _opened_files[i] = 0;
-    }
-    _n_files = 0;
-    errno = 0;
+    fflush(stdout);
+    fflush(stderr);
+    fclose(seqfp);
+    unfreeze_all();
 }

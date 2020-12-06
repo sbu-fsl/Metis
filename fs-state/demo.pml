@@ -22,6 +22,7 @@ proctype worker()
            mountall();
            for (i = 0; i < N_FS; ++i) {
                makecall(rets[i], errs[i], "%s, 0%o", create_file, testfiles[i], 0644);
+               fsfreeze(fslist[i], devlist[i], basepaths[i]);
                compute_abstract_state(basepaths[i], absfs[i]);
            }
            expect(compare_equality_fexists(fslist, N_FS, testdirs));
@@ -42,6 +43,7 @@ proctype worker()
             generate_data(data, writelen, 0);
             for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%s, %p, %ld, %zu", write_file, testfiles[i], data, offset, writelen);
+                fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
 
@@ -64,6 +66,7 @@ proctype worker()
             off_t flen = pick_value(0, 200000, 10000);
             for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%s, %ld", truncate, testfiles[i], flen);
+                fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, N_FS, testfiles));
@@ -81,6 +84,7 @@ proctype worker()
             mountall();
             for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%s", unlink, testfiles[i]);
+                fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, N_FS, testdirs));
@@ -98,6 +102,7 @@ proctype worker()
             mountall();
             for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%s, 0%o", mkdir, testdirs[i], 0755);
+                fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, N_FS, testdirs));
@@ -116,6 +121,7 @@ proctype worker()
             mountall();
             for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%s", rmdir, testdirs[i]);
+                fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, N_FS, testdirs));
@@ -152,8 +158,6 @@ proctype driver(int nproc)
             testfiles[i] = calloc(1, len + 1);
             snprintf(testfiles[i], len + 1, "%s/test.txt", basepaths[i]);
         }
-
-        atexit(cleanup);
     };
 
     for (i : 1 .. nproc) {
