@@ -1,7 +1,7 @@
 #!/bin/bash
 
-FSLIST=(ext4 jffs2)
-DEVLIST=(/dev/ram0 /dev/mtdblock0)
+FSLIST=(ext4 nilfs2)
+DEVLIST=(/dev/ram0 /dev/ram1)
 LOOPDEVS=()
 verbose=0
 POSITIONAL=()
@@ -149,7 +149,17 @@ setup_xfs() {
 unset_xfs() {
     :
 }
+setup_nilfs2() {
+    DEVFILE=$1
+    BLOCKSIZE=1k
+    COUNT=131076
+    runcmd dd if=/dev/zero of=$DEVFILE bs=$BLOCKSIZE count=$COUNT status=none
+    runcmd mkfs.nilfs2 -B 16 $DEVFILE
+}
 
+unset_nilfs2() {
+    :
+}
 generic_cleanup() {
     if [ "$KEEP_FS" = "0" ]; then
         for fs in ${FSLIST[@]}; do

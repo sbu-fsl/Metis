@@ -73,7 +73,10 @@ void mountall()
     while ((folder = exclude_dirs[n])) {
         for (int i = 0; i < N_FS; ++i) {
             snprintf(fullpath, PATH_MAX, "%s/%s", basepaths[i], folder);
-            rmdir(fullpath);
+            int x = rmdir(fullpath);
+	    remove(fullpath);
+	    //fprintf(stderr, "Return -> %d Errno-> %d \n",x,errno);	
+	    //fprintf(stderr, "Remove -> %s \n",fullpath);
         }
         n++;
     }
