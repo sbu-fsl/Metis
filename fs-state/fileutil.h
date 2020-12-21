@@ -77,10 +77,10 @@ static inline void compute_abstract_state(const char *basepath,
     memset(func, 0, FUNC_NAME_LEN + 1); \
     strncpy(func, #funcname, FUNC_NAME_LEN); \
     cur_pid = Pworker->_pid; \
+    record_seq("%s, " argfmt "\n", func, __VA_ARGS__); \
     errno = 0; \
     retvar = funcname(__VA_ARGS__); \
     err = errno; \
-    record_seq("%s, " argfmt "\n", func, __VA_ARGS__); \
     makelog("[seqid = %zu] %s (" argfmt ")", \
             count, func, __VA_ARGS__); \
     printf(" -> ret = %d, err = %s\n", retvar, errnoname(errno)); \
@@ -176,5 +176,6 @@ bool do_fsck();
 int fsfreeze(const char *fstype, const char *devpath, const char *mountpoint);
 int fsthaw(const char *fstype, const char *devpath, const char *mountpoint);
 int unfreeze_all();
+void clear_excluded_files();
 
 #endif
