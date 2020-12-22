@@ -1,7 +1,8 @@
+#include "criu.h"
 #include "fileutil.h"
 #include <sys/wait.h>
 
-int cur_pid;
+int cur_pid, fd;
 char func[FUNC_NAME_LEN + 1];
 struct timespec begin_time;
 
@@ -336,6 +337,13 @@ static long checkpoint_before_hook(unsigned char *ptr)
 {
     fprintf(seqfp, "checkpoint\n");
     makelog("[seqid = %d] checkpoint\n", count);
+    criu_set_log_file("dump.log");
+    int ret = criu_dump();
+    //fprintf(seqfp, "criu checkpoint return :%d\n", ret);
+    makelog("[seqid = %d] criu dump ret: %d\n", count, ret);
+    if (ret == 0) {
+       fprintf(seqfp, "criu checkpoint\n");
+    }
     mmap_devices();
     // assert(do_fsck());
     return 0;
@@ -361,6 +369,8 @@ static long restore_before_hook(unsigned char *ptr)
 static long restore_after_hook(unsigned char *ptr)
 {
     unmap_devices();
+    criu_set_log_file("restore.log");
+    criu_restore();
     // assert(do_fsck());
     // dump_fs_images("after-restore");
     return 0;
@@ -376,6 +386,13 @@ void __attribute__((constructor)) init()
     /* open sequence file */
     seqfp = fopen("sequence.log", "w");
     assert(seqfp);
+    fd = open("/home/gomathi/criu-3.15/test/others/libcriu/wdir/i/test_self/", O_DIRECTORY);
+    criu_init_opts();
+    criu_set_service_binary("/home/gomathi/criu-3.15/criu/criu/");
+    criu_set_images_dir_fd(fd);
+    criu_set_log_level(4);
+    //criu_set_shell_job(1);
+    //criu_set_pid(getpid());
 
     /* Register hooks */
     c_stack_before = checkpoint_before_hook;
@@ -393,6 +410,7 @@ void cleanup()
         close(_opened_files[i]);
         _opened_files[i] = 0;
     }
+    close(fd);
     _n_files = 0;
     errno = 0;
 }
