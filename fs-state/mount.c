@@ -52,11 +52,19 @@ bool do_fsck()
 void mountall()
 {
     static bool inited = false;
+    char fs_idx[3];
     int failpos, err;
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < 1; ++i) {
         /* mount(source, target, fstype, mountflags, option_str) */
-        int ret = mount(devlist[i], basepaths[i], fslist[i], MS_NOATIME, "");
-        if (ret != 0) {
+	//snprintf(fs_idx, 3, "%d", i+1);
+	//char sourcepath[50];
+	//sprintf(sourcepath, ":/server-xfs%d", i+1);
+        //int ret = mount(sourcepath, basepaths[i], "nfs", 0, "addr=127.0.0.1");
+	int ret1 = mount("127.0.0.1:/server-xfs1","/mnt/test-xfs1","nfs",0,"addr=127.0.0.1");
+	int ret = mount("127.0.0.1:/server-xfs2","/mnt/test-xfs2","nfs",0,"addr=127.0.0.1");
+	//int ret = system("mount -t nfs -o nolock 127.0.0.1:/server-xfs1 /mnt/test-xfs1");
+	//int ret1 = system("mount -t nfs -o nolock 127.0.0.1:/server-xfs2 /mnt/test-xfs2");
+	if (ret == -1 || ret1 == -1) {
             failpos = i;
             err = errno;
             goto err;

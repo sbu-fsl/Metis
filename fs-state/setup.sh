@@ -1,7 +1,7 @@
 #!/bin/bash
 
-FSLIST=(ext4 jffs2)
-DEVLIST=(/dev/ram0 /dev/mtdblock0)
+FSLIST=(xfs xfs)
+DEVLIST=(/dev/ram0 /dev/ram2)
 LOOPDEVS=()
 verbose=0
 POSITIONAL=()
@@ -76,6 +76,17 @@ setup_ext2() {
 unset_ext2() {
     :
 }
+setup_btrfs() {
+    DEVFILE=$1;
+    BLOCKSIZE=1k
+    COUNT=112640
+    runcmd dd if=/dev/zero of=$DEVFILE bs=$BLOCKSIZE count=$COUNT status=none;
+
+    setup_ext btrfs $DEVFILE 0;
+}
+unset_btrfs() {
+        :
+}
 
 setup_ext4() {
     DEVFILE=$1;
@@ -127,11 +138,7 @@ setup_mtd() {
 }
 
 setup_xfs() {
-    DEVFILE="$1";
-
-    devsize=$(runcmd verify_device $DEVFILE xfs $(expr 16 \* 1024 \* 1024))
-    runcmd dd if=/dev/zero of=$DEVFILE bs=1k count=$(expr $devsize / 1024)
-    runcmd mkfs.xfs -f $DEVFILE >&2;
+	:
 }
 
 unset_xfs() {
@@ -170,7 +177,7 @@ runcmd() {
     ret=$?;
     if [ $ret -ne 0 ]; then
         echo "Command '$0' exited with error ($ret)." >&2;
-        generic_cleanup;
+        #generic_cleanup;
         exit $ret;
     fi
 }
@@ -232,10 +239,6 @@ for i in $(seq 0 $(($n_fs-1))); do
     fs=${FSLIST[$i]};
     DEVICE=${DEVLIST[$i]};
 
-    # Unmount first
-    if [ "$(mount | grep /mnt/test-$fs)" ]; then
-        runcmd umount -f /mnt/test-$fs;
-    fi
 
     setup_$fs $DEVICE;
 
@@ -253,7 +256,7 @@ if [ "$SETUP_ONLY" != "1" ]; then
     echo 'Please check stdout in output.log, stderr in error.log';
     ./pan 2>error.log > output.log
 
-    generic_cleanup;
+ #   generic_cleanup;
 fi
 
 # Run replayer

@@ -335,24 +335,37 @@ static void unmap_devices()
 
 static long checkpoint_before_hook(unsigned char *ptr)
 {
+    /* criu dump 
+    mkdir(strcat("/home/gomathi/criu-3.15/test/others/libcriu/wdir/i/test_self/", ptr), 0777);
+    fd = open(strcat("/home/gomathi/criu-3.15/test/others/libcriu/wdir/i/test_self/", ptr), O_DIRECTORY);
+    int ret =criu_init_opts();
+    makelog("[criu_init_opts] return: %d\n", ret);
+    criu_set_service_binary("/home/gomathi/criu-3.15/criu/criu/");
+    criu_set_images_dir_fd(fd);
+    criu_set_log_level(4);
+    criu_set_shell_job(1);
+    // get the pid of nfs-ganesha server
+    criu_set_pid(get_nfs_ganesha_pid());
+
     fprintf(seqfp, "checkpoint\n");
     makelog("[seqid = %d] checkpoint\n", count);
     criu_set_log_file("dump.log");
-    int ret = criu_dump();
-    //fprintf(seqfp, "criu checkpoint return :%d\n", ret);
+    ret = criu_dump();
     makelog("[seqid = %d] criu dump ret: %d\n", count, ret);
     if (ret == 0) {
-       fprintf(seqfp, "criu checkpoint\n");
+       fprintf(seqfp, "criu checkpoint succesful\n");
     }
-    mmap_devices();
+     criu dump */
+
+    //mmap_devices();
     // assert(do_fsck());
     return 0;
 }
 
 static long checkpoint_after_hook(unsigned char *ptr)
 {
-    unmap_devices();
-    assert(do_fsck());
+    //unmap_devices();
+    //assert(do_fsck());
     // dump_fs_images("snapshots");
     return 0;
 }
@@ -361,16 +374,25 @@ static long restore_before_hook(unsigned char *ptr)
 {
     fprintf(seqfp, "restore\n");
     makelog("[seqid = %d] restore\n", count);
-    mmap_devices();
+    //mmap_devices();
     // assert(do_fsck());
     return 0;
 }
 
 static long restore_after_hook(unsigned char *ptr)
 {
-    unmap_devices();
+    //unmap_devices();
+    //unmount_all();
+    /* criu restore
+    //mkdir(strcat("/home/gomathi/criu-3.15/test/others/libcriu/wdir/i/test_self/", ptr), 0777);
+    fd = open(strcat("/home/gomathi/criu-3.15/test/others/libcriu/wdir/i/test_self/", ptr), O_DIRECTORY);
+    criu_set_images_dir_fd(fd);
+
     criu_set_log_file("restore.log");
     criu_restore();
+     criu restore */
+
+    //mountall();
     // assert(do_fsck());
     // dump_fs_images("after-restore");
     return 0;
@@ -386,19 +408,27 @@ void __attribute__((constructor)) init()
     /* open sequence file */
     seqfp = fopen("sequence.log", "w");
     assert(seqfp);
-    fd = open("/home/gomathi/criu-3.15/test/others/libcriu/wdir/i/test_self/", O_DIRECTORY);
-    criu_init_opts();
-    criu_set_service_binary("/home/gomathi/criu-3.15/criu/criu/");
-    criu_set_images_dir_fd(fd);
-    criu_set_log_level(4);
-    //criu_set_shell_job(1);
-    //criu_set_pid(getpid());
 
     /* Register hooks */
     c_stack_before = checkpoint_before_hook;
     c_stack_after = checkpoint_after_hook;
     c_unstack_before = restore_before_hook;
     c_unstack_after = restore_after_hook;
+}
+
+int get_nfs_ganesha_pid() {
+    FILE* cmd = popen("pgrep -u root ganesha.nfsd", "r");
+    char pid[10];
+    if (cmd == NULL) {
+        perror("popen");
+        exit(EXIT_FAILURE);
+    }
+    while (fgets(pid, sizeof(pid), cmd)) {
+        printf("%s", pid);
+    }
+    pclose(cmd);
+    return atoi(pid);
+
 }
 
 /* The procedure that resets run-time states
