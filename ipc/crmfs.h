@@ -13,7 +13,7 @@
 #include <linux/limits.h>
 #include <sys/types.h>
 
-// #include "vector.h"
+#include "cr.h"
 
 #if !defined(FUSE_USE_VERSION) || FUSE_USE_VERSION < 30
 #define FUSE_USE_VERSION 30

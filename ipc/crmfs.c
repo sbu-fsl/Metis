@@ -284,6 +284,8 @@ static void crmfs_init(void *userdata, struct fuse_conn_info *conn)
     assert(root != NULL);
     int ret = crmfs_populate_dir(root, root);
     assert(ret == 0);
+    /* Enable ioctl on directory */
+    conn->want |= FUSE_CAP_IOCTL_DIR;
 }
 
 static void crmfs_destroy(void *userdata)
@@ -752,6 +754,89 @@ static void crmfs_statfs(fuse_req_t req, fuse_ino_t ino)
     fuse_reply_statfs(req, &info);
 }
 
+static int checkpoint(uint64_t key)
+{
+    enter();
+    size_t inodes_size = icap * sizeof(struct crmfs_file);
+    struct crmfs_file *copied_files = malloc(inodes_size);
+    int ret = 0;
+    if (!copied_files) {
+        return -ENOMEM;
+    }
+    memcpy(copied_files, files, inodes_size);
+    /* Reset the pointers */
+    for (size_t i = 0; i < icap; ++i) {
+        copied_files[i].data = NULL;
+    }
+    /* Deep copy the data */
+    for (size_t i = 0; i < icap; ++i) {
+        size_t datasz = CRM_FILE_ATTR(&files[i], blocks) * CRM_BLOCK_SZ;
+        if (datasz == 0) {
+            continue;
+        }
+        char *fdata = malloc(datasz);
+        if (!fdata) {
+            ret = -ENOMEM;
+            goto err;
+        }
+        memcpy(fdata, files[i].data, datasz);
+        copied_files[i].data = fdata;
+    }
+
+    ret = insert_state(key, copied_files);
+    if (ret != 0)
+        goto err;
+
+    return ret;
+err:
+    /* Roll back deep copy if error occurred */
+    for (size_t i = 0; i < icap; ++i) {
+        if (copied_files[i].data) {
+            free(copied_files[i].data);
+        }
+    }
+    free(copied_files);
+    return ret;
+}
+
+static int restore(uint64_t key)
+{
+    enter();
+    struct crmfs_file *stored_files = find_state(key);
+    if (!stored_files) {
+        return -ENOENT;
+    }
+    /* Restore file/inode table with the stored one */
+    memcpy(files, stored_files, icap * sizeof(struct crmfs_file));
+    return 0;
+}
+
+static void crmfs_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
+                        struct fuse_file_info *fi, unsigned flags,
+                        const void *in_buf, size_t in_bufsz, size_t out_bufsz)
+{
+    int ret;
+    enter();
+    switch (cmd) {
+        case CRMFS_CHECKPOINT:
+            ret = checkpoint((uint64_t)arg);
+            break;
+
+        case CRMFS_RESTORE:
+            ret = restore((uint64_t)arg);
+            break;
+
+        default:
+            ret = ENOTSUP;
+            break;
+    }
+    if (ret == 0) {
+        fuse_reply_ioctl(req, 0, NULL, 0);
+    } else {
+        fuse_reply_err(req, -ret);
+    }
+}
+
 struct fuse_lowlevel_ops crmfs_ops = {
     .init = crmfs_init,
     .destroy = crmfs_destroy,
@@ -775,7 +860,8 @@ struct fuse_lowlevel_ops crmfs_ops = {
     .rename = crmfs_rename,
     .mknod = crmfs_mknod,
     .fsync = crmfs_fsync,
-    .fsyncdir = crmfs_fsync_dir
+    .fsyncdir = crmfs_fsync_dir,
+    .ioctl = crmfs_ioctl
 };
 
 int main(int argc, char **argv)
