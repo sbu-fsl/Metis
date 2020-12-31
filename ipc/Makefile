@@ -5,7 +5,7 @@ EXT = ../common/*.c
 all: crmfs ckpt restore
 
 crmfs: crmfs.c cr.cpp
-	gcc $(CFLAGS) -DDEBUG -o crmfs crmfs.c cr.cpp $(EXT) -lstdc++ -lrt -lfuse
+	gcc $(CFLAGS) -o crmfs crmfs.c cr.cpp $(EXT) -lstdc++ -lrt -lfuse
 
 ckpt: ckpt.c
 	gcc $(CFLAGS) -o ckpt ckpt.c $(EXT)
