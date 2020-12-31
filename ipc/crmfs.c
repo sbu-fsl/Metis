@@ -806,9 +806,51 @@ static int restore(uint64_t key)
     if (!stored_files) {
         return -ENOENT;
     }
-    /* Restore file/inode table with the stored one */
-    memcpy(files, stored_files, icap * sizeof(struct crmfs_file));
+
+    size_t itable_sz = icap * sizeof(struct crmfs_file);
+    /* Make a full copy of the stored inode table.
+     * We only perfrom the table replacement if the entire
+     * deep copying process is successful. */
+    struct crmfs_file *newfiles = malloc(itable_sz);
+    int ret = 0;
+    if (!newfiles) {
+        ret = -ENOMEM;
+        goto err;
+    }
+    memcpy(newfiles, stored_files, itable_sz);
+    for (size_t i = 0; i < icap; ++i) {
+        newfiles[i].data = NULL;
+    }
+    for (size_t i = 0; i < icap; ++i) {
+        size_t dsize = CRM_FILE_ATTR(&newfiles[i], blocks) * CRM_BLOCK_SZ;
+        char *fdata = malloc(dsize);
+        if (!fdata) {
+            ret = -ENOMEM;
+            goto err;
+        }
+        memcpy(fdata, stored_files[i].data, dsize);
+        newfiles[i].data = fdata;
+    }
+    /* Free the current inode table and replace it with the
+     * copy retrieved from above code */
+    for (size_t i = 0; i < icap; ++i) {
+        if (files[i].data) {
+            free(files[i].data);
+        }
+    }
+    free(files);
+    files = newfiles;
     return 0;
+err:
+    if (newfiles) {
+        for (size_t i = 0; i < icap; ++i) {
+            if (newfiles[i].data) {
+                free(newfiles[i].data);
+            }
+        }
+        free(newfiles);
+    }
+    return ret;
 }
 
 static void crmfs_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
