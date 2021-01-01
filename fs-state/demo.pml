@@ -4,6 +4,7 @@ c_decl {
 \#include "fileutil.h"
 \#include "config.h"
 };
+#include "parameters.pml"
 
 /* The persistent content of the file systems */
 c_track "fsimgs[0]" "262144" "UnMatched";
@@ -14,6 +15,7 @@ c_track "absfs" "sizeof(absfs)";
 proctype worker()
 {
     /* Non-deterministic test loop */
+    int offset, writelen, writebyte, filelen;
     do 
     :: atomic {
        c_code {
@@ -22,7 +24,7 @@ proctype worker()
            mountall();
            for (i = 0; i < N_FS; ++i) {
                makecall(rets[i], errs[i], "%s, 0%o", create_file, testfiles[i], 0644);
-               fsfreeze(fslist[i], devlist[i], basepaths[i]);
+               // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                compute_abstract_state(basepaths[i], absfs[i]);
            }
            expect(compare_equality_fexists(fslist, N_FS, testdirs));
@@ -32,18 +34,22 @@ proctype worker()
            makelog("END: create_file\n");
        };
     };
-    :: atomic {
+    :: pick_write_offset(offset);
+       pick_write_size(writelen);
+       pick_write_byte(writebyte);
+       atomic {
         /* write, check: retval, errno, content */
         c_code {
             makelog("BEGIN: write_file\n");
             mountall();
-            off_t offset = pick_value(0, 32768, 1024);
-            size_t writelen = pick_value(0, 32768, 2048);
-            char *data = malloc(writelen);
-            generate_data(data, writelen, 0);
+            // off_t offset = pick_value(0, 32768, 1024);
+            // size_t writelen = pick_value(0, 32768, 2048);
+            char *data = malloc(Pworker->writelen);
+            generate_data(data, Pworker->writelen, Pworker->writebyte);
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s, %p, %ld, %zu", write_file, testfiles[i], data, offset, writelen);
-                fsfreeze(fslist[i], devlist[i], basepaths[i]);
+                makecall(rets[i], errs[i], "%s, %p, %ld, %zu", write_file, testfiles[i], data,
+                         (off_t)Pworker->offset, (size_t)Pworker->writelen);
+                // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
 
@@ -56,17 +62,18 @@ proctype worker()
             makelog("END: write_file\n");
         };
     };
-    :: atomic {
+    :: pick_truncate_len(filelen);
+       atomic {
         /* truncate, check: retval, errno, existence */
         /* TODO: compare file length. Currently ftruncate is mainly
            intended to avoid long term ENOSPC of write() */
         c_code {
             makelog("BEGIN: truncate\n");
             mountall();
-            off_t flen = pick_value(0, 200000, 10000);
+            // off_t flen = pick_value(0, 200000, 10000);
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s, %ld", truncate, testfiles[i], flen);
-                fsfreeze(fslist[i], devlist[i], basepaths[i]);
+                makecall(rets[i], errs[i], "%s, %ld", truncate, testfiles[i], (off_t)Pworker->filelen);
+                // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, N_FS, testfiles));
@@ -84,7 +91,7 @@ proctype worker()
             mountall();
             for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%s", unlink, testfiles[i]);
-                fsfreeze(fslist[i], devlist[i], basepaths[i]);
+                // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, N_FS, testdirs));
@@ -102,7 +109,7 @@ proctype worker()
             mountall();
             for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%s, 0%o", mkdir, testdirs[i], 0755);
-                fsfreeze(fslist[i], devlist[i], basepaths[i]);
+                // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, N_FS, testdirs));
@@ -121,7 +128,7 @@ proctype worker()
             mountall();
             for (i = 0; i < N_FS; ++i) {
                 makecall(rets[i], errs[i], "%s", rmdir, testdirs[i]);
-                fsfreeze(fslist[i], devlist[i], basepaths[i]);
+                // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, N_FS, testdirs));
@@ -141,13 +148,6 @@ proctype driver(int nproc)
     int i;
     c_code {
         start_perf_metrics_thread();
-        /* Initialize base paths */
-        printf("%ld file systems to test.\n", N_FS);
-        for (int i = 0; i < N_FS; ++i) {
-            size_t len = snprintf(NULL, 0, "/mnt/test-%s", fslist[i]);
-            basepaths[i] = calloc(1, len + 1);
-            snprintf(basepaths[i], len + 1, "/mnt/test-%s", fslist[i]);
-        }
         /* Initialize test dirs and files names */
         for (int i = 0; i < N_FS; ++i) {
             size_t len = snprintf(NULL, 0, "%s/testdir", basepaths[i]);
