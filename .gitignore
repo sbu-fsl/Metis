@@ -21,3 +21,7 @@ modules.order
 Module.symvers
 .*.cmd
 *.csv
+parameters.pml
+ckpt
+restore
+crmfs
