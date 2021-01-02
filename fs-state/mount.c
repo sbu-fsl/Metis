@@ -1,3 +1,5 @@
+#define _XOPEN_SOURCE 500
+#define _POSIX_C_SOURCE 2
 #include "fileutil.h"
 
 static bool fs_frozen[N_FS] = {0};
@@ -51,9 +53,31 @@ bool do_fsck()
     return isgood;
 }
 
+void clear_excluded_files()
+{
+    char path[PATH_MAX] = {0};
+    const char *folder;
+    struct stat st;
+    int n = 0, ret;
+    mountall();
+    while ((folder = exclude_dirs[n]) != NULL) {
+        for (int i = 0; i < N_FS; ++i) {
+            snprintf(path, PATH_MAX, "/mnt/test-%s/%s", fslist[i], folder);
+            ret = stat(path, &st);
+            if (ret < 0)
+                continue;
+            if (S_ISDIR(st.st_mode))
+                rmdir(path);
+            else
+                unlink(path);
+        }
+        n++;
+    }
+    unmount_all();
+}
+
 void mountall()
 {
-    static bool inited = false;
     int failpos, err;
     for (int i = 0; i < N_FS; ++i) {
         /* mount(source, target, fstype, mountflags, option_str) */
@@ -64,20 +88,6 @@ void mountall()
             goto err;
         }
     }
-    if (inited)
-        return;
-    /* remove all folders specified in the exclusion list in config.h */
-    int n = 0;
-    const char *folder;
-    char fullpath[PATH_MAX];
-    while ((folder = exclude_dirs[n])) {
-        for (int i = 0; i < N_FS; ++i) {
-            snprintf(fullpath, PATH_MAX, "%s/%s", basepaths[i], folder);
-            rmdir(fullpath);
-        }
-        n++;
-    }
-    inited = true;
     return;
 err:
     /* undo mounts */
@@ -203,6 +213,7 @@ int unfreeze_all()
 {
     for (int i = 0; i < N_FS; ++i) {
         if (fs_frozen[i]) {
+            fprintf(stderr, "unfreezing %s at %s\n", fslist[i], basepaths[i]);
             fsthaw(fslist[i], devlist[i], basepaths[i]);
         }
     }

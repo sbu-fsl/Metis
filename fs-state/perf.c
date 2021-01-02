@@ -177,28 +177,30 @@ void record_performance()
             ps.majflt, ps.utime, ps.ktime, ps.num_threads, ps.vsize,
             ps.psize);
     /* Retrieve swap activity */
-    struct iostat *swaps_stat;
-    struct iostat *swaps_diff;
-    struct sysinfo info;
-    int ret = sysinfo(&info);
-    if (ret != 0) {
-        fprintf(stderr, "Cannot get sysinfo: %s\n", errnoname(errno));
-        exit(1);
+    if (n_swaps > 0) {
+        struct iostat *swaps_stat;
+        struct iostat *swaps_diff;
+        struct sysinfo info;
+        int ret = sysinfo(&info);
+        if (ret != 0) {
+            fprintf(stderr, "Cannot get sysinfo: %s\n", errnoname(errno));
+            exit(1);
+        }
+        fprintf(perflog_fp, "%lu,", info.totalswap - info.freeswap);
+        swaps_stat = malloc(2 * n_swaps * sizeof(struct iostat));
+        swaps_diff = swaps_stat + n_swaps;
+        get_swapstats(swaps_stat);
+        iostat_diff(swaps_diff, swaps_stat, last_swaps_stat);
+        for (int i = 0; i < n_swaps; ++i) {
+            double read_rate = swaps_diff[i].bytes_read / timediff;
+            double write_rate = swaps_diff[i].bytes_written / timediff;
+            fprintf(perflog_fp, "%.2f,%.2f,", read_rate, write_rate);
+        }
+        /* Free last_swaps_stat[i].devname to avoid memory leak */
+        put_swapstats(last_swaps_stat);
+        memcpy(last_swaps_stat, swaps_stat, n_swaps * sizeof(struct iostat));
+        free(swaps_stat);
     }
-    fprintf(perflog_fp, "%lu,", info.totalswap - info.freeswap);
-    swaps_stat = malloc(2 * n_swaps * sizeof(struct iostat));
-    swaps_diff = swaps_stat + n_swaps;
-    get_swapstats(swaps_stat);
-    iostat_diff(swaps_diff, swaps_stat, last_swaps_stat);
-    for (int i = 0; i < n_swaps; ++i) {
-        double read_rate = swaps_diff[i].bytes_read / timediff;
-        double write_rate = swaps_diff[i].bytes_written / timediff;
-        fprintf(perflog_fp, "%.2f,%.2f,", read_rate, write_rate);
-    }
-    /* Free last_swaps_stat[i].devname to avoid memory leak */
-    put_swapstats(last_swaps_stat);
-    memcpy(last_swaps_stat, swaps_stat, n_swaps * sizeof(struct iostat));
-    free(swaps_stat);
     /* Iterate each file system */
     struct fs_stat cur_fsstats[N_FS];
     pthread_mutex_lock(&fsinfo_lock);

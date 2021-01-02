@@ -332,6 +332,17 @@ static void unmap_devices()
     }
 }
 
+static void init_basepaths()
+{
+    /* Initialize base paths */
+    printf("%ld file systems to test.\n", N_FS);
+    for (int i = 0; i < N_FS; ++i) {
+        size_t len = snprintf(NULL, 0, "/mnt/test-%s", fslist[i]);
+        basepaths[i] = calloc(1, len + 1);
+        snprintf(basepaths[i], len + 1, "/mnt/test-%s", fslist[i]);
+    }
+}
+
 static long checkpoint_before_hook(unsigned char *ptr)
 {
     fprintf(seqfp, "checkpoint\n");
@@ -373,6 +384,13 @@ extern long (*c_unstack_after)(unsigned char *);
 
 void __attribute__((constructor)) init()
 {
+    init_basepaths();
+    /* Clear all excluded dirs/files */
+    clear_excluded_files();
+    /* Fill initial abstract states */
+    for (int i = 0; i < N_FS; ++i) {
+        compute_abstract_state(basepaths[i], absfs[i]);
+    }
     /* open sequence file */
     seqfp = fopen("sequence.log", "w");
     assert(seqfp);
