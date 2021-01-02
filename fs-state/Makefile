@@ -11,14 +11,6 @@ run: all
 	./pan | less -N; \
 	rm -rf /mnt/test-*/test* || true; \
 
-ramdisk: demo_ramdisk.pml
-	spin -a demo_ramdisk.pml; \
-	gcc -o pan pan.c fileutil.c $(COMMON_DIR)/*.c $(CFLAGS); \
-
-run_ramdisk: ramdisk
-	./pan | less -N; \
-	rm -rf /mnt/test-ramdisk-*/test* || true; \	
-
 abstractfs: abstract_fs.cpp
 	g++ -std=c++11 -fPIC -I../include -o abstract_fs.o -c abstract_fs.cpp
 	ar rcs abstract_fs.a abstract_fs.o
