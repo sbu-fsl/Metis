@@ -3,7 +3,7 @@ override CFLAGS += -g -I../include -D PRINTF -lssl -lcrypto -lrt -lstdc++ -lstdc
 #set VECTORSZ=10486000 if test ramdisk (CONFIG_BLK_DEV_RAM) Default: 2100000
 
 all: demo.pml abstractfs
-	./gen_parameters.sh > parameters.pml \
+	./gen_parameters.sh > parameters.pml; \
 	spin -a demo.pml; \
 	gcc -o pan pan.c fileutil.c swapperf.c perf.c operations.c mount.c $(COMMON_DIR)/*.c abstract_fs.a $(CFLAGS); \
 
