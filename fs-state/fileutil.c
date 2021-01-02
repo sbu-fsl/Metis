@@ -377,6 +377,9 @@ void __attribute__((constructor)) init()
     seqfp = fopen("sequence.log", "w");
     assert(seqfp);
 
+    setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stderr, NULL, _IONBF, 0);
+
     /* Register hooks */
     c_stack_before = checkpoint_before_hook;
     c_stack_after = checkpoint_after_hook;

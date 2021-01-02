@@ -50,7 +50,9 @@ static inline int makelog(const char *format, ...)
     current_utc_time(&now);
     timediff(&diff, &now, &begin_time);
     printf("[%4ld.%09ld] ", diff.tv_sec, diff.tv_nsec);
-    return vprintf(format, args);
+    int res = vprintf(format, args);
+    fflush(stdout);
+    return res;
 }
 
 static inline int record_seq(const char *format, ...)
