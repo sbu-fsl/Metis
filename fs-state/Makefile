@@ -7,7 +7,7 @@ override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread
 all: demo.pml common-libs
 	./gen_parameters.sh > parameters.pml; \
 	spin -a demo.pml; \
-	gcc -o pan pan.c fileutil.c swapperf.c perf.c mount.c common-libs.a $(CFLAGS) $(LIBS); \
+	gcc -o pan pan.c fileutil.c perf.c mount.c common-libs.a $(CFLAGS) $(LIBS); \
 
 run: all
 	./pan | less -N; \
