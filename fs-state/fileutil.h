@@ -25,6 +25,7 @@
 #include "vector.h"
 #include "abstract_fs.h"
 #include "config.h"
+#include "set.h"
 
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
@@ -36,6 +37,7 @@ extern int _opened_files[1024];
 extern int _n_files;
 extern size_t count;
 extern char *basepaths[];
+extern absfs_set_t absfs_set;
 
 struct imghash {
     unsigned char md5[16];

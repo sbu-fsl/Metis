@@ -9,6 +9,8 @@ int _opened_files[1024];
 int _n_files;
 size_t count;
 
+absfs_set_t absfs_set;
+
 int compare_file_content(const char *path1, const char *path2)
 {
     const size_t bs = 4096;
@@ -348,6 +350,7 @@ static long checkpoint_before_hook(unsigned char *ptr)
     fprintf(seqfp, "checkpoint\n");
     makelog("[seqid = %d] checkpoint\n", count);
     mmap_devices();
+    absfs_set_add(absfs_set, absfs);
     // assert(do_fsck());
     return 0;
 }
@@ -403,6 +406,9 @@ void __attribute__((constructor)) init()
     c_stack_after = checkpoint_after_hook;
     c_unstack_before = restore_before_hook;
     c_unstack_after = restore_after_hook;
+
+    /* Initialize absfs-set used for counting unique states */
+    absfs_set_init(&absfs_set);
 }
 
 /*
