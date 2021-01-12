@@ -38,10 +38,10 @@ gen_inline write_size;
 gen_inline write_byte;
 gen_inline truncate_len;
 
-a=`expr \( $write_offset_stop - $write_offset_start \) \/ $write_offset_step`
-b=`expr \( $write_size_stop - $write_size_start \) \/ $write_size_step`
-c=`expr \( $write_byte_stop - $write_byte_start \) \/ $write_byte_step`
-d=`expr \( $truncate_len_stop - $truncate_len_start \) \/ $truncate_len_step`
+a=`expr \( $write_offset_stop - $write_offset_start \) \/ $write_offset_step + 1`
+b=`expr \( $write_size_stop - $write_size_start \) \/ $write_size_step + 1`
+c=`expr \( $write_byte_stop - $write_byte_start \) \/ $write_byte_step + 1`
+d=`expr \( $truncate_len_stop - $truncate_len_start \) \/ $truncate_len_step + 1`
 # mkdir/rmdir creates two different states: with/without testdir */
 e=2
 # create/unlink creates two different states: with/without testfile */
