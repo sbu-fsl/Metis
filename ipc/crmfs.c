@@ -840,6 +840,8 @@ static int restore(uint64_t key)
     }
     free(files);
     files = newfiles;
+    /* Remove the state from the pool */
+    remove_state(key);
     return 0;
 err:
     if (newfiles) {

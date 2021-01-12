@@ -18,6 +18,7 @@ extern "C" {
 
 int insert_state(uint64_t key, void *ptr);
 void *find_state(uint64_t key);
+int remove_state(uint64_t key);
 
 #ifdef __cplusplus
 }

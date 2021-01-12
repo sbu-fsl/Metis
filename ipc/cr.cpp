@@ -25,3 +25,12 @@ void *find_state(uint64_t key)
   }
 }
 
+int remove_state(uint64_t key)
+{
+  auto it = state_pool.find(key);
+  if (it == state_pool.end()) {
+    return -ENOENT;
+  }
+  state_pool.erase(it);
+  return 0;
+}
