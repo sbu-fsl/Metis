@@ -138,14 +138,14 @@ void record_performance()
     if (!inited) {
         last_ts = now;
         /* metrics about the model checker itself */
-        fprintf(perflog_fp, "epoch,fsops_rate,proc_state,minor_flt,major_flt,"
-                "utime,ktime,num_threads,vmem_sz,pmem_sz,");
+        fprintf(perflog_fp, "epoch,nops,nstates,fsops_rate,proc_state,"
+                "minor_flt,major_flt,utime,ktime,num_threads,vmem_sz,pmem_sz,");
         /* metrics of the swap devices activity */
         n_swaps = num_swap_devices();
         last_swaps_stat = malloc(n_swaps * sizeof(struct iostat));
         assert(last_swaps_stat);
         get_swapstats(last_swaps_stat);
-	fprintf(perflog_fp, "swap_bytes_used,");
+        fprintf(perflog_fp, "swap_bytes_used,");
         for (int i = 0; i < n_swaps; ++i) {
             fprintf(perflog_fp, "swap_%s_bytes_read,swap_%s_bytes_written,",
                     last_swaps_stat[i].devname, last_swaps_stat[i].devname);
@@ -172,8 +172,9 @@ void record_performance()
     struct proc_stat ps = {0};
     get_proc_stat(&ps);
     /* Out first half of the metrics */
-    fprintf(perflog_fp, "%ld.%09ld,%.3f,%c,%lu,%lu,%lu,%lu,%lu,%lu,%ld,",
-            epoch.tv_sec, epoch.tv_nsec, rate, ps.state, ps.minflt, 
+    fprintf(perflog_fp, "%ld.%09ld,%zu,%zu,%.3f,%c,%lu,%lu,%lu,%lu,%lu,%lu,%ld,",
+            epoch.tv_sec, epoch.tv_nsec, count, absfs_set_size(absfs_set),
+            rate, ps.state, ps.minflt, 
             ps.majflt, ps.utime, ps.ktime, ps.num_threads, ps.vsize,
             ps.psize);
     /* Retrieve swap activity */
