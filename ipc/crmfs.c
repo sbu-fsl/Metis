@@ -138,7 +138,7 @@ static int crmfs_file_truncate(struct crmfs_file *file, size_t newsize)
     }
     /* Zero out new space inside the old last block if the file is
      * expanded */
-    if (newsize > oldsize && (oldsize & CRM_BLOCK_SZ) > 0) {
+    if (newsize > oldsize && (oldsize & (CRM_BLOCK_SZ - 1)) > 0) {
         char *p = (char *)file->data + oldsize;
         size_t bytes_need_clean = round_up(oldsize, CRM_BLOCK_SZ) - oldsize;
         memset(p, 0, bytes_need_clean);
@@ -393,7 +393,7 @@ static void crmfs_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     int ret;
 
     /* Truncate file if FUSE_SET_ATTR_SIZE is called */
-    if (fi && (to_set & FUSE_SET_ATTR_SIZE)) {
+    if (to_set & FUSE_SET_ATTR_SIZE) {
         ret = crmfs_file_truncate(file, attr->st_size);
         if (ret == 0) {
             fuse_reply_attr(req, &file->entry_param.attr, 1.0);
