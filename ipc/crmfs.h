@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <linux/limits.h>
 #include <sys/types.h>
+#include <pthread.h>
 
 #include "cr.h"
 

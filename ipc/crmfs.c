@@ -2,8 +2,23 @@
 
 static size_t icap;
 static size_t dcap;
+static struct fuse_chan *crmfs_ch;
+static struct fuse_session *crmfs_se;
 static const unsigned long crmfs_magic = 0xf09f90b120e596b5;
 struct crmfs_file *files;
+pthread_mutex_t global_lk;
+
+static void crmfs_lock(const char *caller)
+{
+    printf("%s: lock\n", caller);
+    pthread_mutex_lock(&global_lk);
+}
+
+static void crmfs_unlock(const char *caller)
+{
+    printf("%s: unlock\n", caller);
+    pthread_mutex_unlock(&global_lk);
+}
 
 static struct crmfs_file *crmfs_file_create(mode_t filetype, mode_t perm, uid_t uid, gid_t gid)
 {
@@ -304,30 +319,36 @@ static void crmfs_destroy(void *userdata)
 static void crmfs_lookup(fuse_req_t req, fuse_ino_t parent_ino, const char *name)
 {
     enter();
+    crmfs_lock(__func__);
     struct crmfs_file *parent = crmfs_iget(parent_ino);
     if (!parent) {
         fuse_reply_err(req, ENOENT);
-        return;
+        goto end;
     }
     struct crmfs_file *child = crmfs_find_child(parent, name);
     if (IS_ERR(child)) {
         fuse_reply_err(req, -PTR_ERR(child));
-        return;
+        goto end;
     }
     child->nlookup++;
     fuse_reply_entry(req, &child->entry_param);
+end:
+    crmfs_unlock(__func__);
 }
 
 static void crmfs_getattr(fuse_req_t req, fuse_ino_t ino,
                           struct fuse_file_info *fi)
 {
     enter();
+    crmfs_lock(__func__);
     struct crmfs_file *file = crmfs_iget(ino);
     if (!file) {
         fuse_reply_err(req, ENOENT);
-        return;
+        goto end;
     }
     fuse_reply_attr(req, &file->entry_param.attr, 1.0);
+end:
+    crmfs_unlock(__func__);
 }
 
 static void do_setattr(struct crmfs_file *file, struct stat *attr, int to_set)
@@ -385,10 +406,11 @@ static void crmfs_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
                           int to_set, struct fuse_file_info *fi)
 {
     enter();
+    crmfs_lock(__func__);
     struct crmfs_file *file = crmfs_iget(ino);
     if (!file) {
         fuse_reply_err(req, ENOENT);
-        return;
+        goto end;
     }
     int ret;
 
@@ -400,12 +422,13 @@ static void crmfs_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
         } else {
             fuse_reply_err(req, -ret);
         }
-        return;
+        goto end;
     }
 
     do_setattr(file, attr, to_set);
     fuse_reply_attr(req, &file->entry_param.attr, 1.0);
-    return;
+end:
+    crmfs_unlock(__func__);
 }
 
 static void crmfs_fsync_dir(fuse_req_t req, fuse_ino_t ino, int datasync,
@@ -419,15 +442,16 @@ static void crmfs_read_dir(fuse_req_t req, fuse_ino_t ino, size_t size,
                            off_t off, struct fuse_file_info *fi)
 {
     enter();
+    crmfs_lock(__func__);
     struct crmfs_file *dir = crmfs_iget(ino);
     if (!dir) {
         fuse_reply_err(req, ENOENT);
-        return;
+        goto end;
     }
     int ret = crmfs_sanitize_file(dir, __S_IFDIR, false);
     if (ret != 0) {
         fuse_reply_err(req, -ret);
-        return;
+        goto end;
     }
     
     struct crmfs_dirtable *table = dir->data;
@@ -436,14 +460,14 @@ static void crmfs_read_dir(fuse_req_t req, fuse_ino_t ino, size_t size,
     /* If the given offset is out of range, return an empty buffer */
     if (off < 0 || off >= table->capacity) {
         fuse_reply_buf(req, NULL, 0);
-        return;
+        goto end;
     }
     char *buffer = malloc(size);
     size_t bytes_added = 0;
     off_t i;
     if (buffer == NULL) {
         fuse_reply_err(req, ENOMEM);
-        return;
+        goto end;
     }
 
     /* Fill the buffer with dir entries */
@@ -467,22 +491,27 @@ static void crmfs_read_dir(fuse_req_t req, fuse_ino_t ino, size_t size,
 
     fuse_reply_buf(req, buffer, bytes_added);
     free(buffer);
+end:
+    crmfs_unlock(__func__);
 }
 
 static void crmfs_open(fuse_req_t req, fuse_ino_t ino,
                        struct fuse_file_info *fi)
 {
     enter();
+    crmfs_lock(__func__);
     struct crmfs_file *file = crmfs_iget(ino);
     if (!file) {
         fuse_reply_err(req, ENOENT);
-        return;
+        goto end;
     }
     if (!S_ISREG(CRM_FILE_ATTR(file, mode))) {
         fuse_reply_err(req, EISDIR);
-        return;
+        goto end;
     }
     fuse_reply_open(req, fi);
+end:
+    crmfs_unlock(__func__);
 }
 
 static void crmfs_fsync(fuse_req_t req, fuse_ino_t ino, int datasync,
@@ -503,27 +532,28 @@ static void crmfs_mkdir(fuse_req_t req, fuse_ino_t parent_ino, const char *name,
                         mode_t mode)
 {
     enter();
+    crmfs_lock(__func__);
     struct crmfs_file *parent = crmfs_iget(parent_ino);
     struct crmfs_file *child = crmfs_find_child(parent, name);
     if (!IS_ERR(child)) {
         debug("child %s has already existed\n", name);
         fuse_reply_err(req, EEXIST);
-        return;
+        goto end;
     } else if (IS_ERR(child) && PTR_ERR(child) != -ENOENT) {
         fuse_reply_err(req, -PTR_ERR(child));
-        return;
+        goto end;
     }
 
     child = crmfs_file_create(__S_IFDIR, mode, getuid(), getgid());
     if (!child) {
         fuse_reply_err(req, ENOSPC);
-        return;
+        goto end;
     }
     int ret = crmfs_populate_dir(child, parent);
     if (ret) {
         crmfs_destroy_file(child);
         fuse_reply_err(req, -ret);
-        return;
+        goto end;
     }
     ret = crmfs_dir_add_child(parent, child, name);
     if (ret) {
@@ -535,27 +565,30 @@ static void crmfs_mkdir(fuse_req_t req, fuse_ino_t parent_ino, const char *name,
         child->nlookup++;
         fuse_reply_entry(req, &child->entry_param);
     }
+end:
+    crmfs_unlock(__func__);
 }
 
 static void crmfs_create(fuse_req_t req, fuse_ino_t iparent, const char *name,
                          mode_t mode, struct fuse_file_info *fi)
 {
     enter();
+    crmfs_lock(__func__);
     struct crmfs_file *parent = crmfs_iget(iparent);
     struct crmfs_file *child = crmfs_find_child(parent, name);
     if (!IS_ERR(child)) {
         debug("child %s has already existed\n", name);
         fuse_reply_err(req, EEXIST);
-        return;
+        goto end;
     } else if (IS_ERR(child) && PTR_ERR(child) != -ENOENT) {
         fuse_reply_err(req, -PTR_ERR(child));
-        return;
+        goto end;
     }
 
     child = crmfs_file_create(__S_IFREG, mode, getuid(), getgid());
     if (!child) {
         fuse_reply_err(req, ENOSPC);
-        return;
+        goto end;
     }
 
     int ret = crmfs_dir_add_child(parent, child, name);
@@ -566,70 +599,79 @@ static void crmfs_create(fuse_req_t req, fuse_ino_t iparent, const char *name,
         child->nlookup++;
         fuse_reply_create(req, &child->entry_param, fi);
     }
+end:
+    crmfs_unlock(__func__);
 }
 
 static void crmfs_unlink(fuse_req_t req, fuse_ino_t iparent, const char *name)
 {
     enter();
+    crmfs_lock(__func__);
     struct crmfs_file *parent = crmfs_iget(iparent);
     struct crmfs_file *child = crmfs_find_child(parent, name);
     if (IS_ERR(child)) {
         fuse_reply_err(req, -PTR_ERR(child));
-        return;
+        goto end;
     }
     if (S_ISDIR(CRM_FILE_ATTR(child, mode))) {
         debug("cannot unlink a directory %s\n", name);
         fuse_reply_err(req, EISDIR);
-        return;
+        goto end;
     }
     int ret = crmfs_dir_remove_child(parent, name);
     if (ret) {
         fuse_reply_err(req, -ret);
-        return;
+        goto end;
     }
     CRM_FILE_ATTR(child, nlink)--;
 
     fuse_reply_err(req, 0);
+end:
+    crmfs_unlock(__func__);
 }
 
 static void crmfs_rmdir(fuse_req_t req, fuse_ino_t iparent, const char *name)
 {
     enter();
+    crmfs_lock(__func__);
     struct crmfs_file *parent = crmfs_iget(iparent);
     struct crmfs_file *child = crmfs_find_child(parent, name);
     if (IS_ERR(child)) {
         fuse_reply_err(req, -PTR_ERR(child));
-        return;
+        goto end;
     }
     if (!S_ISDIR(CRM_FILE_ATTR(child, mode))) {
         debug("cannot call rmdir on a non-dir file %s\n", name);
         fuse_reply_err(req, ENOTDIR);
-        return;
+        goto end;
     }
     struct crmfs_dirtable *table = child->data;
     /* The dir to be deleted cannot have anything other than '.' and '..' */
     if (table->ndirs > 2) {
         debug("dir %s is not empty\n", name);
         fuse_reply_err(req, ENOTEMPTY);
-        return;
+        goto end;
     }
     int ret = crmfs_dir_remove_child(parent, name);
     if (ret) {
         fuse_reply_err(req, -ret);
-        return;
+        goto end;
     }
     CRM_FILE_ATTR(child, nlink) -= 2;
     CRM_FILE_ATTR(parent, nlink)--;
 
     fuse_reply_err(req, 0);
+end:
+    crmfs_unlock(__func__);
 }
 
 static void crmfs_forget(fuse_req_t req, fuse_ino_t ino, unsigned long nlookup)
 {
     enter();
+    crmfs_lock(__func__);
     struct crmfs_file *file = &files[ino - 1];
     if (!(file->flag & CRM_FILE_EXIST))
-        return;
+        goto end;
 
     file->nlookup -= nlookup;
     if (CRM_FILE_ATTR(file, nlink) == 0 && file->nlookup <= 0) {
@@ -639,16 +681,19 @@ static void crmfs_forget(fuse_req_t req, fuse_ino_t ino, unsigned long nlookup)
                 " get freed. nlookup = %d, nlink = %lu\n", __func__, ino,
                 file->nlookup, CRM_FILE_ATTR(file, nlink));
     }
+end:
+    crmfs_unlock(__func__);
 }
 
 static void crmfs_write(fuse_req_t req, fuse_ino_t ino, const char *buf,
                         size_t size, off_t off, struct fuse_file_info *fi)
 {
     enter();
+    crmfs_lock(__func__);
     struct crmfs_file *file = crmfs_iget(ino);
     if (!file) {
         fuse_reply_err(req, ENOENT);
-        return;
+        goto end;
     }
     int ret;
     if (off + size > CRM_FILE_ATTR(file, size)) {
@@ -658,12 +703,14 @@ static void crmfs_write(fuse_req_t req, fuse_ino_t ino, const char *buf,
     }
     if (ret) {
         fuse_reply_err(req, -ret);
-        return;
+        goto end;
     }
 
     char *p = file->data + off;
     memcpy(p, buf, size);
     fuse_reply_write(req, size);
+end:
+    crmfs_unlock(__func__);
 }
 
 static void crmfs_flush(fuse_req_t req, fuse_ino_t ino,
@@ -676,18 +723,19 @@ static void crmfs_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
                        struct fuse_file_info *fi)
 {
     enter();
+    crmfs_lock(__func__);
     struct crmfs_file *file = crmfs_iget(ino);
     if (!file) {
         fuse_reply_err(req, ENOENT);
-        return;
+        goto end;
     }
     int ret = crmfs_sanitize_file(file, __S_IFREG, false);
     if (ret == -ENODATA) {
         fuse_reply_buf(req, NULL, 0);
-        return;
+        goto end;
     } else if (ret != 0) {
         fuse_reply_err(req, -ret);
-        return;
+        goto end;
     }
 
     size_t filesize = CRM_FILE_ATTR(file, size);
@@ -695,13 +743,15 @@ static void crmfs_read(fuse_req_t req, fuse_ino_t ino, size_t size, off_t off,
     char *p = file->data;
     if (off >= filesize) {
         fuse_reply_buf(req, p, 0);
-        return;
+        goto end;
     } else if (off + size > filesize) {
         bytes_read = filesize - off;
     } else {
         bytes_read = size;
     }
     fuse_reply_buf(req, p + off, bytes_read);
+end:
+    crmfs_unlock(__func__);
 }
 
 static void crmfs_rename(fuse_req_t req, fuse_ino_t parent, const char *name,
@@ -730,38 +780,40 @@ static void crmfs_readlink(fuse_req_t req, fuse_ino_t ino)
 static void crmfs_access(fuse_req_t req, fuse_ino_t ino, int mask)
 {
     enter();
+    crmfs_lock(__func__);
     struct crmfs_file *file = crmfs_iget(ino);
     if (!file) {
         fuse_reply_err(req, ENOENT);
-        return;
+        goto end;
     }
     if (mask == F_OK) {
         fuse_reply_err(req, 0);
-        return;
+        goto end;
     }
     const struct fuse_ctx *ctx = fuse_req_ctx(req);
     /* Check other */
     if ((CRM_FILE_ATTR(file, mode) & mask) == mask) {
         fuse_reply_err(req, 0);
-        return;
+        goto end;
     }
     /* Check group */
     mask <<= 3;
     if ((CRM_FILE_ATTR(file, mode) & mask) == mask &&
             CRM_FILE_ATTR(file, gid) == ctx->gid) {
         fuse_reply_err(req, 0);
-        return;
+        goto end;
     }
     /* Check owner */
     mask <<= 3;
     if ((CRM_FILE_ATTR(file, mode) & mask) == mask &&
             CRM_FILE_ATTR(file, uid) == ctx->uid) {
         fuse_reply_err(req, 0);
-        return;
+        goto end;
     }
 
     fuse_reply_err(req, EACCES);
-    return;
+end:
+    crmfs_unlock(__func__);
 }
 
 static void crmfs_statfs(fuse_req_t req, fuse_ino_t ino)
@@ -794,11 +846,13 @@ static void crmfs_statfs(fuse_req_t req, fuse_ino_t ino)
 static int checkpoint(uint64_t key)
 {
     enter();
+    crmfs_lock(__func__);
     size_t inodes_size = icap * sizeof(struct crmfs_file);
     struct crmfs_file *copied_files = malloc(inodes_size);
     int ret = 0;
     if (!copied_files) {
-        return -ENOMEM;
+        ret = -ENOMEM;
+        goto err;
     }
     memcpy(copied_files, files, inodes_size);
     /* Reset the pointers */
@@ -824,6 +878,7 @@ static int checkpoint(uint64_t key)
     if (ret != 0)
         goto err;
 
+    crmfs_unlock(__func__);
     return ret;
 err:
     /* Roll back deep copy if error occurred */
@@ -833,23 +888,49 @@ err:
         }
     }
     free(copied_files);
+    crmfs_unlock(__func__);
     return ret;
+}
+
+static void invalidate_kernel_states()
+{
+    for (size_t i = 0; i < icap; ++i) {
+        /* Invalidate possible kernel inode cache */
+        if (files[i].flag & CRM_FILE_EXIST) {
+            fuse_lowlevel_notify_inval_inode(crmfs_ch, i + 1, 0, 0);
+        }
+        /* Invalidate potential d-cache */
+        if (S_ISDIR(CRM_FILE_ATTR(&files[i], mode))) {
+            struct crmfs_dirtable *table = files[i].data;
+            struct crmfs_dirent *dirents = table->dirents;
+            for (size_t j = 0; j < table->capacity; ++j) {
+                if (dirents[j].ino > 0) {
+                    fuse_lowlevel_notify_inval_entry(crmfs_ch, i + 1,
+                        dirents[j].name,
+                        strnlen(dirents[j].name, NAME_MAX));
+                }
+            }
+        }
+    }
 }
 
 static int restore(uint64_t key)
 {
     enter();
+    crmfs_lock(__func__);
     struct crmfs_file *stored_files = find_state(key);
+    int ret = 0;
     if (!stored_files) {
-        return -ENOENT;
+        ret = -ENOENT;
+        goto err;
     }
 
+    invalidate_kernel_states();
     size_t itable_sz = icap * sizeof(struct crmfs_file);
     /* Make a full copy of the stored inode table.
      * We only perfrom the table replacement if the entire
      * deep copying process is successful. */
     struct crmfs_file *newfiles = malloc(itable_sz);
-    int ret = 0;
     if (!newfiles) {
         ret = -ENOMEM;
         goto err;
@@ -879,6 +960,7 @@ static int restore(uint64_t key)
     files = newfiles;
     /* Remove the state from the pool */
     remove_state(key);
+    crmfs_unlock(__func__);
     return 0;
 err:
     if (newfiles) {
@@ -889,6 +971,7 @@ err:
         }
         free(newfiles);
     }
+    crmfs_unlock(__func__);
     return ret;
 }
 
@@ -949,8 +1032,6 @@ struct fuse_lowlevel_ops crmfs_ops = {
 int main(int argc, char **argv)
 {
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-    struct fuse_chan *ch;
-    struct fuse_session *se;
     char *mountpoint;
     int err = -1;
     int fg;
@@ -965,27 +1046,30 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    ch = fuse_mount(mountpoint, &args);
-    if (!ch) {
+    crmfs_ch = fuse_mount(mountpoint, &args);
+    if (!crmfs_ch) {
         fprintf(stderr, "Error: fuse_mount failed.\n");
         exit(1);
     }
 
-    se = fuse_lowlevel_new(&args, &crmfs_ops, sizeof(crmfs_ops), NULL);
-    if (!se) {
+    crmfs_se = fuse_lowlevel_new(&args, &crmfs_ops, sizeof(crmfs_ops), NULL);
+    if (!crmfs_se) {
         fprintf(stderr, "Error: fuse_lowlevel_new failed.\n");
         exit(1);
     }
+    pthread_mutex_init(&global_lk, NULL);
 
     fuse_daemonize(fg);
-    if (fuse_set_signal_handlers(se) != -1) {
-        fuse_session_add_chan(se, ch);
-        err = fuse_session_loop(se);
-        fuse_remove_signal_handlers(se);
-        fuse_session_remove_chan(ch);
+    if (fuse_set_signal_handlers(crmfs_se) != -1) {
+        fuse_session_add_chan(crmfs_se, crmfs_ch);
+        err = fuse_session_loop(crmfs_se);
+        fuse_remove_signal_handlers(crmfs_se);
+        fuse_session_remove_chan(crmfs_ch);
     }
-    fuse_session_destroy(se);
-    fuse_unmount(mountpoint, ch);
+    fuse_session_destroy(crmfs_se);
+    fuse_unmount(mountpoint, crmfs_ch);
+
+    pthread_mutex_destroy(&global_lk);
 
     return err ? 1 : 0;
 }
