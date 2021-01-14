@@ -727,6 +727,43 @@ static void crmfs_readlink(fuse_req_t req, fuse_ino_t ino)
     fuse_reply_err(req, ENOTSUP);
 }
 
+static void crmfs_access(fuse_req_t req, fuse_ino_t ino, int mask)
+{
+    enter();
+    struct crmfs_file *file = crmfs_iget(ino);
+    if (!file) {
+        fuse_reply_err(req, ENOENT);
+        return;
+    }
+    if (mask == F_OK) {
+        fuse_reply_err(req, 0);
+        return;
+    }
+    const struct fuse_ctx *ctx = fuse_req_ctx(req);
+    /* Check other */
+    if ((CRM_FILE_ATTR(file, mode) & mask) == mask) {
+        fuse_reply_err(req, 0);
+        return;
+    }
+    /* Check group */
+    mask <<= 3;
+    if ((CRM_FILE_ATTR(file, mode) & mask) == mask &&
+            CRM_FILE_ATTR(file, gid) == ctx->gid) {
+        fuse_reply_err(req, 0);
+        return;
+    }
+    /* Check owner */
+    mask <<= 3;
+    if ((CRM_FILE_ATTR(file, mode) & mask) == mask &&
+            CRM_FILE_ATTR(file, uid) == ctx->uid) {
+        fuse_reply_err(req, 0);
+        return;
+    }
+
+    fuse_reply_err(req, EACCES);
+    return;
+}
+
 static void crmfs_statfs(fuse_req_t req, fuse_ino_t ino)
 {
     struct statvfs info = {
@@ -905,7 +942,8 @@ struct fuse_lowlevel_ops crmfs_ops = {
     .mknod = crmfs_mknod,
     .fsync = crmfs_fsync,
     .fsyncdir = crmfs_fsync_dir,
-    .ioctl = crmfs_ioctl
+    .ioctl = crmfs_ioctl,
+    .access = crmfs_access
 };
 
 int main(int argc, char **argv)
