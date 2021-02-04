@@ -843,6 +843,16 @@ static void crmfs_statfs(fuse_req_t req, fuse_ino_t ino)
     fuse_reply_statfs(req, &info);
 }
 
+static void free_files(struct crmfs_file *files_)
+{
+    for (size_t i = 0; i < icap; ++i) {
+        if (files_[i].data) {
+            free(files_[i].data);
+        }
+    }
+    free(files_);
+}
+
 static int checkpoint(uint64_t key)
 {
     enter();
@@ -882,12 +892,7 @@ static int checkpoint(uint64_t key)
     return ret;
 err:
     /* Roll back deep copy if error occurred */
-    for (size_t i = 0; i < icap; ++i) {
-        if (copied_files[i].data) {
-            free(copied_files[i].data);
-        }
-    }
-    free(copied_files);
+    free_files(copied_files);
     crmfs_unlock(__func__);
     return ret;
 }
@@ -951,26 +956,15 @@ static int restore(uint64_t key)
     }
     /* Free the current inode table and replace it with the
      * copy retrieved from above code */
-    for (size_t i = 0; i < icap; ++i) {
-        if (files[i].data) {
-            free(files[i].data);
-        }
-    }
-    free(files);
+    free_files(files);
     files = newfiles;
     /* Remove the state from the pool */
+    free_files(stored_files);
     remove_state(key);
     crmfs_unlock(__func__);
     return 0;
 err:
-    if (newfiles) {
-        for (size_t i = 0; i < icap; ++i) {
-            if (newfiles[i].data) {
-                free(newfiles[i].data);
-            }
-        }
-        free(newfiles);
-    }
+    free_files(newfiles);
     crmfs_unlock(__func__);
     return ret;
 }
