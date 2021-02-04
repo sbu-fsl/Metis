@@ -9,6 +9,7 @@ c_decl {
 
 /* The persistent content of the file systems */
 c_track "fsimgs[0]" "262144" "UnMatched";
+// c_track "&cur_pid" "sizeof(int)" "UnMatched";
 /* Abstract state signatures of the file systems */
 c_track "absfs" "sizeof(absfs)";
 
@@ -40,7 +41,7 @@ proctype worker()
        atomic {
         /* write, check: retval, errno, content */
         c_code {
-            makelog("BEGIN: write_file\n");
+            makelog("BEGIN: write_file (data=%d)\n", Pworker->writebyte);
             mountall();
             // off_t offset = pick_value(0, 32768, 1024);
             // size_t writelen = pick_value(0, 32768, 2048);
@@ -147,7 +148,7 @@ proctype driver(int nproc)
 {
     int i;
     c_code {
-        // start_perf_metrics_thread();
+        start_perf_metrics_thread();
         /* Initialize test dirs and files names */
         for (int i = 0; i < N_FS; ++i) {
             size_t len = snprintf(NULL, 0, "%s/testdir", basepaths[i]);
