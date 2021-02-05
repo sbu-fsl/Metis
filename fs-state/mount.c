@@ -80,6 +80,9 @@ void mountall()
 {
     int failpos, err;
     for (int i = 0; i < N_FS; ++i) {
+        /* Skip crmfs */
+        if (strcmp(fslist[i], "crmfs") == 0)
+            continue;
         /* mount(source, target, fstype, mountflags, option_str) */
         int ret = mount(devlist[i], basepaths[i], fslist[i], MS_NOATIME, "");
         if (ret != 0) {
@@ -108,6 +111,8 @@ void unmount_all()
     record_fs_stat();
 #endif
     for (int i = 0; i < N_FS; ++i) {
+        if (strcmp(fslist[i], "crmfs") == 0)
+            continue;
         int retry_limit = 10;
         /* We have to unfreeze the frozen file system before unmounting it.
          * Otherwise the system will hang! */

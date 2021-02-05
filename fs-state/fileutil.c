@@ -1,4 +1,5 @@
 #include "fileutil.h"
+#include "cr.h"
 #include <sys/wait.h>
 
 int cur_pid;
@@ -8,8 +9,10 @@ struct timespec begin_time;
 int _opened_files[1024];
 int _n_files;
 size_t count;
-
 absfs_set_t absfs_set;
+
+// Identify whether there's VeriFS: 0 = not set, 1 = yes, -1 = no
+static int crmfs_flag = 0;
 
 int compare_file_content(const char *path1, const char *path2)
 {
@@ -316,6 +319,8 @@ static void dump_fs_images(const char *folder)
 static void mmap_devices()
 {
     for (int i = 0; i < N_FS; ++i) {
+        if (!devlist[i])
+            continue;
         int fsfd = open(devlist[i], O_RDWR);
         assert(fsfd >= 0);
         void *fsimg = mmap(NULL, fsize(fsfd), PROT_READ | PROT_WRITE,
@@ -329,6 +334,8 @@ static void mmap_devices()
 static void unmap_devices()
 {
     for (int i = 0; i < N_FS; ++i) {
+        if (!devlist[i])
+            continue;
         munmap(fsimgs[i], fsize(fsfds[i]));
         close(fsfds[i]);
     }
@@ -345,20 +352,63 @@ static void init_basepaths()
     }
 }
 
+static int open_crmfs_mountpoint()
+{
+    char *crmfs_mp;
+    for (int i = 0; i < N_FS; ++i) {
+        if (strcmp(fslist[i], "crmfs") == 0) {
+            crmfs_mp = basepaths[i];
+            break;
+        }
+    }
+    return open(crmfs_mp, O_RDONLY | __O_DIRECTORY);
+}
+
+static int checkpoint_crmfs(void *ptr)
+{
+    int mpfd = open_crmfs_mountpoint();
+    if (mpfd < 0)
+        return errno;
+
+    int ret = ioctl(mpfd, CRMFS_CHECKPOINT, ptr);
+    close(mpfd);
+    if (ret == 0)
+        return 0;
+    else 
+        return errno;
+}
+
+static int restore_crmfs(void *ptr)
+{
+    int mpfd = open_crmfs_mountpoint();
+    if (mpfd < 0)
+        return errno;
+
+    int ret = ioctl(mpfd, CRMFS_RESTORE, ptr);
+    close(mpfd);
+    return (ret == 0) ? 0 : errno;
+}
+
 static long checkpoint_before_hook(unsigned char *ptr)
 {
     fprintf(seqfp, "checkpoint\n");
     makelog("[seqid = %d] checkpoint\n", count);
     mmap_devices();
     absfs_set_add(absfs_set, absfs);
-    // assert(do_fsck());
+    if (crmfs_flag == 1) {
+        int ckpt_res = checkpoint_crmfs(ptr);
+        if (ckpt_res != 0) {
+            fprintf(stderr, "Cannot checkpoint crmfs. key = %p, err = %s\n",
+                    ptr, errnoname(ckpt_res));
+        }
+    }
     return 0;
 }
 
 static long checkpoint_after_hook(unsigned char *ptr)
 {
     unmap_devices();
-    assert(do_fsck());
+    // assert(do_fsck());
     // dump_fs_images("snapshots");
     return 0;
 }
@@ -369,6 +419,13 @@ static long restore_before_hook(unsigned char *ptr)
     makelog("[seqid = %d] restore\n", count);
     mmap_devices();
     // assert(do_fsck());
+    if (crmfs_flag == 1) {
+        int rest_res = restore_crmfs(ptr);
+        if (rest_res != 0) {
+            fprintf(stderr, "Cannot restore crmfs. key = %p, err = %s\n",
+                    ptr, errnoname(rest_res));
+        }
+    }
     return 0;
 }
 
@@ -384,6 +441,17 @@ extern long (*c_stack_before)(unsigned char *);
 extern long (*c_stack_after)(unsigned char *);
 extern long (*c_unstack_before)(unsigned char *);
 extern long (*c_unstack_after)(unsigned char *);
+
+static void check_has_crmfs()
+{
+    for (int i = 0; crmfs_flag == 0 && i < N_FS; ++i) {
+        if (strcmp(fslist[i], "crmfs") == 0) {
+            crmfs_flag = 1;
+        }
+    }
+    if (crmfs_flag != 1)
+        crmfs_flag = -1;
+}
 
 void __attribute__((constructor)) init()
 {
@@ -409,6 +477,9 @@ void __attribute__((constructor)) init()
 
     /* Initialize absfs-set used for counting unique states */
     absfs_set_init(&absfs_set);
+
+    /* Check if there is VeriFS */
+    check_has_crmfs();
 }
 
 /*
@@ -419,5 +490,5 @@ void __attribute__((destructor)) cleanup()
     fflush(stdout);
     fflush(stderr);
     fclose(seqfp);
-    unfreeze_all();
+    // unfreeze_all();
 }
