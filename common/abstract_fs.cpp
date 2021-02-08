@@ -17,6 +17,28 @@ struct md5sum {
   uint64_t b;
 };
 
+struct exclude_path {
+  std::string parent;
+  std::string name;
+};
+
+static const struct exclude_path exclusion_list[] = {
+  {"/", "lost+found"},
+  {"/", ".nilfs"},
+  {"/", ".mcfs_dummy"}
+};
+
+static inline bool is_excluded(const std::string &parent,
+                               const std::string &name) {
+  int N = sizeof(exclusion_list) / sizeof(struct exclude_path);
+  for (int i = 0; i < N; ++i) {
+    if (exclusion_list[i].parent == parent && exclusion_list[i].name == name) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static inline bool is_this_or_parent(const char *name) {
   return (strncmp(name, ".", NAME_MAX) == 0) ||
          (strncmp(name, "..", NAME_MAX) == 0);
@@ -134,6 +156,9 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs,
 
   /* Walk childrens if there is any */
   for (std::string filename : children) {
+    /* Ignored paths listed in exclusion_list */
+    if (is_excluded(abstract_path, filename))
+      continue;
     fs::path childpath = file.fullpath / filename;
     fs::path child_abstract_path = file.abstract_path / filename;
     ret = walk(childpath.c_str(), child_abstract_path.c_str(), fs, verbose,

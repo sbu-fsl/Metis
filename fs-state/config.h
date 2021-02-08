@@ -17,8 +17,6 @@
 /* Abort the whole program when expect() fails */
 #define ABORT_ON_FAIL    1
 
-/* List of folders to be excluded */
-static const char *exclude_dirs[] = {"lost+found", NULL};
 /* List of file systems: Modify this to experiment with other file systems */
 static const char *fslist[] = {"ext4", "jffs2"};
 static const char *devlist[] = {"/dev/ram0", "/dev/mtdblock0"};

@@ -53,29 +53,6 @@ bool do_fsck()
     return isgood;
 }
 
-void clear_excluded_files()
-{
-    char path[PATH_MAX] = {0};
-    const char *folder;
-    struct stat st;
-    int n = 0, ret;
-    mountall();
-    while ((folder = exclude_dirs[n]) != NULL) {
-        for (int i = 0; i < N_FS; ++i) {
-            snprintf(path, PATH_MAX, "/mnt/test-%s/%s", fslist[i], folder);
-            ret = stat(path, &st);
-            if (ret < 0)
-                continue;
-            if (S_ISDIR(st.st_mode))
-                rmdir(path);
-            else
-                unlink(path);
-        }
-        n++;
-    }
-    unmount_all();
-}
-
 void mountall()
 {
     int failpos, err;

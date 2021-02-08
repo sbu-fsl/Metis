@@ -456,8 +456,6 @@ static void check_has_crmfs()
 void __attribute__((constructor)) init()
 {
     init_basepaths();
-    /* Clear all excluded dirs/files */
-    clear_excluded_files();
     /* Fill initial abstract states */
     for (int i = 0; i < N_FS; ++i) {
         compute_abstract_state(basepaths[i], absfs[i]);
