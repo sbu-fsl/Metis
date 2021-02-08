@@ -1,6 +1,7 @@
 #include "fileutil.h"
 #include "cr.h"
 #include <sys/wait.h>
+#include <sys/vfs.h>
 
 int cur_pid;
 char func[FUNC_NAME_LEN + 1];
@@ -453,6 +454,53 @@ static void check_has_crmfs()
         crmfs_flag = -1;
 }
 
+static void equalize_free_spaces(void)
+{
+    size_t free_spaces[N_FS] = {0};
+    size_t min_space = ULONG_MAX;
+    const char *dummy_file = ".mcfs_dummy";
+    mountall();
+    /* Find free space of each file system being checked */
+    for (int i = 0; i < N_FS; ++i) {
+        struct statfs fsinfo;
+        int ret = statfs(basepaths[i], &fsinfo);
+        if (ret != 0) {
+            logerr("cannot statfs %s", basepaths[i]);
+            exit(1);
+        }
+        size_t free_spc = fsinfo.f_bfree * fsinfo.f_bsize;
+        if (free_spc < min_space)
+            min_space = free_spc;
+        free_spaces[i] = free_spc;
+    }
+    /* Fill data to file systems who have greater than min_space of free space,
+     * so that all file systems will have equal free capacities. */
+    for (int i = 0; i < N_FS; ++i) {
+        size_t fillsz = free_spaces[i] - min_space;
+        char fullpath[PATH_MAX] = {0};
+        snprintf(fullpath, PATH_MAX, "%s/%s", basepaths[i], dummy_file);
+        /* Create/open the dummy file */
+        int fd = open(fullpath, O_CREAT | O_TRUNC | O_RDWR, 0666);
+        if (fd < 0) {
+            logerr("cannot open %s", fullpath);
+            exit(1);
+        }
+        /* Start filling */
+        memset(fullpath, 0, PATH_MAX);
+        while (fillsz > 0) {
+            size_t writesz = min(fillsz, PATH_MAX);
+            ssize_t ret = write(fd, fullpath, writesz);
+            if (ret < 0) {
+                logerr("cannot write data in %s", basepaths[i]);
+                exit(1);
+            }
+            fillsz -= ret;
+        }
+        close(fd);
+    }
+    unmount_all();
+}
+
 void __attribute__((constructor)) init()
 {
     init_basepaths();
@@ -478,6 +526,12 @@ void __attribute__((constructor)) init()
 
     /* Check if there is VeriFS */
     check_has_crmfs();
+
+    /* Fill dummy data so that all file systems have the same amount of free
+     * space (Only for non-VeriFS experiments, because currently VeriFS doesn't
+     * have support for statvfs() yet) */
+    if (crmfs_flag == -1)
+        equalize_free_spaces();
 }
 
 /*
