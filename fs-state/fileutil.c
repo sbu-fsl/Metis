@@ -1,5 +1,6 @@
 #include "fileutil.h"
 #include "cr.h"
+#include "custom_heap.h"
 #include <sys/wait.h>
 #include <sys/vfs.h>
 
@@ -503,6 +504,7 @@ static void equalize_free_spaces(void)
 
 void __attribute__((constructor)) init()
 {
+    try_init_myheap();
     init_basepaths();
     /* Fill initial abstract states */
     for (int i = 0; i < N_FS; ++i) {
@@ -542,5 +544,6 @@ void __attribute__((destructor)) cleanup()
     fflush(stdout);
     fflush(stderr);
     fclose(seqfp);
+    unset_myheap();
     // unfreeze_all();
 }

@@ -1,5 +1,7 @@
 #include "crmfs.h"
 
+#include "custom_heap.h"
+
 static size_t icap;
 static size_t dcap;
 static struct fuse_chan *crmfs_ch;
@@ -1022,6 +1024,16 @@ struct fuse_lowlevel_ops crmfs_ops = {
     .ioctl = crmfs_ioctl,
     .access = crmfs_access
 };
+
+void __attribute__((constructor)) init()
+{
+    try_init_myheap();
+}
+
+void __attribute__((destructor)) cleanup()
+{
+    unset_myheap();
+}
 
 int main(int argc, char **argv)
 {
