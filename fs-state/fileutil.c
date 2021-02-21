@@ -25,13 +25,13 @@ int compare_file_content(const char *path1, const char *path2)
     /* Open the two files */
     fd1 = open(path1, O_RDONLY);
     if (fd1 < 0) {
-        fprintf(stderr, "[seqid=%zu] %s: cannot open %s (%s)\n",
+        logerr("[seqid=%zu] %s: cannot open %s (%s)\n",
                 count, __func__, path1, errnoname(errno));
         return -1;
     }
     fd2 = open(path2, O_RDONLY);
     if (fd2 < 0) {
-        fprintf(stderr, "[seqid=%zu] %s: cannot open %s (%s)\n",
+        logerr("[seqid=%zu] %s: cannot open %s (%s)\n",
                 count, __func__, path1, errnoname(errno));
         close(fd1);
         return -1;
@@ -39,20 +39,20 @@ int compare_file_content(const char *path1, const char *path2)
     /* Get file properties: Make sure equal file size */
     ret = fstat(fd1, &f1);
     if (ret) {
-        fprintf(stderr, "[seqid=%zu] %s: fstat '%s' failed (%s)\n",
+        logerr("[seqid=%zu] %s: fstat '%s' failed (%s)\n",
                 count, __func__, path1, errnoname(errno));
         ret = -1;
         goto end;
     }
     ret = fstat(fd2, &f2);
     if (ret) {
-        fprintf(stderr, "[seqid=%zu] %s: fstat '%s' failed (%s)\n",
+        logerr("[seqid=%zu] %s: fstat '%s' failed (%s)\n",
                 count, __func__, path2, errnoname(errno));
         ret = -1;
         goto end;
     }
     if (f1.st_size != f2.st_size) {
-        fprintf(stderr, "[seqid=%zu] %s: '%s' and '%s' size differ. "
+        logerr("[seqid=%zu] %s: '%s' and '%s' size differ. "
                 "'%s' has %zu bytes and '%s' has %zu.\n", count, __func__,
                 path1, path2, path1, f1.st_size, path2, f2.st_size);
         ret = 1;
@@ -64,14 +64,14 @@ int compare_file_content(const char *path1, const char *path2)
     lseek(fd2, 0, SEEK_SET);
     while ((r1 = read(fd1, buf1, bs)) > 0 && (r2 = read(fd2, buf2, bs)) > 0) {
         if (memcmp(buf1, buf2, r1) != 0) {
-            fprintf(stderr, "[seqid=%zu] %s: content in '%s' and '%s' "
+            logerr("[seqid=%zu] %s: content in '%s' and '%s' "
                     "is not equal.\n", count, __func__, path1, path2);
             ret = -1;
 	    break;
         }
     }
     if (r1 < 0 || r2 < 0) {
-        fprintf(stderr, "[seqid=%zu] %s: error occurred when reading: %s\n",
+        logerr("[seqid=%zu] %s: error occurred when reading: %s\n",
                 count, __func__, errnoname(errno));
         ret = -1;
     }
@@ -94,10 +94,10 @@ bool compare_equality_values(const char **fses, int n_fs, int *nums)
         }
     }
     if (!res) {
-        fprintf(stderr, "[seqid=%zu] %s: discrepancy in values found:\n",
+        logerr("[seqid=%zu] %s: discrepancy in values found:\n",
                 count, __func__);
         for (int i = 0; i < n_fs; ++i)
-            fprintf(stderr, "[%s]: %d\n", fses[i], nums[i]);
+            logerr("[%s]: %d\n", fses[i], nums[i]);
     }
     return res;
 }
@@ -121,15 +121,15 @@ bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
         }
     }
     if (!res) {
-        fprintf(stderr, "[seqid=%zu] Discrepancy in abstract states found:\n",
+        logerr("[seqid=%zu] Discrepancy in abstract states found:\n",
                 count);
         for (int i = 0; i < n_fs; ++i) {
-            fprintf(stderr, "[seqid=%zu, fs=%s]: Directory structure:\n",
+            logerr("[seqid=%zu, fs=%s]: Directory structure:\n",
                     count, fses[i]);
             dump_absfs(basepaths[i]);
-            fprintf(stderr, "[seqid=%zu, fs=%s]: hash=", count, fses[i]);
+            logerr("[seqid=%zu, fs=%s]: hash=", count, fses[i]);
             print_abstract_fs_state(stderr, absfs[i]);
-            fprintf(stderr, "\n");
+            logerr("\n");
         }
     }
     return res;
@@ -152,10 +152,10 @@ bool compare_equality_fexists(const char **fses, int n_fs, char **fpaths)
         }
     }
     if (!res) {
-        fprintf(stderr, "[%zu] Discrepancy in existence of files found:\n",
+        logerr("[%zu] Discrepancy in existence of files found:\n",
                 count);
         for (int i = 0; i < n_fs; ++i) {
-            fprintf(stderr, "[%s]: %s: %d\n", fses[i], fpaths[i], fexists[i]);
+            logerr("[%s]: %s: %d\n", fses[i], fpaths[i], fexists[i]);
         }
     }
     return res;
@@ -176,7 +176,7 @@ bool compare_equality_fcontent(const char **fses, int n_fs, char **fpaths)
         if (compare_file_content(fpaths[i-1], fpaths[i]) != 0) {
             if (res)
                 res = false;
-            fprintf(stderr, "[seqid=%zu] [%s] (%s) is different from [%s] "
+            logerr("[seqid=%zu] [%s] (%s) is different from [%s] "
                     "(%s)\n", count, fses[i-1], fpaths[i-1], fses[i],
                     fpaths[i]);
         }
@@ -239,17 +239,17 @@ static int ensure_dump_dir(const char *folder)
     if (ret < 0 && errno == ENOENT) {
         ret = mkdir(folder, 0755);
         if (ret < 0) {
-            fprintf(stderr, "%s: cannot create folder %s (%s)\n", __func__,
+            logerr("%s: cannot create folder %s (%s)\n", __func__,
                     folder, errnoname(errno));
             return -errno;
         }
     } else if (ret < 0) {
-        fprintf(stderr, "%s: failed to stat %s, error is %s\n", __func__,
+        logerr("%s: failed to stat %s, error is %s\n", __func__,
                 folder, errnoname(errno));
         return -errno;
     } else {
         if (!S_ISDIR(st.st_mode)) {
-            fprintf(stderr, "%s: folder %s is not a directory.\n", __func__,
+            logerr("%s: folder %s is not a directory.\n", __func__,
                     folder);
             return -ENOTDIR;
         }
@@ -262,7 +262,7 @@ static void dump_mmaped(const char *outpath, int fsfd, void *fsimg)
     const size_t bs = 4096;
     int dmpfd = open(outpath, O_CREAT | O_RDWR | O_TRUNC, 0666);
     if (dmpfd < 0) {
-        fprintf(stderr, "%s: cannot create file %s (%s)\n", __func__,
+        logerr("%s: cannot create file %s (%s)\n", __func__,
                 outpath, errnoname(errno));
         return;
     }
@@ -272,7 +272,7 @@ static void dump_mmaped(const char *outpath, int fsfd, void *fsimg)
         size_t writelen = (remaining >= bs) ? bs : remaining;
         ssize_t writeres = write(dmpfd, ptr, writelen);
         if (writeres < 0) {
-            fprintf(stderr, "%s: cannot write data to image dump %s (%s)\n",
+            logerr("%s: cannot write data to image dump %s (%s)\n",
                     __func__, outpath, errnoname(errno));
             close(dmpfd);
             break;
@@ -292,14 +292,14 @@ static void dump_device(const char *devname, const char *folder,
     int status = system(cmd);
     if (WIFEXITED(status)) {
         if (WEXITSTATUS(status) != 0) {
-            fprintf(stderr, "%s: Cannot dump %s on %s, dd exited with %d.\n",
+            logerr("%s: Cannot dump %s on %s, dd exited with %d.\n",
                     __func__, fsname, devname, WEXITSTATUS(status));
         }
     } else if (WIFSIGNALED(status)) {
-        fprintf(stderr, "%s: Cannot dump %s on %s, dd was terminated by signal "
+        logerr("%s: Cannot dump %s on %s, dd was terminated by signal "
                 "%d.\n", __func__, fsname, devname, WTERMSIG(status));
     } else {
-        fprintf(stderr, "%s: Cannot dump %s on %s, dd has exit code %d.\n",
+        logerr("%s: Cannot dump %s on %s, dd has exit code %d.\n",
                 __func__, fsname, devname, status);
     }
 }
@@ -393,14 +393,14 @@ static int restore_crmfs(void *ptr)
 
 static long checkpoint_before_hook(unsigned char *ptr)
 {
-    fprintf(seqfp, "checkpoint\n");
+    submit_seq("checkpoint\n");
     makelog("[seqid = %d] checkpoint\n", count);
     mmap_devices();
     absfs_set_add(absfs_set, absfs);
     if (crmfs_flag == 1) {
         int ckpt_res = checkpoint_crmfs(ptr);
         if (ckpt_res != 0) {
-            fprintf(stderr, "Cannot checkpoint crmfs. key = %p, err = %s\n",
+            logerr("Cannot checkpoint crmfs. key = %p, err = %s\n",
                     ptr, errnoname(ckpt_res));
         }
     }
@@ -417,14 +417,14 @@ static long checkpoint_after_hook(unsigned char *ptr)
 
 static long restore_before_hook(unsigned char *ptr)
 {
-    fprintf(seqfp, "restore\n");
+    submit_seq("restore\n");
     makelog("[seqid = %d] restore\n", count);
     mmap_devices();
     // assert(do_fsck());
     if (crmfs_flag == 1) {
         int rest_res = restore_crmfs(ptr);
         if (rest_res != 0) {
-            fprintf(stderr, "Cannot restore crmfs. key = %p, err = %s\n",
+            logerr("Cannot restore crmfs. key = %p, err = %s\n",
                     ptr, errnoname(rest_res));
         }
     }
@@ -510,12 +510,12 @@ void __attribute__((constructor)) init()
     for (int i = 0; i < N_FS; ++i) {
         compute_abstract_state(basepaths[i], absfs[i]);
     }
-    /* open sequence file */
-    seqfp = fopen("sequence.log", "w");
-    assert(seqfp);
-
+    
+    /* Initialize log daemon */
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
+
+    init_log_daemon(OUTPUT_LOG_PATH, ERROR_LOG_PATH, SEQ_LOG_PATH);
 
     /* Register hooks */
     c_stack_before = checkpoint_before_hook;
@@ -543,7 +543,7 @@ void __attribute__((destructor)) cleanup()
 {
     fflush(stdout);
     fflush(stderr);
-    fclose(seqfp);
     unset_myheap();
+    destroy_log_daemon();
     // unfreeze_all();
 }

@@ -26,6 +26,7 @@
 #include "abstract_fs.h"
 #include "config.h"
 #include "set.h"
+#include "log.h"
 
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
@@ -44,26 +45,22 @@ struct imghash {
     size_t count;
 };
 
-static inline int makelog(const char *format, ...)
+static inline void makelog(const char *format, ...)
 {
     struct timespec now, diff;
     va_list args;
     va_start(args, format);
     current_utc_time(&now);
     timediff(&diff, &now, &begin_time);
-    printf("[%4ld.%09ld] ", diff.tv_sec, diff.tv_nsec);
-    int res = vprintf(format, args);
-    fflush(stdout);
-    return res;
+    submit_message("[%4ld.%09ld] ", diff.tv_sec, diff.tv_nsec);
+    vsubmit_message(format, args);
 }
 
-static inline int record_seq(const char *format, ...)
+static inline void record_seq(const char *format, ...)
 {
     va_list args;
     va_start(args, format);
-    int ret = vfprintf(seqfp, format, args);
-    fflush(seqfp);
-    return ret;
+    vsubmit_seq(format, args);
 }
 
 static inline void compute_abstract_state(const char *basepath,
@@ -87,20 +84,20 @@ static inline void compute_abstract_state(const char *basepath,
     err = errno; \
     makelog("[seqid = %zu] %s (" argfmt ")", \
             count, func, __VA_ARGS__); \
-    printf(" -> ret = %d, err = %s\n", retvar, errnoname(errno)); \
+    submit_message(" -> ret = %d, err = %s\n", retvar, errnoname(errno)); \
     errno = err;
 
 #define logerr(msg, ...) \
-    fprintf(stderr, "%s:%d:%s: " msg " (%s)\n", __FILE__, __LINE__, __func__, \
-            __VA_ARGS__, errnoname(errno));
+    submit_error("%s:%d:%s: " msg " (%s)\n", __FILE__, __LINE__, __func__, \
+                 __VA_ARGS__ __VA_OPT__(,) errnoname(errno));
 
 #define min(x, y) ((x >= y) ? y : x)
 
 static inline void print_expect_failed(const char *expr, const char *file,
                                        int line)
 {
-    fprintf(stderr, "[seqid=%zu] Expectation failed at %s:%d: %s\n",
-            count, file, line, expr);
+    logerr("[seqid=%zu] Expectation failed at %s:%d: %s\n",
+           count, file, line, expr);
 }
 
 #ifndef ABORT_ON_FAIL

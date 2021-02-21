@@ -8,8 +8,8 @@ c_decl {
 #include "parameters.pml"
 
 /* The persistent content of the file systems */
-c_track "fsimgs[0]" "262144" "UnMatched";
-// c_track "&cur_pid" "sizeof(int)" "UnMatched";
+// c_track "fsimgs[0]" "262144" "UnMatched";
+c_track "&cur_pid" "sizeof(int)" "UnMatched";
 /* Abstract state signatures of the file systems */
 c_track "absfs" "sizeof(absfs)";
 
