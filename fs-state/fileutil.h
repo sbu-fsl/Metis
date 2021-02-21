@@ -88,8 +88,8 @@ static inline void compute_abstract_state(const char *basepath,
     errno = err;
 
 #define logerr(msg, ...) \
-    submit_error("%s:%d:%s: " msg " (%s)\n", __FILE__, __LINE__, __func__, \
-                 __VA_ARGS__ __VA_OPT__(,) errnoname(errno));
+    submit_error("%s:%d:%s: " msg " (%s)\n", __FILE__, __LINE__, __func__ \
+                 , ##__VA_ARGS__,  errnoname(errno));
 
 #define min(x, y) ((x >= y) ? y : x)
 
