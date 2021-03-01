@@ -4,14 +4,16 @@ COMMON_OBJ := $(patsubst $(COMMON_DIR)/%,%.o,$(COMMON_SRC))
 override CFLAGS += -g -I../include -D PRINTF # -D T_RAND -D P_RAND
 override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread 
 
-all: demo.pml common-libs absfs-set
-	./gen_parameters.sh > parameters.pml; \
+all: demo.pml parameters common-libs absfs-set
 	spin -a demo.pml; \
 	gcc -o pan pan.c set.o fileutil.c perf.c mount.c common-libs.a $(CFLAGS) $(LIBS); \
 
 run: all
 	./pan | less -N; \
 	rm -rf /mnt/test-*/test* || true; \
+
+parameters: parameters.py parameter_util.py
+	python3 parameters.py
 
 common-libs: $(COMMON_OBJ)
 	ar rvs $@.a $^
