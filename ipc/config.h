@@ -8,7 +8,7 @@
 #define MAX_OPENED_FILES 192
 /* The file name of or the path to the performance log */
 #define PERF_LOG_PATH    "perf.csv"
-/* The name of or the path to the sequence log (without .log suffix) */
+/* The name of or the path to the logs (without .log suffix) */
 #define SEQ_LOG_PATH     "sequence"
 #define OUTPUT_LOG_PATH  "output"
 #define ERROR_LOG_PATH   "error"
