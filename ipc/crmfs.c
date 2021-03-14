@@ -847,6 +847,8 @@ static void crmfs_statfs(fuse_req_t req, fuse_ino_t ino)
 
 static void free_files(struct crmfs_file *files_)
 {
+    if (files_ == NULL)
+        return;
     for (size_t i = 0; i < icap; ++i) {
         if (files_[i].data) {
             free(files_[i].data);
@@ -926,6 +928,7 @@ static int restore(uint64_t key)
     enter();
     crmfs_lock(__func__);
     struct crmfs_file *stored_files = find_state(key);
+    struct crmfs_file *newfiles = NULL;
     int ret = 0;
     if (!stored_files) {
         ret = -ENOENT;
@@ -937,7 +940,7 @@ static int restore(uint64_t key)
     /* Make a full copy of the stored inode table.
      * We only perfrom the table replacement if the entire
      * deep copying process is successful. */
-    struct crmfs_file *newfiles = malloc(itable_sz);
+    newfiles = malloc(itable_sz);
     if (!newfiles) {
         ret = -ENOMEM;
         goto err;
