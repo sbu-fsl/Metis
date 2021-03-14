@@ -22,7 +22,7 @@
 /* List of folders to be excluded */
 static const char *exclude_dirs[] = {"lost+found", NULL};
 /* List of file systems: Modify this to experiment with other file systems */
-static const char *fslist[] = {"crmfs"};
+static const char *fslist[] = {"verifs1"};
 static const char *devlist[] = {NULL};
 #define N_FS    nelem(fslist)
 char *basepaths[N_FS];
