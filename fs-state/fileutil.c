@@ -13,9 +13,6 @@ int _n_files;
 size_t count;
 absfs_set_t absfs_set;
 
-// Identify whether there's VeriFS: 0 = not set, 1 = yes, -1 = no
-static int crmfs_flag = 0;
-
 int compare_file_content(const char *path1, const char *path2)
 {
     const size_t bs = 4096;
@@ -354,54 +351,54 @@ static void init_basepaths()
     }
 }
 
-static int open_crmfs_mountpoint()
+static int checkpoint_verifs(void *ptr, const char *mp)
 {
-    char *crmfs_mp;
-    for (int i = 0; i < N_FS; ++i) {
-        if (strcmp(fslist[i], "crmfs") == 0) {
-            crmfs_mp = basepaths[i];
-            break;
-        }
-    }
-    return open(crmfs_mp, O_RDONLY | __O_DIRECTORY);
-}
-
-static int checkpoint_crmfs(void *ptr)
-{
-    int mpfd = open_crmfs_mountpoint();
-    if (mpfd < 0)
+    int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
+    if (mpfd < 0) {
+        logerr("Cannot open mountpoint %s", mp);
         return errno;
+    }
 
     int ret = ioctl(mpfd, CRMFS_CHECKPOINT, ptr);
+    if (ret < 0) {
+        logerr("Cannot perform checkpoint at %s", mp);
+        ret = errno;
+    }
     close(mpfd);
-    if (ret == 0)
-        return 0;
-    else 
-        return errno;
+    return ret;
 }
 
-static int restore_crmfs(void *ptr)
+static int restore_verifs(void *ptr, const char *mp)
 {
-    int mpfd = open_crmfs_mountpoint();
-    if (mpfd < 0)
+    int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
+    if (mpfd < 0) {
+        logerr("Cannot open mountpoint %s", mp);
         return errno;
+    }
 
     int ret = ioctl(mpfd, CRMFS_RESTORE, ptr);
+    if (ret < 0) {
+        logerr("Cannot perform restore at %s with key %p", mp, ptr);
+        ret = errno;
+    }
+
     close(mpfd);
-    return (ret == 0) ? 0 : errno;
+    return ret;
 }
 
 static long checkpoint_before_hook(unsigned char *ptr)
 {
     submit_seq("checkpoint\n");
-    makelog("[seqid = %d] checkpoint\n", count);
+    makelog("[seqid = %d] checkpoint (%p)\n", count, ptr);
     mmap_devices();
     absfs_set_add(absfs_set, absfs);
-    if (crmfs_flag == 1) {
-        int ckpt_res = checkpoint_crmfs(ptr);
-        if (ckpt_res != 0) {
-            logerr("Cannot checkpoint crmfs. key = %p, err = %s\n",
-                    ptr, errnoname(ckpt_res));
+    for (int i = 0; i < N_FS; ++i) {
+        if (!is_verifs(fslist[i]))
+            continue;
+        int res = checkpoint_verifs(ptr, basepaths[i]); 
+        if (res != 0) {
+            logerr("Failed to checkpoint a verifiable file system %s.",
+                   fslist[i]);
         }
     }
     return 0;
@@ -418,16 +415,19 @@ static long checkpoint_after_hook(unsigned char *ptr)
 static long restore_before_hook(unsigned char *ptr)
 {
     submit_seq("restore\n");
-    makelog("[seqid = %d] restore\n", count);
+    makelog("[seqid = %d] restore (%p)\n", count, ptr);
     mmap_devices();
     // assert(do_fsck());
-    if (crmfs_flag == 1) {
-        int rest_res = restore_crmfs(ptr);
-        if (rest_res != 0) {
-            logerr("Cannot restore crmfs. key = %p, err = %s\n",
-                    ptr, errnoname(rest_res));
+    for (int i = 0; i < N_FS; ++i) {
+        if (!is_verifs(fslist[i]))
+            continue;
+        int res = restore_verifs(ptr, basepaths[i]);
+        if (res != 0) {
+            logerr("Failed to restore a verifiable file system %s.",
+                    fslist[i]);
         }
     }
+    
     return 0;
 }
 
@@ -444,17 +444,6 @@ extern long (*c_stack_after)(unsigned char *);
 extern long (*c_unstack_before)(unsigned char *);
 extern long (*c_unstack_after)(unsigned char *);
 
-static void check_has_crmfs()
-{
-    for (int i = 0; crmfs_flag == 0 && i < N_FS; ++i) {
-        if (strcmp(fslist[i], "crmfs") == 0) {
-            crmfs_flag = 1;
-        }
-    }
-    if (crmfs_flag != 1)
-        crmfs_flag = -1;
-}
-
 static void equalize_free_spaces(void)
 {
     size_t free_spaces[N_FS] = {0};
@@ -463,6 +452,8 @@ static void equalize_free_spaces(void)
     mountall();
     /* Find free space of each file system being checked */
     for (int i = 0; i < N_FS; ++i) {
+        if (is_verifs(fslist[i]))
+            continue;
         struct statfs fsinfo;
         int ret = statfs(basepaths[i], &fsinfo);
         if (ret != 0) {
@@ -477,6 +468,8 @@ static void equalize_free_spaces(void)
     /* Fill data to file systems who have greater than min_space of free space,
      * so that all file systems will have equal free capacities. */
     for (int i = 0; i < N_FS; ++i) {
+        if (is_verifs(fslist[i]))
+            continue;
         size_t fillsz = free_spaces[i] - min_space;
         char fullpath[PATH_MAX] = {0};
         snprintf(fullpath, PATH_MAX, "%s/%s", basepaths[i], dummy_file);
@@ -526,14 +519,10 @@ void __attribute__((constructor)) init()
     /* Initialize absfs-set used for counting unique states */
     absfs_set_init(&absfs_set);
 
-    /* Check if there is VeriFS */
-    check_has_crmfs();
-
     /* Fill dummy data so that all file systems have the same amount of free
-     * space (Only for non-VeriFS experiments, because currently VeriFS doesn't
+     * space (Only for non-VeriFS experiments, because currently VeriFS1 doesn't
      * have support for statvfs() yet) */
-    if (crmfs_flag == -1)
-        equalize_free_spaces();
+    equalize_free_spaces();
 }
 
 /*

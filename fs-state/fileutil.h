@@ -31,6 +31,9 @@
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
 
+#define VERIFS_PREFIX       "veri"
+#define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
+
 extern int cur_pid;
 extern char func[FUNC_NAME_LEN + 1];
 extern struct timespec begin_time;
@@ -160,6 +163,11 @@ static inline ssize_t fsize(int fd)
     } else {
         return 0;
     }
+}
+
+static inline bool is_verifs(const char *fsname)
+{
+    return strncmp(fsname, VERIFS_PREFIX, VERIFS_PREFIX_LEN) == 0;
 }
 
 bool compare_equality_values(const char **fses, int n_fs, int *nums);
