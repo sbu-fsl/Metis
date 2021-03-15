@@ -7,7 +7,7 @@ override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread
 all: crmfs ckpt restore model-checker
 
 model-checker: mc.pml parameters fileutil.c mount.c perf.c common-libs absfs-set
-	spin -a mc.pml
+	/home/yifei/zram_test/VeriFS2-ioctl-20210212/fsl-spin/Src/spin -a mc.pml
 	gcc -g -o pan pan.c fileutil.c mount.c perf.c set.o common-libs.a $(CFLAGS) $(LIBS)
 
 parameters: parameters.py parameter_util.py
