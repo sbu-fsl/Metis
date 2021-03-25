@@ -193,7 +193,7 @@ void make_logger(struct logger *lgr, const char *name, FILE *default_fp)
 
     /* Make a copy of the logger name */
     size_t namelen = strnlen(name, PATH_MAX);
-    char *name_copy = malloc(namelen + 1);
+    char *name_copy = calloc(namelen + 1, sizeof(char));
     assert(name_copy != NULL);
     strncpy(name_copy, name, namelen);
     res.name = name_copy;
