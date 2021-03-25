@@ -37,6 +37,7 @@
 extern int cur_pid;
 extern char func[FUNC_NAME_LEN + 1];
 extern struct timespec begin_time;
+extern struct timespec epoch;
 extern int _opened_files[1024];
 extern int _n_files;
 extern size_t count;
@@ -48,14 +49,19 @@ struct imghash {
     size_t count;
 };
 
+static inline void get_epoch()
+{
+    struct timespec now;
+    current_utc_time(&now);
+    timediff(&epoch, &now, &begin_time);
+}
+
 static inline void makelog(const char *format, ...)
 {
-    struct timespec now, diff;
     va_list args;
     va_start(args, format);
-    current_utc_time(&now);
-    timediff(&diff, &now, &begin_time);
-    submit_message("[%4ld.%09ld] ", diff.tv_sec, diff.tv_nsec);
+    get_epoch();
+    submit_message("[%4ld.%09ld] ", epoch.tv_sec, epoch.tv_nsec);
     vsubmit_message(format, args);
 }
 
@@ -91,8 +97,10 @@ static inline void compute_abstract_state(const char *basepath,
     errno = err;
 
 #define logerr(msg, ...) \
-    submit_error("%s:%d:%s: " msg " (%s)\n", __FILE__, __LINE__, __func__ \
-                 , ##__VA_ARGS__,  errnoname(errno));
+    get_epoch(); \
+    submit_error("[%4ld.%09ld] %s:%d:%s: " msg " (%s)\n", epoch.tv_sec, \
+                 epoch.tv_nsec, __FILE__, __LINE__, __func__, ##__VA_ARGS__, \
+                 errnoname(errno));
 
 #define min(x, y) ((x >= y) ? y : x)
 

@@ -7,6 +7,8 @@
 int cur_pid;
 char func[FUNC_NAME_LEN + 1];
 struct timespec begin_time;
+// Time spent since the program starts
+struct timespec epoch;
 
 int _opened_files[1024];
 int _n_files;
