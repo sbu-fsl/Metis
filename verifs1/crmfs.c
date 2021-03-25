@@ -981,11 +981,11 @@ static void crmfs_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
     int ret;
     enter();
     switch (cmd) {
-        case CRMFS_CHECKPOINT:
+        case VERIFS_CHECKPOINT:
             ret = checkpoint((uint64_t)arg);
             break;
 
-        case CRMFS_RESTORE:
+        case VERIFS_RESTORE:
             ret = restore((uint64_t)arg);
             break;
 

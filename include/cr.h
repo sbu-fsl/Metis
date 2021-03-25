@@ -1,5 +1,5 @@
-#ifndef _CRMFS_CR_H
-#define _CRMFS_CR_H
+#ifndef _VERIFS_CR_H
+#define _VERIFS_CR_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -7,14 +7,14 @@ extern "C" {
 
 #include <sys/ioctl.h>
 
-#define CRMFS_IOC_CODE    '1'
-#define CRMFS_IOC_NO(x)   (CRMFS_IOC_CODE + (x))
-#define CRMFS_IOC(n)      _IO(CRMFS_IOC_CODE, CRMFS_IOC_NO(n))
-#define CRMFS_GET_IOC(n, type)  _IOR(CRMFS_IOC_CODE, CRMFS_IOC_NO(n), type)
-#define CRMFS_SET_IOC(n, type)  _IOW(CRMFS_IOC_CODE, CRMFS_IOC_NO(n), type)
+#define VERIFS_IOC_CODE    '1'
+#define VERIFS_IOC_NO(x)   (VERIFS_IOC_CODE + (x))
+#define VERIFS_IOC(n)      _IO(VERIFS_IOC_CODE, VERIFS_IOC_NO(n))
+#define VERIFS_GET_IOC(n, type)  _IOR(VERIFS_IOC_CODE, VERIFS_IOC_NO(n), type)
+#define VERIFS_SET_IOC(n, type)  _IOW(VERIFS_IOC_CODE, VERIFS_IOC_NO(n), type)
 
-#define CRMFS_CHECKPOINT  CRMFS_IOC(1)
-#define CRMFS_RESTORE     CRMFS_IOC(2)
+#define VERIFS_CHECKPOINT  VERIFS_IOC(1)
+#define VERIFS_RESTORE     VERIFS_IOC(2)
 
 int insert_state(uint64_t key, void *ptr);
 void *find_state(uint64_t key);
@@ -24,4 +24,4 @@ int remove_state(uint64_t key);
 }
 #endif
 
-#endif // _CRMFS_CR_H 
+#endif // _VERIFS_CR_H 

@@ -361,7 +361,7 @@ static int checkpoint_verifs(void *ptr, const char *mp)
         return errno;
     }
 
-    int ret = ioctl(mpfd, CRMFS_CHECKPOINT, ptr);
+    int ret = ioctl(mpfd, VERIFS_CHECKPOINT, ptr);
     if (ret < 0) {
         logerr("Cannot perform checkpoint at %s", mp);
         ret = errno;
@@ -378,7 +378,7 @@ static int restore_verifs(void *ptr, const char *mp)
         return errno;
     }
 
-    int ret = ioctl(mpfd, CRMFS_RESTORE, ptr);
+    int ret = ioctl(mpfd, VERIFS_RESTORE, ptr);
     if (ret < 0) {
         logerr("Cannot perform restore at %s with key %p", mp, ptr);
         ret = errno;

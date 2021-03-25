@@ -23,7 +23,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    int ret = ioctl(dirfd, CRMFS_RESTORE, (void *)key);
+    int ret = ioctl(dirfd, VERIFS_RESTORE, (void *)key);
     if (ret != 0) {
         printf("Result: ret = %d, errno = %d (%s)\n",
                ret, errno, errnoname(errno));
