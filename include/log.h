@@ -19,13 +19,13 @@ struct log_entry {
     char *content;
 };
 
-void submit_log(struct logger *dest, const char *fmt, ...);
-void submit_message(const char *fmt, ...);
-void vsubmit_message(const char *fmt, va_list args);
-void submit_error(const char *fmt, ...);
-void vsubmit_error(const char *fmt, va_list args);
-void submit_seq(const char *fmt, ...);
-void vsubmit_seq(const char *fmt, va_list args);
+int submit_log(struct logger *dest, const char *fmt, ...);
+int submit_message(const char *fmt, ...);
+int vsubmit_message(const char *fmt, va_list args);
+int submit_error(const char *fmt, ...);
+int vsubmit_error(const char *fmt, va_list args);
+int submit_seq(const char *fmt, ...);
+int vsubmit_seq(const char *fmt, va_list args);
 void make_logger(struct logger *lgr, const char *name, FILE *default_fp);
 void init_log_daemon(const char *output_log_name, const char *err_log_name,
         const char *seq_name);

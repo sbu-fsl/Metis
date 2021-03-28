@@ -112,7 +112,7 @@ static void abort_handler(int sig)
     exit(sig);
 }
 
-static void _submit_log(struct logger *dest, const char *fmt, va_list args)
+static int _submit_log(struct logger *dest, const char *fmt, va_list args)
 {
     struct log_entry ent;
     int ret;
@@ -121,9 +121,11 @@ static void _submit_log(struct logger *dest, const char *fmt, va_list args)
     va_copy(args2, args);
     /* Get the length first, then allocate space for the content */
     ret = vsnprintf(NULL, 0, fmt, args);
-    assert(ret >= 0);
+    if (ret < 0)
+        return ret;
     ent.content = malloc(ret + 1);
-    assert(ent.content != NULL);
+    if (ent.content == NULL)
+        return -ENOMEM;
     /* Fill content to the allocated space */
     vsprintf(ent.content, fmt, args2);
     ent.loglen = ret;
@@ -133,49 +135,50 @@ static void _submit_log(struct logger *dest, const char *fmt, va_list args)
     pthread_mutex_lock(&loglock);
     vector_add(&log_queue, &ent);
     pthread_mutex_unlock(&loglock);
+    return ret;
 }
 
-void submit_log(struct logger *dest, const char *fmt, ...)
+int submit_log(struct logger *dest, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    _submit_log(dest, fmt, args);
+    return _submit_log(dest, fmt, args);
 }
 
-void submit_message(const char *fmt, ...)
+int submit_message(const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    _submit_log(&output, fmt, args);
+    return _submit_log(&output, fmt, args);
 }
 
-void vsubmit_message(const char *fmt, va_list args)
+int vsubmit_message(const char *fmt, va_list args)
 {
-    _submit_log(&output, fmt, args);
+    return _submit_log(&output, fmt, args);
 }
 
-void submit_error(const char *fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    _submit_log(&error, fmt, args);
-}
-
-void vsubmit_error(const char *fmt, va_list args) 
-{
-    _submit_log(&error, fmt, args);
-}
-
-void submit_seq(const char *fmt, ...)
+int submit_error(const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    _submit_log(&seq, fmt, args);
+    return _submit_log(&error, fmt, args);
 }
 
-void vsubmit_seq(const char *fmt, va_list args)
+int vsubmit_error(const char *fmt, va_list args) 
 {
-    _submit_log(&seq, fmt, args);
+    return _submit_log(&error, fmt, args);
+}
+
+int submit_seq(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    return _submit_log(&seq, fmt, args);
+}
+
+int vsubmit_seq(const char *fmt, va_list args)
+{
+    return _submit_log(&seq, fmt, args);
 }
 
 void make_logger(struct logger *lgr, const char *name, FILE *default_fp)
