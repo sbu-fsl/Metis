@@ -49,6 +49,7 @@ extern "C" {
 #endif
 
 typedef unsigned char absfs_state_t[16];
+typedef int (*printer_t)(const char *fmt, ...);
 
 struct abstract_fs {
   MD5_CTX ctx;
@@ -59,9 +60,9 @@ typedef struct abstract_fs absfs_t;
 
 void init_abstract_fs(absfs_t *absfs);
 int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
-                     FILE *verbose_outf);
-void print_abstract_fs_state(FILE *out, absfs_state_t state);
-void print_filemode(FILE *out, mode_t mode);
+                     printer_t verbose_printer);
+void print_abstract_fs_state(printer_t printer, absfs_state_t state);
+void print_filemode(printer_t printer, mode_t mode);
 
 /**
  * get_state_prefix: Get the 32-bit prefix of the "abstract file

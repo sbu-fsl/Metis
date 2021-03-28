@@ -92,7 +92,7 @@ end:
 }
 
 static int walk(const char *path, const char *abstract_path, absfs_t *fs,
-                bool verbose, FILE *outf) {
+                bool verbose, printer_t verbose_printer) {
   AbstractFile file;
   struct stat fileinfo = {0};
   std::vector<std::string> children;
@@ -121,14 +121,14 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs,
   file.attrs.gid = fileinfo.st_gid;
 
   if (verbose) {
-    fprintf(outf, "%s, mode=", abstract_path);
-    print_filemode(outf, file.attrs.mode);
-    fprintf(outf, ", size=%zu", file.attrs.size);
+    verbose_printer("%s, mode=", abstract_path);
+    print_filemode(verbose_printer, file.attrs.mode);
+    verbose_printer(", size=%zu", file.attrs.size);
     if (!S_ISREG(file.attrs.mode))
-      fprintf(outf, " (Ignored), ");
+      verbose_printer(" (Ignored), ");
     else
-      fprintf(outf, ", ");
-    fprintf(outf, "nlink=%ld, uid=%d, gid=%d\n", file.attrs.nlink,
+      verbose_printer(", ");
+    verbose_printer("nlink=%ld, uid=%d, gid=%d\n", file.attrs.nlink,
             file.attrs.uid, file.attrs.gid);
   }
 
@@ -162,7 +162,7 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs,
     fs::path childpath = file.fullpath / filename;
     fs::path child_abstract_path = file.abstract_path / filename;
     ret = walk(childpath.c_str(), child_abstract_path.c_str(), fs, verbose,
-               outf);
+               verbose_printer);
     if (ret < 0) {
       fprintf(stderr, "Error when walking '%s'.\n", childpath.c_str());
       return -1;
@@ -217,8 +217,8 @@ void init_abstract_fs(absfs_t *absfs) {
  * @return: 0 for success, and other values for errors.
  */
 int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
-                     FILE *verbose_outf) {
-  int ret = walk(basepath, "/", absfs, verbose, verbose_outf);
+                     printer_t verbose_printer) {
+  int ret = walk(basepath, "/", absfs, verbose, verbose_printer);
   MD5_Final(absfs->state, &absfs->ctx);
   return ret;
 }
@@ -227,41 +227,43 @@ int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
  * print_abstract_fs_state: Print the whole 128-bit abstract file
  *   system state signature
  *
- * @param[in] out:   The FILE object that the caller want to output into
- * @param[in] state: The absfs_state_t value
+ * @param[in] printer:  The function that we can use to print out the
+ *                      characters. It must be in the form of
+ *                        int printer_function(const char *fmt, ...);
+ * @param[in] state:    The absfs_state_t value
  */
-void print_abstract_fs_state(FILE *out, absfs_state_t state) {
+void print_abstract_fs_state(printer_t printer, absfs_state_t state) {
   for (int i = 0; i < 16; ++i)
-    fprintf(out, "%02x", state[i] & 0xff);
+    printer("%02x", state[i] & 0xff);
 }
 
-void print_filemode(FILE *out, mode_t mode) {
-  fputc('<', out);
+void print_filemode(printer_t printer, mode_t mode) {
+  printer("<");
 
   /* file type */
   if (S_ISDIR(mode))
-    fprintf(out, "dir ");
+    printer("dir ");
   if (S_ISCHR(mode))
-    fprintf(out, "chrdev ");
+    printer("chrdev ");
   if (S_ISBLK(mode))
-    fprintf(out, "blkdev ");
+    printer("blkdev ");
   if (S_ISREG(mode))
-    fprintf(out, "file ");
+    printer("file ");
   if (S_ISLNK(mode))
-    fprintf(out, "symlink ");
+    printer("symlink ");
   if (S_ISSOCK(mode))
-    fprintf(out, "socket ");
+    printer("socket ");
   if (S_ISFIFO(mode))
-    fprintf(out, "fifo ");
+    printer("fifo ");
 
   /* permission */
   if (mode & S_ISUID)
-    fprintf(out, "suid ");
+    printer("suid ");
   if (mode & S_ISGID)
-    fprintf(out, "sgid ");
+    printer("sgid ");
   if (mode & S_ISVTX)
-    fprintf(out, "sticky ");
-  fprintf(out, "%03o>", mode & 0777);
+    printer("sticky ");
+  printer("%03o>", mode & 0777);
 }
 
 #ifdef ABSFS_TEST
@@ -281,13 +283,13 @@ int main(int argc, char **argv) {
 
   printf("Iterating directory '%s'...\n", basepath);
 
-  ret = scan_abstract_fs(&absfs, basepath, true, stdout);
+  ret = scan_abstract_fs(&absfs, basepath, true, printf);
 
   if (ret) {
     printf("Error occurred when iterating...\n");
   } else {
     printf("Iteration complete. Abstract FS signature = ");
-    print_abstract_fs_state(stdout, absfs.state);
+    print_abstract_fs_state(printf, absfs.state);
     printf("\n");
   }
 
