@@ -24,35 +24,31 @@ int compare_file_content(const char *path1, const char *path2)
     /* Open the two files */
     fd1 = open(path1, O_RDONLY);
     if (fd1 < 0) {
-        logerr("[seqid=%zu] %s: cannot open %s (%s)\n",
-                count, __func__, path1, errnoname(errno));
+        logerr("[seqid=%zu] cannot open %s", count, path1);
         return -1;
     }
     fd2 = open(path2, O_RDONLY);
     if (fd2 < 0) {
-        logerr("[seqid=%zu] %s: cannot open %s (%s)\n",
-                count, __func__, path1, errnoname(errno));
+        logerr("[seqid=%zu] cannot open %s", count, path1);
         close(fd1);
         return -1;
     }
     /* Get file properties: Make sure equal file size */
     ret = fstat(fd1, &f1);
     if (ret) {
-        logerr("[seqid=%zu] %s: fstat '%s' failed (%s)\n",
-                count, __func__, path1, errnoname(errno));
+        logerr("[seqid=%zu] fstat '%s' failed", count, path1);
         ret = -1;
         goto end;
     }
     ret = fstat(fd2, &f2);
     if (ret) {
-        logerr("[seqid=%zu] %s: fstat '%s' failed (%s)\n",
-                count, __func__, path2, errnoname(errno));
+        logerr("[seqid=%zu] fstat '%s' failed", count, path2);
         ret = -1;
         goto end;
     }
     if (f1.st_size != f2.st_size) {
-        logerr("[seqid=%zu] %s: '%s' and '%s' size differ. "
-                "'%s' has %zu bytes and '%s' has %zu.\n", count, __func__,
+        logwarn("[seqid=%zu] '%s' and '%s' size differ. "
+                "'%s' has %zu bytes and '%s' has %zu.", count,
                 path1, path2, path1, f1.st_size, path2, f2.st_size);
         ret = 1;
         goto end;
@@ -63,15 +59,14 @@ int compare_file_content(const char *path1, const char *path2)
     lseek(fd2, 0, SEEK_SET);
     while ((r1 = read(fd1, buf1, bs)) > 0 && (r2 = read(fd2, buf2, bs)) > 0) {
         if (memcmp(buf1, buf2, r1) != 0) {
-            logerr("[seqid=%zu] %s: content in '%s' and '%s' "
-                    "is not equal.\n", count, __func__, path1, path2);
+            logwarn("[seqid=%zu] content in '%s' and '%s' "
+                    "is not equal.\n", count, path1, path2);
             ret = -1;
 	    break;
         }
     }
     if (r1 < 0 || r2 < 0) {
-        logerr("[seqid=%zu] %s: error occurred when reading: %s\n",
-                count, __func__, errnoname(errno));
+        logerr("[seqid=%zu] error occurred when reading.", count);
         ret = -1;
     }
 end:
@@ -93,10 +88,9 @@ bool compare_equality_values(const char **fses, int n_fs, int *nums)
         }
     }
     if (!res) {
-        logerr("[seqid=%zu] %s: discrepancy in values found:\n",
-                count, __func__);
+        logwarn("[seqid=%zu] discrepancy in values found:", count);
         for (int i = 0; i < n_fs; ++i)
-            logerr("[%s]: %d\n", fses[i], nums[i]);
+            logwarn("[%s]: %d", fses[i], nums[i]);
     }
     return res;
 }
@@ -105,7 +99,7 @@ void dump_absfs(const char *basepath)
 {
     absfs_t absfs;
     init_abstract_fs(&absfs);
-    scan_abstract_fs(&absfs, basepath, true, stderr);
+    scan_abstract_fs(&absfs, basepath, true, submit_error);
 }
 
 bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
@@ -120,15 +114,15 @@ bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
         }
     }
     if (!res) {
-        logerr("[seqid=%zu] Discrepancy in abstract states found:\n",
+        logwarn("[seqid=%zu] Discrepancy in abstract states found:",
                 count);
         for (int i = 0; i < n_fs; ++i) {
-            logerr("[seqid=%zu, fs=%s]: Directory structure:\n",
+            logwarn("[seqid=%zu, fs=%s]: Directory structure:",
                     count, fses[i]);
             dump_absfs(basepaths[i]);
-            logerr("[seqid=%zu, fs=%s]: hash=", count, fses[i]);
-            print_abstract_fs_state(stderr, absfs[i]);
-            logerr("\n");
+            logwarn("[seqid=%zu, fs=%s]: hash=", count, fses[i]);
+            print_abstract_fs_state(submit_error, absfs[i]);
+            logwarn("\n");
         }
     }
     return res;
@@ -151,10 +145,9 @@ bool compare_equality_fexists(const char **fses, int n_fs, char **fpaths)
         }
     }
     if (!res) {
-        logerr("[%zu] Discrepancy in existence of files found:\n",
-                count);
+        logwarn("[%zu] Discrepancy in existence of files found:", count);
         for (int i = 0; i < n_fs; ++i) {
-            logerr("[%s]: %s: %d\n", fses[i], fpaths[i], fexists[i]);
+            logwarn("[%s]: %s: %d", fses[i], fpaths[i], fexists[i]);
         }
     }
     return res;
@@ -175,8 +168,8 @@ bool compare_equality_fcontent(const char **fses, int n_fs, char **fpaths)
         if (compare_file_content(fpaths[i-1], fpaths[i]) != 0) {
             if (res)
                 res = false;
-            logerr("[seqid=%zu] [%s] (%s) is different from [%s] "
-                    "(%s)\n", count, fses[i-1], fpaths[i-1], fses[i],
+            logwarn("[seqid=%zu] [%s] (%s) is different from [%s] "
+                    "(%s)", count, fses[i-1], fpaths[i-1], fses[i],
                     fpaths[i]);
         }
     }
@@ -248,6 +241,7 @@ static int ensure_dump_dir(const char *folder)
         return -errno;
     } else {
         if (!S_ISDIR(st.st_mode)) {
+            errno = ENOTDIR;
             logerr("%s: folder %s is not a directory.\n", __func__,
                     folder);
             return -ENOTDIR;
@@ -261,8 +255,7 @@ static void dump_mmaped(const char *outpath, int fsfd, void *fsimg)
     const size_t bs = 4096;
     int dmpfd = open(outpath, O_CREAT | O_RDWR | O_TRUNC, 0666);
     if (dmpfd < 0) {
-        logerr("%s: cannot create file %s (%s)\n", __func__,
-                outpath, errnoname(errno));
+        logerr("cannot create file %s", outpath);
         return;
     }
     size_t remaining = fsize(fsfd);
@@ -271,8 +264,7 @@ static void dump_mmaped(const char *outpath, int fsfd, void *fsimg)
         size_t writelen = (remaining >= bs) ? bs : remaining;
         ssize_t writeres = write(dmpfd, ptr, writelen);
         if (writeres < 0) {
-            logerr("%s: cannot write data to image dump %s (%s)\n",
-                    __func__, outpath, errnoname(errno));
+            logerr("cannot write data to image dump %s", outpath);
             close(dmpfd);
             break;
         }
@@ -291,15 +283,15 @@ static void dump_device(const char *devname, const char *folder,
     int status = system(cmd);
     if (WIFEXITED(status)) {
         if (WEXITSTATUS(status) != 0) {
-            logerr("%s: Cannot dump %s on %s, dd exited with %d.\n",
-                    __func__, fsname, devname, WEXITSTATUS(status));
+            logwarn("Cannot dump %s on %s, dd exited with %d.",
+                    fsname, devname, WEXITSTATUS(status));
         }
     } else if (WIFSIGNALED(status)) {
-        logerr("%s: Cannot dump %s on %s, dd was terminated by signal "
-                "%d.\n", __func__, fsname, devname, WTERMSIG(status));
+        logwarn("Cannot dump %s on %s, dd was terminated by signal "
+                "%d.", fsname, devname, WTERMSIG(status));
     } else {
-        logerr("%s: Cannot dump %s on %s, dd has exit code %d.\n",
-                __func__, fsname, devname, status);
+        logwarn("Cannot dump %s on %s, dd has exit code %d.",
+                fsname, devname, status);
     }
 }
 

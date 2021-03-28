@@ -96,6 +96,11 @@ static inline void compute_abstract_state(const char *basepath,
     submit_message(" -> ret = %d, err = %s\n", retvar, errnoname(errno)); \
     errno = err;
 
+#define logwarn(msg, ...) \
+    get_epoch(); \
+    submit_error("[%4ld.%09ld] %s:%d:%s: " msg "\n", epoch.tv_sec, \
+                 epoch.tv_nsec, __FILE__, __LINE__, __func__, ##__VA_ARGS__);
+
 #define logerr(msg, ...) \
     get_epoch(); \
     submit_error("[%4ld.%09ld] %s:%d:%s: " msg " (%s)\n", epoch.tv_sec, \
