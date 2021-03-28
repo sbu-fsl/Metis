@@ -297,7 +297,9 @@ static void crmfs_init(void *userdata, struct fuse_conn_info *conn)
     dcap = 0;
     files = calloc(icap, sizeof(struct crmfs_file));
     /* Create the first inode (root directory) */
-    struct crmfs_file *root = crmfs_file_create(__S_IFDIR, 0755, getuid(), getgid());
+    mode_t rootmode = 0777 & (~get_umask());
+    struct crmfs_file *root = crmfs_file_create(__S_IFDIR, rootmode, getuid(),
+                                                getgid());
     assert(root != NULL);
     int ret = crmfs_populate_dir(root, root);
     assert(ret == 0);

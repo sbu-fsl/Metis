@@ -98,6 +98,13 @@ static inline size_t nblocks(size_t size)
   }
 }
 
+static inline mode_t get_umask(void)
+{
+  mode_t mask = umask(0);
+  umask(mask);
+  return mask;
+}
+
 static inline void _crmfs_debug(const char *fmt, ...)
 {
 #ifdef DEBUG
