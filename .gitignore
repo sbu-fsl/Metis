@@ -25,3 +25,4 @@ parameters.pml
 ckpt
 restore
 crmfs
+*.so
