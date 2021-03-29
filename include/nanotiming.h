@@ -1,3 +1,6 @@
+#ifndef _NANOTIMING_H_
+#define _NANOTIMING_H_
+
 #include <stdio.h>
 
 #ifdef __MACH__
@@ -6,6 +9,10 @@
 #else
 #include <time.h>
 #include <sys/time.h>
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /**
@@ -58,3 +65,9 @@ struct timespec benchmark(int (*func)(void *), void *);
  * @times: number of iterations
  */
 struct timespec benchmark_mt(int (*func)(void *), void *, unsigned int times);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

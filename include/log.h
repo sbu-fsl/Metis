@@ -3,6 +3,10 @@
 
 #include "common_headers.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct logger {
     FILE *file;
     /* name: relative or absolute path to the log file, but excludes
@@ -30,5 +34,9 @@ void make_logger(struct logger *lgr, const char *name, FILE *default_fp);
 void init_log_daemon(const char *output_log_name, const char *err_log_name,
         const char *seq_name);
 void destroy_log_daemon();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
