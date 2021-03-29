@@ -12,13 +12,13 @@ pthread_mutex_t global_lk;
 
 static void crmfs_lock(const char *caller)
 {
-    printf("%s: lock\n", caller);
+    debug("%s: lock\n", caller);
     pthread_mutex_lock(&global_lk);
 }
 
 static void crmfs_unlock(const char *caller)
 {
-    printf("%s: unlock\n", caller);
+    debug("%s: unlock\n", caller);
     pthread_mutex_unlock(&global_lk);
 }
 
