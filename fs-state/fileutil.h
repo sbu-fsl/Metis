@@ -78,7 +78,7 @@ static inline void compute_abstract_state(const char *basepath,
     absfs_t absfs;
 
     init_abstract_fs(&absfs);
-    scan_abstract_fs(&absfs, basepath, false, NULL);
+    scan_abstract_fs(&absfs, basepath, false, submit_error);
     memcpy(state, absfs.state, sizeof(absfs_state_t));
 }
 
