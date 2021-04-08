@@ -119,6 +119,8 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs,
   file.attrs.nlink = fileinfo.st_nlink;
   file.attrs.uid = fileinfo.st_uid;
   file.attrs.gid = fileinfo.st_gid;
+  file._attrs.blksize = fileinfo.st_blksize;
+  file._attrs.blocks = fileinfo.st_blocks;
 
   if (verbose) {
     verbose_printer("%s, mode=", abstract_path);
@@ -129,11 +131,12 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs,
     else
       verbose_printer(", ");
     verbose_printer("nlink=%ld, uid=%d, gid=%d\n", file.attrs.nlink,
-            file.attrs.uid, file.attrs.gid);
+        file.attrs.uid, file.attrs.gid);
   }
 
   /* Update the MD5 signature of the abstract file system state */
   file.FeedHasher(&fs->ctx);
+  file.CheckValidity(verbose_printer);
 
   /* If the current file is a directory, read its entries and sort
    * Sorting makes sure that the order of files and directories
@@ -194,6 +197,43 @@ void AbstractFile::FeedHasher(MD5_CTX *ctx) {
 
   /* Assign value back after use */
   attrs.size = fsize;
+}
+
+/**
+ * CheckValidity: check the validity of attrs
+ *
+ * NOTE: the criteria used in this function is specific to the parameter
+ * spaces define in parameters.py. These could be outdated.
+ */
+bool AbstractFile::CheckValidity(printer_t printer) {
+  bool res = true;
+  /* The file must be either a regular file or a directory */
+  if (!(S_ISREG(attrs.mode) ^ S_ISDIR(attrs.mode))) {
+    printer("File %s must be either a regular file or a directory.\n",
+            fullpath.c_str());
+    res = false;
+  }
+  /* The file size should not exceed 1M */
+  if (attrs.size > 1048576) {
+    printer("File %s has size of %zu, which is unlikely in our experiemnt.\n",
+            fullpath.c_str());
+    res = false;
+  }
+  /* nlink shouldn't be too large */
+  if (attrs.nlink > 5) {
+    printer("File %s has %d links, which is unlikely in our experiment.\n",
+            fullpath.c_str());
+    res = false;
+  }
+  /* File size should match number of blocks allocated */
+  size_t rounded_fsize = round_up(attrs.size, _attrs.blksize);
+  size_t allocated = (size_t)_attrs.blksize * _attrs.blocks;
+  if (allocated - rounded_fsize > 4096) {
+    printer("File %s has the size of %zu, but is allocated %zu bytes.\n",
+            fullpath.c_str(), attrs.size, allocated);
+    res = false;
+  }
+  return res;
 }
 
 /**

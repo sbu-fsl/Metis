@@ -21,6 +21,7 @@
 #include <experimental/filesystem>
 
 namespace fs = std::experimental::filesystem;
+typedef int (*printer_t)(const char *fmt, ...);
 
 struct AbstractFile {
     fs::path fullpath;
@@ -34,10 +35,16 @@ struct AbstractFile {
         gid_t gid;
     } attrs;
 
+    struct {
+        blksize_t blksize;
+        blkcnt_t blocks;
+    } _attrs;
+
     /* Feed the attributes and content of the file described by
      * this AbstractFile into MD5 hash calculator and update the
      * MD5 context object. */
     void FeedHasher(MD5_CTX *ctx);
+    bool CheckValidity(printer_t printer);
 };
 
 #endif
@@ -76,6 +83,16 @@ static inline uint32_t get_state_prefix(absfs_t *absfs) {
   uint32_t prefix;
   memcpy(&prefix, absfs->state, sizeof(uint32_t));
   return prefix;
+}
+
+static inline size_t round_up(size_t n, size_t unit)
+{
+  return ((n + unit - 1) / unit) * unit;
+}
+
+static inline size_t round_down(size_t n, size_t unit)
+{
+  return round_up(n, unit) - unit;
 }
 
 #ifdef __cplusplus
