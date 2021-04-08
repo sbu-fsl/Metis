@@ -41,7 +41,7 @@ proctype worker()
        atomic {
         /* write, check: retval, errno, content */
         c_code {
-            makelog("BEGIN: write_file (data=%d)\n", Pworker->writebyte);
+            makelog("BEGIN: write_file (data=%#x)\n", Pworker->writebyte);
             mountall();
             // off_t offset = pick_value(0, 32768, 1024);
             // size_t writelen = pick_value(0, 32768, 2048);
