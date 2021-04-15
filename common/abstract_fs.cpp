@@ -48,24 +48,25 @@ static inline bool is_this_or_parent(const char *name) {
  * hash_file_content: Feed the file content into MD5 calculator and update
  *   an existing MD5 context object.
  *
- * @param[in] fullpath: Full absolute path to the file being hashed
+ * @param[in] file:   The file being hashed
  * @param[in] md5ctx: Pointer to an initialized MD5_CTX object
  *
  * @return: 0 for success, +1 for MD5_Update failure,
  *          negative number for error status of open() or read()
  */
-static int hash_file_content(const char *fullpath, MD5_CTX *md5ctx) {
-  int fd = open(fullpath, O_RDONLY);
+static int hash_file_content(AbstractFile *file, MD5_CTX *md5ctx) {
+  const char *fullpath = file->fullpath.c_str();
+  int fd = file->Open(O_RDONLY);
   char buffer[4096] = {0};
   ssize_t readsize;
   int ret = 0;
   if (fd < 0) {
-    fprintf(stderr, "hash error: cannot open '%s' (%d)\n", fullpath, errno);
+    file->printer("hash error: cannot open '%s' (%d)\n", fullpath, errno);
     ret = -errno;
     goto end;
   }
 
-  while ((readsize = read(fd, buffer, 4096)) > 0) {
+  while ((readsize = file->Read(fd, buffer, 4096)) > 0) {
     ret = MD5_Update(md5ctx, buffer, readsize);
     memset(buffer, 0, sizeof(buffer));
     /* MD5_Update returns 0 for failure and 1 for success.
@@ -75,14 +76,14 @@ static int hash_file_content(const char *fullpath, MD5_CTX *md5ctx) {
       /* This is special: If returned value is +1, then it indicates
        * MD5_Update error. Minus number for error in open() and read() */
       ret = 1;
-      fprintf(stderr, "MD5_Update failed on file '%s'\n", fullpath);
+      file->printer("MD5_Update failed on file '%s'\n", fullpath);
       goto end;
     } else {
       ret = 0;
     }
   }
   if (readsize < 0) {
-    fprintf(stderr, "hash error: read error on '%s' (%d)\n", fullpath, errno);
+    file->printer("hash error: read error on '%s' (%d)\n", fullpath, errno);
     ret = -errno;
   }
 
@@ -104,12 +105,13 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs,
 
   file.fullpath = path;
   file.abstract_path = abstract_path;
+  file.printer = verbose_printer;
 
   /* Stat the current file.
    * Use lstat() because we want to see symbol links as concrete files */
-  ret = lstat(path, &fileinfo);
+  ret = file.Lstat(&fileinfo);
   if (ret != 0) {
-    fprintf(stderr, "Walk error: cannot stat '%s' (%d)\n", path, errno);
+    verbose_printer("Walk error: cannot stat '%s' (%d)\n", path, errno);
     return -1;
   }
   memset(&file.attrs, 0, sizeof(file.attrs));
@@ -136,24 +138,24 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs,
 
   /* Update the MD5 signature of the abstract file system state */
   file.FeedHasher(&fs->ctx);
-  file.CheckValidity(verbose_printer);
+  file.CheckValidity();
 
   /* If the current file is a directory, read its entries and sort
    * Sorting makes sure that the order of files and directories
    * retrieved is deterministic.*/
   if (S_ISDIR(file.attrs.mode)) {
-    DIR *dir = opendir(path);
+    DIR *dir = file.Opendir();
     if (!dir) {
-      fprintf(stderr, "Walk: unable to opendir '%s'. (%d)\n", path, errno);
+      verbose_printer("Walk: unable to opendir '%s'. (%d)\n", path, errno);
       return -1;
     }
     struct dirent *child;
-    while ((child = readdir(dir)) != NULL) {
+    while ((child = file.Readdir(dir)) != NULL) {
       if (is_this_or_parent(child->d_name))
         continue;
       children.push_back(child->d_name);
     }
-    closedir(dir);
+    file.Closedir(dir);
     std::sort(children.begin(), children.end());
   }
 
@@ -167,7 +169,7 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs,
     ret = walk(childpath.c_str(), child_abstract_path.c_str(), fs, verbose,
                verbose_printer);
     if (ret < 0) {
-      fprintf(stderr, "Error when walking '%s'.\n", childpath.c_str());
+      verbose_printer("Error when walking '%s'.\n", childpath.c_str());
       return -1;
     }
   }
@@ -193,7 +195,7 @@ void AbstractFile::FeedHasher(MD5_CTX *ctx) {
   MD5_Update(ctx, &attrs, sizeof(attrs));
 
   if (S_ISREG(attrs.mode))
-    hash_file_content(fullpath.c_str(), ctx);
+    hash_file_content(this, ctx);
 
   /* Assign value back after use */
   attrs.size = fsize;
@@ -205,7 +207,7 @@ void AbstractFile::FeedHasher(MD5_CTX *ctx) {
  * NOTE: the criteria used in this function is specific to the parameter
  * spaces define in parameters.py. These could be outdated.
  */
-bool AbstractFile::CheckValidity(printer_t printer) {
+bool AbstractFile::CheckValidity() {
   bool res = true;
   /* The file must be either a regular file or a directory */
   if (!(S_ISREG(attrs.mode) ^ S_ISDIR(attrs.mode))) {
@@ -234,6 +236,57 @@ bool AbstractFile::CheckValidity(printer_t printer) {
     res = false;
   }
   return res;
+}
+
+void AbstractFile::retry_warning(std::string funcname, std::string cond,
+                                 int retry_count) {
+  std::string ordinal;
+  switch (retry_count % 10) {
+    case 1:
+      ordinal = "st";
+      break;
+
+    case 2:
+      ordinal = "nd";
+      break;
+
+    case 3:
+      ordinal = "rd";
+      break;
+
+    default:
+      ordinal = "th";
+  }
+
+  printer("Retrying %s for the %d%s time because %s\n", funcname.c_str(),
+          retry_count, ordinal.c_str(), cond.c_str());
+}
+
+int AbstractFile::Open(int flag) {
+  DEFINE_SYSCALL_WITH_RETRY(int, open, fullpath.c_str(), flag);
+}
+
+ssize_t AbstractFile::Read(int fd, void *buf, size_t count) {
+  DEFINE_SYSCALL_WITH_RETRY(ssize_t, read, fd, buf, count);
+}
+
+int AbstractFile::Lstat(struct stat *statbuf) {
+  DEFINE_SYSCALL_WITH_RETRY(int, lstat, fullpath.c_str(), statbuf);
+}
+
+DIR *AbstractFile::Opendir() {
+  if (!S_ISDIR(attrs.mode)) {
+    return nullptr;
+  }
+  DEFINE_SYSCALL_WITH_RETRY(DIR *, opendir, fullpath.c_str());
+}
+
+struct dirent *AbstractFile::Readdir(DIR *dirp) {
+  DEFINE_SYSCALL_WITH_RETRY(struct dirent *, readdir, dirp);
+}
+
+int AbstractFile::Closedir(DIR *dirp) {
+  DEFINE_SYSCALL_WITH_RETRY(int, closedir, dirp);
 }
 
 /**

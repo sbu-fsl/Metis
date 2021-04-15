@@ -9,10 +9,26 @@
 #include <unistd.h>
 #include <openssl/md5.h>
 #include <string.h>
+#include <dirent.h>
 
 #ifndef PATH_MAX
 #define PATH_MAX    4096
 #endif
+
+#define SYSCALL_RETRY_LIMIT 5
+#define RETRY_WAIT_USECS    1000
+#define with_retry(retry_cond, retry_limit, wait_us, retry_action, retval, \
+                   func, ...) \
+    int _retry_count = 0; \
+    do { \
+        retval = func(__VA_ARGS__); \
+        if (!(retry_cond)) { \
+            break; \
+        } else { \
+            retry_action(#func, #retry_cond, _retry_count + 1); \
+            usleep(wait_us); \
+        } \
+    } while (_retry_count++ < retry_limit);
 
 /* C++ declarations */
 #ifdef __cplusplus
@@ -43,11 +59,30 @@ struct AbstractFile {
     /* Feed the attributes and content of the file described by
      * this AbstractFile into MD5 hash calculator and update the
      * MD5 context object. */
+    printer_t printer;
     void FeedHasher(MD5_CTX *ctx);
-    bool CheckValidity(printer_t printer);
+    bool CheckValidity();
+
+    /* System call wrappers that can retry on EBUSY */
+    int Open(int flag);
+    ssize_t Read(int fd, void *buf, size_t count);
+    int Lstat(struct stat *statbuf);
+    DIR *Opendir();
+    struct dirent *Readdir(DIR *dirp);
+    int Closedir(DIR *dirp);
+
+private:
+    void retry_warning(std::string funcname, std::string cond, int retry_count);
 };
 
+#define DEFINE_SYSCALL_WITH_RETRY(ret_type, func, ...) \
+    ret_type _ret; \
+    with_retry((_ret < 0 && errno == EBUSY), SYSCALL_RETRY_LIMIT, \
+               RETRY_WAIT_USECS, retry_warning, _ret, func, __VA_ARGS__); \
+    return _ret;
+
 #endif
+
 /* End of C++ declarations */
 
 /* Function prototypes and definitions for C programs */
