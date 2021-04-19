@@ -105,7 +105,15 @@ void dump_absfs(const char *basepath)
 bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
 {
     bool res = true;
+    /* The macros are defined in include/abstract_fs.h */
+    int retry_limit = SYSCALL_RETRY_LIMIT;
     absfs_state_t base;
+retry:
+    /* Calculate the abstract file system states */
+    for (int i = 0; i < n_fs; ++i) {
+        compute_abstract_state(basepaths[i], absfs[i]);
+    }
+    /* Compare */
     memcpy(base, absfs[0], sizeof(absfs_state_t));
     for (int i = 1; i < n_fs; ++i) {
         if (memcmp(base, absfs[i], sizeof(absfs_state_t)) != 0) {
@@ -113,7 +121,7 @@ bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
             break;
         }
     }
-    if (!res) {
+    if (!res && retry_limit <= 0) {
         logwarn("[seqid=%zu] Discrepancy in abstract states found:",
                 count);
         for (int i = 0; i < n_fs; ++i) {
@@ -122,8 +130,18 @@ bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
             dump_absfs(basepaths[i]);
             logwarn("[seqid=%zu, fs=%s]: hash=", count, fses[i]);
             print_abstract_fs_state(submit_error, absfs[i]);
-            logwarn("\n");
         }
+    } else if (retry_limit > 0) {
+        retry_limit--;
+        res = true;
+        logwarn("[seqid=%zu] Discrepancy in abstract states found:", count);
+        for (int i = 0; i < n_fs; ++i) {
+            submit_error("%s has the state ", fses[i]);
+            dump_absfs(basepaths[i]);
+            submit_error("\n");
+        }
+        logwarn("Retrying... The retry limit is %d.", retry_limit);
+        goto retry;
     }
     return res;
 }
