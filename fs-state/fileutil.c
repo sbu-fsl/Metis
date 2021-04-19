@@ -128,8 +128,9 @@ retry:
             logwarn("[seqid=%zu, fs=%s]: Directory structure:",
                     count, fses[i]);
             dump_absfs(basepaths[i]);
-            logwarn("[seqid=%zu, fs=%s]: hash=", count, fses[i]);
+            submit_error("hash=", count, fses[i]);
             print_abstract_fs_state(submit_error, absfs[i]);
+            submit_error("\n");
         }
     } else if (retry_limit > 0) {
         retry_limit--;
