@@ -25,6 +25,9 @@ restore: restore.c common-libs
 absfs-set: set.cpp
 	g++ -std=c++11 -o set.o -c $< $(CFLAGS) $(LIBS)
 
+replayer: replay.c common-libs 
+	gcc -o replay replay.c common-libs.a $(CFLAGS) $(LIBS)
+
 common-libs: $(COMMON_OBJ)
 	ar rvs $@.a $^
 
