@@ -365,7 +365,7 @@ static void init_basepaths()
     }
 }
 
-static int checkpoint_verifs(void *ptr, const char *mp)
+static int checkpoint_verifs(size_t key, const char *mp)
 {
     int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
     if (mpfd < 0) {
@@ -373,7 +373,7 @@ static int checkpoint_verifs(void *ptr, const char *mp)
         return errno;
     }
 
-    int ret = ioctl(mpfd, VERIFS_CHECKPOINT, ptr);
+    int ret = ioctl(mpfd, VERIFS_CHECKPOINT, key);
     if (ret < 0) {
         logerr("Cannot perform checkpoint at %s", mp);
         ret = errno;
@@ -382,7 +382,7 @@ static int checkpoint_verifs(void *ptr, const char *mp)
     return ret;
 }
 
-static int restore_verifs(void *ptr, const char *mp)
+static int restore_verifs(size_t key, const char *mp)
 {
     int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
     if (mpfd < 0) {
@@ -390,9 +390,9 @@ static int restore_verifs(void *ptr, const char *mp)
         return errno;
     }
 
-    int ret = ioctl(mpfd, VERIFS_RESTORE, ptr);
+    int ret = ioctl(mpfd, VERIFS_RESTORE, key);
     if (ret < 0) {
-        logerr("Cannot perform restore at %s with key %p", mp, ptr);
+        logerr("Cannot perform restore at %s with key %zu", mp, key);
         ret = errno;
     }
 
@@ -429,15 +429,17 @@ static long restore_after_hook(unsigned char *ptr)
     return 0;
 }
 
+static size_t state_depth = 0;
 static long update_before_hook(unsigned char *ptr)
 {
     submit_seq("checkpoint\n");
-    makelog("[seqid = %d] checkpoint (%p)\n", count, ptr);
+    makelog("[seqid = %d] checkpoint (%zu)\n", count, state_depth);
     absfs_set_add(absfs_set, absfs);
+    state_depth++;
     for (int i = 0; i < N_FS; ++i) {
         if (!is_verifs(fslist[i]))
             continue;
-        int res = checkpoint_verifs(ptr, basepaths[i]); 
+        int res = checkpoint_verifs(state_depth, basepaths[i]); 
         if (res != 0) {
             logerr("Failed to checkpoint a verifiable file system %s.",
                    fslist[i]);
@@ -454,16 +456,17 @@ static long update_after_hook(unsigned char *ptr)
 static long revert_before_hook(unsigned char *ptr)
 {
     submit_seq("restore\n");
-    makelog("[seqid = %d] restore (%p)\n", count, ptr);
+    makelog("[seqid = %d] restore (%p)\n", count, state_depth);
     for (int i = 0; i < N_FS; ++i) {
         if (!is_verifs(fslist[i]))
             continue;
-        int res = restore_verifs(ptr, basepaths[i]);
+        int res = restore_verifs(state_depth, basepaths[i]);
         if (res != 0) {
             logerr("Failed to restore a verifiable file system %s.",
                     fslist[i]);
         }
     }
+    state_depth--;
     return 0;
 }
 
