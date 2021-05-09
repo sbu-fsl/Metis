@@ -4,8 +4,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 #include <sys/ioctl.h>
+
+struct verifs_str {
+  size_t len;
+  char *str;
+};
 
 #define VERIFS_IOC_CODE    '1'
 #define VERIFS_IOC_NO(x)   (VERIFS_IOC_CODE + (x))
@@ -16,12 +20,13 @@ extern "C" {
 #define VERIFS_CHECKPOINT  VERIFS_IOC(1)
 #define VERIFS_RESTORE     VERIFS_IOC(2)
 
-int insert_state(uint64_t key, void *ptr);
-void *find_state(uint64_t key);
-int remove_state(uint64_t key);
+// the PICKLE and LOAD should receive a parameter of `struct verifs_str` which
+// contains the path to the output / input file.
+#define VERIFS_PICKLE      VERIFS_SET_IOC(3, struct verifs_str)
+#define VERIFS_LOAD        VERIFS_SET_IOC(4, struct verifs_str)
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // _VERIFS_CR_H 
+#endif // _VERIFS_CR_H
