@@ -401,19 +401,7 @@ static int restore_verifs(void *ptr, const char *mp)
 
 static long checkpoint_before_hook(unsigned char *ptr)
 {
-    submit_seq("checkpoint\n");
-    makelog("[seqid = %d] checkpoint (%p)\n", count, ptr);
     mmap_devices();
-    absfs_set_add(absfs_set, absfs);
-    for (int i = 0; i < N_FS; ++i) {
-        if (!is_verifs(fslist[i]))
-            continue;
-        int res = checkpoint_verifs(ptr, basepaths[i]); 
-        if (res != 0) {
-            logerr("Failed to checkpoint a verifiable file system %s.",
-                   fslist[i]);
-        }
-    }
     return 0;
 }
 
@@ -427,20 +415,8 @@ static long checkpoint_after_hook(unsigned char *ptr)
 
 static long restore_before_hook(unsigned char *ptr)
 {
-    submit_seq("restore\n");
-    makelog("[seqid = %d] restore (%p)\n", count, ptr);
     mmap_devices();
     // assert(do_fsck());
-    for (int i = 0; i < N_FS; ++i) {
-        if (!is_verifs(fslist[i]))
-            continue;
-        int res = restore_verifs(ptr, basepaths[i]);
-        if (res != 0) {
-            logerr("Failed to restore a verifiable file system %s.",
-                    fslist[i]);
-        }
-    }
-    
     return 0;
 }
 
@@ -452,10 +428,57 @@ static long restore_after_hook(unsigned char *ptr)
     return 0;
 }
 
+static long update_before_hook(unsigned char *ptr)
+{
+    submit_seq("checkpoint\n");
+    makelog("[seqid = %d] checkpoint (%p)\n", count, ptr);
+    absfs_set_add(absfs_set, absfs);
+    for (int i = 0; i < N_FS; ++i) {
+        if (!is_verifs(fslist[i]))
+            continue;
+        int res = checkpoint_verifs(ptr, basepaths[i]); 
+        if (res != 0) {
+            logerr("Failed to checkpoint a verifiable file system %s.",
+                   fslist[i]);
+        }
+    }
+    return 0;
+}
+
+static long update_after_hook(unsigned char *ptr)
+{
+    return 0;
+}
+
+static long revert_before_hook(unsigned char *ptr)
+{
+    submit_seq("restore\n");
+    makelog("[seqid = %d] restore (%p)\n", count, ptr);
+    for (int i = 0; i < N_FS; ++i) {
+        if (!is_verifs(fslist[i]))
+            continue;
+        int res = restore_verifs(ptr, basepaths[i]);
+        if (res != 0) {
+            logerr("Failed to restore a verifiable file system %s.",
+                    fslist[i]);
+        }
+    }
+    return 0;
+}
+
+static long revert_after_hook(unsigned char *ptr)
+{
+    return 0;
+}
+
 extern long (*c_stack_before)(unsigned char *);
 extern long (*c_stack_after)(unsigned char *);
 extern long (*c_unstack_before)(unsigned char *);
 extern long (*c_unstack_after)(unsigned char *);
+extern long (*c_update_before)(unsigned char *);
+extern long (*c_update_after)(unsigned char *);
+extern long (*c_revert_before)(unsigned char *);
+extern long (*c_revert_after)(unsigned char *);
 
 static void equalize_free_spaces(void)
 {
@@ -518,8 +541,8 @@ void __attribute__((constructor)) init()
     }
     
     /* Initialize log daemon */
-    setvbuf(stdout, NULL, _IONBF, 0);
-    setvbuf(stderr, NULL, _IONBF, 0);
+    // setvbuf(stdout, NULL, _IONBF, 0);
+    // setvbuf(stderr, NULL, _IONBF, 0);
 
     init_log_daemon(OUTPUT_LOG_PATH, ERROR_LOG_PATH, SEQ_LOG_PATH);
 
@@ -528,6 +551,10 @@ void __attribute__((constructor)) init()
     c_stack_after = checkpoint_after_hook;
     c_unstack_before = restore_before_hook;
     c_unstack_after = restore_after_hook;
+    c_update_before = update_before_hook;
+    c_update_after = update_after_hook;
+    c_revert_before = revert_before_hook;
+    c_revert_after = revert_after_hook;
 
     /* Initialize absfs-set used for counting unique states */
     absfs_set_init(&absfs_set);
