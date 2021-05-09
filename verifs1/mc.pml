@@ -9,7 +9,6 @@ c_decl {
 
 /* The persistent content of the file systems */
 // c_track "fsimgs[0]" "262144" "UnMatched";
-c_track "&cur_pid" "0" "UnMatched";
 /* Abstract state signatures of the file systems */
 c_track "absfs" "sizeof(absfs)";
 
