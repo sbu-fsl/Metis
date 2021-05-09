@@ -132,16 +132,17 @@ retry:
             print_abstract_fs_state(submit_error, absfs[i]);
             submit_error("\n");
         }
-    } else if (retry_limit > 0) {
+    } else if (!res && retry_limit > 0) {
         retry_limit--;
         res = true;
         logwarn("[seqid=%zu] Discrepancy in abstract states found:", count);
         for (int i = 0; i < n_fs; ++i) {
             submit_error("%s has the state ", fses[i]);
-            dump_absfs(basepaths[i]);
+            print_abstract_fs_state(submit_error, absfs[i]);
             submit_error("\n");
         }
         logwarn("Retrying... The retry limit is %d.", retry_limit);
+        usleep(5000);
         goto retry;
     }
     return res;
