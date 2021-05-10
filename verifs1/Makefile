@@ -13,8 +13,17 @@ model-checker: mc.pml parameters fileutil.c mount.c perf.c common-libs absfs-set
 parameters: parameters.py parameter_util.py
 	python3 parameters.py
 
-crmfs: crmfs.c cr.cpp common-libs
-	gcc $(CFLAGS) -o crmfs crmfs.c cr.cpp common-libs.a -lstdc++ -lrt -lfuse
+cr.o: cr.cpp
+	g++ -std=c++11 -c cr.cpp $< $(CFLAGS) $(LIBS)
+
+crmfs.o: crmfs.c
+	gcc $(CFLAGS) -c crmfs.c 
+
+pickle.o: pickle.c common-libs
+	gcc $(CFLAGS) -c pickle.c $< $(CFLAGS) $(LIBS)
+
+crmfs: crmfs.o cr.o pickle.o common-libs
+	g++ -o crmfs crmfs.o cr.o pickle.o common-libs.a -lstdc++ -lrt -lfuse -lcrypto
 
 ckpt: ckpt.c common-libs
 	gcc $(CFLAGS) -o ckpt ckpt.c common-libs.a
@@ -24,6 +33,9 @@ restore: restore.c common-libs
 
 absfs-set: set.cpp
 	g++ -std=c++11 -o set.o -c $< $(CFLAGS) $(LIBS)
+
+test_pickle_and_load: test_pickle_and_load.c common-libs
+	gcc -o test_pickle_and_load test_pickle_and_load.c common-libs.a $(CFLAGS) $(LIBS)
 
 replayer: replay.c common-libs 
 	gcc -o replay replay.c common-libs.a $(CFLAGS) $(LIBS)

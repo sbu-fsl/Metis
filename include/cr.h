@@ -1,14 +1,22 @@
 #ifndef _VERIFS_CR_H
 #define _VERIFS_CR_H
+#define MAX_FILE_LEN 100
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 #include <sys/ioctl.h>
+#include <openssl/sha.h>
+
 
 struct verifs_str {
   size_t len;
-  char *str;
+  char str[MAX_FILE_LEN];
+};
+
+struct state_file_header {
+    size_t fsize;
+    unsigned char hash[SHA256_DIGEST_LENGTH];
 };
 
 #define VERIFS_IOC_CODE    '1'

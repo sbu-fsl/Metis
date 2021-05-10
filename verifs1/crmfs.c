@@ -1,3 +1,4 @@
+#include <sys/mman.h>
 #include "crmfs.h"
 
 #include "custom_heap.h"
@@ -976,11 +977,140 @@ err:
     return ret;
 }
 
+/*
+    API to pickle VeriFS1 data structures.
+*/
+int pickle_file_system(int fd, SHA256_CTX *hashctx) {
+    int ret = 0, size = 0;
+    ret = lseek(fd, sizeof(struct state_file_header), SEEK_SET);
+    if (ret < 0) {
+	ret = -errno;
+	return ret;
+    }
+    // pickle icap
+    write_and_hash(fd, hashctx, &icap, sizeof(icap));
+    // pickle dcap
+    write_and_hash(fd, hashctx, &dcap, sizeof(dcap));
+    // pickle inodes
+    for (int i = 0; i < icap; ++i) {
+        write_and_hash(fd, hashctx, &files[i].flag, sizeof(files[i].flag));
+        write_and_hash(fd, hashctx, &files[i].nlookup, sizeof(files[i].nlookup));
+        write_and_hash(fd, hashctx, &files[i].entry_param, sizeof(files[i].entry_param));
+        size_t datasz = CRM_FILE_ATTR(&files[i], blocks) * CRM_BLOCK_SZ;
+        write_and_hash(fd, hashctx, &datasz, sizeof(datasz));
+	if (datasz == 0) {
+            continue;
+        }
+        char *fdata = malloc(datasz);
+        if (!fdata) {
+            ret = -ENOMEM;
+        }
+        memcpy(fdata, files[i].data, datasz);
+        // pickle file data
+        write_and_hash(fd, hashctx, fdata, datasz);
+    }
+    // pickle checkpointed data
+    int nstates = get_checkpointed_states_count();
+    write_and_hash(fd, hashctx, &nstates, sizeof(nstates)); 
+    for(int i = 0; i < nstates; i++) {
+        uint64_t key = get_next_key();
+        void* data = get_next_data();
+        write_and_hash(fd, hashctx, &key, sizeof(key));
+        // icap * sizeof(struct crmfs_file) is the total size of the checkpointed data[refer to checkpoint()'s implementation]
+        write_and_hash(fd, hashctx, data, icap * sizeof(struct crmfs_file));
+    }
+    off_t filelen = lseek(fd, 0, SEEK_CUR);
+    struct state_file_header header = {0};
+    header.fsize = filelen;
+    SHA256_Final(header.hash, &hashctx);
+    ret = lseek(fd, 0, SEEK_SET);
+    if (ret >= 0) {
+	ret = write(fd, &header, sizeof(header));
+    }
+    if (ret >= 0) {
+       ret = 0;
+    } else {
+	ret = -errno;
+    }
+    return ret;
+}
+
+
+/*
+    API to load data from pickle
+*/
+int load_file_system(const void *data) {
+    int ret = 0;
+    const char *ptr = (const char *)data;
+    // skip the header
+    ptr += sizeof(struct state_file_header);
+    // load icap
+    memcpy(&icap, ptr, sizeof(icap));
+    int count = 0;
+    ptr += sizeof(icap);
+    count +=  sizeof(icap);
+    // load dcap
+    memcpy(&dcap, ptr, sizeof(dcap));
+    ptr += sizeof(dcap);
+    count +=  sizeof(dcap);
+    struct crmfs_file file;
+    files = malloc(icap * sizeof(struct crmfs_file));
+    // load inodes
+    for (int i = 0; i < icap; ++i) {
+        memcpy(&files[i].flag, ptr,  sizeof(files[i].flag));
+	ptr += sizeof(files[i].flag);
+	count += sizeof(files[i].flag);
+        memcpy(&files[i].nlookup, ptr, sizeof(files[i].nlookup));
+	ptr += sizeof(files[i].nlookup);
+	count += sizeof(files[i].nlookup);
+        memcpy(&files[i].entry_param, ptr, sizeof(files[i].entry_param));
+	ptr += sizeof(files[i].entry_param);
+	count += sizeof(files[i].entry_param);
+        size_t datasz;
+        memcpy(&datasz, ptr, sizeof(size_t));
+	ptr += sizeof(datasz);
+	count += sizeof(datasz);
+        if (datasz == 0) {
+            continue;
+        }
+	// load data
+        files[i].data = malloc(datasz);
+        if (!files[i].data) {
+            ret = -ENOMEM;
+        }
+        memcpy(files[i].data, ptr, datasz);
+	count += datasz;
+	ptr += datasz;
+    }
+    // load checkpointed states
+    int nstates;
+    memcpy(&nstates, ptr, sizeof(nstates));
+    ptr += sizeof(nstates);
+    clear_states();
+    for(int i = 0; i < nstates; i++) {
+        uint64_t key;
+        void* data;
+        memcpy(&key, ptr, sizeof(key));
+        ptr += sizeof(key);
+        // icap * sizeof(struct crmfs_file) is the total size of the checkpointed data[refer to checkpoint()'s implementation]
+        memcpy(data, ptr, icap * sizeof(struct crmfs_file));
+        ptr += icap * sizeof(struct crmfs_file);
+        insert_state(key, data);
+    }
+    return ret;
+}
+
+
 static void crmfs_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
                         struct fuse_file_info *fi, unsigned flags,
                         const void *in_buf, size_t in_bufsz, size_t out_bufsz)
 {
-    int ret;
+    int ret = 0, status, fd;
+    const char* mapped_data;
+    struct stat file_stat;
+    FILE* fp;
+    struct verifs_str* file_path;
+    SHA256_CTX hashctx;
     enter();
     switch (cmd) {
         case VERIFS_CHECKPOINT:
@@ -990,7 +1120,38 @@ static void crmfs_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
         case VERIFS_RESTORE:
             ret = restore((uint64_t)arg);
             break;
-
+	case VERIFS_PICKLE:
+	    SHA256_Init(&hashctx);
+	    file_path = (struct verifs_str *) in_buf;
+	    fd = open(file_path->str, O_RDWR | O_CREAT | O_TRUNC, 0644);
+	    if (fd >= 0) {
+		ret = pickle_file_system(fd, &hashctx);
+	    	close(fd);
+	    } else {
+		ret = -errno;
+	    }
+	    break;
+	case VERIFS_LOAD:
+	    file_path = (struct verifs_str*)in_buf;
+	    fd = open(file_path->str, O_RDONLY);
+            if(fd >= 0) {
+		    ret = verify_state_file(fd);
+		    if (ret == 0) {
+		    	status = fstat(fd, &file_stat);
+		    	mapped_data = (char*) malloc(file_stat.st_size);
+		    	mapped_data = mmap (0, file_stat.st_size, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);
+		    	if (mapped_data == MAP_FAILED) {
+				ret = -errno;
+		    	} else {
+		    		ret = load_file_system(mapped_data);    
+		    	}
+		    }
+                    close(fd);
+            } else {
+                    ret = -errno;
+            }
+	    fclose(fp);
+            break;
         default:
             ret = ENOTSUP;
             break;
