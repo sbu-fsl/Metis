@@ -16,6 +16,7 @@
 #include "cr.h"
 #include "nanotiming.h"
 #include "vector.h"
+#include "abstract_fs.h"
 
 static int seq = 0;
 
@@ -204,6 +205,16 @@ void restore()
 	state_depth--;
 }
 
+void check_absfs_state()
+{
+	int i = seq % N_FS;
+	absfs_t absfs;
+	init_abstract_fs(&absfs);
+	scan_abstract_fs(&absfs, basepaths[i], false, printf);
+	printf("The abstract state of %s is ", basepaths[i]);
+	print_abstract_fs_state(printf, absfs.state);
+}
+
 int main(int argc, char **argv)
 {
 	FILE *seqfp = fopen("sequence.log", "r");
@@ -255,6 +266,7 @@ int main(int argc, char **argv)
 		if (flag_restore)
 			restore();
 		errno = 0;
+		check_absfs_state();
 		free(line);
 		destroy_fields(&argvec);
 		perfstat();
