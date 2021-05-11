@@ -12,6 +12,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <gperftools/profiler.h>
+
 struct md5sum {
   uint64_t a;
   uint64_t b;
@@ -295,6 +297,7 @@ int AbstractFile::Closedir(DIR *dirp) {
  * @param[in]: Pointer to an absfs_t object.
  */
 void init_abstract_fs(absfs_t *absfs) {
+  ProfilerEnable();
   MD5_Init(&absfs->ctx);
   memset(absfs->state, 0, sizeof(absfs->state));
 }

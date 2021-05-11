@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <gperftools/profiler.h>
 
 #define __USE_XOPEN_EXTENDED 1
 #include <ftw.h>
@@ -154,6 +155,7 @@ int do_rmdir(vector_t *argvec)
 /* Now I would expect the setup script to setup file systems instead. */
 void replayer_init()
 {
+	ProfilerEnable();
 	srand(time(0));
 	for (int i = 0; i < N_FS; ++i) {
 		size_t len = snprintf(NULL, 0, "/mnt/test-%s", fslist[i]);
@@ -211,8 +213,6 @@ void check_absfs_state()
 	absfs_t absfs;
 	init_abstract_fs(&absfs);
 	scan_abstract_fs(&absfs, basepaths[i], false, printf);
-	printf("The abstract state of %s is ", basepaths[i]);
-	print_abstract_fs_state(printf, absfs.state);
 }
 
 int main(int argc, char **argv)

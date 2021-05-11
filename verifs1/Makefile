@@ -2,7 +2,7 @@ COMMON_DIR := ../common
 COMMON_SRC := $(wildcard $(COMMON_DIR)/*.c) $(wildcard $(COMMON_DIR)/*.cpp)
 COMMON_OBJ := $(patsubst $(COMMON_DIR)/%,%.o,$(COMMON_SRC))
 override CFLAGS += -g -I../include -D PRINTF # -D T_RAND -D P_RAND
-override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread 
+override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler
 
 all: crmfs ckpt restore model-checker
 
@@ -25,8 +25,8 @@ restore: restore.c common-libs
 absfs-set: set.cpp
 	g++ -std=c++11 -o set.o -c $< $(CFLAGS) $(LIBS)
 
-replayer: replay.c common-libs 
-	gcc -o replay replay.c common-libs.a $(CFLAGS) $(LIBS)
+replayer: replay.c 
+	gcc -o replay replay.c $(CFLAGS) -lmcfs $(LIBS) 
 
 common-libs: $(COMMON_OBJ)
 	ar rvs $@.a $^
