@@ -120,4 +120,16 @@ static inline void _crmfs_debug(const char *fmt, ...)
 
 #define enter() _crmfs_debug("%s\n", __func__);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int insert_state(uint64_t key, void *ptr);
+void *find_state(uint64_t key);
+int remove_state(uint64_t key);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif // _CRMFS_H_

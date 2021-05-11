@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <cerrno>
 #include "cr.h"
+#include "crmfs.h"
 
 std::unordered_map<uint64_t, void *> state_pool;
 
