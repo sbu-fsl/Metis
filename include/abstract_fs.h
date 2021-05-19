@@ -40,9 +40,9 @@ namespace fs = std::experimental::filesystem;
 typedef int (*printer_t)(const char *fmt, ...);
 
 struct AbstractFile {
-    fs::path fullpath;
+    std::string fullpath;
     /* Abstract path is irrelevant to the basepath of the mount point */
-    fs::path abstract_path;
+    std::string abstract_path;
     struct {
         mode_t mode;
         size_t size;

@@ -11,8 +11,11 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <ftw.h>
 
 #include <gperftools/profiler.h>
+#include "errnoname.h"
+#include "path_utils.h"
 
 struct md5sum {
   uint64_t a;
@@ -94,87 +97,97 @@ end:
   return ret;
 }
 
+class DirWalker {
+private:
+  char pathbuf[PATH_MAX];
+
+  const char *get_abstract_path(const char *fullpath) {
+    tc_path_rebase(basepath, fullpath, pathbuf, PATH_MAX);
+    return pathbuf;
+  }
+
+public:
+  std::vector<AbstractFile> files;
+  const char *basepath;
+  size_t basepath_len;
+  printer_t printer;
+
+  DirWalker(const char *basepath, printer_t printer) {
+    this->basepath = basepath;
+    this->basepath_len = strnlen(basepath, PATH_MAX);
+    this->printer = printer;
+  }
+
+  void handler(const char *fpath, const struct stat *finfo) {
+    AbstractFile file;
+    file.printer = printer;
+    file.fullpath = fpath;
+    file.abstract_path = get_abstract_path(fpath);
+    file.attrs.mode = finfo->st_mode;
+    file.attrs.size = finfo->st_size;
+    file.attrs.nlink = finfo->st_nlink;
+    file.attrs.uid = finfo->st_uid;
+    file.attrs.gid = finfo->st_gid;
+    file._attrs.blksize = finfo->st_blksize;
+    file._attrs.blocks = finfo->st_blocks;
+    files.push_back(file);
+  }
+
+  int walk() {
+    int res = 0;
+    for (auto &p : fs::recursive_directory_iterator(basepath)) {
+      const char *pathstr = p.path().c_str();
+      struct stat finfo = {0};
+      res = stat(pathstr, &finfo);
+      if (res < 0) {
+        res = -errno;
+        printer("Cannot stat %s - %d(%s)\n", pathstr, errno, errnoname(errno));
+        break;
+      }
+      handler(pathstr, &finfo);
+    }
+    return res;
+  }
+};
+
 static int walk(const char *path, const char *abstract_path, absfs_t *fs,
                 bool verbose, printer_t verbose_printer) {
-  AbstractFile file;
-  struct stat fileinfo = {0};
-  std::vector<std::string> children;
-  int ret = 0;
-  // Avoid '.' or '..'
-  if (is_this_or_parent(path)) {
-    return 0;
+
+  DirWalker walker(path, verbose_printer);
+  int res = walker.walk();
+
+  if (res < 0) {
+    verbose_printer("Error when walking directory %s: %d(%s)\n", path, errno,
+        errnoname(errno));
+    return res;
   }
 
-  file.fullpath = path;
-  file.abstract_path = abstract_path;
-  file.printer = verbose_printer;
+  // sort the file list
+  auto abspath_cmp = [](const AbstractFile &a, const AbstractFile &b) {
+    return a.abstract_path < b.abstract_path;
+  };
+  std::vector<AbstractFile> &files = walker.files;
+  std::sort(files.begin(), files.end(), abspath_cmp);
 
-  /* Stat the current file.
-   * Use lstat() because we want to see symbol links as concrete files */
-  ret = file.Lstat(&fileinfo);
-  if (ret != 0) {
-    verbose_printer("Walk error: cannot stat '%s' (%d)\n", path, errno);
-    return -1;
-  }
-  memset(&file.attrs, 0, sizeof(file.attrs));
-  /* Assemble attributes of our interest */
-  file.attrs.mode = fileinfo.st_mode;
-  file.attrs.size = fileinfo.st_size;
-  file.attrs.nlink = fileinfo.st_nlink;
-  file.attrs.uid = fileinfo.st_uid;
-  file.attrs.gid = fileinfo.st_gid;
-  file._attrs.blksize = fileinfo.st_blksize;
-  file._attrs.blocks = fileinfo.st_blocks;
-
-  if (verbose) {
-    verbose_printer("%s, mode=", abstract_path);
-    print_filemode(verbose_printer, file.attrs.mode);
-    verbose_printer(", size=%zu", file.attrs.size);
-    if (!S_ISREG(file.attrs.mode))
-      verbose_printer(" (Ignored), ");
-    else
-      verbose_printer(", ");
-    verbose_printer("nlink=%ld, uid=%d, gid=%d\n", file.attrs.nlink,
-        file.attrs.uid, file.attrs.gid);
-  }
-
-  /* Update the MD5 signature of the abstract file system state */
-  file.FeedHasher(&fs->ctx);
-  file.CheckValidity();
-
-  /* If the current file is a directory, read its entries and sort
-   * Sorting makes sure that the order of files and directories
-   * retrieved is deterministic.*/
-  if (S_ISDIR(file.attrs.mode)) {
-    DIR *dir = file.Opendir();
-    if (!dir) {
-      verbose_printer("Walk: unable to opendir '%s'. (%d)\n", path, errno);
-      return -1;
+  // iterate the file list and compute the hash
+  MD5_CTX md5ctx;
+  MD5_Init(&md5ctx);
+  for (AbstractFile &file : files) {
+    if (verbose) {
+      verbose_printer("%s, mode=", file.abstract_path.c_str());
+      print_filemode(verbose_printer, file.attrs.mode);
+      verbose_printer(", size=%zu", file.attrs.size);
+      if (!S_ISREG(file.attrs.mode))
+        verbose_printer(" (Ignored), ");
+      else
+        verbose_printer(", ");
+      verbose_printer("nlink=%ld, uid=%d, gid=%d\n", file.attrs.nlink,
+          file.attrs.uid, file.attrs.gid);
     }
-    struct dirent *child;
-    while ((child = file.Readdir(dir)) != NULL) {
-      if (is_this_or_parent(child->d_name))
-        continue;
-      children.push_back(child->d_name);
-    }
-    file.Closedir(dir);
-    std::sort(children.begin(), children.end());
+    file.FeedHasher(&fs->ctx);
+    // file.CheckValidity();
   }
 
-  /* Walk childrens if there is any */
-  for (std::string filename : children) {
-    /* Ignored paths listed in exclusion_list */
-    if (is_excluded(abstract_path, filename))
-      continue;
-    fs::path childpath = file.fullpath / filename;
-    fs::path child_abstract_path = file.abstract_path / filename;
-    ret = walk(childpath.c_str(), child_abstract_path.c_str(), fs, verbose,
-               verbose_printer);
-    if (ret < 0) {
-      verbose_printer("Error when walking '%s'.\n", childpath.c_str());
-      return -1;
-    }
-  }
   return 0;
 }
 
