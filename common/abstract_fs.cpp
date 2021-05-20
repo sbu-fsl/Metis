@@ -102,8 +102,11 @@ private:
   char pathbuf[PATH_MAX];
 
   const char *get_abstract_path(const char *fullpath) {
-    tc_path_rebase(basepath, fullpath, pathbuf, PATH_MAX);
-    return pathbuf;
+    // tc_path_rebase(basepath, fullpath, pathbuf, PATH_MAX);
+    const char *res = fullpath + basepath_len;
+    if (*res == '\0')
+      return "/";
+    return res;
   }
 
 public:
@@ -116,6 +119,11 @@ public:
     this->basepath = basepath;
     this->basepath_len = strnlen(basepath, PATH_MAX);
     this->printer = printer;
+
+    // stat the root
+    struct stat baseinfo = {0};
+    stat(basepath, &baseinfo);
+    handler(basepath, &baseinfo);
   }
 
   void handler(const char *fpath, const struct stat *finfo) {
