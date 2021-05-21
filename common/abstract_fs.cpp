@@ -97,72 +97,58 @@ end:
   return ret;
 }
 
-class DirWalker {
-private:
-  char pathbuf[PATH_MAX];
+static const char *walker_basepath;
+static size_t basepath_len;
+static std::vector<AbstractFile> walker_files;
+static printer_t walker_printer;
+static const char *get_abstract_path(const char *fullpath) {
+  // tc_path_rebase(basepath, fullpath, pathbuf, PATH_MAX);
+  const char *res = fullpath + basepath_len;
+  if (*res == '\0')
+    return "/";
+  return res;
+}
 
-  const char *get_abstract_path(const char *fullpath) {
-    // tc_path_rebase(basepath, fullpath, pathbuf, PATH_MAX);
-    const char *res = fullpath + basepath_len;
-    if (*res == '\0')
-      return "/";
-    return res;
+static int nftw_handler(const char *fpath, const struct stat *finfo,
+    int typeflag, struct FTW *ftwbuf) {
+  AbstractFile file;
+  file.printer = walker_printer;
+  file.fullpath = fpath;
+  file.abstract_path = get_abstract_path(fpath);
+  file.attrs.mode = finfo->st_mode;
+  file.attrs.size = finfo->st_size;
+  file.attrs.nlink = finfo->st_nlink;
+  file.attrs.uid = finfo->st_uid;
+  file.attrs.gid = finfo->st_gid;
+  file._attrs.blksize = finfo->st_blksize;
+  file._attrs.blocks = finfo->st_blocks;
+  walker_files.push_back(file);
+  return 0;
+}
+
+static int do_walk(const char *basepath, printer_t printer) {
+  // Initialize
+  walker_basepath = basepath;
+  basepath_len = strnlen(basepath, PATH_MAX);
+  walker_files.clear();
+  walker_printer = printer;
+
+  // walk the directory tree
+  const int nopenfd = 50;
+  int res = nftw(basepath, nftw_handler, nopenfd, FTW_PHYS);
+  if (res < 0) {
+    printer("nftw() error while walking %s. errno = %d(%s)\n", basepath,
+        errno, errnoname(errno));
+    return -errno;
   }
 
-public:
-  std::vector<AbstractFile> files;
-  const char *basepath;
-  size_t basepath_len;
-  printer_t printer;
-
-  DirWalker(const char *basepath, printer_t printer) {
-    this->basepath = basepath;
-    this->basepath_len = strnlen(basepath, PATH_MAX);
-    this->printer = printer;
-
-    // stat the root
-    struct stat baseinfo = {0};
-    stat(basepath, &baseinfo);
-    handler(basepath, &baseinfo);
-  }
-
-  void handler(const char *fpath, const struct stat *finfo) {
-    AbstractFile file;
-    file.printer = printer;
-    file.fullpath = fpath;
-    file.abstract_path = get_abstract_path(fpath);
-    file.attrs.mode = finfo->st_mode;
-    file.attrs.size = finfo->st_size;
-    file.attrs.nlink = finfo->st_nlink;
-    file.attrs.uid = finfo->st_uid;
-    file.attrs.gid = finfo->st_gid;
-    file._attrs.blksize = finfo->st_blksize;
-    file._attrs.blocks = finfo->st_blocks;
-    files.push_back(file);
-  }
-
-  int walk() {
-    int res = 0;
-    for (auto &p : fs::recursive_directory_iterator(basepath)) {
-      const char *pathstr = p.path().c_str();
-      struct stat finfo = {0};
-      res = stat(pathstr, &finfo);
-      if (res < 0) {
-        res = -errno;
-        printer("Cannot stat %s - %d(%s)\n", pathstr, errno, errnoname(errno));
-        break;
-      }
-      handler(pathstr, &finfo);
-    }
-    return res;
-  }
-};
+  return 0;
+}
 
 static int walk(const char *path, const char *abstract_path, absfs_t *fs,
                 bool verbose, printer_t verbose_printer) {
 
-  DirWalker walker(path, verbose_printer);
-  int res = walker.walk();
+  int res = do_walk(path, verbose_printer);
 
   if (res < 0) {
     verbose_printer("Error when walking directory %s: %d(%s)\n", path, errno,
@@ -171,10 +157,10 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs,
   }
 
   // sort the file list
+  std::vector<AbstractFile> &files = walker_files;
   auto abspath_cmp = [](const AbstractFile &a, const AbstractFile &b) {
     return a.abstract_path < b.abstract_path;
   };
-  std::vector<AbstractFile> &files = walker.files;
   std::sort(files.begin(), files.end(), abspath_cmp);
 
   // iterate the file list and compute the hash
