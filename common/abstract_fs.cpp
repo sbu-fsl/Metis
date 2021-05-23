@@ -115,6 +115,7 @@ static int nftw_handler(const char *fpath, const struct stat *finfo,
   file.printer = walker_printer;
   file.fullpath = fpath;
   file.abstract_path = get_abstract_path(fpath);
+  memset(&file.attrs, 0, sizeof(file.attrs));
   file.attrs.mode = finfo->st_mode;
   file.attrs.size = finfo->st_size;
   file.attrs.nlink = finfo->st_nlink;
@@ -164,8 +165,6 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs,
   std::sort(files.begin(), files.end(), abspath_cmp);
 
   // iterate the file list and compute the hash
-  MD5_CTX md5ctx;
-  MD5_Init(&md5ctx);
   for (AbstractFile &file : files) {
     if (verbose) {
       verbose_printer("%s, mode=", file.abstract_path.c_str());
