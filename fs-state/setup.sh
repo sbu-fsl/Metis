@@ -1,7 +1,8 @@
 #!/bin/bash
 
-FSLIST=(ext4 jffs2)
-DEVLIST=(/dev/ram0 /dev/mtdblock0)
+#FSLIST=(ext4 jffs2)
+FSLIST=(ext4 zfs)
+DEVLIST=(/dev/ram0 /dev/ram1)
 LOOPDEVS=()
 verbose=0
 POSITIONAL=()
@@ -150,6 +151,19 @@ unset_xfs() {
     :
 }
 
+setup_zfs() { 
+    DEVFILE="$1";
+    runcmd dd if=/dev/zero of=$DEVFILE bs=$BLOCKSIZE count=$COUNT status=none;
+    runcmd zpool create mcfszpool $DEVFILE
+    runcmd zfs set mountpoint=legacy mcfszpool
+    runcmd zfs create mcfszpool/fs1
+}
+
+unset_zfs() {
+    runcmd zfs destroy -r mcfszpool
+}
+
+
 generic_cleanup() {
     if [ "$KEEP_FS" = "0" ]; then
         for fs in ${FSLIST[@]}; do
@@ -192,7 +206,11 @@ mount_all() {
     for i in $(seq 0 $(($n_fs-1))); do
         fs=${FSLIST[$i]};
         DEVICE=${DEVLIST[$i]};
-        runcmd mount -t $fs $DEVICE /mnt/test-$fs;
+        if [ "$fs" == "zfs" ];then
+            runcmd mount -t zfs mcfszpool/fs1 /mnt/test-zfs
+        else
+            runcmd mount -t $fs $DEVICE /mnt/test-$fs;
+        fi
     done
 }
 
