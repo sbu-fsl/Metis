@@ -18,30 +18,28 @@
 #include <errno.h>
 
 
-static void do_pickle_and_load(const char *mp, struct verifs_str* arg)
-{
-	int mpfd = open(mp, O_RDONLY | O_DIRECTORY);
-	assert(mpfd >= 0);
+static void do_pickle_and_load(const char *mp, struct verifs_str *arg) {
+    int mpfd = open(mp, O_RDONLY | O_DIRECTORY);
+    assert(mpfd >= 0);
 
-	int res = ioctl(mpfd, VERIFS_PICKLE, arg);
-	assert(res == 0);
+    int res = ioctl(mpfd, VERIFS_PICKLE, arg);
+    assert(res == 0);
 
-	close(mpfd);
+    close(mpfd);
 
-	mpfd = open(mp, O_RDONLY | O_DIRECTORY);
-        assert(mpfd >= 0);
+    mpfd = open(mp, O_RDONLY | O_DIRECTORY);
+    assert(mpfd >= 0);
 
-        int res1 = ioctl(mpfd, VERIFS_LOAD, arg);
-	assert(res1 == 0);
+    int res1 = ioctl(mpfd, VERIFS_LOAD, arg);
+    assert(res1 == 0);
 
-        close(mpfd);
+    close(mpfd);
 }
 
-int main(int argc, char const *argv[])
-{
-	// TODO: pass path name via struct verifs_str
-	struct verifs_str data;
-	strcpy(data.str, "/mnt/data_1.txt");
-	do_pickle_and_load("/mnt/test-verifs1", &data);
-	return 0;
+int main(int argc, char const *argv[]) {
+    // TODO: pass path name via struct verifs_str
+    struct verifs_str data;
+    strcpy(data.str, "/mnt/data_1.txt");
+    do_pickle_and_load("/mnt/test-verifs1", &data);
+    return 0;
 }

@@ -90,9 +90,9 @@ if __name__ == "__main__":
     whole_var_list = [x for x in whole_var_list if x != []]
     print('Get %d after removal' % (len(whole_condition_list)))
     print('Generating scripts...')
-    for index in range(len(whole_condition_list)):
-        condition_list = whole_condition_list[index]
-        var_list = whole_var_list[index]
+    for size in range(len(whole_condition_list)):
+        condition_list = whole_condition_list[size]
+        var_list = whole_var_list[size]
         # remove redundant var
         var_set = set(var_list)
         script = script_head
@@ -115,6 +115,6 @@ if __name__ == "__main__":
         script = script.replace('||', ' or ')
         script = script.replace('|', ' or ')
         script += script_tail
-        script_name = 'test_scripts/test_script%d.py' %(index)
+        script_name = 'test_scripts/test_script%d.py' %(size)
         with open(script_name, 'w') as sc:
             sc.write(script)
