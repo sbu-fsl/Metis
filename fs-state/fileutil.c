@@ -365,6 +365,46 @@ static void init_basepaths()
     }
 }
 
+static int checkpoint_zfs(size_t key, const char *mp)
+{
+    int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
+    if (mpfd < 0) {
+        logerr("Cannot open mountpoint %s", mp);
+        return errno;
+    }
+    char cmd[ARG_MAX] = {0};
+    snprintf(cmd, ARG_MAX, "zfs snapshot mcfszpool/fs1@testsnap%zu", key);
+
+    int ret = system(cmd);
+    if (ret < 0) {
+        logerr("Cannot perform checkpoint at %s", mp);
+        ret = errno;
+    }
+    close(mpfd);
+    return ret;
+}
+
+static int restore_zfs(size_t key, const char *mp)
+{
+    int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
+    if (mpfd < 0) {
+        logerr("Cannot open mountpoint %s", mp);
+        return errno;
+    }
+    char cmd[ARG_MAX] = {0};
+    snprintf(cmd, ARG_MAX, "zfs rollback -r mcfszpool/fs1@testsnap%zu", key);
+
+    int ret = system(cmd);
+    if (ret < 0) {
+        logerr("Cannot perform restore at %s with key %zu", mp, key);
+        ret = errno;
+    }
+    close(mpfd);
+    return ret;
+}
+
+
+
 static int checkpoint_verifs(size_t key, const char *mp)
 {
     int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
@@ -373,7 +413,7 @@ static int checkpoint_verifs(size_t key, const char *mp)
         return errno;
     }
 
-    int ret = ioctl(mpfd, VERIFS_CHECKPOINT, key);
+    int ret = ioctl(mpfd, VERIFS_CHECKPOINT, key); 
     if (ret < 0) {
         logerr("Cannot perform checkpoint at %s", mp);
         ret = errno;
@@ -395,7 +435,6 @@ static int restore_verifs(size_t key, const char *mp)
         logerr("Cannot perform restore at %s with key %zu", mp, key);
         ret = errno;
     }
-
     close(mpfd);
     return ret;
 }
@@ -437,9 +476,19 @@ static long update_before_hook(unsigned char *ptr)
     absfs_set_add(absfs_set, absfs);
     state_depth++;
     for (int i = 0; i < N_FS; ++i) {
-        if (!is_verifs(fslist[i]))
+        if (!is_verifs(fslist[i]) && fslist[i] != "zfs"){
             continue;
-        int res = checkpoint_verifs(state_depth, basepaths[i]); 
+	}
+
+
+	int res = 0;
+	if( is_verifs(fslist[i]) ){
+        	res = checkpoint_verifs(state_depth, basepaths[i]); 
+	}
+	else if( fslist[i] == "zfs"){
+		res = checkpoint_zfs(state_depth, basepaths[i]);
+	}
+
         if (res != 0) {
             logerr("Failed to checkpoint a verifiable file system %s.",
                    fslist[i]);
@@ -458,9 +507,14 @@ static long revert_before_hook(unsigned char *ptr)
     submit_seq("restore\n");
     makelog("[seqid = %d] restore (%p)\n", count, state_depth);
     for (int i = 0; i < N_FS; ++i) {
-        if (!is_verifs(fslist[i]))
+        if (!is_verifs(fslist[i]) && fslist[i] != "zfs")
             continue;
-        int res = restore_verifs(state_depth, basepaths[i]);
+
+	int res = 0;
+	if ( is_verifs(fslist[i]) )
+	        res = restore_verifs(state_depth, basepaths[i]);
+	else if (fslist[i] == "zfs" )
+		res = restore_zfs(state_depth, basepaths[i]);
         if (res != 0) {
             logerr("Failed to restore a verifiable file system %s.",
                     fslist[i]);
@@ -492,7 +546,7 @@ static void equalize_free_spaces(void)
     mountall();
     /* Find free space of each file system being checked */
     for (int i = 0; i < N_FS; ++i) {
-        if (is_verifs(fslist[i]))
+        if (is_verifs(fslist[i]) || fslist[i] == "zfs")
             continue;
         struct statfs fsinfo;
         int ret = statfs(basepaths[i], &fsinfo);
@@ -508,7 +562,7 @@ static void equalize_free_spaces(void)
     /* Fill data to file systems who have greater than min_space of free space,
      * so that all file systems will have equal free capacities. */
     for (int i = 0; i < N_FS; ++i) {
-        if (is_verifs(fslist[i]))
+        if (is_verifs(fslist[i]) || fslist[i] == "zfs")
             continue;
         size_t fillsz = free_spaces[i] - min_space;
         char fullpath[PATH_MAX] = {0};
@@ -549,6 +603,7 @@ void __attribute__((constructor)) init()
     // setvbuf(stderr, NULL, _IONBF, 0);
 
     init_log_daemon(OUTPUT_LOG_PATH, ERROR_LOG_PATH, SEQ_LOG_PATH);
+    
 
     /* Register hooks */
     c_stack_before = checkpoint_before_hook;

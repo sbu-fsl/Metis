@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #FSLIST=(ext4 jffs2)
-FSLIST=(ext4 zfs)
+FSLIST=(verifs2 zfs)
 DEVLIST=(/dev/ram0 /dev/ram1)
 LOOPDEVS=()
 verbose=0
@@ -152,17 +152,42 @@ unset_xfs() {
 }
 
 setup_zfs() { 
+    #runcmd zfs create -o mountpoint=/mnt/test-zfs zpooltest/fs2
+    echo "setup zfs begin"
     DEVFILE="$1";
+    BLOCKSIZE=1k
+    COUNT=256
     runcmd dd if=/dev/zero of=$DEVFILE bs=$BLOCKSIZE count=$COUNT status=none;
+    #runcmd zpool create mcfszpool $DEVFILE
     runcmd zpool create mcfszpool $DEVFILE
     runcmd zfs set mountpoint=legacy mcfszpool
     runcmd zfs create mcfszpool/fs1
+    mount -t zfs mcfszpool/fs1 /mnt/test-zfs
+    #mount -t zfs mcfszpool/fs1 /mnt/test-zfs-ramblkdev
+    #zfs create mcfszpool
+    #zfs set mountpoint=legacy mcfszpool
+    echo "setup zfs done"
 }
 
 unset_zfs() {
     runcmd zfs destroy -r mcfszpool
 }
 
+
+setup_verifs2() {
+    cd ../../fuse-cpp-ramfs/src && cmake ../src
+    cd ../../fuse-cpp-ramfs/src && make
+    cd ../../fuse-cpp-ramfs/src && runcmd make install
+
+    #runcmd umount -l /mnt/test-verifs2
+    runcmd rm -rf /mnt/test-verifs2/*
+    runcmd rm -r /mnt/test-verifs2
+    runcmd mkdir /mnt/test-verifs2
+}
+
+unset_verifs2() {
+    echo "here in verifs2"
+}
 
 generic_cleanup() {
     if [ "$KEEP_FS" = "0" ]; then
@@ -269,9 +294,9 @@ for i in $(seq 0 $(($n_fs-1))); do
 
     setup_$fs $DEVICE;
 
-    if [ -d /mnt/test-$fs ]; then
-        runcmd rm -rf /mnt/test-$fs;
-    fi
+    #if [ -d /mnt/test-$fs ]; then
+    #    runcmd rm -rf /mnt/test-$fs;
+    #fi
     runcmd mkdir -p /mnt/test-$fs;
 
 done
