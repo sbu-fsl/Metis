@@ -1058,6 +1058,29 @@ int load_file_system(const void *data) {
     return ret;
 }
 
+static char *fetch_filepath(const char *cfgpath) {
+    int cfgfd = open(cfgpath, O_RDONLY);
+    if (cfgfd < 0)
+        return NULL;
+
+    char *path = (char *) calloc(PATH_MAX, 1);
+    if (path == NULL) {
+        close(cfgfd);
+        return NULL;
+    }
+
+    ssize_t res = read(cfgfd, path, PATH_MAX);
+    if (res < 0) {
+        close(cfgfd);
+        return NULL;
+    }
+
+    size_t pathlen = strnlen(path, PATH_MAX);
+    path = (char *) realloc(path, pathlen + 1);
+    close(cfgfd);
+    return path;
+}
+
 
 static void crmfs_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
                         struct fuse_file_info *fi, unsigned flags,
@@ -1066,7 +1089,7 @@ static void crmfs_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
     const char *mapped_data;
     struct stat file_stat;
     FILE *fp;
-    struct verifs_str *file_path;
+    char *file_path = NULL;
     SHA256_CTX hashctx;
     enter();
     switch (cmd) {
@@ -1079,8 +1102,12 @@ static void crmfs_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
             break;
         case VERIFS_PICKLE:
             SHA256_Init(&hashctx);
-            file_path = (struct verifs_str *) in_buf;
-            fd = open(file_path->str, O_RDWR | O_CREAT | O_TRUNC, 0644);
+            file_path = fetch_filepath(VERIFS_PICKLE_CFG);
+            if(file_path==NULL){
+                ret = -errno;
+                break;
+            }
+            fd = open(file_path, O_RDWR | O_CREAT | O_TRUNC, 0644);
             if (fd >= 0) {
                 ret = pickle_file_system(fd, &hashctx);
                 close(fd);
@@ -1089,8 +1116,8 @@ static void crmfs_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
             }
             break;
         case VERIFS_LOAD:
-            file_path = (struct verifs_str *) in_buf;
-            fd = open(file_path->str, O_RDONLY);
+            file_path = fetch_filepath(VERIFS_LOAD_CFG);
+            fd = open(file_path, O_RDONLY);
             if (fd >= 0) {
                 ret = verify_state_file(fd);
                 if (ret == 0) {
@@ -1113,6 +1140,8 @@ static void crmfs_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
             ret = ENOTSUP;
             break;
     }
+    if (file_path)
+        free(file_path);
     if (ret == 0) {
         fuse_reply_ioctl(req, 0, NULL, 0);
     } else {

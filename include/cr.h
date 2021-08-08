@@ -32,6 +32,8 @@ struct state_file_header {
 // contains the path to the output / input file.
 #define VERIFS_PICKLE      VERIFS_SET_IOC(3, struct verifs_str)
 #define VERIFS_LOAD        VERIFS_SET_IOC(4, struct verifs_str)
+#define VERIFS_PICKLE_CFG  "/tmp/pickle.cfg"
+#define VERIFS_LOAD_CFG    "/tmp/pickle.cfg"
 
 #ifdef __cplusplus
 }
