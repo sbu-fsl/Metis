@@ -12,16 +12,16 @@ from contextlib import suppress
 
 # config
 fs_exec = 'fuse-cpp-ramfs'  # bin program or path, ex: ../../verifs1/crmfs
-path_to_fs = '{}/mnt/fuse-cpp-ramfs'.format(os.getcwd())  # absolute path only
+path_to_fs = '{}/mnt/verifs'.format(os.getcwd())  # absolute path only
 absfs_path = '../../fs-state/absfs'
-pkl_path = '../build/pkl'
-load_path = '../build/load'
+pkl_path = '../../fuse-cpp-ramfs/build/pkl'
+load_path = '../../fuse-cpp-ramfs/build/load'
 '''*You need to comment out (rm -rf "$DIR") in racer script for this to work correctly'''
-racer_script_path = 'racer/racer.sh'
+racer_script_path = '../racer/racer.sh'
 '''range format: [a,b)'''
 racer_duration = (1, 5)
 racer_threads = (3, 7)
-num_test_attempts = (5, 10)
+num_test_attempts = (1, 3)
 #
 
 print(sys.platform)

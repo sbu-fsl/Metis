@@ -1,7 +1,9 @@
 #include <stdint.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <limits.h>
 #include <errno.h>
 #include <mcfs/errnoname.h>
-#include "common.h"
 #include "cr.h"
 
 int main(int argc, char **argv)
@@ -35,7 +37,7 @@ int main(int argc, char **argv)
     close(cfgfd);
 
     // call the ioctl
-    int ret = ioctl(dirfd, VERIFS_LOAD, nullptr);
+    int ret = ioctl(dirfd, VERIFS_LOAD, NULL);
     if (ret != 0) {
         printf("Result: ret = %d, errno = %d (%s)\n",
                ret, errno, errnoname(errno));
