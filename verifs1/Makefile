@@ -4,7 +4,7 @@ COMMON_OBJ := $(patsubst $(COMMON_DIR)/%,%.o,$(COMMON_SRC))
 override CFLAGS += -g -I../include -D PRINTF # -D T_RAND -D P_RAND
 override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread 
 
-all: crmfs ckpt restore model-checker
+all: crmfs ckpt restore pkl load model-checker
 
 model-checker: mc.pml parameters fileutil.c mount.c perf.c common-libs absfs-set
 	spin -a mc.pml
@@ -34,8 +34,11 @@ restore: restore.c common-libs
 absfs-set: set.cpp
 	g++ -std=c++11 -o set.o -c $< $(CFLAGS) $(LIBS)
 
-test_pickle_and_load: test_pickle_and_load.c common-libs
-	gcc -o test_pickle_and_load test_pickle_and_load.c common-libs.a $(CFLAGS) $(LIBS)
+pkl: pkl.c common-libs
+	gcc -o pkl pkl.c common-libs.a $(CFLAGS) $(LIBS)
+
+load: load.c common-libs
+	gcc -o load load.c common-libs.a $(CFLAGS) $(LIBS)
 
 replayer: replay.c common-libs 
 	gcc -o replay replay.c common-libs.a $(CFLAGS) $(LIBS)
@@ -44,11 +47,11 @@ common-libs: $(COMMON_OBJ)
 	ar rvs $@.a $^
 
 %.c.o: $(COMMON_DIR)/%.c
-	gcc -Wall -Werror -o $@ -fPIC -c $< $(CFLAGS) $(LIBS)
+	gcc -Wall -o $@ -fPIC -c $< $(CFLAGS) $(LIBS)
 
 %.cpp.o: $(COMMON_DIR)/%.cpp
-	g++ -std=c++11 -Wall -Werror -o $@ -fPIC -c $< $(CFLAGS) $(LIBS)
+	g++ -std=c++11 -Wall -o $@ -fPIC -c $< $(CFLAGS) $(LIBS)
 
 clean:
-	rm -f ckpt restore crmfs *.o *.log .*.swp pan.* *.a pan
+	rm -f ckpt restore crmfs pkl load *.o *.log .*.swp pan.* *.a pan
 

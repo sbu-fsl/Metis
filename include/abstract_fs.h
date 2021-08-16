@@ -77,7 +77,7 @@ private:
 
 #define DEFINE_SYSCALL_WITH_RETRY(ret_type, func, ...) \
     ret_type _ret; \
-    with_retry((_ret < 0 && errno == EBUSY), SYSCALL_RETRY_LIMIT, \
+    with_retry(((intptr_t)_ret < 0 && errno == EBUSY), SYSCALL_RETRY_LIMIT, \
                RETRY_WAIT_USECS, retry_warning, _ret, func, __VA_ARGS__); \
     return _ret;
 
