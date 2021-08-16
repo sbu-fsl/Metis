@@ -3,7 +3,7 @@ override CFLAGS += -I../include -D PRINTF
 
 all: demo.pml
 	spin -a demo.pml; \
-	gcc -o pan pan.c fileutil.c $(COMMON_DIR)/*.c $(CFLAGS); \
+	gcc -o pan pan.c fileutil.c $(COMMON_DIR)/*.c $(CFLAGS) -pthread;  \
 
 run: all
 	./pan | less -N; \
