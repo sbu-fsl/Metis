@@ -977,19 +977,7 @@ int pickle_file_system(int fd, SHA256_CTX *hashctx) {
         // icap * sizeof(struct crmfs_file) is the total size of the checkpointed data[refer to checkpoint()'s implementation]
         write_and_hash(fd, hashctx, data, icap * sizeof(struct crmfs_file));
     }
-    off_t filelen = lseek(fd, 0, SEEK_CUR);
-    struct state_file_header header = {0};
-    header.fsize = filelen;
-    SHA256_Final(header.hash, &hashctx);
-    ret = lseek(fd, 0, SEEK_SET);
-    if (ret >= 0) {
-        ret = write(fd, &header, sizeof(header));
-    }
-    if (ret >= 0) {
-        ret = 0;
-    } else {
-        ret = -errno;
-    }
+    ret = 0;
     return ret;
 }
 
@@ -997,9 +985,9 @@ int pickle_file_system(int fd, SHA256_CTX *hashctx) {
 /*
     API to load data from pickle
 */
-int load_file_system(const void *data) {
+int load_file_system(const void *file_data) {
     int ret = 0;
-    const char *ptr = (const char *) data;
+    const char *ptr = (const char *) file_data;
     // skip the header
     ptr += sizeof(struct state_file_header);
     // load icap
@@ -1090,7 +1078,6 @@ static void crmfs_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
     struct stat file_stat;
     FILE *fp;
     char *file_path = NULL;
-    SHA256_CTX hashctx;
     enter();
     switch (cmd) {
         case VERIFS_CHECKPOINT:
@@ -1101,15 +1088,29 @@ static void crmfs_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
             ret = restore((uint64_t) arg);
             break;
         case VERIFS_PICKLE:
+            SHA256_CTX hashctx;
             SHA256_Init(&hashctx);
             file_path = fetch_filepath(VERIFS_PICKLE_CFG);
-            if(file_path==NULL){
+            if (file_path == NULL) {
                 ret = -errno;
                 break;
             }
             fd = open(file_path, O_RDWR | O_CREAT | O_TRUNC, 0644);
             if (fd >= 0) {
                 ret = pickle_file_system(fd, &hashctx);
+                if (ret == 0) {
+                    off_t filelen = lseek(fd, 0, SEEK_CUR);
+                    struct state_file_header header = {0};
+                    header.fsize = filelen;
+                    SHA256_Final(header.hash, &hashctx);
+                    ret = lseek(fd, 0, SEEK_SET);
+                    if (ret >= 0) {
+                        ret = write(fd, &header, sizeof(header));
+                        ret = 0;
+                    } else {
+                        ret = -errno;
+                    }
+                }
                 close(fd);
             } else {
                 ret = -errno;
