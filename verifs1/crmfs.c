@@ -1076,7 +1076,6 @@ static void crmfs_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
     int ret = 0, status, fd;
     const char *mapped_data;
     struct stat file_stat;
-    FILE *fp;
     char *file_path = NULL;
     enter();
     switch (cmd) {
@@ -1135,7 +1134,6 @@ static void crmfs_ioctl(fuse_req_t req, fuse_ino_t ino, int cmd, void *arg,
             } else {
                 ret = -errno;
             }
-            fclose(fp);
             break;
         default:
             ret = ENOTSUP;
@@ -1215,7 +1213,7 @@ int main(int argc, char **argv) {
     }
     pthread_mutex_init(&global_lk, NULL);
 
-    fuse_daemonize(fg);
+    fuse_daemonize(1);
     if (fuse_set_signal_handlers(crmfs_se) != -1) {
         fuse_session_add_chan(crmfs_se, crmfs_ch);
         err = fuse_session_loop(crmfs_se);
