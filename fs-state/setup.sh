@@ -170,23 +170,20 @@ setup_zfs() {
 }
 
 unset_zfs() {
-    runcmd zfs destroy -r mcfszpool
+    #runcmd zfs destroy -r mcfszpool
+    echo "here"
 }
 
 
 setup_verifs2() {
-    cd ../../fuse-cpp-ramfs/src && cmake ../src
-    cd ../../fuse-cpp-ramfs/src && make
-    cd ../../fuse-cpp-ramfs/src && runcmd make install
-
-    #runcmd umount -l /mnt/test-verifs2
-    runcmd rm -rf /mnt/test-verifs2/*
-    runcmd rm -r /mnt/test-verifs2
-    runcmd mkdir /mnt/test-verifs2
+   cd ../../fuse-cpp-ramfs/src && make
+   cd ../../fuse-cpp-ramfs/src && make install
+   cd ../../fuse-cpp-ramfs/ && fuse-cpp-ramfs /mnt/test-verifs2 &
+   cd ../../nfs4mc/fs-state
 }
 
 unset_verifs2() {
-    echo "here in verifs2"
+    echo "unset verifs2"
 }
 
 generic_cleanup() {
@@ -291,7 +288,6 @@ for i in $(seq 0 $(($n_fs-1))); do
     if [ "$(mount | grep /mnt/test-$fs)" ]; then
         runcmd umount -f /mnt/test-$fs;
     fi
-
     setup_$fs $DEVICE;
 
     #if [ -d /mnt/test-$fs ]; then

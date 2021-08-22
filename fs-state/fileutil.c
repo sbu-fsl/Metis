@@ -367,6 +367,7 @@ static void init_basepaths()
 
 static int checkpoint_zfs(size_t key, const char *mp)
 {
+    errno = 0;    
     int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
     if (mpfd < 0) {
         logerr("Cannot open mountpoint %s", mp);
@@ -374,9 +375,12 @@ static int checkpoint_zfs(size_t key, const char *mp)
     }
     char cmd[ARG_MAX] = {0};
     snprintf(cmd, ARG_MAX, "zfs snapshot mcfszpool/fs1@testsnap%zu", key);
-
     int ret = system(cmd);
-    if (ret < 0) {
+    
+    if (ret == -1 || WEXITSTATUS(ret) != 0){
+        char buf[BUFSIZ];
+        setbuf(stderr, buf);
+
         logerr("Cannot perform checkpoint at %s", mp);
         ret = errno;
     }
@@ -386,6 +390,7 @@ static int checkpoint_zfs(size_t key, const char *mp)
 
 static int restore_zfs(size_t key, const char *mp)
 {
+    errno = 0;
     int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
     if (mpfd < 0) {
         logerr("Cannot open mountpoint %s", mp);
@@ -393,12 +398,19 @@ static int restore_zfs(size_t key, const char *mp)
     }
     char cmd[ARG_MAX] = {0};
     snprintf(cmd, ARG_MAX, "zfs rollback -r mcfszpool/fs1@testsnap%zu", key);
-
     int ret = system(cmd);
-    if (ret < 0) {
+    if (ret  == -1 || WEXITSTATUS(ret) != 0){
         logerr("Cannot perform restore at %s with key %zu", mp, key);
         ret = errno;
     }
+    
+    snprintf(cmd, ARG_MAX, "zfs destroy mcfszpool/fs1@testsnap%zu", key);
+    ret = system(cmd);
+    if (ret  == -1 || WEXITSTATUS(ret) != 0){
+        logerr("Cannot perform restore at %s with key %zu", mp, key);
+        ret = errno;
+    }
+
     close(mpfd);
     return ret;
 }
@@ -407,6 +419,8 @@ static int restore_zfs(size_t key, const char *mp)
 
 static int checkpoint_verifs(size_t key, const char *mp)
 {
+    errno = 0;
+    logerr("CHECKPOINT VERIFS2");
     int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
     if (mpfd < 0) {
         logerr("Cannot open mountpoint %s", mp);
