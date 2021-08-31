@@ -2,7 +2,7 @@
 
 #FSLIST=(ext4 jffs2)
 FSLIST=(verifs2 zfs)
-DEVLIST=(/dev/ram0 /dev/ram1)
+DEVLIST=("" /dev/ram1)
 LOOPDEVS=()
 verbose=0
 POSITIONAL=()
@@ -170,12 +170,14 @@ setup_zfs() {
 }
 
 unset_zfs() {
-    #runcmd zfs destroy -r mcfszpool
-    echo "here"
+    runcmd zpool destroy mcfszpool
 }
 
 
 setup_verifs2() {
+   if [ -d /mnt/test-verifs2 ]; then
+       rm -rf /mnt/test-verifs2/*
+   fi
    cd ../../fuse-cpp-ramfs/src && make
    cd ../../fuse-cpp-ramfs/src && make install
    cd ../../fuse-cpp-ramfs/ && fuse-cpp-ramfs /mnt/test-verifs2 &
@@ -183,7 +185,15 @@ setup_verifs2() {
 }
 
 unset_verifs2() {
-    echo "unset verifs2"
+    mount | grep /mnt/test-verifs2
+    ret=$?
+    if [ $ret -eq 0 ]; then
+        runcmd cd ../../fuse-cpp-ramfs/ && fusermount -u /mnt/test-verifs2
+        rc=$?;
+        if [ $rc -ne 0 ]; then
+            echo "Unable to unmount verifs2. fusermount -u /mnt/test-verifs2 exited with error ($rc)." >&2;
+        fi
+    fi
 }
 
 generic_cleanup() {
@@ -199,7 +209,6 @@ generic_cleanup() {
                 losetup -d $device;
             fi
         done
-
         for fs in ${FSLIST[@]}; do
             unset_$fs;
         done
@@ -230,6 +239,8 @@ mount_all() {
         DEVICE=${DEVLIST[$i]};
         if [ "$fs" == "zfs" ];then
             runcmd mount -t zfs mcfszpool/fs1 /mnt/test-zfs
+        elif [ "$fs" == "verifs2"]; then
+            :
         else
             runcmd mount -t $fs $DEVICE /mnt/test-$fs;
         fi
@@ -289,10 +300,9 @@ for i in $(seq 0 $(($n_fs-1))); do
         runcmd umount -f /mnt/test-$fs;
     fi
     setup_$fs $DEVICE;
-
-    #if [ -d /mnt/test-$fs ]; then
-    #    runcmd rm -rf /mnt/test-$fs;
-    #fi
+    if [ -d /mnt/test-$fs ] && [ $fs != "verifs2" ] && [ $fs != "zfs" ]; then
+        runcmd rm -rf /mnt/test-$fs;
+    fi
     runcmd mkdir -p /mnt/test-$fs;
 
 done
@@ -303,7 +313,6 @@ if [ "$SETUP_ONLY" != "1" ]; then
     echo 'Running file system checker...';
     echo 'Please check stdout in output.log, stderr in error.log';
     ./pan 2>error.log > output.log
-
     generic_cleanup;
 fi
 

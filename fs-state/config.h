@@ -21,7 +21,7 @@
 
 /* List of file systems: Modify this to experiment with other file systems */
 static const char *fslist[] = {"verifs2", "zfs"};
-static const char *devlist[] = {"/dev/ram0", "/dev/ram1"};
+static const char *devlist[] = {NULL, "/dev/ram1"};
 #define N_FS    nelem(fslist)
 char *basepaths[N_FS];
 char *testdirs[N_FS];
