@@ -20,7 +20,7 @@
 #include <openssl/md5.h>
 
 #include "nanotiming.h"
-#include "operations.h"
+#include "operations_in_vm.h"
 #include "errnoname.h"
 #include "vector.h"
 #include "abstract_fs.h"
@@ -154,7 +154,7 @@ static inline void generate_data(char *buffer, size_t len, int value)
     }
 }
 
-static inline bool check_file_existence(const char *path)
+static inline bool check_file_existence(const char *vm, const char *path)
 {
     return access(path, F_OK) == 0;
 }
@@ -199,8 +199,8 @@ void unmount_all();
 void record_fs_stat();
 void start_perf_metrics_thread();
 bool do_fsck();
-int fsfreeze(const char *fstype, const char *devpath, const char *mountpoint);
-int fsthaw(const char *fstype, const char *devpath, const char *mountpoint);
+int fsfreeze(const char *vm, const char *fstype, const char *devpath, const char *mountpoint);
+int fsthaw(const char *vm, const char *fstype, const char *devpath, const char *mountpoint);
 int unfreeze_all();
 void clear_excluded_files();
 

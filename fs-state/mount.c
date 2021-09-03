@@ -1,6 +1,7 @@
 #define _XOPEN_SOURCE 500
 #define _POSIX_C_SOURCE 2
 #include "fileutil.h"
+#include "operations_in_vm.h"
 
 static bool fs_frozen[N_FS] = {0};
 
@@ -58,10 +59,11 @@ void mountall()
     int failpos, err;
     for (int i = 0; i < N_FS; ++i) {
         /* Skip verifs */
-        if (is_verifs(fslist[i]))
-            continue;
+        /*if (is_verifs(fslist[i]))
+            continue;*/
         /* mount(source, target, fstype, mountflags, option_str) */
-        int ret = mount(devlist[i], basepaths[i], fslist[i], MS_NOATIME, "");
+        //int ret = mount(devlist[i], basepaths[i], fslist[i], MS_NOATIME, "");
+        int ret = mount_in_vm(vmlist[i], devlist[i], basepaths[i], fslist[i], MS_NOATIME, "");
         if (ret != 0) {
             failpos = i;
             err = errno;
@@ -72,13 +74,14 @@ void mountall()
 err:
     /* undo mounts */
     for (int i = 0; i < failpos; ++i) {
-        if (is_verifs(fslist[i]))
-            continue;
-        umount2(basepaths[i], MNT_FORCE);
+        /*if (is_verifs(fslist[i]))
+            continue;*/
+        //umount2(basepaths[i], MNT_FORCE);
+        umount_in_vm(vmlist[i], basepaths[i], MNT_FORCE);
     }
-    fprintf(stderr, "Could not mount file system %s in %s at %s (%s)\n",
+    fprintf(stderr, "Could not mount file system %s in %s at %s on vm %s (%s)\n",
             fslist[failpos], devlist[failpos], basepaths[failpos],
-            errnoname(err));
+            vmlist[failpos], errnoname(err));
     exit(1);
 }
 
@@ -90,16 +93,17 @@ void unmount_all()
     record_fs_stat();
 #endif
     for (int i = 0; i < N_FS; ++i) {
-        if (is_verifs(fslist[i]))
-            continue;
+        /*if (is_verifs(fslist[i]))
+            continue;*/
         int retry_limit = 10;
         /* We have to unfreeze the frozen file system before unmounting it.
          * Otherwise the system will hang! */
         if (fs_frozen[i]) {
-            fsthaw(fslist[i], devlist[i], basepaths[i]);
+            fsthaw(vmlist[i], fslist[i], devlist[i], basepaths[i]);
         }
 try_unmount:
-        ret = umount2(basepaths[i], 0);
+        //ret = umount2(basepaths[i], 0);
+        ret = umount_in_vm(vmlist[i], basepaths[i], 0);
         if (ret != 0) {
             /* If unmounting failed due to device being busy, wait 1ms and
              * try again up to retry_limit times */
@@ -110,8 +114,8 @@ try_unmount:
                 retry_limit--;
                 goto try_unmount;
             }
-            fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
-                    fslist[i], basepaths[i], errnoname(errno));
+            fprintf(stderr, "Could not unmount file system %s at %s on vm %s (%s)\n",
+                    fslist[i], basepaths[i], vmlist[i], errnoname(errno));
             has_failure = true;
         }
     }
@@ -132,28 +136,22 @@ static void set_fs_frozen_flag(const char *mountpoint, bool value)
     }
 }
 
-static int freeze_or_thaw(const char *caller, const char *fstype,
-    const char *devpath, const char *mp, unsigned long op)
+static int freeze_or_thaw(const char *caller, const char *vm, 
+    const char *fstype, const char *devpath, const char *mp,
+    unsigned long op)
 {
     if (op != FIFREEZE && op != FITHAW)
         return -1;
 
     char *opname;
-    int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
-    if (mpfd < 0) {
-        fprintf(stderr, "%s: Cannot open %s (%s)\n", caller, mp,
-                errnoname(errno));
-        return -1;
-    }
 
     if (op == FIFREEZE)
         opname = "FIFREEZE";
     else if (op == FITHAW)
         opname = "FITHAW";
 
-    int ret = ioctl(mpfd, op, 0);
+    int ret = freeze_or_thaw_fs_in_vm(vm, mp, op);
     int err = errno;
-    close(mpfd);
     if (ret == 0) {
         /* Mark the corresponding file system as being frozen */
         set_fs_frozen_flag(mp, (op == FIFREEZE));
@@ -174,7 +172,8 @@ static int freeze_or_thaw(const char *caller, const char *fstype,
     else
         options = "rw";
 
-    ret = mount(devpath, mp, fstype, remnt_flag, options);
+    //ret = mount(devpath, mp, fstype, remnt_flag, options);
+    ret = mount_in_vm(vm, devpath, mp, fstype, remnt_flag, options);
     if (ret < 0) {
         fprintf(stderr, "%s: remounting failed on %s (%s)\n", caller, mp,
                 errnoname(errno));
@@ -183,14 +182,14 @@ static int freeze_or_thaw(const char *caller, const char *fstype,
 
 }
 
-int fsfreeze(const char *fstype, const char *devpath, const char *mountpoint)
+int fsfreeze(const char *vm, const char *fstype, const char *devpath, const char *mountpoint)
 {
-    return freeze_or_thaw(__func__, fstype, devpath, mountpoint, FIFREEZE);
+    return freeze_or_thaw(__func__, vm, fstype, devpath, mountpoint, FIFREEZE);
 }
 
-int fsthaw(const char *fstype, const char *devpath, const char *mountpoint)
+int fsthaw(const char *vm, const char *fstype, const char *devpath, const char *mountpoint)
 {
-    return freeze_or_thaw(__func__, fstype, devpath, mountpoint, FITHAW);
+    return freeze_or_thaw(__func__, vm, fstype, devpath, mountpoint, FITHAW);
 }
 
 int unfreeze_all()
@@ -198,7 +197,7 @@ int unfreeze_all()
     for (int i = 0; i < N_FS; ++i) {
         if (fs_frozen[i]) {
             fprintf(stderr, "unfreezing %s at %s\n", fslist[i], basepaths[i]);
-            fsthaw(fslist[i], devlist[i], basepaths[i]);
+            fsthaw(vmlist[i], fslist[i], devlist[i], basepaths[i]);
         }
     }
 }
