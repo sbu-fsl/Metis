@@ -2,11 +2,11 @@ COMMON_DIR := ../common
 COMMON_SRC := $(wildcard $(COMMON_DIR)/*.c) $(wildcard $(COMMON_DIR)/*.cpp)
 COMMON_OBJ := $(patsubst $(COMMON_DIR)/%,%.o,$(COMMON_SRC))
 override CFLAGS += -g -I../include -D PRINTF # -D T_RAND -D P_RAND
-override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread 
+override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler 
 
 all: demo.pml parameters common-libs absfs-set
 	spin -a demo.pml; \
-	gcc -o pan pan.c set.o fileutil.c perf.c mount.c common-libs.a $(CFLAGS) $(LIBS); \
+	gcc -o pan pan.c set.o fileutil.c perf.c mount.c operations_in_vm.c common-libs.a $(CFLAGS) $(LIBS); \
 
 run: all
 	./pan | less -N; \
@@ -29,7 +29,7 @@ absfs-set: set.cpp
 	
 abstractfs-test: $(COMMON_DIR)/abstract_fs.cpp
 	g++ -std=c++11 -g -Wall -Werror -o absfs $< -DABSFS_TEST \
-		-I../include -lssl -lcrypto -lrt -lstdc++ -lstdc++fs
+		-I../include -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lprofiler
 
 replayer: replay.c mount.c common-libs
 	gcc -o replay replay.c mount.c \
