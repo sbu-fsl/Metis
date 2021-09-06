@@ -2,7 +2,7 @@ c_decl {
 /* The escaped '#' is intended to prevent Spin from expanding the headers
  * when it's generating the C code */
 \#include "fileutil.h"
-\#include "config.h"
+\#include "whichconfig.h"
 };
 #include "parameters.pml"
 

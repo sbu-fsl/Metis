@@ -24,7 +24,7 @@
 #include "errnoname.h"
 #include "vector.h"
 #include "abstract_fs.h"
-#include "config.h"
+#include "whichconfig.h"
 #include "set.h"
 #include "log.h"
 
