@@ -199,8 +199,8 @@ void unmount_all();
 void record_fs_stat();
 void start_perf_metrics_thread();
 bool do_fsck();
-int fsfreeze(const char *vm, const char *fstype, const char *devpath, const char *mountpoint);
-int fsthaw(const char *vm, const char *fstype, const char *devpath, const char *mountpoint);
+int fsfreeze(int fsidx, const char *fstype, const char *devpath, const char *mountpoint);
+int fsthaw(int fsidx, const char *fstype, const char *devpath, const char *mountpoint);
 int unfreeze_all();
 void clear_excluded_files();
 

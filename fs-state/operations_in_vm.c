@@ -8,300 +8,308 @@
 #include <time.h>
 
 char *base_command = "vmrun -T ws -gu root -gp Pa55word";
+char *file_ops_script = "/mnt/hgfs/mcfs_shared/run_file_ops";
+char *absfs_script = "/mnt/hgfs/mcfs_shared/run_absfs";
 
-int get_retval_errno(const char *vm, const char *funcname)
+int get_retval_errno(int fsidx, const char *funcname)
 {
-    clock_t start = clock();
-    char command[1000];
-    sprintf(command, "%s copyFileFromGuestToHost %s /home/tc/mcfs_fops_ret /home/ubuntu/retfiles/mcfs_fops_ret", base_command, vm);
-    system(command);
-
-    FILE *fptr = fopen("/home/ubuntu/retfiles/mcfs_fops_ret", "r");
+    char filename[64];
+    sprintf(filename, "/tmp/mcfs_shared/%d/ret/mcfs_fops_ret", fsidx);
+    FILE *fptr = fopen(filename, "r");
     if (fptr == NULL)
     {
-        printf("Could not obtain the retval file from guest %s for command %s\n", vm, funcname);
+        printf("%s file not present in the shared folder %s for command %s\n", filename, vmlist[fsidx], funcname);
     }
     int ret = 0, err = 0;
     fscanf(fptr, "%d %d", &ret, &err);
-
     fclose(fptr);
-    system("rm -rf /home/ubuntu/retfiles/mcfs_fops_ret");
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
     errno = err;
     return ret;
 }
 
-int create_file_in_vm(const char *vm, const char *path, int mode)
+int create_file_in_vm(int fsidx, const char *path, int mode)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
 
     char command[5000];
-    sprintf(command, "%s runProgramInGuest %s /bin/bash \"/home/tc/run_file_ops\" \"create_file %s %d\"", base_command, vm, path, mode);
+    sprintf(command, "%s runProgramInGuest %s /bin/bash \"%s\" \"create_file %s %d\"", base_command, vmlist[fsidx], file_ops_script, path, mode);
 
+    errno = 0;
     system(command);
     
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
-    return get_retval_errno(vm, __func__);
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));
+    return get_retval_errno(fsidx, __func__);
 }
 
-int write_file_in_vm(const char *vm, const char *path, char *data, off_t offset, size_t length)
+int write_file_in_vm(int fsidx, const char *path, char *data, off_t offset, size_t length)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
 
     char command[10000]; // TODO get appropriate size of the data
-    sprintf(command, "%s runProgramInGuest %s /bin/bash \"/home/tc/run_file_ops\" \"write_file %s '%s' %ld %zu\"", base_command, vm, path, data, offset, length);
+    sprintf(command, "%s runProgramInGuest %s /bin/bash \"%s\" \"write_file %s %s %ld %zu\"", base_command, vmlist[fsidx], file_ops_script, path, data, offset, length);
 
+    errno = 0;
     system(command);
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
-    return get_retval_errno(vm, __func__);
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));
+    return get_retval_errno(fsidx, __func__);
 }
 
-int truncate_file_in_vm(const char *vm, const char *path, off_t length)
+int truncate_file_in_vm(int fsidx, const char *path, off_t length)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
     char command[5000];
-    sprintf(command, "%s runProgramInGuest %s /bin/bash \"/home/tc/run_file_ops\" \"truncate_file %s %ld\"", base_command, vm, path, length);
+    sprintf(command, "%s runProgramInGuest %s /bin/bash \"%s\" \"truncate_file %s %ld\"", base_command, vmlist[fsidx], file_ops_script, path, length);
 
+    errno = 0;
     system(command);
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
-    return get_retval_errno(vm, __func__);
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));
+    return get_retval_errno(fsidx, __func__);
 }
 
-int unlink_file_in_vm(const char *vm, const char *path)
+int unlink_file_in_vm(int fsidx, const char *path)
 {
-    clock_t start = clock();
-
-    char command[5000];
-    sprintf(command, "%s runProgramInGuest %s /bin/bash \"/home/tc/run_file_ops\" \"unlink_file %s\"", base_command, vm, path);
-
-    system(command);
-
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
-    return get_retval_errno(vm, __func__);
-}
-
-int create_dir_in_vm(const char *vm, const char *path, int mode)
-{
-    clock_t start = clock();
-    char command[5000];
-    sprintf(command, "%s runProgramInGuest %s /bin/bash \"/home/tc/run_file_ops\" \"create_dir %s %d\"", base_command, vm, path, mode);
-
-    system(command);
-
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
-    return get_retval_errno(vm, __func__);
-}
-
-int remove_dir_in_vm(const char *vm, const char *path)
-{
-    clock_t start = clock();
+    time_t start = time(NULL);
 
     char command[5000];
-    sprintf(command, "%s runProgramInGuest %s /bin/bash \"/home/tc/run_file_ops\" \"remove_dir %s\"", base_command, vm, path);
+    sprintf(command, "%s runProgramInGuest %s /bin/bash \"%s\" \"unlink_file %s\"", base_command, vmlist[fsidx], file_ops_script, path);
 
+    errno = 0;
     system(command);
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
-    return get_retval_errno(vm, __func__);
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));
+    return get_retval_errno(fsidx, __func__);
 }
 
-int freeze_or_thaw_fs_in_vm(const char *vm, const char *path, unsigned long op)
+int create_dir_in_vm(int fsidx, const char *path, int mode)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
+    char command[5000];
+    sprintf(command, "%s runProgramInGuest %s /bin/bash \"%s\" \"create_dir %s %d\"", base_command, vmlist[fsidx], file_ops_script, path, mode);
+
+    errno = 0;
+    system(command);
+
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));
+    return get_retval_errno(fsidx, __func__);
+}
+
+int remove_dir_in_vm(int fsidx, const char *path)
+{
+    time_t start = time(NULL);
 
     char command[5000];
-    sprintf(command, "%s runProgramInGuest %s /bin/bash \"/home/tc/run_file_ops\" \"freeze_or_thaw_fs %s %lu\"", base_command, vm, path, op);
+    sprintf(command, "%s runProgramInGuest %s /bin/bash \"%s\" \"remove_dir %s\"", base_command, vmlist[fsidx], file_ops_script, path);
 
+    errno = 0;
     system(command);
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
-    return get_retval_errno(vm, __func__);
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));
+    return get_retval_errno(fsidx, __func__);
 }
 
-int mount_in_vm(const char *vm, const char *source, const char *target,
+int freeze_or_thaw_fs_in_vm(int fsidx, const char *path, unsigned long op)
+{
+    time_t start = time(NULL);
+
+    char command[5000];
+    sprintf(command, "%s runProgramInGuest %s /bin/bash \"%s\" \"freeze_or_thaw_fs %s %lu\"", base_command, vmlist[fsidx], file_ops_script, path, op);
+
+    errno = 0;
+    system(command);
+
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));
+    return get_retval_errno(fsidx, __func__);
+}
+
+int mount_in_vm(int fsidx, const char *source, const char *target,
     const char *filesystemtype, unsigned long mountflags,
     const char *data)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
 
     char command[5000];
-    sprintf(command, "%s runProgramInGuest %s /bin/bash \"/home/tc/run_file_ops\" \"mount_fs %s %s %s %lu %s\"", base_command, vm, source, target, filesystemtype, mountflags, data);
+    sprintf(command, "%s runProgramInGuest %s /bin/bash \"%s\" \"mount_fs %s %s %s %lu %s\"", base_command, vmlist[fsidx], file_ops_script, source, target, filesystemtype, mountflags, data);
 
+    errno = 0;
     system(command);
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
-    return get_retval_errno(vm, __func__);
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));
+    return get_retval_errno(fsidx, __func__);
 }
 
-int umount_in_vm(const char *vm, const char *target, int flags)
+int umount_in_vm(int fsidx, const char *target, int flags)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
 
     char command[5000];
-    sprintf(command, "%s runProgramInGuest %s /bin/bash \"/home/tc/run_file_ops\" \"umount_fs %s %d\"", base_command, vm, target, flags);
+    sprintf(command, "%s runProgramInGuest %s /bin/bash \"%s\" \"umount_fs %s %d\"", base_command, vmlist[fsidx], file_ops_script, target, flags);
 
+    errno = 0;
     system(command);
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
-    return get_retval_errno(vm, __func__);
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));
+    return get_retval_errno(fsidx, __func__);
 }
 
-bool check_file_existence_in_vm(const char *vm, const char *path)
+bool check_file_existence_in_vm(int fsidx, const char *path)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
 
     char command[5000];
-    sprintf(command, "%s fileExistsInGuest %s %s", base_command, vm, path);
+    sprintf(command, "%s fileExistsInGuest %s %s", base_command, vmlist[fsidx], path);
 
+    errno = 0;
     int ret = system(command);
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));
     return ret;
 }
 
-int get_file_from_vm(const char *vm, const char *path, const char *local_path)
+int get_file_from_vm(int fsidx, const char *path, const char *local_path)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
 
     char command[5000];
-    sprintf(command, "%s copyFileFromGuestToHost %s %s %s", base_command, vm, path, local_path);
+    sprintf(command, "%s copyFileFromGuestToHost %s %s %s", base_command, vmlist[fsidx], path, local_path);
 
+    errno = 0;
     int ret = system(command);
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));
     return ret;
 }
 
-int perform_statfs_in_vm(const char *vm, const char *path)
+int perform_statfs_in_vm(int fsidx, const char *path)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
 
     char command[5000];
-    sprintf(command, "%s runProgramInGuest %s /bin/bash \"/home/tc/run_file_ops\" \"get_fs_free_spaces %s\"", base_command, vm, path);
+    sprintf(command, "%s runProgramInGuest %s /bin/bash \"%s\" \"get_fs_free_spaces %s\"", base_command, vmlist[fsidx], file_ops_script, path);
 
+    errno = 0;
     system(command);
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
-    return get_retval_errno(vm, __func__);
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));
+    return get_retval_errno(fsidx, __func__);
 }
 
-size_t get_fs_free_space_in_vm(const char *vm)
+size_t get_fs_free_space_in_vm(int fsidx)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
 
-    char command[5000];
-    sprintf(command, "%s copyFileFromGuestToHost %s /home/tc/fs_free_space /home/ubuntu/retfiles/fs_free_space", base_command, vm);
-    system(command);
-
-    FILE *fptr = fopen("/home/ubuntu/retfiles/fs_free_space", "r");
+    char filename[64];
+    sprintf(filename, "/tmp/mcfs_shared/%d/ret/fs_free_space_ret", fsidx);
+    FILE *fptr = fopen(filename, "r");
     if (fptr == NULL)
     {
-        printf("Could not obtain the freespace file from guest %s\n", vm);
+        printf("%s file not found of %s\n", filename, vmlist[fsidx]);
     }
     size_t free_spc = -1;
     fscanf(fptr, "%zu", &free_spc);
     fclose(fptr);
-    system("rm -rf /home/ubuntu/retfiles/fs_free_space");
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
     return free_spc;
 }
 
-int write_dummy_file_fs_in_vm(const char *vm, const char *path, size_t fillsz)
+int write_dummy_file_fs_in_vm(int fsidx, const char *path, size_t fillsz)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
 
     char command[5000];
-    sprintf(command, "%s runProgramInGuest %s /bin/bash \"/home/tc/run_file_ops\" \"write_dummy_file %s %zu\"", base_command, vm, path, fillsz);
+    sprintf(command, "%s runProgramInGuest %s /bin/bash \"%s\" \"write_dummy_file %s %zu\"", base_command, vmlist[fsidx], file_ops_script, path, fillsz);
 
+    errno = 0;
     system(command);
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
-    return get_retval_errno(vm, __func__);
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));
+    return get_retval_errno(fsidx, __func__);
 }
 
-int take_vm_snapshot(const char *vm, const char *name)
+int take_vm_snapshot(int fsidx, const char *name)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
 
     char command[5000];
-    sprintf(command, "vmrun -T ws snapshot %s %s", vm, name);
+    sprintf(command, "vmrun -T ws snapshot %s %s", vmlist[fsidx], name);
 
+    errno = 0;
     int ret = system(command);
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));
     return ret;
 }
 
-int restore_vm_snapshot(const char *vm, const char *name)
+int restore_vm_snapshot(int fsidx, const char *name)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
 
     char commandRevert[5000];
-    sprintf(commandRevert, "vmrun -T ws revertToSnapshot %s %s", vm, name);
+    sprintf(commandRevert, "vmrun -T ws revertToSnapshot %s %s", vmlist[fsidx], name);
+    errno = 0;
     int ret = system(commandRevert);
-    printf("Executed: %s (%fs)\n", commandRevert, ((double)(clock() - start))/CLOCKS_PER_SEC);
+    printf("Executed: %s (%lds)\n", commandRevert, (time(NULL) - start));
 
     if (ret != 0)
     {
-        printf("Error while restoring the snapshot %s for vm %s with revertToSnapshot %d\n", name, vm, ret);
+        printf("Error while restoring the snapshot %s for vm %s with revertToSnapshot %d\n", name, vmlist[fsidx], ret);
         return ret;
     }
 
-    start = clock();
+    start = time(NULL);
     char commandStart[5000];
-    sprintf(commandStart, "vmrun -T ws start %s", vm);
+    sprintf(commandStart, "vmrun -T ws start %s", vmlist[fsidx]);
+    errno = 0;
     ret = system(commandStart);
     if (ret != 0)
     {
-        printf("Error while restarting the vm %s after reverting to snapshot %s: %d\n", vm, name, ret);
+        printf("Error while restarting the vm %s after reverting to snapshot %s: %d\n", vmlist[fsidx], name, ret);
     }
 
-    set_env_var_in_vm(vm, "LD_LIBRARY_PATH", "/usr/local/lib");
+    set_env_var_in_vm(i, "LD_LIBRARY_PATH", "/usr/local/lib");
 
-    printf("Executed: %s (%fs)\n", commandStart, ((double)(clock() - start))/CLOCKS_PER_SEC);
+    printf("Executed: %s (%lds)\n", commandStart, (time(NULL) - start));
     return ret;
 }
 
-int delete_vm_snapshot(const char *vm, const char *name)
+int delete_vm_snapshot(int fsidx, const char *name)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
 
     char command[5000];
-    sprintf(command, "vmrun -T ws deleteSnapshot %s %s", vm, name);
+    sprintf(command, "vmrun -T ws deleteSnapshot %s %s", vmlist[fsidx], name);
 
+    errno = 0;
     int ret = system(command);
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);  
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));  
     return ret;
 }
 
-int compute_abstract_state_in_vm(const char *vm, const char *path, absfs_state_t state)
+int compute_abstract_state_in_vm(int fsidx, const char *path, absfs_state_t state)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
 
     char command[5000];
-    //sprintf(command, "%s runScriptInGuest %s /bin/bash \"/home/tc/absfs %s", base_command, vm, path);
-    sprintf(command, "%s runProgramInGuest %s /bin/bash \"/home/tc/run_absfs\" \"%s\"", base_command, vm, path);
+    sprintf(command, "%s runProgramInGuest %s /bin/bash \"%s\" \"%s\"", base_command, vmlist[fsidx], absfs_script, path);
+    errno = 0;
     system(command);
 
-    int ret = get_retval_errno(vm, __func__);
+    int ret = get_retval_errno(fsidx, __func__);
     if (ret != 0)
     {
-        printf("Could not obtain the abstract state from guest %s\n", vm);
+        printf("Could not obtain the abstract state from guest %s\n", vmlist[fsidx]);
         return ret;
     }
-    
-    char command2[5000];
-    sprintf(command2, "%s copyFileFromGuestToHost %s /home/tc/abstract_fs_ret /home/ubuntu/retfiles/abstract_fs_ret", base_command, vm);
-    system(command2);
-    FILE *f = fopen("/home/ubuntu/retfiles/abstract_fs_ret", "r");
+
+    char filename[64];
+    sprintf(filename, "/tmp/mcfs_shared/%d/ret/abstract_fs_ret", fsidx);
+    FILE *f = fopen(filename, "r");
     if (f == NULL)
     {
-        printf("Could NOT obtain the abstract state from guest %s\n", vm);
+        printf("%s not found of %s\n", filename, vmlist[fsidx]);
     }
     
     unsigned int temp[16];
@@ -312,22 +320,21 @@ int compute_abstract_state_in_vm(const char *vm, const char *path, absfs_state_t
     }
 
     fclose(f);
-    system("rm -rf /home/ubuntu/retfiles/abstract_fs_ret");
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC); 
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start)); 
     return ret;
 }
 
-int set_env_var_in_vm(const char *vm, const char *varName, const char *value)
+int set_env_var_in_vm(int fsidx, const char *varName, const char *value)
 {
-    clock_t start = clock();
+    time_t start = time(NULL);
 
     char command[5000];
-    sprintf(command, "%s writeVariable %s guestEnv %s %s", base_command, vm, varName, value);
+    sprintf(command, "%s writeVariable %s guestEnv %s %s", base_command, vmlist[fsidx], varName, value);
 
     int ret = system(command);
 
-    printf("Executed: %s (%fs)\n", command, ((double)(clock() - start))/CLOCKS_PER_SEC);
+    printf("Executed: %s (%lds)\n", command, (time(NULL) - start));
     return ret;
 }
 

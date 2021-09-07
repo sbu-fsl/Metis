@@ -385,7 +385,7 @@ int main(int argc, char **argv) {
     //printf("Error occurred when iterating...\n");
   } else {
     //printf("Iteration complete. Abstract FS signature = ");
-    FILE *fp = fopen("/home/tc/abstract_fs_ret", "w");
+    FILE *fp = fopen("/mnt/hgfs/mcfs_shared/ret/abstract_fs_ret", "w");
     for (int i = 0; i < 16; ++i)
     {
         fprintf(fp, "%02x", absfs.state[i] & 0xff);
@@ -393,7 +393,7 @@ int main(int argc, char **argv) {
     fclose(fp);
   }
 
-  FILE *f = fopen("/home/tc/mcfs_fops_ret", "w");
+  FILE *f = fopen("/mnt/hgfs/mcfs_shared/ret/mcfs_fops_ret", "w");
   fprintf(f, "%d %d", ret, errno);
   fclose(f);
 

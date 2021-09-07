@@ -23,9 +23,9 @@ proctype worker()
            makelog("BEGIN: create_file\n");
            //mountall();
            for (i = 0; i < N_FS; ++i) {
-               makecall(rets[i], errs[i], "%s, %s, 0%o", create_file_in_vm, vmlist[i], testfiles[i], 0644);
-               // fsfreeze(vmlist[i], fslist[i], devlist[i], basepaths[i]);
-               compute_abstract_state_in_vm(vmlist[i], basepaths[i], absfs[i]);
+               makecall(rets[i], errs[i], "%d, %s, 0%o", create_file_in_vm, i, testfiles[i], 0644);
+               // fsfreeze(i, fslist[i], devlist[i], basepaths[i]);
+               compute_abstract_state_in_vm(i, basepaths[i], absfs[i]);
            }
            expect(compare_equality_fexists(fslist, N_FS, testfiles));
            expect(compare_equality_values(fslist, N_FS, errs));
@@ -47,10 +47,10 @@ proctype worker()
             char *data = malloc(Pworker->writelen);
             generate_data(data, Pworker->writelen, Pworker->writebyte);
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s, %s, %p, %ld, %zu", write_file_in_vm, vmlist[i], testfiles[i], data,
+                makecall(rets[i], errs[i], "%d, %s, %p, %ld, %zu", write_file_in_vm, i, testfiles[i], data,
                          (off_t)Pworker->offset, (size_t)Pworker->writelen);
-                // fsfreeze(vmlist[i], fslist[i], devlist[i], basepaths[i]);
-                compute_abstract_state_in_vm(vmlist[i], basepaths[i], absfs[i]);
+                // fsfreeze(i, fslist[i], devlist[i], basepaths[i]);
+                compute_abstract_state_in_vm(i, basepaths[i], absfs[i]);
             }
 
             free(data);
@@ -72,9 +72,9 @@ proctype worker()
             //mountall();
             // off_t flen = pick_value(0, 200000, 10000);
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s, %s, %ld", truncate_file_in_vm, vmlist[i], testfiles[i], (off_t)Pworker->filelen);
-                // fsfreeze(vmlist[i], fslist[i], devlist[i], basepaths[i]);
-                compute_abstract_state_in_vm(vmlist[i], basepaths[i], absfs[i]);
+                makecall(rets[i], errs[i], "%d, %s, %ld", truncate_file_in_vm, i, testfiles[i], (off_t)Pworker->filelen);
+                // fsfreeze(i, fslist[i], devlist[i], basepaths[i]);
+                compute_abstract_state_in_vm(i, basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, N_FS, testfiles));
             expect(compare_equality_values(fslist, N_FS, rets));
@@ -90,9 +90,9 @@ proctype worker()
             makelog("BEGIN: unlink\n");
             //mountall();
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s, %s", unlink_file_in_vm, vmlist[i], testfiles[i]);
-                // fsfreeze(vmlist[i], fslist[i], devlist[i], basepaths[i]);
-                compute_abstract_state_in_vm(vmlist[i], basepaths[i], absfs[i]);
+                makecall(rets[i], errs[i], "%d, %s", unlink_file_in_vm, i, testfiles[i]);
+                // fsfreeze(i, fslist[i], devlist[i], basepaths[i]);
+                compute_abstract_state_in_vm(i, basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, N_FS, testfiles));
             expect(compare_equality_values(fslist, N_FS, rets));
@@ -108,9 +108,9 @@ proctype worker()
             makelog("BEGIN: mkdir\n");
             //mountall();
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s, %s, 0%o", create_dir_in_vm, vmlist[i], testdirs[i], 0755);
-                // fsfreeze(vmlist[i], fslist[i], devlist[i], basepaths[i]);
-                compute_abstract_state_in_vm(vmlist[i], basepaths[i], absfs[i]);
+                makecall(rets[i], errs[i], "%d, %s, 0%o", create_dir_in_vm, i, testdirs[i], 0755);
+                // fsfreeze(i, fslist[i], devlist[i], basepaths[i]);
+                compute_abstract_state_in_vm(i, basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, N_FS, testdirs));
             expect(compare_equality_values(fslist, N_FS, rets));
@@ -127,9 +127,9 @@ proctype worker()
             makelog("BEGIN: rmdir\n");
             //mountall();
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s, %s", remove_dir_in_vm, vmlist[i], testdirs[i]);
-                // fsfreeze(vmlist[i], fslist[i], devlist[i], basepaths[i]);
-                compute_abstract_state_in_vm(vmlist[i], basepaths[i], absfs[i]);
+                makecall(rets[i], errs[i], "%d, %s", remove_dir_in_vm, i, testdirs[i]);
+                // fsfreeze(i, fslist[i], devlist[i], basepaths[i]);
+                compute_abstract_state_in_vm(i, basepaths[i], absfs[i]);
             }
             expect(compare_equality_fexists(fslist, N_FS, testdirs));
             expect(compare_equality_values(fslist, N_FS, rets));

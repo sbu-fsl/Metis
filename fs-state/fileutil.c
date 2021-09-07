@@ -111,7 +111,7 @@ bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
 retry:
     /* Calculate the abstract file system states */
     for (int i = 0; i < n_fs; ++i) {
-        compute_abstract_state_in_vm(vmlist[i], basepaths[i], absfs[i]);
+        compute_abstract_state_in_vm(i, basepaths[i], absfs[i]);
     }
     /* Compare */
     memcpy(base, absfs[0], sizeof(absfs_state_t));
@@ -155,7 +155,7 @@ bool compare_equality_fexists(const char **fses, int n_fs, char **fpaths)
 
     /* Check file existence */
     for (int i = 0; i < n_fs; ++i)
-        fexists[i] = check_file_existence_in_vm(vmlist[i], fpaths[i]);
+        fexists[i] = check_file_existence_in_vm(i, fpaths[i]);
 
     bool base = fexists[0];
     for (int i = 0; i < n_fs; ++i) {
@@ -181,14 +181,14 @@ bool compare_equality_fcontent(const char **fses, int n_fs, char **fpaths)
         return false;
 
     /* If none of the files exists, return TRUE */
-    if (check_file_existence_in_vm(vmlist[0], fpaths[0]) == false)
+    if (check_file_existence_in_vm(0, fpaths[0]) == false)
         return true;
 
-    system("rm -f /home/ubuntu/files_to_compare/*");
+    system("rm -f /tmp/mcfs_shared/files_to_compare/*");
 
     char path1[256];
-    sprintf(path1, "/home/ubuntu/files_to_compare/%d", 0);
-    if (get_file_from_vm(vmlist[0], fpaths[0], path1) != 0)
+    sprintf(path1, "/tmp/mcfs_shared/files_to_compare/%d", 0);
+    if (get_file_from_vm(0, fpaths[0], path1) != 0)
     {
         logerr("[seqid=%zu] could not obtain file %s from vm %s ",
                 count, fpaths[0], vmlist[0]);
@@ -197,12 +197,12 @@ bool compare_equality_fcontent(const char **fses, int n_fs, char **fpaths)
 
     char path2[256];
     for (int i = 1; i < n_fs; ++i) {
-        sprintf(path1, "/home/ubuntu/files_to_compare/%d", i - 1);
-        sprintf(path2, "/home/ubuntu/files_to_compare/%d", i);
-        if (get_file_from_vm(vmlist[i], fpaths[i], path2) != 0)
+        sprintf(path1, "/tmp/mcfs_shared/files_to_compare/%d", i - 1);
+        sprintf(path2, "/tmp/mcfs_shared/files_to_compare/%d", i);
+        if (get_file_from_vm(i, fpaths[i], path2) != 0)
         {
             logerr("[seqid=%zu] could not obtain file %s from vm %s ",
-                    count, fpaths[i], vmlist[i]);
+                    count, fpaths[i], i);
             //exit(1);
         }
    
@@ -460,12 +460,15 @@ static long update_before_hook(unsigned char *ptr)
     for (int i = 0; i < N_FS; ++i) {
         char name[10];
         sprintf(name, "%d_%zu", i, state_depth);
-        int res = take_vm_snapshot(vmlist[i], name);
+        time_t start = time(NULL);
+        int res = take_vm_snapshot(i, name);
+        makelog("vm take snapshot operation for %s took %ds\n", name, (time(NULL) - start));
         if (res != 0)
         {
             logerr("Failed to take snapshot of vm %s (%s): ret %d",
                     vmlist[i], fslist[i], res);
             //exit(1);
+            return -1;
         }
     /*
         if (!is_verifs(fslist[i]))
@@ -493,20 +496,26 @@ static long revert_before_hook(unsigned char *ptr)
     for (int i = 0; i < N_FS; ++i) {
         char name[10];
         sprintf(name, "%d_%zu", i, state_depth);
-        int res = restore_vm_snapshot(vmlist[i], name);
+        time_t start = time(NULL);
+        int res = restore_vm_snapshot(i, name);
+        makelog("vm restore operation for %s took %ds\n", name, (time(NULL) - start));
         if (res != 0)
         {
             logerr("Failed to restore the vm %s to snapshot %s: ret %d",
                     vmlist[i], name, res);
             //exit(1);
+            return -2;
         }
         else
         {
-            res = delete_vm_snapshot(vmlist[i], name);
+            time_t start2 = time(NULL);
+            res = delete_vm_snapshot(i, name);
+            makelog("vm snapshot delete operation for %s took %ds\n", name, (time(NULL) - start2));
             if (res != 0)
             {
                 logerr("Failed to delete the vm snapshot %s, ret %d", name, res);
                 //exit(1);
+                return -3;
             }
         }
     /*
@@ -547,12 +556,12 @@ static void equalize_free_spaces(void)
     for (int i = 0; i < N_FS; ++i) {
         if (is_verifs(fslist[i]))
             continue;
-        int ret = perform_statfs_in_vm(vmlist[i], basepaths[i]);
+        int ret = perform_statfs_in_vm(i, basepaths[i]);
         if (ret != 0) {
             logerr("cannot statfs %s", basepaths[i]);
             exit(1);
         }
-        size_t free_spc = get_fs_free_space_in_vm(vmlist[i]);
+        size_t free_spc = get_fs_free_space_in_vm(i);
         if (free_spc < min_space)
             min_space = free_spc;
         free_spaces[i] = free_spc;
@@ -563,7 +572,7 @@ static void equalize_free_spaces(void)
         if (is_verifs(fslist[i]))
             continue;
         size_t fillsz = free_spaces[i] - min_space;
-        int ret = write_dummy_file_fs_in_vm(vmlist[i], basepaths[i], fillsz);
+        int ret = write_dummy_file_fs_in_vm(i, basepaths[i], fillsz);
         if (ret == -1)
         {
             logerr("cannot open %s/.mcfs_dummy", basepaths[i]);
@@ -606,8 +615,8 @@ void __attribute__((constructor)) init()
 
     mountall();
     for (int i = 0; i < N_FS; ++i) {
-        set_env_var_in_vm(vmlist[i], "LD_LIBRARY_PATH", "/usr/local/lib");
-        compute_abstract_state_in_vm(vmlist[i], basepaths[i], absfs[i]);
+        set_env_var_in_vm(i, "LD_LIBRARY_PATH", "/usr/local/lib");
+        compute_abstract_state_in_vm(i, basepaths[i], absfs[i]);
     }
     
     /* Initialize log daemon */

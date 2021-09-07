@@ -117,7 +117,7 @@ int get_fs_free_spaces(char *path)
     if (ret == 0)
     {
         size_t free_spc = fsinfo.f_bfree * fsinfo.f_bsize;
-        FILE *f = fopen("/home/tc/fs_free_space", "w");
+        FILE *f = fopen("/mnt/hgfs/mcfs_shared/ret/fs_free_space_ret", "w");
         fprintf(f, "%zu", free_spc);
         fclose(f);
     }
@@ -165,9 +165,22 @@ int main(int argc, char** argv)
         }
         else if (strcmp(op, "write_file") == 0)
         {
-            off_t offset = strtol(argv[4], NULL, 10);
-            size_t length = (size_t) strtoull(argv[5], NULL, 10);
-            ret = write_file(argv[2], argv[3], offset, length);
+            char *data;
+            off_t offset;
+            size_t length;
+            if (argc == 6)
+            {
+                data = argv[3];
+                offset = strtol(argv[4], NULL, 10);
+                length = (size_t) strtoull(argv[5], NULL, 10);
+            }
+            else
+            {
+                data = NULL;
+                offset = strtol(argv[3], NULL, 10);
+                length = (size_t) strtoull(argv[4], NULL, 10);
+            }
+            ret = write_file(argv[2], data, offset, length);
         }
         else if (strcmp(op, "truncate_file") == 0)
         {
@@ -221,7 +234,7 @@ int main(int argc, char** argv)
     }
 
     int err = errno;
-    FILE *f = fopen("/home/tc/mcfs_fops_ret", "w");
+    FILE *f = fopen("/mnt/hgfs/mcfs_shared/ret/mcfs_fops_ret", "w");
     fprintf(f, "%d %d", ret, err);
     fclose(f);
 
