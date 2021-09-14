@@ -557,6 +557,9 @@ static void equalize_free_spaces(void)
 
 void __attribute__((constructor)) init()
 {
+    char output_log_name[NAME_MAX] = {0};
+    char error_log_name[NAME_MAX] = {0};
+    char seq_log_name[NAME_MAX] = {0};
     try_init_myheap();
     setup_filesystems();
     init_basepaths();
@@ -569,7 +572,10 @@ void __attribute__((constructor)) init()
     // setvbuf(stdout, NULL, _IONBF, 0);
     // setvbuf(stderr, NULL, _IONBF, 0);
 
-    init_log_daemon(OUTPUT_LOG_PATH, ERROR_LOG_PATH, SEQ_LOG_PATH);
+    add_ts_to_logname(output_log_name, NAME_MAX, OUTPUT_PREFIX, "");
+    add_ts_to_logname(error_log_name, NAME_MAX, ERROR_PREFIX, "");
+    add_ts_to_logname(seq_log_name, NAME_MAX, SEQ_PREFIX, "");
+    init_log_daemon(output_log_name, error_log_name, seq_log_name);
 
     /* Register hooks */
     c_stack_before = checkpoint_before_hook;
