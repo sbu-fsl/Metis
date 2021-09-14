@@ -203,5 +203,9 @@ int fsfreeze(const char *fstype, const char *devpath, const char *mountpoint);
 int fsthaw(const char *fstype, const char *devpath, const char *mountpoint);
 int unfreeze_all();
 void clear_excluded_files();
+int setup_generic(const char *fsname, const char *devname, const size_t size_kb);
+int setup_jffs2(const char *devname, const size_t size_kb);
+void execute_cmd(const char *cmd);
+void populate_mountpoints();
 
 #endif

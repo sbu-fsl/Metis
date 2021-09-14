@@ -23,6 +23,7 @@
 static const char *fslist[] = {"ext2", "ext4"};
 static const char *fssuffix[] = {"-2", "-3"};
 static const char *devlist[] = {"/dev/ram2", "/dev/ram3"};
+static const size_t devsize_kb[] = {256, 256};
 #define N_FS    nelem(fslist)
 char *basepaths[N_FS];
 char *testdirs[N_FS];

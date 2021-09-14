@@ -354,6 +354,24 @@ static void unmap_devices()
     }
 }
 
+static void setup_filesystems()
+{
+    int ret;
+    populate_mountpoints();
+    for (int i = 0; i < N_FS; ++i) {
+        if (strcmp(fslist[i], "jffs2") == 0) {
+            ret = setup_jffs2(devlist[i], devsize_kb[i]);
+        } else {
+            ret = setup_generic(fslist[i], devlist[i], devsize_kb[i]);
+        }
+        if (ret != 0) {
+            fprintf(stderr, "Cannot setup file system %s (ret = %d)\n",
+                    fslist[i], ret);
+            exit(1);
+        }
+    }
+}
+
 static void init_basepaths()
 {
     /* Initialize base paths */
@@ -540,6 +558,7 @@ static void equalize_free_spaces(void)
 void __attribute__((constructor)) init()
 {
     try_init_myheap();
+    setup_filesystems();
     init_basepaths();
     /* Fill initial abstract states */
     for (int i = 0; i < N_FS; ++i) {

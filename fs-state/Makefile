@@ -7,7 +7,7 @@ PAN = pan
 
 all: demo.pml parameters common-libs absfs-set
 	spin -a demo.pml; \
-	gcc -o $(PAN) pan.c set.o fileutil.c perf.c mount.c common-libs.a $(CFLAGS) $(LIBS); \
+	gcc -o $(PAN) pan.c set.o fileutil.c perf.c mount.c setup.c common-libs.a $(CFLAGS) $(LIBS); \
 
 run: all
 	./pan | less -N; \
