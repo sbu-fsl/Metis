@@ -43,6 +43,8 @@ extern int _n_files;
 extern size_t count;
 extern char *basepaths[];
 extern absfs_set_t absfs_set;
+extern int pan_argc;
+extern char **pan_argv;
 
 struct imghash {
     unsigned char md5[16];

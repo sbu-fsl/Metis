@@ -252,13 +252,16 @@ void seed_rand_with_urandom()
 
 static void __attribute__((constructor)) perf_init()
 {
+    char perf_log_name[NAME_MAX] = {0};
+    const char *progname = pan_argv[0];
     seed_rand_with_urandom();
     get_swaps();
     current_utc_time(&begin_time);
-    perflog_fp = fopen(PERF_LOG_PATH, "w");
+    add_ts_to_logname(perf_log_name, NAME_MAX, PERF_PREFIX, progname, ".csv");
+    perflog_fp = fopen(perf_log_name, "w");
     if (!perflog_fp) {
         fprintf(stderr, "Cannot create or open perf log file at %s (%d)\n",
-                PERF_LOG_PATH, errno);
+                perf_log_name, errno);
         abort();
     }
     curpid = getpid();

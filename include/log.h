@@ -23,6 +23,23 @@ struct log_entry {
     char *content;
 };
 
+// Get a string of current date and time in the format of yyyymmdd-hhmmss
+static inline void get_datetime_stamp(char *strbuf, size_t maxlen) {
+  time_t now;
+  struct tm now_tm;
+  now = time(NULL);
+  gmtime_r(&now, &now_tm);
+  strftime(strbuf, maxlen, "%Y%m%d-%H%M%S", &now_tm);
+}
+
+static inline void add_ts_to_logname(char *strbuf, size_t maxlen,
+    const char *logname, const char *progname, const char *suffix) {
+  // yyyymmdd-hhmmss'\0' -> total 16 characters
+  char tsbuf[16] = {0};
+  get_datetime_stamp(tsbuf, 16);
+  snprintf(strbuf, maxlen, "%s-%s-%s%s", logname, progname, tsbuf, suffix);
+}
+
 int submit_log(struct logger *dest, const char *fmt, ...);
 int submit_message(const char *fmt, ...);
 int vsubmit_message(const char *fmt, va_list args);

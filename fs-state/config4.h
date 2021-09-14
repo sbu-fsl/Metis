@@ -7,11 +7,11 @@
  * in order to avoid false discrepancy in open() tests */
 #define MAX_OPENED_FILES 192
 /* The file name of or the path to the performance log */
-#define PERF_LOG_PATH    "perf4.csv"
+#define PERF_PREFIX      "perf"
 /* The name of or the path to the logs (without .log suffix) */
-#define SEQ_LOG_PATH     "sequence4"
-#define OUTPUT_LOG_PATH  "output4"
-#define ERROR_LOG_PATH   "error4"
+#define SEQ_PREFIX       "sequence"
+#define OUTPUT_PREFIX    "output"
+#define ERROR_PREFIX     "error"
 /* Interval of perf metrics logging (in secs) */
 #define PERF_INTERVAL    5
 /* Max length of function name in log */
