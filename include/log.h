@@ -37,7 +37,8 @@ static inline void add_ts_to_logname(char *strbuf, size_t maxlen,
   // yyyymmdd-hhmmss'\0' -> total 16 characters
   char tsbuf[16] = {0};
   get_datetime_stamp(tsbuf, 16);
-  snprintf(strbuf, maxlen, "%s-%s-%s%s", logname, progname, tsbuf, suffix);
+  snprintf(strbuf, maxlen, "%s-%s-%s-%d%s", logname, progname, tsbuf, getpid(),
+           suffix);
 }
 
 int submit_log(struct logger *dest, const char *fmt, ...);
