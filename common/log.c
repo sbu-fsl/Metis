@@ -269,3 +269,31 @@ void init_log_daemon(const char *output_log_name, const char *err_log_name,
     pthread_mutex_init(&loglock, NULL);
 }
 
+ssize_t get_progname(char *outbuf)
+{
+    int fd;
+    char buffer[PATH_MAX + 1] = {0};
+    ssize_t readres, ret = 0;
+    ssize_t starti = 0, endi;
+
+    fd = open("/proc/self/cmdline", O_RDONLY);
+    if (fd < 0)
+        return -errno;
+    
+    readres = read(fd, buffer, PATH_MAX);
+    close(fd);
+
+    if (readres < 0)
+        return -errno;
+
+    // find the first NULL terminator
+    for (endi = 0; endi <= PATH_MAX && buffer[endi]; ++endi);
+    // find the last slash
+    for (starti = endi; starti >= 0 && buffer[starti] != '/'; --starti);
+    // copy the progname to outbuf
+    for (ssize_t i = starti + 1; i <= endi; ++i, ++ret) {
+        *outbuf = buffer[i];
+        outbuf++;
+    }
+    return ret;
+}

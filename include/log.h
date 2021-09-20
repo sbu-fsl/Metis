@@ -52,6 +52,7 @@ void make_logger(struct logger *lgr, const char *name, FILE *default_fp);
 void init_log_daemon(const char *output_log_name, const char *err_log_name,
         const char *seq_name);
 void destroy_log_daemon();
+ssize_t get_progname(char *outbuf);
 
 #ifdef __cplusplus
 }

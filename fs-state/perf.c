@@ -253,7 +253,13 @@ void seed_rand_with_urandom()
 static void __attribute__((constructor)) perf_init()
 {
     char perf_log_name[NAME_MAX] = {0};
-    const char *progname = pan_argv[0];
+    char progname[NAME_MAX] = {0};
+    ssize_t progname_len = get_progname(progname);
+    if (progname_len < 0) {
+        fprintf(stderr, "Cannot retrieve prog name: %s (%ld)\n",
+                errnoname(-progname_len), progname_len);
+        exit(1);
+    }
     seed_rand_with_urandom();
     get_swaps();
     current_utc_time(&begin_time);

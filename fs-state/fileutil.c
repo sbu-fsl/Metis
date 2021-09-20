@@ -113,6 +113,20 @@ retry:
     for (int i = 0; i < n_fs; ++i) {
         compute_abstract_state(basepaths[i], absfs[i]);
     }
+    /* New: record abstract states in the main log */
+    static size_t prev_seqid = 0;
+    if (prev_seqid != count) {
+        char abs_state_str[33] = {0};
+        char *strp = abs_state_str;
+        for (int i = 0; i < 16; ++i) {
+            // second arg of snprintf: count the null-terminator. However, the
+    	    // return value does not include the terminator.
+            size_t res = snprintf(strp, 3, "%0x", absfs[0][i]);
+            strp += res;
+        }
+        makelog("absfs = {%s}\n", abs_state_str);
+        prev_seqid = count;
+    }
     /* Compare */
     memcpy(base, absfs[0], sizeof(absfs_state_t));
     for (int i = 1; i < n_fs; ++i) {
@@ -560,7 +574,8 @@ void __attribute__((constructor)) init()
     char output_log_name[NAME_MAX] = {0};
     char error_log_name[NAME_MAX] = {0};
     char seq_log_name[NAME_MAX] = {0};
-    const char *progname = pan_argv[0];
+    char progname[NAME_MAX] = {0};
+    ssize_t progname_len;
     try_init_myheap();
     setup_filesystems();
     init_basepaths();
@@ -572,6 +587,13 @@ void __attribute__((constructor)) init()
     /* Initialize log daemon */
     // setvbuf(stdout, NULL, _IONBF, 0);
     // setvbuf(stderr, NULL, _IONBF, 0);
+
+    progname_len = get_progname(progname);
+    if (progname_len < 0) {
+        fprintf(stderr, "Cannot get cmdline and program name: (%s:%ld)\n",
+                errnoname(-progname_len), progname_len);
+        exit(1);
+    }
 
     add_ts_to_logname(output_log_name, NAME_MAX, OUTPUT_PREFIX, progname, "");
     add_ts_to_logname(error_log_name, NAME_MAX, ERROR_PREFIX, progname, "");
