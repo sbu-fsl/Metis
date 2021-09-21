@@ -117,5 +117,8 @@ void populate_mountpoints()
         snprintf(cmdbuf, PATH_MAX, "mkdir -p /mnt/test-%s%s", fslist[i],
                  fssuffix[i]);
         execute_cmd(cmdbuf);
+        snprintf(cmdbuf, PATH_MAX, "umount -f /mnt/test-%s%s || true",
+                 fslist[i], fssuffix[i]);
+        execute_cmd(cmdbuf);
     }
 }
