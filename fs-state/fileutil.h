@@ -197,7 +197,7 @@ void fsimg_checkpoint(const char *mntpoint);
 void closeall();
 void cleanup();
 void mountall();
-void unmount_all();
+void unmount_all(bool strict);
 void record_fs_stat();
 void start_perf_metrics_thread();
 bool do_fsck();
@@ -209,5 +209,15 @@ int setup_generic(const char *fsname, const char *devname, const size_t size_kb)
 int setup_jffs2(const char *devname, const size_t size_kb);
 void execute_cmd(const char *cmd);
 void populate_mountpoints();
+
+static inline void unmount_all_strict()
+{
+    unmount_all(true);
+}
+
+static inline void unmount_all_relaxed()
+{
+    unmount_all(false);
+}
 
 #endif

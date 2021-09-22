@@ -249,7 +249,7 @@ int main(int argc, char **argv)
 			printf("Unrecognized op: %s\n", funcname);
 		}
 		seq++;
-		unmount_all();
+		unmount_all_strict();
 		if (flag_ckpt)
 			checkpoint();
 		if (flag_restore)

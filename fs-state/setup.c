@@ -117,6 +117,6 @@ void populate_mountpoints()
         snprintf(cmdbuf, PATH_MAX, "mkdir -p /mnt/test-%s%s", fslist[i],
                  fssuffix[i]);
         execute_cmd(cmdbuf);
-        unmount_all();
+        unmount_all_relaxed();
     }
 }

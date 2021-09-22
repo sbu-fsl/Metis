@@ -82,7 +82,7 @@ err:
     exit(1);
 }
 
-void unmount_all()
+void unmount_all(bool strict)
 {
     bool has_failure = false;
     int ret;
@@ -115,7 +115,7 @@ try_unmount:
             has_failure = true;
         }
     }
-    if (has_failure)
+    if (has_failure && strict)
         exit(1);
 }
 

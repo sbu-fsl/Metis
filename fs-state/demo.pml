@@ -30,7 +30,7 @@ proctype worker()
            expect(compare_equality_fexists(fslist, N_FS, testdirs));
            expect(compare_equality_values(fslist, N_FS, errs));
            expect(compare_equality_absfs(fslist, N_FS, absfs));
-           unmount_all();
+           unmount_all_strict();
            makelog("END: create_file\n");
        };
     };
@@ -58,7 +58,7 @@ proctype worker()
             expect(compare_equality_values(fslist, N_FS, errs));
             expect(compare_equality_fcontent(fslist, N_FS, testfiles));
             expect(compare_equality_absfs(fslist, N_FS, absfs));
-            unmount_all();
+            unmount_all_strict();
             makelog("END: write_file\n");
         };
     };
@@ -80,7 +80,7 @@ proctype worker()
             expect(compare_equality_values(fslist, N_FS, rets));
             expect(compare_equality_values(fslist, N_FS, errs));
             expect(compare_equality_absfs(fslist, N_FS, absfs));
-            unmount_all();
+            unmount_all_strict();
             makelog("END: truncate\n");
         };
     };
@@ -98,7 +98,7 @@ proctype worker()
             expect(compare_equality_values(fslist, N_FS, rets));
             expect(compare_equality_values(fslist, N_FS, errs));
             expect(compare_equality_absfs(fslist, N_FS, absfs));
-            unmount_all();
+            unmount_all_strict();
             makelog("END: unlink\n");
         }
     };
@@ -116,7 +116,7 @@ proctype worker()
             expect(compare_equality_values(fslist, N_FS, rets));
             expect(compare_equality_values(fslist, N_FS, errs));
             expect(compare_equality_absfs(fslist, N_FS, absfs));
-            unmount_all();
+            unmount_all_strict();
             makelog("END: mkdir\n");
         }
         // assert(! c_expr{ errs[0] == EEXIST && errs[1] == EEXIST && errs[2] == 0 });
@@ -135,7 +135,7 @@ proctype worker()
             expect(compare_equality_values(fslist, N_FS, rets));
             expect(compare_equality_values(fslist, N_FS, errs));
             expect(compare_equality_absfs(fslist, N_FS, absfs));
-            unmount_all();
+            unmount_all_strict();
             makelog("END: rmdir\n");
         }
     };

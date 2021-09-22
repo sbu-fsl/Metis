@@ -566,7 +566,7 @@ static void equalize_free_spaces(void)
         }
         close(fd);
     }
-    unmount_all();
+    unmount_all_strict();
 }
 
 void __attribute__((constructor)) init()
