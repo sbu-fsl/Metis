@@ -577,8 +577,8 @@ void __attribute__((constructor)) init()
     char progname[NAME_MAX] = {0};
     ssize_t progname_len;
     try_init_myheap();
-    setup_filesystems();
     init_basepaths();
+    setup_filesystems();
     /* Fill initial abstract states */
     for (int i = 0; i < N_FS; ++i) {
         compute_abstract_state(basepaths[i], absfs[i]);
