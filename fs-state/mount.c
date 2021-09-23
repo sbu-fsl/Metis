@@ -103,10 +103,12 @@ try_unmount:
         if (ret != 0) {
             /* If unmounting failed due to device being busy, wait 1ms and
              * try again up to retry_limit times */
+            useconds_t waitms = (1 << (10 - retry_limit));
             if (errno == EBUSY && retry_limit > 0) {
                 fprintf(stderr, "File system %s mounted on %s is busy. Retry "
-                        "unmounting after 1ms.\n", fslist[i], basepaths[i]);
-                usleep(1000);
+                        "unmounting after %dms.\n", fslist[i], basepaths[i],
+                        waitms);
+                usleep(1000 * waitms);
                 retry_limit--;
                 goto try_unmount;
             }
