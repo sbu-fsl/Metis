@@ -163,6 +163,11 @@ setup_zfs() {
     runcmd zfs set mountpoint=legacy mcfszpool
     runcmd zfs create mcfszpool/fs1
     mount -t zfs mcfszpool/fs1 /mnt/test-zfs
+    sudo zfs snapshot mcfszpool/fs1@testsnap_dummy
+    sudo zpool create zpooltest /dev/sdb;
+    sudo zfs create zpooltest/fs;
+    sudo zfs send mcfszpool/fs1@testsnap_dummy | sudo zfs receive -F zpooltest/fs
+
     #mount -t zfs mcfszpool/fs1 /mnt/test-zfs-ramblkdev
     #zfs create mcfszpool
     #zfs set mountpoint=legacy mcfszpool
@@ -170,7 +175,8 @@ setup_zfs() {
 }
 
 unset_zfs() {
-    runcmd zpool destroy mcfszpool
+    #runcmd zpool destroy mcfszpool
+    :
 }
 
 

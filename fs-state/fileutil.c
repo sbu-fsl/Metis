@@ -81,7 +81,9 @@ bool compare_equality_values(const char **fses, int n_fs, int *nums)
 {
     bool res = true;
     int base = nums[0];
+    //logwarn("Comparing equality values %zu", n_fs);
     for (int i = 0; i < n_fs; ++i) {
+        logwarn("testrun : [%s]: %d", fses[i], nums[i]);
         if (nums[i] != base) {
             res = false;
             break;
@@ -89,6 +91,7 @@ bool compare_equality_values(const char **fses, int n_fs, int *nums)
     }
     if (!res) {
         logwarn("[seqid=%zu] discrepancy in values found:", count);
+        logwarn("Comparing equality values %zu", n_fs);
         for (int i = 0; i < n_fs; ++i)
             logwarn("[%s]: %d", fses[i], nums[i]);
     }
@@ -373,7 +376,22 @@ static int checkpoint_zfs(size_t key, const char *mp)
         logerr("Cannot open mountpoint %s", mp);
         return errno;
     }
+
     char cmd[ARG_MAX] = {0};
+
+
+    snprintf(cmd, ARG_MAX, "sudo ./sstest.sh c %zu", key);
+ 
+    int ret = system(cmd);
+    
+    if (ret == -1 || WEXITSTATUS(ret) != 0){
+        char buf[BUFSIZ];
+        setbuf(stderr, buf);
+
+        logerr("Cannot perform checkpoint at %s", mp);
+        ret = errno;
+    }
+    /*
     snprintf(cmd, ARG_MAX, "zfs snapshot mcfszpool/fs1@testsnap%zu", key);
     int ret = system(cmd);
     
@@ -384,7 +402,26 @@ static int checkpoint_zfs(size_t key, const char *mp)
         logerr("Cannot perform checkpoint at %s", mp);
         ret = errno;
     }
+   
+    //incremental send. If it fails, send onlt the top one.
+    //snprintf(cmd, ARG_MAX, "ss1=$(zfs list -t snapshot -o name | grep mcfszpool/fs1@testsnap | tac | tail -n +2); ss2=$(zfs list -t snapshot -o name | grep zpooltest/fs1@testsnap | tac | tail -n +1); sudo zfs send -i $ss1 $ss2 | sudo  zfs recv zpooltest/fs > incrementalsend_err_file");
+   
+    snprintf(cmd, ARG_MAX, "key=%zu; sudo zfs snapshot mcfszpool/fs1@testsnap$key; ss1=$(zfs list -t snapshot -o name | grep mcfszpool/fs1@testsnap | tac | tail -n +2); if [ "$ss1" != "" ]; then sudo zfs send -i $ss1 mcfszpool/fs1@testsnap$key | sudo  zfs recv zpooltest/fs;  else  sudo zfs send mcfszpool/fs1@testsnap$key | sudo  zfs recv zpooltest/fs; fi  if [ "$ss1" != "" ]; then  sudo zfs destroy $ss1  fi  ", key);   
+
+    logerr("zfs incremental send command is %s", cmd);
+    //snprintf(cmd, ARG_MAX, "zfs send ", key);
+    ret = system(cmd);
+
+    if (ret == -1 || WEXITSTATUS(ret) != 0){
+        char buf[BUFSIZ];
+        setbuf(stderr, buf);
+        logerr("Cannot perform checkpoint at %s", mp);
+        ret = errno;
+    }
+
     close(mpfd);
+    */
+    //sleep(3);
     return ret;
 }
 
@@ -397,6 +434,19 @@ static int restore_zfs(size_t key, const char *mp)
         return errno;
     }
     char cmd[ARG_MAX] = {0};
+    
+    snprintf(cmd, ARG_MAX, "sudo ./sstest.sh r %zu", key);
+ 
+    int ret = system(cmd);
+    
+    if (ret == -1 || WEXITSTATUS(ret) != 0){
+        char buf[BUFSIZ];
+        setbuf(stderr, buf);
+
+        logerr("Cannot perform checkpoint at %s", mp);
+        ret = errno;
+    }
+    /*
     snprintf(cmd, ARG_MAX, "zfs rollback -r mcfszpool/fs1@testsnap%zu", key);
     int ret = system(cmd);
     if (ret  == -1 || WEXITSTATUS(ret) != 0){
@@ -410,8 +460,9 @@ static int restore_zfs(size_t key, const char *mp)
         logerr("Cannot perform restore at %s with key %zu", mp, key);
         ret = errno;
     }
-
+    */
     close(mpfd);
+    //sleep(3);
     return ret;
 }
 

@@ -27,9 +27,9 @@ common-libs: $(COMMON_OBJ)
 absfs-set: set.cpp
 	g++ -std=c++11 -o set.o -c $< $(CFLAGS) $(LIBS)
 	
-abstractfs-test: $(COMMON_DIR)/abstract_fs.cpp common-libs
-	g++ -std=c++11 -g -Wall -Werror -o absfs $< common-libs.a -DABSFS_TEST \
-		-I../include -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lprofiler
+abstractfs-test: $(COMMON_DIR)/abstract_fs.cpp
+	g++ -std=c++11 -g -Wall -Werror -o absfs $< -DABSFS_TEST \
+		-I../include -lssl -lcrypto -lrt -lstdc++ -lstdc++fs
 
 replayer: replay.c mount.c common-libs
 	gcc -o replay replay.c mount.c \
