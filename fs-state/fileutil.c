@@ -81,9 +81,7 @@ bool compare_equality_values(const char **fses, int n_fs, int *nums)
 {
     bool res = true;
     int base = nums[0];
-    //logwarn("Comparing equality values %zu", n_fs);
     for (int i = 0; i < n_fs; ++i) {
-        logwarn("testrun : [%s]: %d", fses[i], nums[i]);
         if (nums[i] != base) {
             res = false;
             break;
@@ -91,7 +89,6 @@ bool compare_equality_values(const char **fses, int n_fs, int *nums)
     }
     if (!res) {
         logwarn("[seqid=%zu] discrepancy in values found:", count);
-        logwarn("Comparing equality values %zu", n_fs);
         for (int i = 0; i < n_fs; ++i)
             logwarn("[%s]: %d", fses[i], nums[i]);
     }

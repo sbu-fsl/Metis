@@ -161,10 +161,12 @@ setup_zfs() {
     #runcmd zpool create mcfszpool $DEVFILE
     runcmd zpool create mcfszpool $DEVFILE
     runcmd zfs set mountpoint=legacy mcfszpool
+    runcmd zfs set compression=lz4 mcfszpool
     runcmd zfs create mcfszpool/fs1
     mount -t zfs mcfszpool/fs1 /mnt/test-zfs
     sudo zfs snapshot mcfszpool/fs1@testsnap_dummy
     sudo zpool create zpooltest /dev/sdb;
+    runcmd zfs set compression=lz4 zpooltest
     sudo zfs create zpooltest/fs;
     sudo zfs send mcfszpool/fs1@testsnap_dummy | sudo zfs receive -F zpooltest/fs
 
