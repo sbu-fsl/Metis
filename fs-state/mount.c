@@ -82,6 +82,21 @@ err:
     exit(1);
 }
 
+static void save_lsof()
+{
+    int ret;
+    static int report_count = 0;
+    char progname[NAME_MAX] = {0};
+    char logname[NAME_MAX] = {0};
+    char cmd[PATH_MAX] = {0};
+
+    get_progname(progname);
+    add_ts_to_logname(logname, NAME_MAX, "lsof", progname, "");
+    ret = snprintf(cmd, PATH_MAX, "lsof > %s-%d.txt", logname, report_count++);
+    assert(ret >= 0);
+    ret = system(cmd);
+}
+
 void unmount_all(bool strict)
 {
     bool has_failure = false;
@@ -110,6 +125,7 @@ try_unmount:
                         waitms);
                 usleep(1000 * waitms);
                 retry_limit--;
+                save_lsof();
                 goto try_unmount;
             }
             fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
