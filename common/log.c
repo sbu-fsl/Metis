@@ -41,7 +41,7 @@ static void logrotate(struct logger *lgr)
     snprintf(logpath1, PATH_MAX, "%s.log", lgr->name);
     /* Rename <name>.log to <name>.N.log where N is the first unused integer */
     while (1) {
-        char compr_cmd[PATH_MAX] = {0};
+        char compr_cmd[ARG_MAX] = {0};
         snprintf(logpath2, PATH_MAX, "%s.%d.log.gz", lgr->name, N);
         if (access(logpath2, F_OK) == 0) {
             N++;
@@ -56,7 +56,7 @@ static void logrotate(struct logger *lgr)
         assert(ret == 0);
         /* Compress the rotated log */
         snprintf(compr_cmd, PATH_MAX + 8, "gzip %s &", logpath2);
-        system(compr_cmd);
+        ret = system(compr_cmd);
         break;
     }
     /* Reopen log file */
