@@ -116,9 +116,9 @@ void unmount_all(bool strict)
 try_unmount:
         ret = umount2(basepaths[i], 0);
         if (ret != 0) {
-            /* If unmounting failed due to device being busy, wait 1ms and
-             * try again up to retry_limit times */
-            useconds_t waitms = (1 << (10 - retry_limit));
+            /* If unmounting failed due to device being busy, again up to
+             * retry_limit times with 100 * 2^n ms (n = num_retries) */
+            useconds_t waitms = (100 << (10 - retry_limit));
             if (errno == EBUSY && retry_limit > 0) {
                 fprintf(stderr, "File system %s mounted on %s is busy. Retry "
                         "unmounting after %dms.\n", fslist[i], basepaths[i],
