@@ -107,7 +107,7 @@ void unmount_all(bool strict)
     for (int i = 0; i < N_FS; ++i) {
         if (is_verifs(fslist[i]))
             continue;
-        int retry_limit = 10;
+        int retry_limit = 20;
         /* We have to unfreeze the frozen file system before unmounting it.
          * Otherwise the system will hang! */
         if (fs_frozen[i]) {
