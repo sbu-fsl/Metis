@@ -41,7 +41,11 @@ extern "C" {
     typedef int (*printer_t)(const char *fmt, ...);
 
     struct abstract_fs {
-        XXH3_state_t *state;
+        #ifdef USE_MD5
+            MD5_CTX state;
+        #else
+            XXH3_state_t *state;
+        #endif
         absfs_state_t hash;
     };
 
@@ -63,7 +67,7 @@ extern "C" {
      */
     static inline uint32_t get_state_prefix(absfs_t *absfs) {
         uint32_t prefix;
-        memcpy(&prefix, absfs->state, sizeof(uint32_t));
+        memcpy(&prefix, &absfs->state, sizeof(uint32_t));
         return prefix;
     }
 
@@ -116,7 +120,7 @@ struct AbstractFile {
      * MD5 context object. */
     printer_t printer;
 
-    void FeedHasher(XXH3_state_t *state);
+    void FeedHasher(absfs_t *absfs);
 
     bool CheckValidity();
 

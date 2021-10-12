@@ -59,7 +59,7 @@ static inline bool is_this_or_parent(const char *name) {
  * @return: 0 for success, +1 for MD5_Update failure,
  *          negative number for error status of open() or read()
  */
-static int hash_file_content(AbstractFile *file, XXH3_state_t *state) {
+static int hash_file_content(AbstractFile *file, absfs_t *absfs) {
     const char *fullpath = file->fullpath.c_str();
     int fd = file->Open(O_RDONLY);
     char buffer[4096] = {0};
@@ -72,8 +72,11 @@ static int hash_file_content(AbstractFile *file, XXH3_state_t *state) {
     }
 
     while ((readsize = file->Read(fd, buffer, 4096)) > 0) {
-        //ret = MD5_Update(md5ctx, buffer, readsize);
-        ret = (XXH3_128bits_update(state, buffer, readsize) != XXH_ERROR);
+        #ifdef USE_MD5
+            ret = MD5_Update(&absfs->state, buffer, readsize);
+        #else
+            ret = (XXH3_128bits_update(absfs->state, buffer, readsize) != XXH_ERROR);
+        #endif
         memset(buffer, 0, sizeof(buffer));
         /* MD5_Update returns 0 for failure and 1 for success.
          * However, we want 0 for success and other values for error.
@@ -179,14 +182,14 @@ static int walk(const char *path, const char *abstract_path, absfs_t *fs,
             verbose_printer("nlink=%ld, uid=%d, gid=%d\n", file.attrs.nlink,
                             file.attrs.uid, file.attrs.gid);
         }
-        file.FeedHasher(fs->state);
+        file.FeedHasher(fs);
         // file.CheckValidity();
     }
 
     return 0;
 }
 
-void AbstractFile::FeedHasher(XXH3_state_t *state) {
+void AbstractFile::FeedHasher(absfs_t *absfs) {
     const char *abspath = abstract_path.c_str();
     size_t pathlen = strnlen(abspath, PATH_MAX);
 
@@ -201,14 +204,16 @@ void AbstractFile::FeedHasher(XXH3_state_t *state) {
         attrs.nlink = 0;
     }
 
-    XXH3_128bits_update(state, abspath, pathlen);
-    XXH3_128bits_update(state, &attrs, sizeof(attrs));
-
-    //MD5_Update(state, abspath, pathlen);
-    //MD5_Update(state, &attrs, sizeof(attrs));
+    #ifdef USE_MD5
+        MD5_Update(&absfs->state, abspath, pathlen);
+        MD5_Update(&absfs->state, &attrs, sizeof(attrs));
+    #else
+        XXH3_128bits_update(absfs->state, abspath, pathlen);
+        XXH3_128bits_update(absfs->state, &attrs, sizeof(attrs));
+    #endif
 
     if (S_ISREG(attrs.mode))
-        hash_file_content(this, state);
+        hash_file_content(this, absfs);
 
     /* Assign value back after use */
     attrs.size = fsize;
@@ -309,11 +314,13 @@ int AbstractFile::Closedir(DIR *dirp) {
  */
 void init_abstract_fs(absfs_t *absfs) {
     ProfilerEnable();
-    //MD5_Init(&absfs->ctx);
+    #ifdef USE_MD5
+    MD5_Init(&absfs->state);
+    #else
     absfs->state = XXH3_createState();
-    memset(absfs->hash, 0, sizeof(absfs->hash));
-
     if (XXH3_128bits_reset(absfs->state) == XXH_ERROR) abort();
+    #endif
+    memset(absfs->hash, 0, sizeof(absfs->hash));
 }
 
 /**
@@ -329,9 +336,14 @@ void init_abstract_fs(absfs_t *absfs) {
 int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
                      printer_t verbose_printer) {
     int ret = walk(basepath, "/", absfs, verbose, verbose_printer);
-    //MD5_Final(absfs->state, &absfs->ctx);
+
+    #ifdef USE_MD5
+    MD5_Final(absfs->hash, &absfs->state);
+    #else
     XXH128_hash_t const hash = XXH3_128bits_digest(absfs->state);
     memcpy(&absfs->hash, &hash, sizeof(hash));
+    #endif
+
     return ret;
 }
 
@@ -390,7 +402,7 @@ int main(int argc, char **argv) {
   } else {
     basepath = getenv("HOME");
   }
-
+  ProfilerStart("out.prof");
   init_abstract_fs(&absfs);
 
   printf("Iterating directory '%s'...\n", basepath);
@@ -404,7 +416,7 @@ int main(int argc, char **argv) {
     print_abstract_fs_state(printf, absfs.hash);
     printf("\n");
   }
-
+  ProfilerStop();
   return ret;
 }
 
