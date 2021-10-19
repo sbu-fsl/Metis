@@ -36,16 +36,18 @@
 extern "C" {
 #endif
 #include <xxhash.h>
+#include <zlib.h>
 
     typedef unsigned char absfs_state_t[16];
     typedef int (*printer_t)(const char *fmt, ...);
 
     struct abstract_fs {
-        #ifdef USE_MD5
-            MD5_CTX state;
-        #else
-            XXH3_state_t *state;
-        #endif
+        uint hash_option;
+        union{
+            XXH3_state_t *xxh_state;
+            MD5_CTX md5_state;
+            uLong crc32_state;
+        };
         absfs_state_t hash;
     };
 
@@ -54,7 +56,7 @@ extern "C" {
     void init_abstract_fs(absfs_t *absfs);
     int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
                          printer_t verbose_printer);
-    void print_abstract_fs_state(printer_t printer, absfs_state_t state);
+    void print_abstract_fs_state(printer_t printer, const absfs_state_t state);
     void print_filemode(printer_t printer, mode_t mode);
 
     /**
@@ -67,7 +69,7 @@ extern "C" {
      */
     static inline uint32_t get_state_prefix(absfs_t *absfs) {
         uint32_t prefix;
-        memcpy(&prefix, &absfs->state, sizeof(uint32_t));
+        memcpy(&prefix, &absfs->md5_state, sizeof(uint32_t));
         return prefix;
     }
 
@@ -138,7 +140,7 @@ struct AbstractFile {
     int Closedir(DIR *dirp);
 
 private:
-    void retry_warning(std::string funcname, std::string cond, int retry_count);
+    void retry_warning(const std::string& funcname, const std::string& cond, int retry_count) const;
 };
 
 #define DEFINE_SYSCALL_WITH_RETRY(ret_type, func, ...) \
