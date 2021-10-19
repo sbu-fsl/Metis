@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FSLIST=(ext4 jffs2)
+FSLIST=(verifs2 nfs)
 DEVLIST=(/dev/ram0 /dev/mtdblock0)
 LOOPDEVS=()
 verbose=0
@@ -148,6 +148,31 @@ setup_xfs() {
 
 unset_xfs() {
     :
+}
+
+setup_verifs2() {
+    pushd .
+    if [ -d /mnt/test-verifs2 ]; then
+        rm -rf /mnt/test-verifs2/*
+    fi
+
+    cd ../../fuse-cpp-ramfs
+    mkdir -p build
+    cd build
+    cmake ../src
+    make && make install
+    fuse-cpp-ramfs /mnt/test-verifs2 &
+    popd
+}
+
+unset_verifs2() {
+    mount | grep /mnt/test-verifs2
+    if [ $? -eq 0 ]; then
+        runcmd cd ../../fuse-cpp-ramfs/ && fusermount -u /mnt/test-verifs2
+        if [ $? -ne 0 ]; then
+            echo "Unable to unmount verifs2. fusermount -u /mnt/test-verifs2 exited with error ($rc)." >&2;
+        fi
+    fi
 }
 
 generic_cleanup() {
