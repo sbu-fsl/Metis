@@ -87,7 +87,7 @@ static int hash_file_content(AbstractFile *file, absfs_t *absfs) {
             }
             case 3: {
                 ret = (int)
-                        (absfs->crc32_state = crc32((uLong) & absfs->crc32_state, (const Bytef *) buffer,
+                        (absfs->crc32_state = crc32((uLong) absfs->crc32_state, (const Bytef *) buffer,
                                                     (uInt) readsize));
                 break;
             }
@@ -238,7 +238,7 @@ void AbstractFile::FeedHasher(absfs_t *absfs) {
             break;
         }
         case 3: {
-            absfs->crc32_state = crc32((uLong) & absfs->crc32_state, (const Bytef *) abspath, (uInt) pathlen);
+            absfs->crc32_state = crc32((uLong) absfs->crc32_state, (const Bytef *) abspath, (uInt) pathlen);
             break;
         }
     }
