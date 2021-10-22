@@ -42,7 +42,7 @@ extern "C" {
     typedef int (*printer_t)(const char *fmt, ...);
 
     struct abstract_fs {
-        uint hash_option;
+        unsigned int hash_option;
         union{
             XXH3_state_t *xxh_state;
             MD5_CTX md5_state;
