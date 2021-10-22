@@ -41,6 +41,8 @@ extern "C" {
     typedef unsigned char absfs_state_t[16];
     typedef int (*printer_t)(const char *fmt, ...);
 
+    enum hash_type{xxh128_t, xxh3_t, md5_t,crc32_t};
+
     struct abstract_fs {
         unsigned int hash_option;
         union{

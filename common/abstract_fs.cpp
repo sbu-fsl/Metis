@@ -222,23 +222,24 @@ void AbstractFile::FeedHasher(absfs_t *absfs) {
     }
 
     switch (absfs->hash_option) {
-        case 0: {
+        case xxh128_t: {
             XXH3_128bits_update(absfs->xxh_state, abspath, pathlen);
             XXH3_128bits_update(absfs->xxh_state, &attrs, sizeof(attrs));
             break;
         }
-        case 1: {
+        case xxh3_t: {
             XXH3_64bits_update(absfs->xxh_state, abspath, pathlen);
             XXH3_64bits_update(absfs->xxh_state, &attrs, sizeof(attrs));
             break;
         }
-        case 2: {
+        case md5_t: {
             MD5_Update(&absfs->md5_state, abspath, pathlen);
             MD5_Update(&absfs->md5_state, &attrs, sizeof(attrs));
             break;
         }
-        case 3: {
+        case crc32_t: {
             absfs->crc32_state = crc32((uLong) absfs->crc32_state, (const Bytef *) abspath, (uInt) pathlen);
+            absfs->crc32_state = crc32((uLong) absfs->crc32_state, (const Bytef *) &attrs, (uInt) sizeof(attrs));
             break;
         }
     }
@@ -347,21 +348,21 @@ void init_abstract_fs(absfs_t *absfs) {
     ProfilerEnable();
     //0:xxh128,1:xxh3,2:md5,3:crc64
     switch (absfs->hash_option) {
-        case 0: {
+        case xxh128_t: {
             absfs->xxh_state = XXH3_createState();
             if (XXH3_64bits_reset(absfs->xxh_state) == XXH_ERROR) abort();
             break;
         }
-        case 1: {
+        case xxh3_t: {
             absfs->xxh_state = XXH3_createState();
             if (XXH3_128bits_reset(absfs->xxh_state) == XXH_ERROR) abort();
             break;
         }
-        case 2: {
+        case md5_t: {
             MD5_Init(&absfs->md5_state);
             break;
         }
-        case 3: {
+        case crc32_t: {
             break;
         }
     }
@@ -383,21 +384,21 @@ int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
     int ret = walk(basepath, "/", absfs, verbose, verbose_printer);
     //0:xxh128,1:xxh3,2:md5,3:crc64
     switch (absfs->hash_option) {
-        case 0: {
+        case xxh128_t: {
             XXH128_hash_t const hash = XXH3_128bits_digest(absfs->xxh_state);
             memcpy(&absfs->state, &hash, sizeof(hash));
             break;
         }
-        case 1: {
+        case xxh3_t: {
             XXH64_hash_t const hash = XXH3_64bits_digest(absfs->xxh_state);
             memcpy(&absfs->state, &hash, sizeof(hash));
             break;
         }
-        case 2: {
+        case md5_t: {
             MD5_Final(absfs->state, &absfs->md5_state);
             break;
         }
-        case 3: {
+        case crc32_t: {
             memcpy(&absfs->state, &absfs->crc32_state, sizeof(absfs->crc32_state));
             break;
         }
