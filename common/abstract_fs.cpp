@@ -73,19 +73,19 @@ static int hash_file_content(AbstractFile *file, absfs_t *absfs) {
 
     while ((readsize = file->Read(fd, buffer, 4096)) > 0) {
         switch (absfs->hash_option) {
-            case 0: {
+            case xxh128_t: {
                 ret = (XXH3_128bits_update(absfs->xxh_state, buffer, readsize) != XXH_ERROR);
                 break;
             }
-            case 1: {
+            case xxh3_t: {
                 ret = (XXH3_64bits_update(absfs->xxh_state, buffer, readsize) != XXH_ERROR);
                 break;
             }
-            case 2: {
+            case md5_t: {
                 ret = MD5_Update(&absfs->md5_state, buffer, readsize);
                 break;
             }
-            case 3: {
+            case crc32_t: {
                 ret = (int)
                         (absfs->crc32_state = crc32((uLong) absfs->crc32_state, (const Bytef *) buffer,
                                                     (uInt) readsize));
