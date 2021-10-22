@@ -48,7 +48,7 @@ extern "C" {
             MD5_CTX md5_state;
             uLong crc32_state;
         };
-        absfs_state_t hash;
+        absfs_state_t state;
     };
 
     typedef struct abstract_fs absfs_t;

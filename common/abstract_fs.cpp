@@ -365,7 +365,7 @@ void init_abstract_fs(absfs_t *absfs) {
             break;
         }
     }
-    memset(absfs->hash, 0, sizeof(absfs->hash));
+    memset(absfs->state, 0, sizeof(absfs->state));
 }
 
 /**
@@ -385,20 +385,20 @@ int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
     switch (absfs->hash_option) {
         case 0: {
             XXH128_hash_t const hash = XXH3_128bits_digest(absfs->xxh_state);
-            memcpy(&absfs->hash, &hash, sizeof(hash));
+            memcpy(&absfs->state, &hash, sizeof(hash));
             break;
         }
         case 1: {
             XXH64_hash_t const hash = XXH3_64bits_digest(absfs->xxh_state);
-            memcpy(&absfs->hash, &hash, sizeof(hash));
+            memcpy(&absfs->state, &hash, sizeof(hash));
             break;
         }
         case 2: {
-            MD5_Final(absfs->hash, &absfs->md5_state);
+            MD5_Final(absfs->state, &absfs->md5_state);
             break;
         }
         case 3: {
-            memcpy(&absfs->hash, &absfs->crc32_state, sizeof(absfs->crc32_state));
+            memcpy(&absfs->state, &absfs->crc32_state, sizeof(absfs->crc32_state));
             break;
         }
     }
@@ -460,7 +460,7 @@ int main(int argc, char **argv) {
     if (argc > 1) {
         basepath = argv[1];
         if(argc>2){
-            uint hash_option = argv[2][0] - '0';
+            unsigned int hash_option = argv[2][0] - '0';
             if (hash_option <= 3)
                 absfs.hash_option = hash_option;
         }
@@ -479,7 +479,7 @@ int main(int argc, char **argv) {
         printf("Error occurred when iterating...\n");
     } else {
         printf("Iteration complete. Abstract FS signature = ");
-        print_abstract_fs_state(printf, absfs.hash);
+        print_abstract_fs_state(printf, absfs.state);
         printf("\n");
     }
     ProfilerStop();
