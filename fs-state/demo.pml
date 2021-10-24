@@ -3,6 +3,7 @@ c_decl {
  * when it's generating the C code */
 \#include "fileutil.h"
 \#include "config.h"
+\#include "libnfs.h"
 };
 #include "parameters.pml"
 
@@ -12,18 +13,21 @@ c_track "fsimgs[1]" "262144" "UnMatched";
 /* Abstract state signatures of the file systems */
 c_track "absfs" "sizeof(absfs)";
 
+struct nfs_context *nfs;
+
 proctype worker()
 {
     /* Non-deterministic test loop */
     int offset, writelen, writebyte, filelen;
-    do 
+    struct nfsfh *nfsfh = NULL;
+    do
     :: atomic {
        c_code {
            /* creat, check: errno, existence */
            makelog("BEGIN: create_file\n");
            mountall();
            for (i = 0; i < N_FS; ++i) {
-               makecall(rets[i], errs[i], "%s, 0%o", create_file, testfiles[i], 0644);
+               makecall(rets[i], errs[i], "%s, 0%o", nfs_creat, nfs, testfiles[i], 0644, &nfsfh);
                // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                compute_abstract_state(basepaths[i], absfs[i]);
            }
@@ -47,7 +51,7 @@ proctype worker()
             char *data = malloc(Pworker->writelen);
             generate_data(data, Pworker->writelen, Pworker->writebyte);
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s, %p, %ld, %zu", write_file, testfiles[i], data,
+                makecall(rets[i], errs[i], "%s, %p, %ld, %zu", nfs_write, nfs, nfsfh testfiles[i], data,
                          (off_t)Pworker->offset, (size_t)Pworker->writelen);
                 // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
@@ -72,7 +76,7 @@ proctype worker()
             mountall();
             // off_t flen = pick_value(0, 200000, 10000);
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s, %ld", truncate, testfiles[i], (off_t)Pworker->filelen);
+                makecall(rets[i], errs[i], "%s, %ld", nfs_truncate, nfs, testfiles[i], 0);
                 // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
@@ -90,7 +94,7 @@ proctype worker()
             makelog("BEGIN: unlink\n");
             mountall();
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s", unlink, testfiles[i]);
+                makecall(rets[i], errs[i], "%s", nfs_unlink, nfs, testfiles[i]);
                 // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
@@ -108,7 +112,7 @@ proctype worker()
             makelog("BEGIN: mkdir\n");
             mountall();
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s, 0%o", mkdir, testdirs[i], 0755);
+                makecall(rets[i], errs[i], "%s, 0%o", nfs_mkdir, nfs, testdirs[i]);
                 // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
@@ -127,7 +131,7 @@ proctype worker()
             makelog("BEGIN: rmdir\n");
             mountall();
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s", rmdir, testdirs[i]);
+                makecall(rets[i], errs[i], "%s", nfs_rmdir, nfs, testdirs[i]);
                 // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
@@ -139,7 +143,7 @@ proctype worker()
             makelog("END: rmdir\n");
         }
     };
-    
+
     od
 };
 
@@ -147,6 +151,7 @@ proctype driver(int nproc)
 {
     int i;
     c_code {
+        nfs = nfs_init_context();
         start_perf_metrics_thread();
         /* Initialize test dirs and files names */
         for (int i = 0; i < N_FS; ++i) {

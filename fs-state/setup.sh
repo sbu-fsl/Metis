@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FSLIST=(verifs2 nfs)
+FSLIST=(verifs2 nfs_verifs2)
 DEVLIST=(/dev/ram0 /dev/mtdblock0)
 LOOPDEVS=()
 verbose=0
@@ -151,28 +151,19 @@ unset_xfs() {
 }
 
 setup_verifs2() {
-    pushd .
-    if [ -d /mnt/test-verifs2 ]; then
-        rm -rf /mnt/test-verifs2/*
-    fi
-
-    cd ../../fuse-cpp-ramfs
-    mkdir -p build
-    cd build
-    cmake ../src
-    make && make install
-    fuse-cpp-ramfs /mnt/test-verifs2 &
-    popd
+    runcmd fuse-cpp-ramfs /mnt/test-verifs2 &
 }
 
 unset_verifs2() {
-    mount | grep /mnt/test-verifs2
-    if [ $? -eq 0 ]; then
-        runcmd cd ../../fuse-cpp-ramfs/ && fusermount -u /mnt/test-verifs2
-        if [ $? -ne 0 ]; then
-            echo "Unable to unmount verifs2. fusermount -u /mnt/test-verifs2 exited with error ($rc)." >&2;
-        fi
-    fi
+    :
+}
+
+setup_nfs_verifs2() {
+    runcmd fuse-cpp-ramfs /mnt/test-nfs_verifs2 &
+}
+
+unset_nfs_verifs2() {
+    :
 }
 
 generic_cleanup() {
@@ -274,13 +265,12 @@ for i in $(seq 0 $(($n_fs-1))); do
         runcmd umount -f /mnt/test-$fs;
     fi
 
-    setup_$fs $DEVICE;
-
     if [ -d /mnt/test-$fs ]; then
         runcmd rm -rf /mnt/test-$fs;
     fi
     runcmd mkdir -p /mnt/test-$fs;
 
+    setup_$fs $DEVICE;
 done
 
 # Run test program
