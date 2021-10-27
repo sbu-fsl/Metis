@@ -17,31 +17,39 @@
 #include "errnoname.h"
 #include "path_utils.h"
 
+#include <unordered_set>
+
 struct md5sum {
     uint64_t a;
     uint64_t b;
 };
 
-struct exclude_path {
+/*struct exclude_path {
     std::string parent;
     std::string name;
-};
+};*/
+std::unordered_set<std::string> exclusion_list = {
+        {"/lost+found"},
+        {"/.nilfs"},
+        {"/.mcfs_dummy"},
+        {"/build"}
+};;
 
-static const struct exclude_path exclusion_list[] = {
+/*static const struct exclude_path exclusion_list[] = {
         {"/", "lost+found"},
         {"/", ".nilfs"},
         {"/", ".mcfs_dummy"}
-};
+};*/
 
-static inline bool is_excluded(const std::string &parent,
-                               const std::string &name) {
-    int N = sizeof(exclusion_list) / sizeof(struct exclude_path);
+static inline bool is_excluded(const std::string &path) {
+    /*int N = sizeof(exclusion_list) / sizeof(struct exclude_path);
     for (int i = 0; i < N; ++i) {
         if (exclusion_list[i].parent == parent && exclusion_list[i].name == name) {
             return true;
         }
     }
-    return false;
+    return false;*/
+    return (exclusion_list.find(path) != exclusion_list.end());
 }
 
 static inline bool is_this_or_parent(const char *name) {
@@ -73,19 +81,19 @@ static int hash_file_content(AbstractFile *file, absfs_t *absfs) {
 
     while ((readsize = file->Read(fd, buffer, 4096)) > 0) {
         switch (absfs->hash_option) {
-            case 0: {
+            case xxh128_t: {
                 ret = (XXH3_128bits_update(absfs->xxh_state, buffer, readsize) != XXH_ERROR);
                 break;
             }
-            case 1: {
+            case xxh3_t: {
                 ret = (XXH3_64bits_update(absfs->xxh_state, buffer, readsize) != XXH_ERROR);
                 break;
             }
-            case 2: {
+            case md5_t: {
                 ret = MD5_Update(&absfs->md5_state, buffer, readsize);
                 break;
             }
-            case 3: {
+            case crc32_t: {
                 ret = (int)
                         (absfs->crc32_state = crc32((uLong) absfs->crc32_state, (const Bytef *) buffer,
                                                     (uInt) readsize));
@@ -133,10 +141,13 @@ static const char *get_abstract_path(const char *fullpath) {
 
 static int nftw_handler(const char *fpath, const struct stat *finfo,
                         int typeflag, struct FTW *ftwbuf) {
+    const char *abspath = get_abstract_path(fpath);
+    if (is_excluded(abspath)) return FTW_SKIP_SUBTREE;
+
     AbstractFile file;
     file.printer = walker_printer;
     file.fullpath = fpath;
-    file.abstract_path = get_abstract_path(fpath);
+    file.abstract_path = abspath;
     memset(&file.attrs, 0, sizeof(file.attrs));
     file.attrs.mode = finfo->st_mode;
     file.attrs.size = finfo->st_size;
@@ -146,7 +157,7 @@ static int nftw_handler(const char *fpath, const struct stat *finfo,
     file._attrs.blksize = finfo->st_blksize;
     file._attrs.blocks = finfo->st_blocks;
     walker_files.push_back(file);
-    return 0;
+    return FTW_CONTINUE;
 }
 
 static int do_walk(const char *basepath, printer_t printer) {
@@ -158,7 +169,7 @@ static int do_walk(const char *basepath, printer_t printer) {
 
     // walk the directory tree
     const int nopenfd = 50;
-    int res = nftw(basepath, nftw_handler, nopenfd, FTW_PHYS);
+    int res = nftw(basepath, nftw_handler, nopenfd, FTW_PHYS | FTW_ACTIONRETVAL);
     if (res < 0) {
         printer("nftw() error while walking %s. errno = %d(%s)\n", basepath,
                 errno, errnoname(errno));
@@ -222,23 +233,24 @@ void AbstractFile::FeedHasher(absfs_t *absfs) {
     }
 
     switch (absfs->hash_option) {
-        case 0: {
+        case xxh128_t: {
             XXH3_128bits_update(absfs->xxh_state, abspath, pathlen);
             XXH3_128bits_update(absfs->xxh_state, &attrs, sizeof(attrs));
             break;
         }
-        case 1: {
+        case xxh3_t: {
             XXH3_64bits_update(absfs->xxh_state, abspath, pathlen);
             XXH3_64bits_update(absfs->xxh_state, &attrs, sizeof(attrs));
             break;
         }
-        case 2: {
+        case md5_t: {
             MD5_Update(&absfs->md5_state, abspath, pathlen);
             MD5_Update(&absfs->md5_state, &attrs, sizeof(attrs));
             break;
         }
-        case 3: {
+        case crc32_t: {
             absfs->crc32_state = crc32((uLong) absfs->crc32_state, (const Bytef *) abspath, (uInt) pathlen);
+            absfs->crc32_state = crc32((uLong) absfs->crc32_state, (const Bytef *) &attrs, (uInt) sizeof(attrs));
             break;
         }
     }
@@ -347,25 +359,25 @@ void init_abstract_fs(absfs_t *absfs) {
     ProfilerEnable();
     //0:xxh128,1:xxh3,2:md5,3:crc64
     switch (absfs->hash_option) {
-        case 0: {
+        case xxh128_t: {
             absfs->xxh_state = XXH3_createState();
             if (XXH3_64bits_reset(absfs->xxh_state) == XXH_ERROR) abort();
             break;
         }
-        case 1: {
+        case xxh3_t: {
             absfs->xxh_state = XXH3_createState();
             if (XXH3_128bits_reset(absfs->xxh_state) == XXH_ERROR) abort();
             break;
         }
-        case 2: {
+        case md5_t: {
             MD5_Init(&absfs->md5_state);
             break;
         }
-        case 3: {
+        case crc32_t: {
             break;
         }
     }
-    memset(absfs->hash, 0, sizeof(absfs->hash));
+    memset(absfs->state, 0, sizeof(absfs->state));
 }
 
 /**
@@ -383,22 +395,22 @@ int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
     int ret = walk(basepath, "/", absfs, verbose, verbose_printer);
     //0:xxh128,1:xxh3,2:md5,3:crc64
     switch (absfs->hash_option) {
-        case 0: {
+        case xxh128_t: {
             XXH128_hash_t const hash = XXH3_128bits_digest(absfs->xxh_state);
-            memcpy(&absfs->hash, &hash, sizeof(hash));
+            memcpy(&absfs->state, &hash, sizeof(hash));
             break;
         }
-        case 1: {
+        case xxh3_t: {
             XXH64_hash_t const hash = XXH3_64bits_digest(absfs->xxh_state);
-            memcpy(&absfs->hash, &hash, sizeof(hash));
+            memcpy(&absfs->state, &hash, sizeof(hash));
             break;
         }
-        case 2: {
-            MD5_Final(absfs->hash, &absfs->md5_state);
+        case md5_t: {
+            MD5_Final(absfs->state, &absfs->md5_state);
             break;
         }
-        case 3: {
-            memcpy(&absfs->hash, &absfs->crc32_state, sizeof(absfs->crc32_state));
+        case crc32_t: {
+            memcpy(&absfs->state, &absfs->crc32_state, sizeof(absfs->crc32_state));
             break;
         }
     }
@@ -460,7 +472,7 @@ int main(int argc, char **argv) {
     if (argc > 1) {
         basepath = argv[1];
         if(argc>2){
-            uint hash_option = argv[2][0] - '0';
+            unsigned int hash_option = argv[2][0] - '0';
             if (hash_option <= 3)
                 absfs.hash_option = hash_option;
         }
@@ -479,7 +491,7 @@ int main(int argc, char **argv) {
         printf("Error occurred when iterating...\n");
     } else {
         printf("Iteration complete. Abstract FS signature = ");
-        print_abstract_fs_state(printf, absfs.hash);
+        print_abstract_fs_state(printf, absfs.state);
         printf("\n");
     }
     ProfilerStop();
