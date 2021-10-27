@@ -363,6 +363,17 @@ void init_abstract_fs(absfs_t *absfs) {
     memset(absfs->state, 0, sizeof(absfs->state));
 }
 
+/* We have to free up the dynamic memory if XXH is selected, otherwise there
+ * would be memory leak */
+void destroy_abstract_fs(absfs_t *absfs) {
+    switch (absfs->hash_option) {
+        case xxh128_t:
+        case xxh3_t:
+            XXH3_freeState(absfs->xxh_state);
+            break;
+    }
+}
+
 /**
  * scan_abstract_fs: Walk the directory tree starting from the given
  *   basepath, and calculate a MD5 hash as the "abstract file system
