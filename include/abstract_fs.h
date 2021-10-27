@@ -56,6 +56,7 @@ extern "C" {
     typedef struct abstract_fs absfs_t;
 
     void init_abstract_fs(absfs_t *absfs);
+    void destroy_abstract_fs(absfs_t *absfs);
     int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
                          printer_t verbose_printer);
     void print_abstract_fs_state(printer_t printer, const absfs_state_t state);
