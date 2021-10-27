@@ -150,7 +150,7 @@ retry:
         for (int i = 0; i < 16; ++i) {
             // second arg of snprintf: count the null-terminator. However, the
     	    // return value does not include the terminator.
-            size_t res = snprintf(strp, 3, "%0x", absfs[0][i]);
+            size_t res = snprintf(strp, 3, "%02x", absfs[0][i]);
             strp += res;
         }
         makelog("absfs = {%s}\n", abs_state_str);
