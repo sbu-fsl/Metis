@@ -84,6 +84,7 @@ static inline void compute_abstract_state(const char *basepath,
     init_abstract_fs(&absfs);
     scan_abstract_fs(&absfs, basepath, false, submit_error);
     memcpy(state, absfs.state, sizeof(absfs_state_t));
+    destroy_abstract_fs(&absfs);
 }
 
 #define makecall(retvar, err, argfmt, funcname, ...) \

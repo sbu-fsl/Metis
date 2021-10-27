@@ -101,6 +101,7 @@ void dump_absfs(const char *basepath)
     absfs.hash_option = absfs_hash_method;
     init_abstract_fs(&absfs);
     scan_abstract_fs(&absfs, basepath, true, submit_error);
+    destroy_abstract_fs(&absfs);
 }
 
 static void tell_absfs_hash_method()
