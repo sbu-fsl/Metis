@@ -107,19 +107,19 @@ static void tell_absfs_hash_method()
 {
     char *hashname;
     switch (absfs_hash_method) {
-        case 0:
-            hashname = "xxh128";
+        case xxh128_t:
+            hashname = "xxh3-128";
             break;
 
-        case 1:
-            hashname = "xxh64";
+        case xxh3_t:
+            hashname = "xxh3-64";
             break;
 
-        case 2:
+        case md5_t:
             hashname = "md5";
             break;
 
-        case 3:
+        case crc32_t:
             hashname = "crc32";
             break;
 
