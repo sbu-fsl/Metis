@@ -98,8 +98,36 @@ bool compare_equality_values(const char **fses, int n_fs, int *nums)
 void dump_absfs(const char *basepath)
 {
     absfs_t absfs;
+    absfs.hash_option = absfs_hash_method;
     init_abstract_fs(&absfs);
     scan_abstract_fs(&absfs, basepath, true, submit_error);
+}
+
+static void tell_absfs_hash_method()
+{
+    char *hashname;
+    switch (absfs_hash_method) {
+        case 0:
+            hashname = "xxh128";
+            break;
+
+        case 1:
+            hashname = "xxh64";
+            break;
+
+        case 2:
+            hashname = "md5";
+            break;
+
+        case 3:
+            hashname = "crc32";
+            break;
+
+        default:
+            hashname = "(unknown)";
+            break;
+    }
+    fprintf(stderr, "Selected abstraction hash method is %s.\n", hashname);
 }
 
 bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
@@ -569,6 +597,16 @@ static void equalize_free_spaces(void)
     unmount_all_strict();
 }
 
+extern void (*spin_after_argparse)(int argc, char **argv);
+static void main_hook(int argc, char **argv)
+{
+    tell_absfs_hash_method();
+    /* Fill initial abstract states */
+    for (int i = 0; i < N_FS; ++i) {
+        compute_abstract_state(basepaths[i], absfs[i]);
+    }
+}
+
 void __attribute__((constructor)) init()
 {
     char output_log_name[NAME_MAX] = {0};
@@ -609,6 +647,7 @@ void __attribute__((constructor)) init()
     c_update_after = update_after_hook;
     c_revert_before = revert_before_hook;
     c_revert_after = revert_after_hook;
+    spin_after_argparse = main_hook;
 
     /* Initialize absfs-set used for counting unique states */
     absfs_set_init(&absfs_set);

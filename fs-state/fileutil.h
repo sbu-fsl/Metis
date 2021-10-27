@@ -45,6 +45,7 @@ extern char *basepaths[];
 extern absfs_set_t absfs_set;
 extern int pan_argc;
 extern char **pan_argv;
+extern int absfs_hash_method;
 
 struct imghash {
     unsigned char md5[16];
@@ -79,6 +80,7 @@ static inline void compute_abstract_state(const char *basepath,
 {
     absfs_t absfs;
 
+    absfs.hash_option = absfs_hash_method;
     init_abstract_fs(&absfs);
     scan_abstract_fs(&absfs, basepath, false, submit_error);
     memcpy(state, absfs.state, sizeof(absfs_state_t));
