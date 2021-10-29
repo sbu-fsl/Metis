@@ -33,7 +33,7 @@ std::unordered_set<std::string> exclusion_list = {
         {"/.nilfs"},
         {"/.mcfs_dummy"},
         {"/build"}
-};;
+};
 
 /*static const struct exclude_path exclusion_list[] = {
         {"/", "lost+found"},
@@ -250,7 +250,8 @@ void AbstractFile::FeedHasher(absfs_t *absfs) {
         }
         case crc32_t: {
             absfs->crc32_state = crc32((uLong) absfs->crc32_state, (const Bytef *) abspath, (uInt) pathlen);
-            absfs->crc32_state = crc32((uLong) absfs->crc32_state, (const Bytef *) &attrs, (uInt) sizeof(attrs));
+            absfs->crc32_state = crc32((uLong) absfs->crc32_state, (const Bytef *) &attrs,
+                                         (uInt) sizeof(attrs));
             break;
         }
     }
@@ -374,6 +375,7 @@ void init_abstract_fs(absfs_t *absfs) {
             break;
         }
         case crc32_t: {
+            memset((void *) &absfs->md5_state, 0, sizeof(absfs->md5_state));
             break;
         }
     }
