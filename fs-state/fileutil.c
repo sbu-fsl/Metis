@@ -483,25 +483,31 @@ static long restore_after_hook(unsigned char *ptr)
 static size_t state_depth = 0;
 static long update_before_hook(unsigned char *ptr)
 {
+    int res = 0;
     submit_seq("checkpoint\n");
     makelog("[seqid = %d] checkpoint (%zu)\n", count, state_depth);
     absfs_set_add(absfs_set, absfs);
     state_depth++;
     for (int i = 0; i < N_FS; ++i) {
-        if (!is_verifs(fslist[i]) && fslist[i] != "nfs_verifs2")
+        if (!is_verifs(fslist[i]) && !is_nfs_verifs(fslist[i]))
             continue;
-        int res = checkpoint_verifs(state_depth, basepaths[i]);
+
+        if (is_verifs(fslist[i])) {
+            res = checkpoint_verifs(state_depth, basepaths[i]);
+        } else if( is_nfs_verifs(fslist[i]) ){
+            res = checkpoint_nfs(state_depth, basepaths[i]);
+        }
+
         if (res != 0) {
             logerr("Failed to checkpoint a verifiable file system %s.",
                    fslist[i]);
         }
     }
 
-    int res = 0;
 	if( is_verifs(fslist[i]) ){
         res = checkpoint_verifs(state_depth, basepaths[i]);
 	}
-	else if( fslist[i] == "nfs_verifs2"){
+	else if( is_nfs_verifs(fslist[i]) ){
 		res = checkpoint_nfs(state_depth, basepaths[i]);
 	}
 
@@ -519,12 +525,12 @@ static long revert_before_hook(unsigned char *ptr)
     submit_seq("restore\n");
     makelog("[seqid = %d] restore (%p)\n", count, state_depth);
     for (int i = 0; i < N_FS; ++i) {
-        if (!is_verifs(fslist[i]) && fslist[i]  != "nfs_verifs2")
+        if (!is_verifs(fslist[i]) && !is_nfs_verifs(fslist[i]))
             continue;
 
         if ( is_verifs(fslist[i]) )
 	        res = restore_verifs(state_depth, basepaths[i]);
-	    else if (fslist[i] == "nfs_verifs2" )
+	    else if ( is_nfs_verifs(fslist[i]) )
 		    res = restore_nfs(state_depth, basepaths[i]);
         if (res != 0) {
             logerr("Failed to restore a verifiable file system %s.",
@@ -557,7 +563,7 @@ static void equalize_free_spaces(void)
     mountall();
     /* Find free space of each file system being checked */
     for (int i = 0; i < N_FS; ++i) {
-        if (is_verifs(fslist[i]))
+        if (is_verifs(fslist[i]) || is_nfs_verifs(fslist[i]))
             continue;
         struct statfs fsinfo;
         int ret = statfs(basepaths[i], &fsinfo);
@@ -573,7 +579,7 @@ static void equalize_free_spaces(void)
     /* Fill data to file systems who have greater than min_space of free space,
      * so that all file systems will have equal free capacities. */
     for (int i = 0; i < N_FS; ++i) {
-        if (is_verifs(fslist[i]))
+        if (is_verifs(fslist[i]) || is_nfs_verifs(fslist[i]))
             continue;
         size_t fillsz = free_spaces[i] - min_space;
         char fullpath[PATH_MAX] = {0};

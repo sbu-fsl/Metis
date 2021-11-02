@@ -1,7 +1,7 @@
 #!/bin/bash
 
-FSLIST=(verifs2 nfs_verifs2)
-DEVLIST=(/dev/ram0 /dev/mtdblock0)
+FSLIST=(verifs2 nfs_verifs2 nfs_server)
+DEVLIST=()
 LOOPDEVS=()
 verbose=0
 POSITIONAL=()
@@ -166,9 +166,24 @@ unset_nfs_verifs2() {
     :
 }
 
+setup_nfs_server() {
+    runcmd ganesha.nfsd
+}
+
+unset_nfs_server() {
+    local pid=`pgrep -x ganesha.nfsd`
+    if [[ ! -z $pid ]]; then
+        runcmd kill -9 `pgrep ganesha.nfsd`
+    fi
+}
+
 generic_cleanup() {
     if [ "$KEEP_FS" = "0" ]; then
         for fs in ${FSLIST[@]}; do
+            if [[ "$fs" == *"nfs"* ]]; then
+                unset_nfs_server;
+            fi
+
             if [ "$(mount | grep /mnt/test-$fs)" ]; then
                 umount -f /mnt/test-$fs;
             fi
@@ -260,9 +275,18 @@ for i in $(seq 0 $(($n_fs-1))); do
     fs=${FSLIST[$i]};
     DEVICE=${DEVLIST[$i]};
 
-    # Unmount first
+    if [[ "$fs" == "nfs_server" ]]; then
+        setup_nfs_server;
+        continue
+    fi
+
+    # stop the server first
+    if [[ "$fs" == *"nfs"* ]]; then
+        unset_nfs_server;
+    fi
+
     if [ "$(mount | grep /mnt/test-$fs)" ]; then
-        runcmd umount -f /mnt/test-$fs;
+        umount -f /mnt/test-$fs;
     fi
 
     if [ -d /mnt/test-$fs ]; then
