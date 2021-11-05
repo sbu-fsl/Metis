@@ -618,11 +618,7 @@ void __attribute__((constructor)) init()
     try_init_myheap();
     init_basepaths();
     setup_filesystems();
-    /* Fill initial abstract states */
-    for (int i = 0; i < N_FS; ++i) {
-        compute_abstract_state(basepaths[i], absfs[i]);
-    }
-    
+
     /* Initialize log daemon */
     // setvbuf(stdout, NULL, _IONBF, 0);
     // setvbuf(stderr, NULL, _IONBF, 0);
