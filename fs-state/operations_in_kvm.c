@@ -298,7 +298,7 @@ int restore_kvm_snapshot(int fsidx, const char *name)
 
     if (ret != 0)
     {
-        printf("Error while restoring the snapshot %s for vm %s with revertToSnapshot %d\n", name, kvmlist[fsidx], ret);
+        printf("Error while restoring the snapshot %s for kvm %s with revertToSnapshot %d\n", name, kvmlist[fsidx], ret);
         return ret;
     }
 

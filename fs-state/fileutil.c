@@ -111,7 +111,7 @@ bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
 retry:
     /* Calculate the abstract file system states */
     for (int i = 0; i < n_fs; ++i) {
-        compute_abstract_state(basepaths[i], absfs[i]);
+        compute_abstract_state_in_kvm(i, basepaths[i], absfs[i]);
     }
     /* Compare */
     memcpy(base, absfs[0], sizeof(absfs_state_t));
@@ -155,7 +155,7 @@ bool compare_equality_fexists(const char **fses, int n_fs, char **fpaths)
 
     /* Check file existence */
     for (int i = 0; i < n_fs; ++i)
-        fexists[i] = check_file_existence(fpaths[i]);
+        fexists[i] = check_file_existence_in_kvm(i, fpaths[i]);
 
     bool base = fexists[0];
     for (int i = 0; i < n_fs; ++i) {
@@ -181,11 +181,32 @@ bool compare_equality_fcontent(const char **fses, int n_fs, char **fpaths)
         return false;
 
     /* If none of the files exists, return TRUE */
-    if (check_file_existence(fpaths[0]) == false)
+    if (check_file_existence_in_kvm(0, fpaths[0]) == false)
         return true;
 
+    system("rm -f /tmp/mcfs_shared/files_to_compare/*");
+
+    char path1[256];
+    sprintf(path1, "/tmp/mcfs_shared/files_to_compare/%d", 0);
+    if (get_file_from_kvm(0, fpaths[0], path1) != 0)
+    {
+        logerr("[seqid=%zu] could not obtain file %s from kvm %s ",
+                count, fpaths[0], kvmlist[0]);
+        //exit(1);
+    }
+
+    char path2[256];
     for (int i = 1; i < n_fs; ++i) {
-        if (compare_file_content(fpaths[i-1], fpaths[i]) != 0) {
+        sprintf(path1, "/tmp/mcfs_shared/files_to_compare/%d", i - 1);
+        sprintf(path2, "/tmp/mcfs_shared/files_to_compare/%d", i);
+        if (get_file_from_kvm(i, fpaths[i], path2) != 0)
+        {
+            logerr("[seqid=%zu] could not obtain file %s from kvm %s ",
+                    count, fpaths[i], i);
+            //exit(1);
+        }
+   
+        if (compare_file_content(path1, path2) != 0) {
             if (res)
                 res = false;
             logwarn("[seqid=%zu] [%s] (%s) is different from [%s] "
@@ -402,13 +423,13 @@ static int restore_verifs(size_t key, const char *mp)
 
 static long checkpoint_before_hook(unsigned char *ptr)
 {
-    mmap_devices();
+    //mmap_devices();
     return 0;
 }
 
 static long checkpoint_after_hook(unsigned char *ptr)
 {
-    unmap_devices();
+    //unmap_devices();
     // assert(do_fsck());
     // dump_fs_images("snapshots");
     return 0;
@@ -416,14 +437,14 @@ static long checkpoint_after_hook(unsigned char *ptr)
 
 static long restore_before_hook(unsigned char *ptr)
 {
-    mmap_devices();
+    //mmap_devices();
     // assert(do_fsck());
     return 0;
 }
 
 static long restore_after_hook(unsigned char *ptr)
 {
-    unmap_devices();
+    //unmap_devices();
     // assert(do_fsck());
     // dump_fs_images("after-restore");
     return 0;
@@ -437,6 +458,19 @@ static long update_before_hook(unsigned char *ptr)
     absfs_set_add(absfs_set, absfs);
     state_depth++;
     for (int i = 0; i < N_FS; ++i) {
+        char name[10];
+        sprintf(name, "%d_%zu", i, state_depth);
+        time_t start = time(NULL);
+        int res = take_kvm_snapshot(i, name);
+        makelog("KVM take snapshot operation for %s took %ds\n", name, (time(NULL) - start));
+        if (res != 0)
+        {
+            logerr("Failed to take snapshot of kvm %s (%s): ret %d",
+                    kvmlist[i], fslist[i], res);
+            //exit(1);
+            return -1;
+        }
+        /*
         if (!is_verifs(fslist[i]))
             continue;
         int res = checkpoint_verifs(state_depth, basepaths[i]); 
@@ -444,6 +478,7 @@ static long update_before_hook(unsigned char *ptr)
             logerr("Failed to checkpoint a verifiable file system %s.",
                    fslist[i]);
         }
+        */
     }
     return 0;
 }
@@ -458,6 +493,31 @@ static long revert_before_hook(unsigned char *ptr)
     submit_seq("restore\n");
     makelog("[seqid = %d] restore (%p)\n", count, state_depth);
     for (int i = 0; i < N_FS; ++i) {
+        char name[10];
+        sprintf(name, "%d_%zu", i, state_depth);
+        time_t start = time(NULL);
+        int res = restore_kvm_snapshot(i, name);
+        makelog("kvm restore operation for %s took %ds\n", name, (time(NULL) - start));
+        if (res != 0)
+        {
+            logerr("Failed to restore the kvm %s to snapshot %s: ret %d",
+                    kvmlist[i], name, res);
+            //exit(1);
+            return -2;
+        }
+        else
+        {
+            time_t start2 = time(NULL);
+            res = delete_kvm_snapshot(i, name);
+            makelog("kvm snapshot delete operation for %s took %ds\n", name, (time(NULL) - start2));
+            if (res != 0)
+            {
+                logerr("Failed to delete the kvm snapshot %s, ret %d", name, res);
+                //exit(1);
+                return -3;
+            }
+        }
+        /*
         if (!is_verifs(fslist[i]))
             continue;
         int res = restore_verifs(state_depth, basepaths[i]);
@@ -465,6 +525,7 @@ static long revert_before_hook(unsigned char *ptr)
             logerr("Failed to restore a verifiable file system %s.",
                     fslist[i]);
         }
+        */
     }
     state_depth--;
     return 0;
@@ -488,19 +549,18 @@ static void equalize_free_spaces(void)
 {
     size_t free_spaces[N_FS] = {0};
     size_t min_space = ULONG_MAX;
-    const char *dummy_file = ".mcfs_dummy";
-    mountall();
+    //const char *dummy_file = ".mcfs_dummy";
+    //mountall();
     /* Find free space of each file system being checked */
     for (int i = 0; i < N_FS; ++i) {
         if (is_verifs(fslist[i]))
             continue;
-        struct statfs fsinfo;
-        int ret = statfs(basepaths[i], &fsinfo);
+        int ret = perform_statfs_in_kvm(i, basepaths[i]);
         if (ret != 0) {
             logerr("cannot statfs %s", basepaths[i]);
             exit(1);
         }
-        size_t free_spc = fsinfo.f_bfree * fsinfo.f_bsize;
+        size_t free_spc = get_fs_free_space_in_kvm(i);
         if (free_spc < min_space)
             min_space = free_spc;
         free_spaces[i] = free_spc;
@@ -511,16 +571,27 @@ static void equalize_free_spaces(void)
         if (is_verifs(fslist[i]))
             continue;
         size_t fillsz = free_spaces[i] - min_space;
-        char fullpath[PATH_MAX] = {0};
-        snprintf(fullpath, PATH_MAX, "%s/%s", basepaths[i], dummy_file);
+        int ret = write_dummy_file_fs_in_kvm(i, basepaths[i], fillsz);
+        if (ret == -1)
+        {
+            logerr("cannot open %s/.mcfs_dummy", basepaths[i]);
+            exit(1);
+        }
+        else if (ret == -2)
+        {
+            logerr("cannot write data in %s", basepaths[i]);
+            exit(1);
+        }
+        /*char fullpath[PATH_MAX] = {0};
+        snprintf(fullpath, PATH_MAX, "%s/%s", basepaths[i], dummy_file);*/
         /* Create/open the dummy file */
-        int fd = open(fullpath, O_CREAT | O_TRUNC | O_RDWR, 0666);
+        /*int fd = open(fullpath, O_CREAT | O_TRUNC | O_RDWR, 0666);
         if (fd < 0) {
             logerr("cannot open %s", fullpath);
             exit(1);
-        }
+        }*/
         /* Start filling */
-        memset(fullpath, 0, PATH_MAX);
+        /*memset(fullpath, 0, PATH_MAX);
         while (fillsz > 0) {
             size_t writesz = min(fillsz, PATH_MAX);
             ssize_t ret = write(fd, fullpath, writesz);
@@ -530,9 +601,9 @@ static void equalize_free_spaces(void)
             }
             fillsz -= ret;
         }
-        close(fd);
+        close(fd);*/
     }
-    unmount_all();
+    //unmount_all();
 }
 
 void __attribute__((constructor)) init()
@@ -540,8 +611,11 @@ void __attribute__((constructor)) init()
     try_init_myheap();
     init_basepaths();
     /* Fill initial abstract states */
+
+    mountall();
     for (int i = 0; i < N_FS; ++i) {
-        compute_abstract_state(basepaths[i], absfs[i]);
+        //set_env_var_in_kvm(i, "LD_LIBRARY_PATH", "/usr/local/lib");
+        compute_abstract_state_in_kvm(i, basepaths[i], absfs[i]);
     }
     
     /* Initialize log daemon */
