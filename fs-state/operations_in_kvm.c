@@ -18,8 +18,8 @@ char *guest_file_ops_script = "/mnt/hgfs/mcfs_shared/run_file_ops";
 
 char *guest_fs_free_space_ret_file = "/mnt/hgfs/mcfs_shared/ret/fs_free_space_ret";
 
-char *guest_absfs_ret_file = "/mnt/hgfs/mcfs_shared/ret/abstract_fs_ret";
 char *guest_absfs_script = "/mnt/hgfs/mcfs_shared/run_absfs";
+char *guest_absfs_ret_file = "/mnt/hgfs/mcfs_shared/ret/abstract_fs_ret";
 
 int get_retval_errno(int fsidx, const char *funcname)
 {
