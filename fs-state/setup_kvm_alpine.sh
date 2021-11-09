@@ -252,9 +252,9 @@ if [ "$SKIP_SETUP" != "1" ]; then
         __runcmd_kvm $IP "test -d /mnt/test-$fs"
         mount_dir_exists=$?
         if [ "$mount_dir_exists" -eq "0" ]; then
-            runcmd_vmware $IP rm -rf /mnt/test-$fs;
+            runcmd_kvm $IP rm -rf /mnt/test-$fs;
         fi
-        runcmd_vmware $IP mkdir -p /mnt/test-$fs;
+        runcmd_kvm $IP mkdir -p /mnt/test-$fs;
 
     done
 fi
