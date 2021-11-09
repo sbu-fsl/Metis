@@ -6,7 +6,7 @@ override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler
 
 all: demo.pml parameters common-libs absfs-set
 	spin -a demo.pml; \
-	gcc -o pan pan.c set.o fileutil.c perf.c mount.c common-libs.a $(CFLAGS) $(LIBS); \
+	gcc -o pan pan.c set.o fileutil.c perf.c mount.c operations_in_kvm.c common-libs.a $(CFLAGS) $(LIBS); \
 
 run: all
 	./pan | less -N; \

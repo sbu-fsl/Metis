@@ -1,9 +1,10 @@
 #!/bin/bash
 
-FSLIST=(ext4)
-DEVLIST=(/dev/ram0)
-KVMLIST=(alpine-standard)
-KVM_IP=("192.168.122.120")
+FSLIST=(ext4 ext2)
+DEVLIST=(/dev/ram0 /dev/ram0)
+KVMLIST=(alpine-standard-zero alpine-standard-one)
+KVM_IP=("192.168.122.243" "192.168.122.160")
+# Ideally, two VMs have the same user
 USER=root
 LOOPDEVS=()
 verbose=0

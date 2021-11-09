@@ -383,17 +383,26 @@ int main(int argc, char **argv) {
 
   init_abstract_fs(&absfs);
 
-  printf("Iterating directory '%s'...\n", basepath);
+  // printf("Iterating directory '%s'...\n", basepath);
 
-  ret = scan_abstract_fs(&absfs, basepath, true, printf);
+  ret = scan_abstract_fs(&absfs, basepath, false, printf);
 
   if (ret) {
-    printf("Error occurred when iterating...\n");
+    //printf("Error occurred when iterating...\n");
   } else {
-    printf("Iteration complete. Abstract FS signature = ");
-    print_abstract_fs_state(printf, absfs.state);
-    printf("\n");
+    //printf("Iteration complete. Abstract FS signature = ");
+    //print_abstract_fs_state(printf, absfs.state);
+    //printf("\n");
+    FILE *fp = fopen("/mnt/hgfs/mcfs_shared/ret/abstract_fs_ret", "w");
+    for (int i = 0; i < 16; ++i)
+    {
+        fprintf(fp, "%02x", absfs.state[i] & 0xff);
+    }
+    fclose(fp);
   }
+  FILE *f = fopen("/mnt/hgfs/mcfs_shared/ret/mcfs_fops_ret", "w");
+  fprintf(f, "%d %d", ret, errno);
+  fclose(f);
 
   return ret;
 }
