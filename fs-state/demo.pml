@@ -24,7 +24,7 @@ proctype worker()
            //mountall();
            for (i = 0; i < N_FS; ++i) {
                makecall(rets[i], errs[i], "%d, %s, 0%o", create_file_in_kvm, i, testfiles[i], 0644);
-               // fsfreeze(fslist[i], devlist[i], basepaths[i]);
+               // fsfreeze(i, fslist[i], devlist[i], basepaths[i]);
                compute_abstract_state_in_kvm(i, basepaths[i], absfs[i]);
            }
            expect(compare_equality_fexists(fslist, N_FS, testfiles));
