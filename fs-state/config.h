@@ -21,9 +21,9 @@
 
 /* List of file systems: Modify this to experiment with other file systems */
 static const char *fslist[] = {"ext4", "ext2"};
-static const char *devlist[] = {"/dev/ram", "/dev/ram"};
-static const char *kvmiplist[] = {"192.168.122.243", "192.168.122.160"};
-static const char *kvmlist[] = {"alpine-standard-zero", "alpine-standard-one"};
+static const char *devlist[] = {"/dev/ram0", "/dev/ram0"};
+static const char *kvmiplist[] = {"192.168.122.225", "192.168.122.186"};
+static const char *kvmlist[] = {"core-current-zero", "core-current-one"};
 
 #define N_FS    nelem(fslist)
 char *basepaths[N_FS];
