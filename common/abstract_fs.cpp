@@ -17,6 +17,16 @@
 #include "errnoname.h"
 #include "path_utils.h"
 
+const char *guest_absfs_script = "/mnt/hgfs/mcfs_shared/run_absfs";
+const char *guest_absfs_ret_file = "/mnt/hgfs/mcfs_shared/ret/abstract_fs_ret";
+
+const char *guest_fops_ret_file = "/mnt/hgfs/mcfs_shared/ret/mcfs_fops_ret";
+const char *guest_file_ops_script = "/mnt/hgfs/mcfs_shared/run_file_ops";
+
+const char *guest_fs_free_space_ret_file = "/mnt/hgfs/mcfs_shared/ret/fs_free_space_ret";
+
+const char *ssh_user = "root";
+
 struct md5sum {
   uint64_t a;
   uint64_t b;
@@ -324,6 +334,72 @@ int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
   MD5_Final(absfs->state, &absfs->ctx);
   return ret;
 }
+
+int scan_abstract_fs_remote_kvm(int fsidx, const char *ssh_user, const char *kvm_ip,
+                        absfs_t *absfs, const char *basepath, bool verbose,
+                        printer_t verbose_printer) {
+  // Based on ssh_user and kvmip to run guest_absfs_script 
+  // "/mnt/hgfs/mcfs_shared/run_absfs"
+  char command[5000];
+  sprintf(command, "ssh %s@%s \"/bin/bash %s %s\"", ssh_user, kvm_ip, guest_absfs_script, basepath);
+  printf("[YIFEI] scan_abstract_fs_remote_kvm:  %s\n", command);
+
+  errno = 0;
+  system(command);
+
+  // scp the abstract state computation return value and error code to the host machine 
+  char host_ret_dir[100];
+  sprintf(host_ret_dir, "/tmp/mcfs_shared/%d/ret/", fsidx);
+
+  char scp_command[500];
+  sprintf(scp_command, "scp %s@%s:%s %s", ssh_user, kvm_ip, guest_fops_ret_file, host_ret_dir);
+  // execute scp command to get absfs-compute return value and error code
+  system(scp_command);
+
+  char filename[200];
+  sprintf(filename, "%s/mcfs_fops_ret", host_ret_dir);
+  FILE *fptr = fopen(filename, "r");
+  if (fptr == NULL)
+  {
+    fprintf(stderr, "[scan_abstract_fs_remote_kvm] %s file not present in the SCP shared folder %s for command %s\n", filename, kvm_ip, __func__);
+  }
+  int ret = 0, err = 0;
+  fscanf(fptr, "%d %d", &ret, &err);
+  fclose(fptr);
+
+  errno = err;
+
+  if (ret != 0)
+  {
+    printf("Could not obtain the abstract state return from guest %s\n", kvm_ip);
+    return ret;
+  }
+  // execute scp command to get absfs-state hash
+  //char scp_command[500];
+  sprintf(scp_command, "scp %s@%s:%s %s", ssh_user, kvm_ip, guest_absfs_ret_file, host_ret_dir);
+  printf("[YIFEI] %d: command to copy absfs hash to host machine: %s\n", fsidx, scp_command);
+
+  system(scp_command);
+
+  //char filename[200];
+  sprintf(filename, "%s/abstract_fs_ret", host_ret_dir);
+  FILE *f = fopen(filename, "r");
+  if (f == NULL)
+  {
+      printf("scan_abstract_fs_remote_kvm %s not found of %s\n", filename, kvm_ip);
+  }
+  unsigned int temp[16];
+  for (int i = 0; i < 16; i++)
+  {
+      fscanf(f, "%02x", &temp[i]);
+      absfs->state[i] = temp[i];
+  }
+
+  fclose(f);
+
+  return ret;
+}
+
 
 /**
  * print_abstract_fs_state: Print the whole 128-bit abstract file

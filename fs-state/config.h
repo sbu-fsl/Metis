@@ -25,6 +25,7 @@ static const char *devlist[] = {"/dev/ram0", "/dev/ram0"};
 static const char *kvmiplist[] = {"192.168.122.225", "192.168.122.186"};
 static const char *kvmlist[] = {"core-current-zero", "core-current-one"};
 
+
 #define N_FS    nelem(fslist)
 char *basepaths[N_FS];
 char *testdirs[N_FS];

@@ -12,22 +12,15 @@ char *base_command = "vmrun -T ws -gu root -gp Pa55word";
 char *file_ops_script = "/mnt/hgfs/mcfs_shared/run_file_ops";
 char *absfs_script = "/mnt/hgfs/mcfs_shared/run_absfs";
 */
-char *ssh_user = "root";
-char *guest_fops_ret_file = "/mnt/hgfs/mcfs_shared/ret/mcfs_fops_ret";
-char *guest_file_ops_script = "/mnt/hgfs/mcfs_shared/run_file_ops";
 
-char *guest_fs_free_space_ret_file = "/mnt/hgfs/mcfs_shared/ret/fs_free_space_ret";
-
-char *guest_absfs_script = "/mnt/hgfs/mcfs_shared/run_absfs";
-char *guest_absfs_ret_file = "/mnt/hgfs/mcfs_shared/ret/abstract_fs_ret";
 
 int get_retval_errno(int fsidx, const char *funcname)
 {
-    char filename[100];
+    char filename[200];
     // scp required
     // scp root@ip:/mnt/mcfs_shared/ret/mcfs_fops_ret /tmp/mcfs_shared/%d/ret/
     char scp_command[500];
-    char host_ret_dir[64];
+    char host_ret_dir[100];
     sprintf(host_ret_dir, "/tmp/mcfs_shared/%d/ret/", fsidx);
     sprintf(scp_command, "scp %s@%s:%s %s", ssh_user, kvmiplist[fsidx], guest_fops_ret_file, host_ret_dir);
     system(scp_command);
@@ -35,7 +28,7 @@ int get_retval_errno(int fsidx, const char *funcname)
     FILE *fptr = fopen(filename, "r");
     if (fptr == NULL)
     {
-        printf("%s file not present in the SCP shared folder %s for command %s\n", filename, kvmiplist[fsidx], funcname);
+        fprintf(stderr, "[get_retval_errno] %s file not present in the SCP shared folder %s for command %s\n", filename, kvmiplist[fsidx], funcname);
     }
     int ret = 0, err = 0;
     fscanf(fptr, "%d %d", &ret, &err);
@@ -344,28 +337,32 @@ int compute_abstract_state_in_kvm(int fsidx, const char *path, absfs_state_t sta
     char command[5000];
     //sprintf(command, "%s runProgramInGuest %s /bin/bash \"%s\" \"%s\"", base_command, vmlist[fsidx], absfs_script, path);
     sprintf(command, "ssh %s@%s \"/bin/bash %s %s\"", ssh_user, kvmiplist[fsidx], guest_absfs_script, path);
+    printf("[YIFEI] compute_abstract_state_in_kvm %d: command to run absfs script in KVM guest: %s\n", fsidx, command);
+
     errno = 0;
     system(command);
 
     int ret = get_retval_errno(fsidx, __func__);
     if (ret != 0)
     {
-        printf("Could not obtain the abstract state from guest %s\n", kvmlist[fsidx]);
+        printf("Could not obtain the abstract state return from guest %s\n", kvmlist[fsidx]);
         return ret;
     }
 
-    char filename[100];
+    char filename[200];
     char scp_command[500];
-    char host_ret_dir[64];
+    char host_ret_dir[100];
     sprintf(host_ret_dir, "/tmp/mcfs_shared/%d/ret/", fsidx);
     sprintf(scp_command, "scp %s@%s:%s %s", ssh_user, kvmiplist[fsidx], guest_absfs_ret_file, host_ret_dir);
+    printf("[YIFEI] compute_abstract_state_in_kvm %d: command to copy absfs return file to host machine: %s\n", fsidx, scp_command);
+
     system(scp_command);
 
     sprintf(filename, "%s/abstract_fs_ret", host_ret_dir);
     FILE *f = fopen(filename, "r");
     if (f == NULL)
     {
-        printf("%s not found of %s\n", filename, kvmlist[fsidx]);
+        printf("compute_abstract_state_in_kvm %s not found of %s\n", filename, kvmlist[fsidx]);
     }
 
     unsigned int temp[16];

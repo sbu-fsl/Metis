@@ -11,6 +11,7 @@ verbose=0
 POSITIONAL=()
 _CFLAGS=""
 KEEP_FS=0
+KEEP_SNAPSHOT=0
 SETUP_ONLY=0
 REPLAY=0
 exclude_dirs=(
@@ -129,6 +130,16 @@ generic_cleanup() {
             IP=${KVM_IP[$i]};
 
             unset_$fs $IP;
+        done
+    fi
+
+    if [ "$KEEP_SNAPSHOT" = "0" ]; then
+        n_kvm=${#KVMLIST[@]};
+        for i in $(seq 0 $(($n_kvm-1))); do
+            kvmdomain=${KVMLIST[$i]};
+            for snapshot in $(virsh snapshot-list ${kvmdomain}| tail -n +3 | head -n -1 | cut -d' ' -f2); do 
+                virsh snapshot-delete ${kvmdomain} $snapshot; 
+            done 
         done
     fi
 

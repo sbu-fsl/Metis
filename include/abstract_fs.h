@@ -103,8 +103,20 @@ typedef struct abstract_fs absfs_t;
 void init_abstract_fs(absfs_t *absfs);
 int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
                      printer_t verbose_printer);
+int scan_abstract_fs_remote_kvm(int fsidx, const char *ssh_user, const char *kvm_ip, absfs_t *absfs, const char *basepath, bool verbose,
+                     printer_t verbose_printer);
 void print_abstract_fs_state(printer_t printer, absfs_state_t state);
 void print_filemode(printer_t printer, mode_t mode);
+
+
+extern const char *guest_absfs_script;
+extern const char *guest_absfs_ret_file;
+
+extern const char *guest_fops_ret_file;
+extern const char *guest_file_ops_script;
+
+extern const char *guest_fs_free_space_ret_file;
+extern const char *ssh_user;
 
 /**
  * get_state_prefix: Get the 32-bit prefix of the "abstract file

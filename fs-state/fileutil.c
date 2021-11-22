@@ -95,11 +95,12 @@ bool compare_equality_values(const char **fses, int n_fs, int *nums)
     return res;
 }
 
-void dump_absfs(const char *basepath)
+void dump_absfs(int fsidx, const char *ssh_user, const char *kvm_ip, const char *basepath)
 {
     absfs_t absfs;
     init_abstract_fs(&absfs);
-    scan_abstract_fs(&absfs, basepath, true, submit_error);
+    //scan_abstract_fs(&absfs, basepath, true, submit_error);
+    scan_abstract_fs_remote_kvm(fsidx, ssh_user, kvm_ip, &absfs, basepath, true, submit_error);
 }
 
 bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
@@ -127,7 +128,7 @@ retry:
         for (int i = 0; i < n_fs; ++i) {
             logwarn("[seqid=%zu, fs=%s]: Directory structure:",
                     count, fses[i]);
-            dump_absfs(basepaths[i]);
+            dump_absfs(i, ssh_user, kvmiplist[i], basepaths[i]);
             submit_error("hash=", count, fses[i]);
             print_abstract_fs_state(submit_error, absfs[i]);
             submit_error("\n");
