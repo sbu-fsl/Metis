@@ -224,9 +224,9 @@ size_t get_fs_free_space_in_kvm(int fsidx)
 {
     time_t start = time(NULL);
 
-    char filename[100];
+    char filename[200];
     char scp_command[500];
-    char host_ret_dir[64];
+    char host_ret_dir[100];
     sprintf(host_ret_dir, "/tmp/mcfs_shared/%d/ret/", fsidx);
     //sprintf(filename, "/tmp/mcfs_shared/%d/ret/fs_free_space_ret", fsidx);
     sprintf(scp_command, "scp %s@%s:%s %s", ssh_user, kvmiplist[fsidx], guest_fs_free_space_ret_file, host_ret_dir);
