@@ -16,6 +16,7 @@
 #include <gperftools/profiler.h>
 #include "errnoname.h"
 #include "path_utils.h"
+#include <unordered_set>
 
 const char *guest_absfs_script = "/mnt/hgfs/mcfs_shared/run_absfs";
 const char *guest_absfs_ret_file = "/mnt/hgfs/mcfs_shared/ret/abstract_fs_ret";
@@ -32,6 +33,7 @@ struct md5sum {
   uint64_t b;
 };
 
+/*
 struct exclude_path {
   std::string parent;
   std::string name;
@@ -42,7 +44,16 @@ static const struct exclude_path exclusion_list[] = {
   {"/", ".nilfs"},
   {"/", ".mcfs_dummy"}
 };
+*/
 
+std::unordered_set<std::string> exclusion_list = {
+        {"/lost+found"},
+        {"/.nilfs"},
+        {"/.mcfs_dummy"},
+        {"/build"}
+};
+
+/*
 static inline bool is_excluded(const std::string &parent,
                                const std::string &name) {
   int N = sizeof(exclusion_list) / sizeof(struct exclude_path);
@@ -53,6 +64,19 @@ static inline bool is_excluded(const std::string &parent,
   }
   return false;
 }
+*/
+
+static inline bool is_excluded(const std::string &path) {
+    /*int N = sizeof(exclusion_list) / sizeof(struct exclude_path);
+    for (int i = 0; i < N; ++i) {
+        if (exclusion_list[i].parent == parent && exclusion_list[i].name == name) {
+            return true;
+        }
+    }
+    return false;*/
+    return (exclusion_list.find(path) != exclusion_list.end());
+}
+
 
 static inline bool is_this_or_parent(const char *name) {
   return (strncmp(name, ".", NAME_MAX) == 0) ||
@@ -121,6 +145,9 @@ static const char *get_abstract_path(const char *fullpath) {
 
 static int nftw_handler(const char *fpath, const struct stat *finfo,
     int typeflag, struct FTW *ftwbuf) {
+  const char *abspath = get_abstract_path(fpath);
+  if (is_excluded(abspath)) return FTW_SKIP_SUBTREE;
+
   AbstractFile file;
   file.printer = walker_printer;
   file.fullpath = fpath;
