@@ -23,7 +23,7 @@ proctype worker()
            makelog("BEGIN: create_file\n");
            mountall();
            for (i = 0; i < N_FS; ++i) {
-               makecall(rets[i], errs[i], "%s, 0%o", nfs_create_file, testfiles[i], 0644);
+               makecall(rets[i], errs[i], "%s, 0%o", create_file, testfiles[i], 0644);
                // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                compute_abstract_state(basepaths[i], absfs[i]);
            }
@@ -47,7 +47,7 @@ proctype worker()
             char *data = malloc(Pworker->writelen);
             generate_data(data, Pworker->writelen, Pworker->writebyte);
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s, %p, %ld, %zu", nfs_write_file, testfiles[i], data,
+                makecall(rets[i], errs[i], "%s, %p, %ld, %zu", write_file, testfiles[i], data,
                          (off_t)Pworker->offset, (size_t)Pworker->writelen);
                 // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
@@ -72,7 +72,7 @@ proctype worker()
             mountall();
             // off_t flen = pick_value(0, 200000, 10000);
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s, %ld", nfs_trunc_file, testfiles[i]);
+                makecall(rets[i], errs[i], "%s, %ld", truncate, testfiles[i], (off_t)Pworker->filelen);
                 // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
@@ -90,7 +90,7 @@ proctype worker()
             makelog("BEGIN: unlink\n");
             mountall();
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s", nfs_unlink_file, testfiles[i]);
+                makecall(rets[i], errs[i], "%s", unlink, testfiles[i]);
                 // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
@@ -108,7 +108,7 @@ proctype worker()
             makelog("BEGIN: mkdir\n");
             mountall();
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s, 0%o", nfs_create_dir, testdirs[i]);
+                makecall(rets[i], errs[i], "%s, 0%o", mkdir, testdirs[i], 0755);
                 // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }
@@ -127,7 +127,7 @@ proctype worker()
             makelog("BEGIN: rmdir\n");
             mountall();
             for (i = 0; i < N_FS; ++i) {
-                makecall(rets[i], errs[i], "%s", nfs_remove_dir, testdirs[i]);
+                makecall(rets[i], errs[i], "%s", rmdir, testdirs[i]);
                 // fsfreeze(fslist[i], devlist[i], basepaths[i]);
                 compute_abstract_state(basepaths[i], absfs[i]);
             }

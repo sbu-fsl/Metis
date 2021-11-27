@@ -55,13 +55,14 @@ bool do_fsck()
 
 void mountall()
 {
-    int failpos, err;
+    int failpos, err, ret;
     for (int i = 0; i < N_FS; ++i) {
         /* Skip verifs */
-        if (is_verifs(fslist[i]) || is_nfs_verifs(fslist[i]))
+        if (is_verifs(fslist[i]))
             continue;
         /* mount(source, target, fstype, mountflags, option_str) */
-        int ret = mount(devlist[i], basepaths[i], fslist[i], MS_NOATIME, "");
+
+        ret = mount(devlist[i], basepaths[i], fslist[i], MS_NOATIME, "");
         if (ret != 0) {
             failpos = i;
             err = errno;
@@ -72,7 +73,7 @@ void mountall()
 err:
     /* undo mounts */
     for (int i = 0; i < failpos; ++i) {
-        if (is_verifs(fslist[i]) || is_nfs_verifs(fslist[i]))
+        if (is_verifs(fslist[i]))
             continue;
         umount2(basepaths[i], MNT_FORCE);
     }
@@ -90,7 +91,7 @@ void unmount_all()
     record_fs_stat();
 #endif
     for (int i = 0; i < N_FS; ++i) {
-        if (is_verifs(fslist[i]) || is_nfs_verifs(fslist[i]))
+        if (is_verifs(fslist[i]))
             continue;
         int retry_limit = 10;
         /* We have to unfreeze the frozen file system before unmounting it.

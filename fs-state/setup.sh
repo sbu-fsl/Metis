@@ -1,7 +1,7 @@
 #!/bin/bash
 
-FSLIST=(verifs2 nfs_verifs2 nfs_server)
-DEVLIST=()
+FSLIST=(ext4 nfs)
+DEVLIST=(/dev/ram0 /dev/ram1)
 LOOPDEVS=()
 verbose=0
 POSITIONAL=()
@@ -90,6 +90,19 @@ unset_ext4() {
     :
 }
 
+setup_nfs() {
+    DEVFILE=$1;
+    BLOCKSIZE=1k
+    COUNT=256
+    runcmd dd if=/dev/zero of=$DEVFILE bs=$BLOCKSIZE count=$COUNT status=none;
+
+    setup_ext ext4 $DEVFILE 0;
+}
+
+unset_nfs() {
+    :
+}
+
 JFFS2_EMPTY_DIR=/tmp/_empty_dir_$RANDOM
 JFFS2_IMAGE=/tmp/jffs2.img
 JFFS2_SIZE=262144
@@ -150,40 +163,9 @@ unset_xfs() {
     :
 }
 
-setup_verifs2() {
-    runcmd fuse-cpp-ramfs /mnt/test-verifs2 &
-}
-
-unset_verifs2() {
-    :
-}
-
-setup_nfs_verifs2() {
-    runcmd fuse-cpp-ramfs /mnt/test-nfs_verifs2 &
-}
-
-unset_nfs_verifs2() {
-    :
-}
-
-setup_nfs_server() {
-    runcmd ganesha.nfsd
-}
-
-unset_nfs_server() {
-    local pid=`pgrep -x ganesha.nfsd`
-    if [[ ! -z $pid ]]; then
-        runcmd kill -9 `pgrep ganesha.nfsd`
-    fi
-}
-
 generic_cleanup() {
     if [ "$KEEP_FS" = "0" ]; then
         for fs in ${FSLIST[@]}; do
-            if [[ "$fs" == *"nfs"* ]]; then
-                unset_nfs_server;
-            fi
-
             if [ "$(mount | grep /mnt/test-$fs)" ]; then
                 umount -f /mnt/test-$fs;
             fi
@@ -275,26 +257,18 @@ for i in $(seq 0 $(($n_fs-1))); do
     fs=${FSLIST[$i]};
     DEVICE=${DEVLIST[$i]};
 
-    if [[ "$fs" == "nfs_server" ]]; then
-        setup_nfs_server;
-        continue
-    fi
-
-    # stop the server first
-    if [[ "$fs" == *"nfs"* ]]; then
-        unset_nfs_server;
-    fi
-
+    # Unmount first
     if [ "$(mount | grep /mnt/test-$fs)" ]; then
-        umount -f /mnt/test-$fs;
+        runcmd umount -f /mnt/test-$fs;
     fi
+
+    setup_$fs $DEVICE;
 
     if [ -d /mnt/test-$fs ]; then
         runcmd rm -rf /mnt/test-$fs;
     fi
     runcmd mkdir -p /mnt/test-$fs;
 
-    setup_$fs $DEVICE;
 done
 
 # Run test program
@@ -315,4 +289,3 @@ if [ "$REPLAY" = "1" ]; then
     ./replay 2>&1 > replay.log
     mount_all;
 fi
-

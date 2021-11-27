@@ -32,9 +32,9 @@
 #define _FILEUTIL_H_
 
 #define VERIFS_PREFIX       "veri"
-#define NFS_VERIFS_PREFIX   "nfs_veri"
+#define NFS_PREFIX   "nfs"
 #define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
-#define NFS_VERIFS_PREFIX_LEN   (sizeof(NFS_VERIFS_PREFIX) - 1)
+#define NFS_PREFIX_LEN   (sizeof(NFS_PREFIX) - 1)
 
 extern int cur_pid;
 extern char func[FUNC_NAME_LEN + 1];
@@ -185,8 +185,8 @@ static inline bool is_verifs(const char *fsname)
     return strncmp(fsname, VERIFS_PREFIX, VERIFS_PREFIX_LEN) == 0;
 }
 
-static inline bool is_nfs_verifs(const char *fsname) {
-    return strncmp(fsname, NFS_VERIFS_PREFIX, NFS_VERIFS_PREFIX_LEN) == 0;
+static inline bool is_nfs(const char *fsname) {
+    return strncmp(fsname, NFS_PREFIX, NFS_PREFIX_LEN) == 0;
 }
 
 bool compare_equality_values(const char **fses, int n_fs, int *nums);
