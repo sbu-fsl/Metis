@@ -24,7 +24,7 @@
 #include "errnoname.h"
 #include "vector.h"
 #include "abstract_fs.h"
-#include "config.h"
+#include "whichconfig.h"
 #include "set.h"
 #include "log.h"
 
@@ -43,6 +43,9 @@ extern int _n_files;
 extern size_t count;
 extern char *basepaths[];
 extern absfs_set_t absfs_set;
+extern int pan_argc;
+extern char **pan_argv;
+extern int absfs_hash_method;
 
 struct imghash {
     unsigned char md5[16];
@@ -77,9 +80,11 @@ static inline void compute_abstract_state(const char *basepath,
 {
     absfs_t absfs;
 
+    absfs.hash_option = absfs_hash_method;
     init_abstract_fs(&absfs);
     scan_abstract_fs(&absfs, basepath, false, submit_error);
     memcpy(state, absfs.state, sizeof(absfs_state_t));
+    destroy_abstract_fs(&absfs);
 }
 
 #define makecall(retvar, err, argfmt, funcname, ...) \
@@ -195,7 +200,7 @@ void fsimg_checkpoint(const char *mntpoint);
 void closeall();
 void cleanup();
 void mountall();
-void unmount_all();
+void unmount_all(bool strict);
 void record_fs_stat();
 void start_perf_metrics_thread();
 bool do_fsck();
@@ -203,5 +208,19 @@ int fsfreeze(const char *fstype, const char *devpath, const char *mountpoint);
 int fsthaw(const char *fstype, const char *devpath, const char *mountpoint);
 int unfreeze_all();
 void clear_excluded_files();
+int setup_generic(const char *fsname, const char *devname, const size_t size_kb);
+int setup_jffs2(const char *devname, const size_t size_kb);
+void execute_cmd(const char *cmd);
+void populate_mountpoints();
+
+static inline void unmount_all_strict()
+{
+    unmount_all(true);
+}
+
+static inline void unmount_all_relaxed()
+{
+    unmount_all(false);
+}
 
 #endif

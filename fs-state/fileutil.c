@@ -98,8 +98,37 @@ bool compare_equality_values(const char **fses, int n_fs, int *nums)
 void dump_absfs(const char *basepath)
 {
     absfs_t absfs;
+    absfs.hash_option = absfs_hash_method;
     init_abstract_fs(&absfs);
     scan_abstract_fs(&absfs, basepath, true, submit_error);
+    destroy_abstract_fs(&absfs);
+}
+
+static void tell_absfs_hash_method()
+{
+    char *hashname;
+    switch (absfs_hash_method) {
+        case xxh128_t:
+            hashname = "xxh3-128";
+            break;
+
+        case xxh3_t:
+            hashname = "xxh3-64";
+            break;
+
+        case md5_t:
+            hashname = "md5";
+            break;
+
+        case crc32_t:
+            hashname = "crc32";
+            break;
+
+        default:
+            hashname = "(unknown)";
+            break;
+    }
+    fprintf(stderr, "Selected abstraction hash method is %s.\n", hashname);
 }
 
 bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
@@ -112,6 +141,20 @@ retry:
     /* Calculate the abstract file system states */
     for (int i = 0; i < n_fs; ++i) {
         compute_abstract_state(basepaths[i], absfs[i]);
+    }
+    /* New: record abstract states in the main log */
+    static size_t prev_seqid = 0;
+    if (prev_seqid != count) {
+        char abs_state_str[33] = {0};
+        char *strp = abs_state_str;
+        for (int i = 0; i < 16; ++i) {
+            // second arg of snprintf: count the null-terminator. However, the
+    	    // return value does not include the terminator.
+            size_t res = snprintf(strp, 3, "%02x", absfs[0][i]);
+            strp += res;
+        }
+        makelog("absfs = {%s}\n", abs_state_str);
+        prev_seqid = count;
     }
     /* Compare */
     memcpy(base, absfs[0], sizeof(absfs_state_t));
@@ -354,14 +397,34 @@ static void unmap_devices()
     }
 }
 
+static void setup_filesystems()
+{
+    int ret;
+    populate_mountpoints();
+    for (int i = 0; i < N_FS; ++i) {
+        if (strcmp(fslist[i], "jffs2") == 0) {
+            ret = setup_jffs2(devlist[i], devsize_kb[i]);
+        } else {
+            ret = setup_generic(fslist[i], devlist[i], devsize_kb[i]);
+        }
+        if (ret != 0) {
+            fprintf(stderr, "Cannot setup file system %s (ret = %d)\n",
+                    fslist[i], ret);
+            exit(1);
+        }
+    }
+}
+
 static void init_basepaths()
 {
     /* Initialize base paths */
     printf("%ld file systems to test.\n", N_FS);
     for (int i = 0; i < N_FS; ++i) {
-        size_t len = snprintf(NULL, 0, "/mnt/test-%s", fslist[i]);
+        size_t len = snprintf(NULL, 0, "/mnt/test-%s%s",
+                              fslist[i], fssuffix[i]);
         basepaths[i] = calloc(1, len + 1);
-        snprintf(basepaths[i], len + 1, "/mnt/test-%s", fslist[i]);
+        snprintf(basepaths[i], len + 1, "/mnt/test-%s%s",
+                 fslist[i], fssuffix[i]);
     }
 }
 
@@ -532,23 +595,45 @@ static void equalize_free_spaces(void)
         }
         close(fd);
     }
-    unmount_all();
+    unmount_all_strict();
 }
 
-void __attribute__((constructor)) init()
+extern void (*spin_after_argparse)(int argc, char **argv);
+static void main_hook(int argc, char **argv)
 {
-    try_init_myheap();
-    init_basepaths();
+    tell_absfs_hash_method();
     /* Fill initial abstract states */
     for (int i = 0; i < N_FS; ++i) {
         compute_abstract_state(basepaths[i], absfs[i]);
     }
-    
+}
+
+void __attribute__((constructor)) init()
+{
+    char output_log_name[NAME_MAX] = {0};
+    char error_log_name[NAME_MAX] = {0};
+    char seq_log_name[NAME_MAX] = {0};
+    char progname[NAME_MAX] = {0};
+    ssize_t progname_len;
+    try_init_myheap();
+    init_basepaths();
+    setup_filesystems();
+
     /* Initialize log daemon */
     // setvbuf(stdout, NULL, _IONBF, 0);
     // setvbuf(stderr, NULL, _IONBF, 0);
 
-    init_log_daemon(OUTPUT_LOG_PATH, ERROR_LOG_PATH, SEQ_LOG_PATH);
+    progname_len = get_progname(progname);
+    if (progname_len < 0) {
+        fprintf(stderr, "Cannot get cmdline and program name: (%s:%ld)\n",
+                errnoname(-progname_len), progname_len);
+        exit(1);
+    }
+
+    add_ts_to_logname(output_log_name, NAME_MAX, OUTPUT_PREFIX, progname, "");
+    add_ts_to_logname(error_log_name, NAME_MAX, ERROR_PREFIX, progname, "");
+    add_ts_to_logname(seq_log_name, NAME_MAX, SEQ_PREFIX, progname, "");
+    init_log_daemon(output_log_name, error_log_name, seq_log_name);
 
     /* Register hooks */
     c_stack_before = checkpoint_before_hook;
@@ -559,6 +644,7 @@ void __attribute__((constructor)) init()
     c_update_after = update_after_hook;
     c_revert_before = revert_before_hook;
     c_revert_after = revert_after_hook;
+    spin_after_argparse = main_hook;
 
     /* Initialize absfs-set used for counting unique states */
     absfs_set_init(&absfs_set);

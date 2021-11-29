@@ -3,10 +3,11 @@ COMMON_SRC := $(wildcard $(COMMON_DIR)/*.c) $(wildcard $(COMMON_DIR)/*.cpp)
 COMMON_OBJ := $(patsubst $(COMMON_DIR)/%,%.o,$(COMMON_SRC))
 override CFLAGS += -g -I../include -D PRINTF # -D T_RAND -D P_RAND
 override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz
+PAN = pan
 
 all: demo.pml parameters common-libs absfs-set
 	spin -a demo.pml; \
-	gcc -o pan pan.c set.o fileutil.c perf.c mount.c common-libs.a $(CFLAGS) $(LIBS); \
+	gcc -o $(PAN) pan.c set.o fileutil.c perf.c mount.c setup.c common-libs.a $(CFLAGS) $(LIBS); \
 
 run: all
 	./pan | less -N; \

@@ -82,7 +82,22 @@ err:
     exit(1);
 }
 
-void unmount_all()
+static void save_lsof()
+{
+    int ret;
+    static int report_count = 0;
+    char progname[NAME_MAX] = {0};
+    char logname[NAME_MAX] = {0};
+    char cmd[PATH_MAX] = {0};
+
+    get_progname(progname);
+    add_ts_to_logname(logname, NAME_MAX, "lsof", progname, "");
+    ret = snprintf(cmd, PATH_MAX, "lsof > %s-%d.txt", logname, report_count++);
+    assert(ret >= 0);
+    ret = system(cmd);
+}
+
+void unmount_all(bool strict)
 {
     bool has_failure = false;
     int ret;
@@ -92,7 +107,7 @@ void unmount_all()
     for (int i = 0; i < N_FS; ++i) {
         if (is_verifs(fslist[i]))
             continue;
-        int retry_limit = 10;
+        int retry_limit = 20;
         /* We have to unfreeze the frozen file system before unmounting it.
          * Otherwise the system will hang! */
         if (fs_frozen[i]) {
@@ -101,13 +116,16 @@ void unmount_all()
 try_unmount:
         ret = umount2(basepaths[i], 0);
         if (ret != 0) {
-            /* If unmounting failed due to device being busy, wait 1ms and
-             * try again up to retry_limit times */
+            /* If unmounting failed due to device being busy, again up to
+             * retry_limit times with 100 * 2^n ms (n = num_retries) */
+            useconds_t waitms = (100 << (10 - retry_limit));
             if (errno == EBUSY && retry_limit > 0) {
                 fprintf(stderr, "File system %s mounted on %s is busy. Retry "
-                        "unmounting after 1ms.\n", fslist[i], basepaths[i]);
-                usleep(1000);
+                        "unmounting after %dms.\n", fslist[i], basepaths[i],
+                        waitms);
+                usleep(1000 * waitms);
                 retry_limit--;
+                save_lsof();
                 goto try_unmount;
             }
             fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
@@ -115,7 +133,7 @@ try_unmount:
             has_failure = true;
         }
     }
-    if (has_failure)
+    if (has_failure && strict)
         exit(1);
 }
 

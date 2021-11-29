@@ -24,10 +24,6 @@ struct md5sum {
     uint64_t b;
 };
 
-/*struct exclude_path {
-    std::string parent;
-    std::string name;
-};*/
 std::unordered_set<std::string> exclusion_list = {
         {"/lost+found"},
         {"/.nilfs"},
@@ -35,20 +31,7 @@ std::unordered_set<std::string> exclusion_list = {
         {"/build"}
 };
 
-/*static const struct exclude_path exclusion_list[] = {
-        {"/", "lost+found"},
-        {"/", ".nilfs"},
-        {"/", ".mcfs_dummy"}
-};*/
-
 static inline bool is_excluded(const std::string &path) {
-    /*int N = sizeof(exclusion_list) / sizeof(struct exclude_path);
-    for (int i = 0; i < N; ++i) {
-        if (exclusion_list[i].parent == parent && exclusion_list[i].name == name) {
-            return true;
-        }
-    }
-    return false;*/
     return (exclusion_list.find(path) != exclusion_list.end());
 }
 

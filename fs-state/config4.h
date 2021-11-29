@@ -20,9 +20,9 @@
 #define ABORT_ON_FAIL    1
 
 /* List of file systems: Modify this to experiment with other file systems */
-static const char *fslist[] = {"ext4", "jffs2"};
-static const char *fssuffix[] = {"", ""};
-static const char *devlist[] = {"/dev/ram0", "/dev/mtdblock0"};
+static const char *fslist[] = {"ext2", "ext4"};
+static const char *fssuffix[] = {"-6", "-7"};
+static const char *devlist[] = {"/dev/ram6", "/dev/ram7"};
 static const size_t devsize_kb[] = {256, 256};
 #define N_FS    nelem(fslist)
 char *basepaths[N_FS];
