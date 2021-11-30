@@ -15,6 +15,15 @@ int _n_files;
 size_t count;
 absfs_set_t absfs_set;
 
+static ssize_t read2(int fd, void *buf, size_t count)
+{
+    ssize_t res = read(fd, buf, count);
+    if (res >= 0)
+        return res;
+    else
+        return -errno;
+}
+
 int compare_file_content(const char *path1, const char *path2)
 {
     const size_t bs = 4096;
@@ -54,19 +63,20 @@ int compare_file_content(const char *path1, const char *path2)
         goto end;
     }
     /* Compare the file content */
-    int r1, r2;
+    ssize_t r1, r2;
     lseek(fd1, 0, SEEK_SET);
     lseek(fd2, 0, SEEK_SET);
-    while ((r1 = read(fd1, buf1, bs)) > 0 && (r2 = read(fd2, buf2, bs)) > 0) {
+    while ((r1 = read2(fd1, buf1, bs)) > 0 && (r2 = read2(fd2, buf2, bs)) > 0) {
         if (memcmp(buf1, buf2, r1) != 0) {
             logwarn("[seqid=%zu] content in '%s' and '%s' "
                     "is not equal.\n", count, path1, path2);
             ret = -1;
-	    break;
+	        break;
         }
     }
     if (r1 < 0 || r2 < 0) {
-        logerr("[seqid=%zu] error occurred when reading.", count);
+        logerr("[seqid=%zu] error occurred when reading (r1 = %ld, r2 = %ld).",
+               count, r1, r2);
         ret = -1;
     }
 end:
