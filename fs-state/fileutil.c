@@ -463,6 +463,57 @@ static int restore_verifs(size_t key, const char *mp)
     return ret;
 }
 
+static int checkpoint_nfs(size_t key, const char *mp)
+{
+    errno = 0;
+    int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
+    if (mpfd < 0) {
+        logerr("Cannot open mountpoint %s", mp);
+        return errno;
+    }
+
+    char cmd[ARG_MAX] = {0};
+
+    snprintf(cmd, ARG_MAX, "sudo ./nfs_cr.sh c %zu", key);
+
+    int ret = system(cmd);
+
+    if (ret == -1 || WEXITSTATUS(ret) != 0){
+        char buf[BUFSIZ];
+        setbuf(stderr, buf);
+
+        logerr("Cannot perform checkpoint at %s", mp);
+        ret = errno;
+    }
+
+    return ret;
+}
+
+static int restore_nfs(size_t key, const char *mp) {
+    errno = 0;
+    int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
+    if (mpfd < 0) {
+        logerr("Cannot open mountpoint %s", mp);
+        return errno;
+    }
+    char cmd[ARG_MAX] = {0};
+
+    snprintf(cmd, ARG_MAX, "sudo ./nfs_cr.sh r %zu", key);
+
+    int ret = system(cmd);
+
+    if (ret == -1 || WEXITSTATUS(ret) != 0){
+        char buf[BUFSIZ];
+        setbuf(stderr, buf);
+
+        logerr("Cannot perform checkpoint at %s", mp);
+        ret = errno;
+    }
+
+    close(mpfd);
+    return ret;
+}
+
 static long checkpoint_before_hook(unsigned char *ptr)
 {
     mmap_devices();
@@ -495,6 +546,7 @@ static long restore_after_hook(unsigned char *ptr)
 static size_t state_depth = 0;
 static long update_before_hook(unsigned char *ptr)
 {
+    int res = 0;
     submit_seq("checkpoint\n");
     makelog("[seqid = %d] checkpoint (%zu)\n", count, state_depth);
     absfs_set_add(absfs_set, absfs);
@@ -502,7 +554,12 @@ static long update_before_hook(unsigned char *ptr)
     for (int i = 0; i < N_FS; ++i) {
         if (!is_verifs(fslist[i]))
             continue;
-        int res = checkpoint_verifs(state_depth, basepaths[i]); 
+
+        if (is_nfs(fslist[i]))
+            res = checkpoint_nfs(state_depth, basepaths[i]);
+        else
+            res = checkpoint_verifs(state_depth, basepaths[i]);
+
         if (res != 0) {
             logerr("Failed to checkpoint a verifiable file system %s.",
                    fslist[i]);
@@ -518,12 +575,18 @@ static long update_after_hook(unsigned char *ptr)
 
 static long revert_before_hook(unsigned char *ptr)
 {
+    int res = 0;
     submit_seq("restore\n");
     makelog("[seqid = %d] restore (%p)\n", count, state_depth);
     for (int i = 0; i < N_FS; ++i) {
         if (!is_verifs(fslist[i]))
             continue;
-        int res = restore_verifs(state_depth, basepaths[i]);
+
+        if (is_nfs(fslist[i]))
+            res = restore_nfs(state_depth, basepaths[i]);
+        else
+            res = restore_verifs(state_depth, basepaths[i]);
+
         if (res != 0) {
             logerr("Failed to restore a verifiable file system %s.",
                     fslist[i]);

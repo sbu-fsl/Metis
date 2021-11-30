@@ -47,7 +47,7 @@ int check_device(const char *devname, const size_t exp_size_kb)
         return -ENOSPC;
     }
     close(fd);
-    return 0; 
+    return 0;
 }
 
 int setup_generic(const char *fsname, const char *devname, const size_t size_kb)
@@ -66,7 +66,11 @@ int setup_generic(const char *fsname, const char *devname, const size_t size_kb)
              devname, size_kb);
     execute_cmd(cmdbuf);
     // format the device with the specified file system
-    snprintf(cmdbuf, PATH_MAX, "mkfs.%s %s", fsname, devname);
+    if (is_nfs(fsname)) {
+        snprintf(cmdbuf, PATH_MAX, "mkfs.%s %s", "ext4", devname);
+    } else {
+        snprintf(cmdbuf, PATH_MAX, "mkfs.%s %s", fsname, devname);
+    }
     execute_cmd(cmdbuf);
 
     return 0;
@@ -76,7 +80,7 @@ int setup_jffs2(const char *devname, const size_t size_kb)
 {
     char cmdbuf[PATH_MAX];
     int ret, randnum;
-    
+
     // check if mtdram and mtdblock are loaded
     execute_cmd("lsmod | grep mtdram");
     execute_cmd("lsmod | grep mtdblock");
@@ -117,6 +121,6 @@ void populate_mountpoints()
         snprintf(cmdbuf, PATH_MAX, "mkdir -p /mnt/test-%s%s", fslist[i],
                  fssuffix[i]);
         execute_cmd(cmdbuf);
-        unmount_all_relaxed();
+        // unmount_all_relaxed();
     }
 }

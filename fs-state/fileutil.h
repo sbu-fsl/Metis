@@ -32,7 +32,10 @@
 #define _FILEUTIL_H_
 
 #define VERIFS_PREFIX       "veri"
+#define NFS_PREFIX          "nfs"
 #define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
+#define NFS_PREFIX_LEN      (sizeof(NFS_PREFIX) - 1)
+#define NFS_GANESHA         "ganesha.nfsd"
 
 extern int cur_pid;
 extern char func[FUNC_NAME_LEN + 1];
@@ -186,6 +189,10 @@ static inline ssize_t fsize(int fd)
 static inline bool is_verifs(const char *fsname)
 {
     return strncmp(fsname, VERIFS_PREFIX, VERIFS_PREFIX_LEN) == 0;
+}
+
+static inline bool is_nfs(const char *fsname) {
+    return strncmp(fsname, NFS_PREFIX, NFS_PREFIX_LEN) == 0;
 }
 
 bool compare_equality_values(const char **fses, int n_fs, int *nums);
