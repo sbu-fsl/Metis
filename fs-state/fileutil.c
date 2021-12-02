@@ -14,6 +14,7 @@ int _opened_files[1024];
 int _n_files;
 size_t count;
 absfs_set_t absfs_set;
+static size_t state_depth = 0;
 
 int compare_file_content(const char *path1, const char *path2)
 {
@@ -463,54 +464,33 @@ static int restore_verifs(size_t key, const char *mp)
     return ret;
 }
 
-static int checkpoint_nfs(size_t key, const char *mp)
+int snapshot_nfs()
 {
-    errno = 0;
-    int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
-    if (mpfd < 0) {
-        logerr("Cannot open mountpoint %s", mp);
-        return errno;
-    }
-
     char cmd[ARG_MAX] = {0};
-
-    snprintf(cmd, ARG_MAX, "sudo ./nfs_cr.sh c %zu", key);
-
+    snprintf(cmd, ARG_MAX, "./nfs_cr.sh c %zu", state_depth);
     int ret = system(cmd);
-
     if (ret == -1 || WEXITSTATUS(ret) != 0){
         char buf[BUFSIZ];
         setbuf(stderr, buf);
-
-        logerr("Cannot perform checkpoint at %s", mp);
+        logerr("Cannot checkpoint nfs server");
         ret = errno;
     }
 
     return ret;
 }
 
-static int restore_nfs(size_t key, const char *mp) {
+static int restore_nfs() {
     errno = 0;
-    int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
-    if (mpfd < 0) {
-        logerr("Cannot open mountpoint %s", mp);
-        return errno;
-    }
     char cmd[ARG_MAX] = {0};
-
-    snprintf(cmd, ARG_MAX, "sudo ./nfs_cr.sh r %zu", key);
-
+    snprintf(cmd, ARG_MAX, "./nfs_cr.sh r %zu", state_depth);
     int ret = system(cmd);
-
     if (ret == -1 || WEXITSTATUS(ret) != 0){
         char buf[BUFSIZ];
         setbuf(stderr, buf);
-
-        logerr("Cannot perform checkpoint at %s", mp);
+        logerr("Cannot restore nfs server");
         ret = errno;
     }
 
-    close(mpfd);
     return ret;
 }
 
@@ -543,7 +523,6 @@ static long restore_after_hook(unsigned char *ptr)
     return 0;
 }
 
-static size_t state_depth = 0;
 static long update_before_hook(unsigned char *ptr)
 {
     int res = 0;
@@ -555,10 +534,7 @@ static long update_before_hook(unsigned char *ptr)
         if (!is_verifs(fslist[i]))
             continue;
 
-        if (is_nfs(fslist[i]))
-            res = checkpoint_nfs(state_depth, basepaths[i]);
-        else
-            res = checkpoint_verifs(state_depth, basepaths[i]);
+        res = checkpoint_verifs(state_depth, basepaths[i]);
 
         if (res != 0) {
             logerr("Failed to checkpoint a verifiable file system %s.",
@@ -582,10 +558,7 @@ static long revert_before_hook(unsigned char *ptr)
         if (!is_verifs(fslist[i]))
             continue;
 
-        if (is_nfs(fslist[i]))
-            res = restore_nfs(state_depth, basepaths[i]);
-        else
-            res = restore_verifs(state_depth, basepaths[i]);
+        res = restore_verifs(state_depth, basepaths[i]);
 
         if (res != 0) {
             logerr("Failed to restore a verifiable file system %s.",

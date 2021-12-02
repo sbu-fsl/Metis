@@ -127,7 +127,7 @@ proctype worker()
             makelog("END: rmdir\n");
         }
     };
-    
+
     od
 };
 

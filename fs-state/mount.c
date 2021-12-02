@@ -30,8 +30,9 @@ static char *receive_output(FILE *cmdfp, size_t *length)
 }
 
 static int start_nfs_server() {
+    logerr("[DEV] nfs server started!!");
     system("ganesha.nfsd");
-    sleep(1000);
+    sleep(1);
 
     if (system("pidof -x ganesha.nfsd") != 0)
         return -1;
@@ -40,16 +41,21 @@ static int start_nfs_server() {
 }
 
 static void stop_nfs_server() {
+    logerr("[DEV] nfs server stopped!!");
+
+    // checkpoint the server
+    snapshot_nfs();
+
     system("killall -9 ganesha.nfsd");
-    sleep(1000);
+    sleep(1);
 }
 
 static int mount_nfs_client() {
     system("mount.nfs4 -o vers=4 127.0.0.1:/vfs0 /vfs1");
-    sleep(1000);
+    sleep(1);
 
     if (system("mount | grep vfs1") != 0)
-        return -1;   //
+        return -1;
 
     return 0;
 }
@@ -165,8 +171,10 @@ void unmount_all(bool strict)
         if (is_verifs(fslist[i]))
             continue;
 
-        if (is_nfs(fslist[i]))
+        if (is_nfs(fslist[i])) {
             unmount_nfs_client();
+            stop_nfs_server();
+        }
 
         int retry_limit = 20;
         /* We have to unfreeze the frozen file system before unmounting it.

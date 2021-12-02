@@ -219,6 +219,7 @@ int setup_generic(const char *fsname, const char *devname, const size_t size_kb)
 int setup_jffs2(const char *devname, const size_t size_kb);
 void execute_cmd(const char *cmd);
 void populate_mountpoints();
+int snapshot_nfs();
 
 static inline void unmount_all_strict()
 {
