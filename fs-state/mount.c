@@ -30,7 +30,7 @@ static char *receive_output(FILE *cmdfp, size_t *length)
 }
 
 static int start_nfs_server() {
-    logerr("[DEV] nfs server started!!");
+    logerr("[NFS] nfs server started!!");
     system("ganesha.nfsd");
     sleep(1);
 
@@ -41,7 +41,7 @@ static int start_nfs_server() {
 }
 
 static void stop_nfs_server() {
-    logerr("[DEV] nfs server stopped!!");
+    logerr("[NFS] nfs server stopped!!");
 
     // checkpoint the server
     snapshot_nfs();
@@ -92,22 +92,6 @@ void mountall()
 {
     int failpos, err, ret;
     for (int i = 0; i < N_FS; ++i) {
-        /* Skip verifs */
-        if (is_verifs(fslist[i]))
-            continue;
-        /* mount(source, target, fstype, mountflags, option_str) */
-
-        if (is_nfs(fslist[i])) {
-            ret = mount(devlist[i], basepaths[i], "ext4", MS_NOATIME, "");
-        } else {
-            ret = mount(devlist[i], basepaths[i], fslist[i], MS_NOATIME, "");
-        }
-        if (ret != 0) {
-            failpos = i;
-            err = errno;
-            goto err;
-        }
-
         if (is_nfs(fslist[i])) {
             // start nfs server
             ret = start_nfs_server();
@@ -120,23 +104,42 @@ void mountall()
             // mount nfs client
             ret = mount_nfs_client();
             if (ret != 0) {
+                logerr("[NFS] failed to mount NFS client.");
                 failpos = i;
                 err = errno;
                 goto err;
             }
+        }
+
+        /* Skip verifs */
+        if (is_verifs(fslist[i]) || is_nfs_veri(fslist[i]))
+            continue;
+
+        if (is_nfs(fslist[i])) {
+            ret = mount(devlist[i], basepaths[i], "ext4", MS_NOATIME, "");
+        } else {
+            ret = mount(devlist[i], basepaths[i], fslist[i], MS_NOATIME, "");
+        }
+
+        if (ret != 0) {
+            failpos = i;
+            err = errno;
+            goto err;
         }
     }
     return;
 err:
     /* undo mounts */
     for (int i = 0; i < failpos; ++i) {
-        if (is_verifs(fslist[i]))
-            continue;
-
         if (is_nfs(fslist[i])) {
             umount2("/vfs1", MNT_FORCE);
             stop_nfs_server();
         }
+
+        if (is_verifs(fslist[i]) || is_nfs_veri(fslist[i])) {
+            continue;
+        }
+
         umount2(basepaths[i], MNT_FORCE);
     }
     fprintf(stderr, "Could not mount file system %s in %s at %s (%s)\n",
@@ -168,13 +171,13 @@ void unmount_all(bool strict)
     record_fs_stat();
 #endif
     for (int i = 0; i < N_FS; ++i) {
-        if (is_verifs(fslist[i]))
-            continue;
-
         if (is_nfs(fslist[i])) {
             unmount_nfs_client();
             stop_nfs_server();
         }
+
+        if (is_verifs(fslist[i]) || is_nfs_veri(fslist[i]))
+            continue;
 
         int retry_limit = 20;
         /* We have to unfreeze the frozen file system before unmounting it.

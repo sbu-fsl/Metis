@@ -1,7 +1,7 @@
 #!/bin/bash
 
-FSLIST=(ext4 nfs)
-DEVLIST=(/dev/ram0 /dev/ram1)
+FSLIST=(verifs2 nfs_veri)
+DEVLIST=()
 LOOPDEVS=()
 verbose=0
 POSITIONAL=()
@@ -100,6 +100,22 @@ setup_nfs() {
 }
 
 unset_nfs() {
+    :
+}
+
+setup_verifs2() {
+    runcmd fuse-cpp-ramfs /mnt/test-verifs2 &
+}
+
+unset_verifs2() {
+    :
+}
+
+setup_nfs_veri() {
+    runcmd fuse-cpp-ramfs /mnt/test-nfs_veri &
+}
+
+unset_nfs_veri() {
     :
 }
 

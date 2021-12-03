@@ -403,6 +403,10 @@ static void setup_filesystems()
     int ret;
     populate_mountpoints();
     for (int i = 0; i < N_FS; ++i) {
+
+        if (is_verifs(fslist[i]) || is_nfs_veri(fslist[i]))
+            continue;
+
         if (strcmp(fslist[i], "jffs2") == 0) {
             ret = setup_jffs2(devlist[i], devsize_kb[i]);
         } else {
@@ -531,7 +535,7 @@ static long update_before_hook(unsigned char *ptr)
     absfs_set_add(absfs_set, absfs);
     state_depth++;
     for (int i = 0; i < N_FS; ++i) {
-        if (!is_verifs(fslist[i]))
+        if (!is_verifs(fslist[i]) || !is_nfs_veri(fslist[i]))
             continue;
 
         res = checkpoint_verifs(state_depth, basepaths[i]);
@@ -555,7 +559,7 @@ static long revert_before_hook(unsigned char *ptr)
     submit_seq("restore\n");
     makelog("[seqid = %d] restore (%p)\n", count, state_depth);
     for (int i = 0; i < N_FS; ++i) {
-        if (!is_verifs(fslist[i]))
+        if (!is_verifs(fslist[i]) || !is_nfs_veri(fslist[i]))
             continue;
 
         res = restore_verifs(state_depth, basepaths[i]);
@@ -591,7 +595,7 @@ static void equalize_free_spaces(void)
     mountall();
     /* Find free space of each file system being checked */
     for (int i = 0; i < N_FS; ++i) {
-        if (is_verifs(fslist[i]))
+        if (is_verifs(fslist[i]) || is_nfs_veri(fslist[i]))
             continue;
         struct statfs fsinfo;
         int ret = statfs(basepaths[i], &fsinfo);
@@ -607,7 +611,7 @@ static void equalize_free_spaces(void)
     /* Fill data to file systems who have greater than min_space of free space,
      * so that all file systems will have equal free capacities. */
     for (int i = 0; i < N_FS; ++i) {
-        if (is_verifs(fslist[i]))
+        if (is_verifs(fslist[i]) || is_nfs_veri(fslist[i]))
             continue;
         size_t fillsz = free_spaces[i] - min_space;
         char fullpath[PATH_MAX] = {0};

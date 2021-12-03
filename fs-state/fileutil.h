@@ -33,8 +33,10 @@
 
 #define VERIFS_PREFIX       "veri"
 #define NFS_PREFIX          "nfs"
+#define NFS_VERI_PREFIX     "nfs_veri"
 #define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
 #define NFS_PREFIX_LEN      (sizeof(NFS_PREFIX) - 1)
+#define NFS_VERIFS_LEN      (sizeof(NFS_VERI_PREFIX) - 1)
 #define NFS_GANESHA         "ganesha.nfsd"
 
 extern int cur_pid;
@@ -193,6 +195,10 @@ static inline bool is_verifs(const char *fsname)
 
 static inline bool is_nfs(const char *fsname) {
     return strncmp(fsname, NFS_PREFIX, NFS_PREFIX_LEN) == 0;
+}
+
+static inline bool is_nfs_veri(const char *fsname) {
+    return strncmp(fsname, NFS_VERI_PREFIX, NFS_VERIFS_LEN) == 0;
 }
 
 bool compare_equality_values(const char **fses, int n_fs, int *nums);
