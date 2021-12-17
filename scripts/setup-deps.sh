@@ -3,7 +3,15 @@
 BASEDIR=$HOME
 MCFS_BUILD_TYPE=Debug
 OVERRIDES=()
+CWD=$(pwd)
 verbose=0
+
+colorecho() {
+    color=$1
+    shift
+    rest=$@
+    $CWD/color.py "@$color\$$rest@!$";
+}
 
 should_override() {
     name=$1
@@ -23,7 +31,7 @@ runcmd() {
     $@;
     ret=$?;
     if [ $ret -ne 0 ]; then
-        echo "Command '$0' exited with error ($ret)." >&2;
+        colorecho red "Command '$0' exited with error ($ret)." >&2;
         exit $ret;
     fi
 }
@@ -31,26 +39,26 @@ runcmd() {
 install_pkg() {
     for pkg in $@;
     do
-        echo "Trying to install $pkg...";
+        colorecho cyan "Trying to install $pkg...";
         # Skip if the package has been installed
         if sudo dpkg -V "$pkg" 2>/dev/null; then
             if should_override $pkg; then
-                echo "Package $pkg has been installed, but user asked to override.";
+                colorecho green "Package $pkg has been installed, but user asked to override.";
                 sudo dpkg -r $pkg;
             else
-                echo "Package $pkg has been installed, skip.";
+                colorecho green "Package $pkg has been installed, skip.";
                 continue;
             fi
         fi
         # Report error if the package does not exist
         if ! apt-cache show "$pkg" 2>/dev/null >/dev/null; then
-            echo "Package $pkg does not exist in the software source!";
+            colorecho red "Package $pkg does not exist in the software source!";
             return 1;
         fi
         sudo apt-get install -y $pkg;
         res=$?;
         if [ $res -ne 0 ]; then
-            echo "Failed to install $pkg. res is $res";
+            colorecho red "Failed to install $pkg. res is $res";
             return $res;
         fi
     done
@@ -77,10 +85,10 @@ prepare_repo() {
     repourl=$2
     if check_repo $name; then
         if should_override $name; then
-            echo "$name is already there, but user asked to override.";
+            colorecho green "$name is already there, but user asked to override.";
             mv "$BASEDIR/$name" "$BASEDIR/$name.old";
         else
-            echo "$name is already there.";
+            colorecho green "$name is already there.";
 	    return;
         fi
     fi
@@ -127,22 +135,22 @@ while [[ $# -gt 0 ]]; do
         --invoke)
             shift
             func=$1;
-	    echo "Invoking function $func...";
+	    colorecho cyan "Invoking function $func...";
             shift
             args=$@
-	    echo "Args is $args";
+	    colorecho cyan "Args is $args";
             $func $args
             exit;
             ;;
         *)
-            echo "Unrecognized parameter: $1"
+            colorecho red "Unrecognized parameter: $1"
             exit 1
             ;;
     esac
 done
 
 if [ "$MCFS_BUILD_TYPE" != "Debug" ] && [ "$MCFS_BUILD_TYPE" != "Release" ]; then
-    echo "Build type can only be either \"Debug\" or \"Release\", but supplied $MCFS_BUILD_TYPE.";
+    colorecho red "Build type can only be either \"Debug\" or \"Release\", but supplied $MCFS_BUILD_TYPE.";
     exit 1;
 fi
 
@@ -244,7 +252,7 @@ install_swarm() {
     popd;
 }
 
-echo "Installing required packages..."
+colorecho cyan "Installing required packages..."
 runcmd sudo apt update
 # Basic tools and compilers
 runcmd install_pkg gcc g++ git vim
@@ -289,4 +297,4 @@ for repo in ${required_repos[@]}; do
     runcmd install_$repo;
 done
 
-echo "Environment setup complete!";
+colorecho green "Environment setup complete!";
