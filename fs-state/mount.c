@@ -4,6 +4,10 @@
 
 static bool fs_frozen[N_FS] = {0};
 
+void custom_sleep() {
+    usleep(200 * 1000);
+}
+
 static char *receive_output(FILE *cmdfp, size_t *length)
 {
     const size_t block = 4096;
@@ -29,10 +33,25 @@ static char *receive_output(FILE *cmdfp, size_t *length)
     return buffer;
 }
 
+static void save_lsof()
+{
+    int ret;
+    static int report_count = 0;
+    char progname[NAME_MAX] = {0};
+    char logname[NAME_MAX] = {0};
+    char cmd[PATH_MAX] = {0};
+
+    get_progname(progname);
+    add_ts_to_logname(logname, NAME_MAX, "lsof", progname, "");
+    ret = snprintf(cmd, PATH_MAX, "lsof > %s-%d.txt", logname, report_count++);
+    assert(ret >= 0);
+    ret = system(cmd);
+}
+
 static int start_nfs_server() {
     logerr("[NFS] nfs server started!!");
     system("ganesha.nfsd");
-    sleep(1);
+    usleep(500 * 1000);
 
     if (system("pidof -x ganesha.nfsd") != 0)
         return -1;
@@ -41,18 +60,18 @@ static int start_nfs_server() {
 }
 
 static void stop_nfs_server() {
-    logerr("[NFS] nfs server stopped!!");
-
     // checkpoint the server
     snapshot_nfs();
 
     system("killall -9 ganesha.nfsd");
-    sleep(1);
+    logerr("[NFS] nfs server stopped!!");
+
+    custom_sleep();
 }
 
 static int mount_nfs_client() {
     system("mount.nfs4 -o vers=4 127.0.0.1:/vfs0 /vfs1");
-    sleep(1);
+    custom_sleep();
 
     if (system("mount | grep vfs1") != 0)
         return -1;
@@ -61,7 +80,32 @@ static int mount_nfs_client() {
 }
 
 static void unmount_nfs_client() {
-    umount2("/vfs1", MNT_FORCE);
+    int ret = 0;
+    int retry_limit = 20;
+    bool has_failure = false;
+
+try_nfs_unmount:
+    ret = umount2("/vfs1", MNT_FORCE);
+    if (ret != 0) {
+        /* If unmounting failed due to device being busy, again up to
+            * retry_limit times with 100 * 2^n ms (n = num_retries) */
+        useconds_t waitms = (100 << (10 - retry_limit));
+        if (errno == EBUSY && retry_limit > 0) {
+            fprintf(stderr, "File system %s mounted on %s is busy. Retry "
+                    "unmounting after %dms.\n", "/vfs0", "/vfs1",
+                    waitms);
+            usleep(1000 * waitms);
+            retry_limit--;
+            save_lsof();
+            goto try_nfs_unmount;
+        }
+        fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
+                fslist[i], basepaths[i], errnoname(errno));
+        has_failure = true;
+    }
+
+    if(has_failure)
+        exit(1);
 }
 
 bool do_fsck()
@@ -131,7 +175,7 @@ void mountall()
 err:
     /* undo mounts */
     for (int i = 0; i < failpos; ++i) {
-        if (is_nfs(fslist[i])) {
+        if (is_nfs(fslist[i]) && system("mountpoint -q /vfs1") == 0) {
             umount2("/vfs1", MNT_FORCE);
             stop_nfs_server();
         }
@@ -146,21 +190,6 @@ err:
             fslist[failpos], devlist[failpos], basepaths[failpos],
             errnoname(err));
     exit(1);
-}
-
-static void save_lsof()
-{
-    int ret;
-    static int report_count = 0;
-    char progname[NAME_MAX] = {0};
-    char logname[NAME_MAX] = {0};
-    char cmd[PATH_MAX] = {0};
-
-    get_progname(progname);
-    add_ts_to_logname(logname, NAME_MAX, "lsof", progname, "");
-    ret = snprintf(cmd, PATH_MAX, "lsof > %s-%d.txt", logname, report_count++);
-    assert(ret >= 0);
-    ret = system(cmd);
 }
 
 void unmount_all(bool strict)
