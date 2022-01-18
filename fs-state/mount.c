@@ -51,7 +51,7 @@ static void save_lsof()
 static int start_nfs_server() {
     logerr("[NFS] nfs server started!!");
     system("ganesha.nfsd");
-    usleep(500 * 1000);
+    usleep(400 * 1000);
 
     if (system("pidof -x ganesha.nfsd") != 0)
         return -1;
@@ -81,7 +81,7 @@ static int mount_nfs_client() {
 
 static void unmount_nfs_client() {
     int ret = 0;
-    int retry_limit = 20;
+    int retry_limit = 10;
     bool has_failure = false;
 
 try_nfs_unmount:
@@ -89,7 +89,7 @@ try_nfs_unmount:
     if (ret != 0) {
         /* If unmounting failed due to device being busy, again up to
             * retry_limit times with 100 * 2^n ms (n = num_retries) */
-        useconds_t waitms = (100 << (10 - retry_limit));
+        useconds_t waitms = (1 << (10 - retry_limit));
         if (errno == EBUSY && retry_limit > 0) {
             fprintf(stderr, "File system %s mounted on %s is busy. Retry "
                     "unmounting after %dms.\n", "/vfs0", "/vfs1",
