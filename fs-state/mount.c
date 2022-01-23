@@ -49,12 +49,32 @@ static void save_lsof()
 }
 
 static int start_nfs_server() {
-    logerr("[NFS] nfs server started!!");
+    int ret = 0;
+    int retry_limit = 10;
+    bool has_failure = false;
     system("ganesha.nfsd");
-    usleep(400 * 1000);
 
-    if (system("pidof -x ganesha.nfsd") != 0)
+check_server_status:
+    ret = system("rpcinfo -u localhost nfs");
+    if (ret != 0) {
+        /* If unmounting failed due to device being busy, again up to
+            * retry_limit times with 100 * 2^n ms (n = num_retries) */
+        useconds_t waitms = (1 << (10 - retry_limit));
+        if (retry_limit > 0) {
+            fprintf(stderr, "NFS-ganesha server not started. Checking status after %dms.\n", waitms);
+            usleep(1000 * waitms);
+            retry_limit--;
+            goto check_server_status;
+        }
+        fprintf(stderr, "Could not start NFS-server %s at %s (%s)\n",
+                fslist[i], basepaths[i], errnoname(errno));
+        has_failure = true;
+    }
+
+    if(has_failure)
         return -1;
+
+    logerr("[NFS] nfs server started!!");
 
     return 0;
 }
@@ -139,10 +159,8 @@ void mountall()
         if (is_nfs(fslist[i])) {
             // start nfs server
             ret = start_nfs_server();
-            if (ret != 0) {
-                failpos = i;
-                err = errno;
-                goto err;
+            while (ret != 0) {
+                ret = start_nfs_server();
             }
 
             // mount nfs client
