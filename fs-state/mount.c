@@ -74,18 +74,13 @@ check_server_status:
     if(has_failure)
         return -1;
 
-    logerr("[NFS] nfs server started!!");
-
     return 0;
 }
 
 static void stop_nfs_server() {
     // checkpoint the server
     snapshot_nfs();
-
     system("killall -9 ganesha.nfsd");
-    logerr("[NFS] nfs server stopped!!");
-
     custom_sleep();
 }
 
