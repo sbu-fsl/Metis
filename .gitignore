@@ -27,3 +27,4 @@ restore
 crmfs
 *.so
 *nfs_imgs*
+*lsof*
