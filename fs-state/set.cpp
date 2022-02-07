@@ -1,5 +1,5 @@
 #include "set.h"
-#include "whichconfig.h"
+#include "config.h"
 #include <unordered_set>
 
 struct AbsfsData {

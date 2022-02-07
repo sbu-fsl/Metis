@@ -13,6 +13,11 @@ run: all
 	./pan | less -N; \
 	rm -rf /mnt/test-*/test* || true; \
 
+install: absfs-set libsmcfs
+
+libsmcfs: set.o fileutil.o perf.o mount.o setup.o $(COMMON_OBJ)
+	ar rvs $@.a $^
+
 parameters: parameters.py parameter_util.py
 	python3 parameters.py
 
@@ -37,5 +42,5 @@ replayer: replay.c mount.c common-libs
 		-DNO_FS_STAT common-libs.a $(CFLAGS) $(LIBS)
 
 clean:
-	rm -rf test test.txt pan* *.log *.o *.a absfs *.trail \
+	rm -rf test test.txt pan* *.log *.csv *.o *.a absfs *.trail \
 	rm -rf /mnt/test-*/test*
