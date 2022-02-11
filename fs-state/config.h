@@ -25,12 +25,15 @@ static const char *fslist[] = {"ext4", "jffs2"};
 static const char *fssuffix[] = {"", ""};
 static const char *devlist[] = {"/dev/ram0", "/dev/mtdblock0"};
 #else
-#define STR(n) #n
+#ifndef STR
+#define STR_(n) #n
+#define STR(n) STR_(n)
 #define I1 (CONFIG*2-2)
 #define I2 (CONFIG*2-1)
+#endif
 static const char *fslist[] = {"ext4", "ext2"};
-static const char *fssuffix[] = {"-"STR(I1), "-"STR(I2)};
-static const char *devlist[] = {"/dev/ram"STR(I1), "/dev/ram"STR(I2)};
+static const char *fssuffix[] = {"-" STR(I1), "-" STR(I2)};
+static const char *devlist[] = {"/dev/ram" STR(I1), "/dev/ram" STR(I2)};
 #endif
 static const size_t devsize_kb[] = {256, 256};
 #define N_FS    nelem(fslist)
