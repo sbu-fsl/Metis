@@ -20,20 +20,26 @@
 #define ABORT_ON_FAIL    1
 
 /* List of file systems: Modify this to experiment with other file systems */
-#ifndef CONFIG
+#if !SCONFIG
 static const char *fslist[] = {"ext4", "jffs2"};
 static const char *fssuffix[] = {"", ""};
 static const char *devlist[] = {"/dev/ram0", "/dev/mtdblock0"};
-#else
-#ifndef STR
-#define STR_(n) #n
-#define STR(n) STR_(n)
-#define I1 (CONFIG*2-2)
-#define I2 (CONFIG*2-1)
-#endif
+#elif SCONFIG == 1
 static const char *fslist[] = {"ext4", "ext2"};
-static const char *fssuffix[] = {"-" STR(I1), "-" STR(I2)};
-static const char *devlist[] = {"/dev/ram" STR(I1), "/dev/ram" STR(I2)};
+static const char *fssuffix[] = {"-0", "-1"};
+static const char *devlist[] = {"/dev/ram0", "/dev/ram1"};
+#elif SCONFIG == 2
+static const char *fslist[] = {"ext4", "ext2"};
+static const char *fssuffix[] = {"-2", "-3"};
+static const char *devlist[] = {"/dev/ram2", "/dev/ram3"};
+#elif SCONFIG == 3
+static const char *fslist[] = {"ext4", "ext2"};
+static const char *fssuffix[] = {"-4", "-5"};
+static const char *devlist[] = {"/dev/ram4", "/dev/ram5"};
+#elif SCONFIG == 4
+static const char *fslist[] = {"ext4", "ext2"};
+static const char *fssuffix[] = {"-6", "-7"};
+static const char *devlist[] = {"/dev/ram6", "/dev/ram7"};
 #endif
 static const size_t devsize_kb[] = {256, 256};
 #define N_FS    nelem(fslist)
