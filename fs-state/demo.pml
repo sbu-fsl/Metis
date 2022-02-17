@@ -127,7 +127,33 @@ proctype worker()
             makelog("END: rmdir\n");
         }
     };
-    
+    :: atomic {
+        /* rename */
+        c_code {
+            makelog("BEGIN: rename\n");
+            mountall();
+            
+            int num = random() % filecount;
+            for (i = 0; i < N_FS; ++i) {
+                char *rename_file;
+                
+                size_t rename_filename_len = snprintf(NULL, 0, "%s/%s", basepaths[i], filepool[num]);
+                rename_file = calloc(1, rename_filename_len+1);
+
+                snprintf(rename_file, rename_filename_len + 1, "%s/%s", basepaths[i], filepool[num]);
+                
+                makecall(rets[i], errs[i], "%s,  %s", mv, testfiles[i], rename_file);
+            }
+            expect(compare_equality_fexists(fslist, N_FS, testdirs));
+            expect(compare_equality_values(fslist, N_FS, rets));
+            expect(compare_equality_values(fslist, N_FS, errs));
+            expect(compare_equality_absfs(fslist, N_FS, absfs));
+
+            unmount_all_strict();
+            makelog("END: rename\n");
+        }
+    };
+ 
     od
 };
 
@@ -135,8 +161,18 @@ proctype driver(int nproc)
 {
     int i;
     c_code {
+        filecount = 10;
         start_perf_metrics_thread();
         /* Initialize test dirs and files names */
+
+        for(int i = 0; i < filecount; i++){
+            size_t filename_len = snprintf(NULL, 0, "f-%d.txt", i);
+            filepool[i] = calloc(1, filename_len+1);
+            snprintf(filepool[i], filename_len + 1, "f-%d.txt", i);
+            //makelog("filepool entry : %s", filepool[i]);
+        }
+
+
         for (int i = 0; i < N_FS; ++i) {
             size_t len = snprintf(NULL, 0, "%s/testdir", basepaths[i]);
             testdirs[i] = calloc(1, len + 1);

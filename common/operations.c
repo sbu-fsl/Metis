@@ -43,3 +43,15 @@ exit_err:
     errno = err;
     return -1;
 }
+
+int mv(const char *path1, const char *path2)
+{
+   fprintf(stderr, "mv called %s %s", path1, path2);
+   int ret = rename(path1, path2);
+   if ( ret != 0 ){
+       fprintf(stderr,"error in rename %d, %d", ret, errno);
+       return -1;
+   }
+
+   return 0;
+}

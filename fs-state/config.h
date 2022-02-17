@@ -28,6 +28,8 @@ static const size_t devsize_kb[] = {256, 256};
 char *basepaths[N_FS];
 char *testdirs[N_FS];
 char *testfiles[N_FS];
+int filecount;
+char *filepool[100];
 
 /* Pointer to memory-mapped file system images */
 void *fsimgs[N_FS];
