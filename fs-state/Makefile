@@ -46,5 +46,5 @@ replayer: replay.c mount.c common-libs
 		-DNO_FS_STAT common-libs.a $(CFLAGS) $(LIBS)
 
 clean:
-	rm -rf test test.txt pan* *.log *.csv *.o *.a absfs *.trail script* \
+	rm -rf test test.txt pan* *.log *.csv *.o *.a absfs *.trail script* swarm_done* \
 	rm -rf /mnt/test-*/test*
