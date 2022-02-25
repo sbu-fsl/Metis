@@ -1,6 +1,9 @@
 #ifndef _FSSTATE_CONFIG_H_
 #define _FSSTATE_CONFIG_H_
 
+#include <stdio.h>
+#include "abstract_fs.h"
+
 #define nelem(array)  (sizeof(array) / sizeof(array[0]))
 
 /* This should be a multiple of N_FS
@@ -20,25 +23,51 @@
 #define ABORT_ON_FAIL    1
 
 /* List of file systems: Modify this to experiment with other file systems */
+/*
 static const char *fslist[] = {"ext4", "jffs2"};
 static const char *fssuffix[] = {"", ""};
 static const char *devlist[] = {"/dev/ram0", "/dev/mtdblock0"};
 static const size_t devsize_kb[] = {256, 256};
+*/
+
+/*
 #define N_FS    nelem(fslist)
 char *basepaths[N_FS];
 char *testdirs[N_FS];
 char *testfiles[N_FS];
+*/
+
+extern char *fslist[];
+extern char *fssuffix[];
+extern char *devlist[];
+extern size_t devsize_kb[];
+
+extern int N_FS;
+
+extern char *basepaths[];
+extern char *testdirs[];
+extern char *testfiles[];
 
 /* Pointer to memory-mapped file system images */
-void *fsimgs[N_FS];
+//void *fsimgs[N_FS];
 /* File descriptors of the opened f/s images */
-int fsfds[N_FS];
+//int fsfds[N_FS];
 
-absfs_state_t absfs[N_FS];
+//absfs_state_t absfs[N_FS];
+
+extern void *fsimgs[];
+extern int fsfds[];
+//extern absfs_state_t absfs[];
+absfs_state_t absfs[2];
 
 FILE *seqfp;
 
-int rets[N_FS], errs[N_FS];
-int i;
+//int rets[N_FS], errs[N_FS];
+extern int i;
+
+extern int rets[], errs[];
+extern bool fs_frozen[];
+
+void init_fs_config_params();
 
 #endif // _FSSTATE_CONFIG_H_

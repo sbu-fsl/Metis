@@ -110,13 +110,13 @@ int setup_jffs2(const char *devname, const size_t size_kb)
     return 0;
 }
 
-void populate_mountpoints()
+void populate_mountpoints(int N_FS, char* fslist[], char *devlist[], char* fssuffix[], char *basepaths[], bool fs_frozen[])
 {
     char cmdbuf[PATH_MAX];
     for (int i = 0; i < N_FS; ++i) {
         snprintf(cmdbuf, PATH_MAX, "mkdir -p /mnt/test-%s%s", fslist[i],
                  fssuffix[i]);
         execute_cmd(cmdbuf);
-        unmount_all_relaxed();
+        unmount_all_relaxed(N_FS, fslist, devlist, basepaths, fs_frozen);
     }
 }

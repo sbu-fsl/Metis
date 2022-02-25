@@ -110,12 +110,12 @@ static int get_fs_stat(const char *mp, struct fs_stat *st)
     return ret;
 }
 
-static struct fs_stat fsinfos[N_FS];
 static pthread_mutex_t fsinfo_lock;
 
-void record_fs_stat()
+void record_fs_stat(int N_FS, char *basepaths[])
 {
     struct fs_stat my_fsstats[N_FS];
+    struct fs_stat fsinfos[N_FS];
     for (int i = 0; i < N_FS; ++i) {
         get_fs_stat(basepaths[i], &my_fsstats[i]);
     }
@@ -124,7 +124,7 @@ void record_fs_stat()
     pthread_mutex_unlock(&fsinfo_lock);
 }
 
-void record_performance()
+void record_performance(struct fs_stat fsinfos[], int N_FS, char* fslist[])
 {
     static bool inited = false;
     static size_t last_count = 0;
@@ -217,10 +217,11 @@ void record_performance()
     fflush(perflog_fp);
 }
 
-void* perf_logger(void *arg)
+void* perf_logger(void *arg, int N_FS, char* fslist[])
 {
+    struct fs_stat fsinfos[N_FS];
     while (!perf_logger_stop) {
-        record_performance();
+        record_performance(fsinfos, N_FS, fslist);
         sleep(PERF_INTERVAL);
     }
     return NULL;

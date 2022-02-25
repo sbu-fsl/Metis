@@ -89,7 +89,6 @@ extern "C" {
 #endif
 /* End of prototypes and definitions for C programs */
 
-#endif // _ABSTRACT_FS_H
 
 
 
@@ -154,4 +153,5 @@ private:
 
 #endif
 
+#endif // _ABSTRACT_FS_H
 /* End of C++ declarations */

@@ -3,10 +3,11 @@
 #include <unordered_set>
 
 struct AbsfsData {
-  static const size_t absfs_len = N_FS * sizeof(absfs_state_t);
-  char data[sizeof(absfs_state_t) * N_FS];
+  static size_t absfs_len;
+  char* data = new char[sizeof(absfs_state_t) * N_FS];
 
   AbsfsData() {
+    absfs_len = N_FS * sizeof(absfs_state_t);
     memset(data, 0, absfs_len);
   }
 

@@ -27,7 +27,7 @@ proctype worker()
            }
            expect(compare_equality_fexists(fslist, N_FS, testdirs));
            expect(compare_equality_values(fslist, N_FS, errs));
-           expect(compare_equality_absfs(fslist, N_FS, absfs));
+           expect(compare_equality_absfs(fslist, N_FS, absfs, basepaths));
            unmount_all();
            makelog("END: create_file\n");
        };
@@ -53,7 +53,7 @@ proctype worker()
             expect(compare_equality_values(fslist, N_FS, rets));
             expect(compare_equality_values(fslist, N_FS, errs));
             expect(compare_equality_fcontent(fslist, N_FS, testfiles));
-            expect(compare_equality_absfs(fslist, N_FS, absfs));
+            expect(compare_equality_absfs(fslist, N_FS, absfs, basepaths));
             unmount_all();
             makelog("END: write_file\n");
         };
@@ -73,7 +73,7 @@ proctype worker()
             expect(compare_equality_fexists(fslist, N_FS, testfiles));
             expect(compare_equality_values(fslist, N_FS, rets));
             expect(compare_equality_values(fslist, N_FS, errs));
-            expect(compare_equality_absfs(fslist, N_FS, absfs));
+            expect(compare_equality_absfs(fslist, N_FS, absfs, basepaths));
             unmount_all();
             makelog("END: truncate\n");
         };
@@ -89,7 +89,7 @@ proctype worker()
             expect(compare_equality_fexists(fslist, N_FS, testdirs));
             expect(compare_equality_values(fslist, N_FS, rets));
             expect(compare_equality_values(fslist, N_FS, errs));
-            expect(compare_equality_absfs(fslist, N_FS, absfs));
+            expect(compare_equality_absfs(fslist, N_FS, absfs, basepaths));
             unmount_all();
             makelog("END: unlink\n");
         }
@@ -105,7 +105,7 @@ proctype worker()
             expect(compare_equality_fexists(fslist, N_FS, testdirs));
             expect(compare_equality_values(fslist, N_FS, rets));
             expect(compare_equality_values(fslist, N_FS, errs));
-            expect(compare_equality_absfs(fslist, N_FS, absfs));
+            expect(compare_equality_absfs(fslist, N_FS, absfs, basepaths));
             unmount_all();
             makelog("END: mkdir\n");
         }
@@ -122,7 +122,7 @@ proctype worker()
             expect(compare_equality_fexists(fslist, N_FS, testdirs));
             expect(compare_equality_values(fslist, N_FS, rets));
             expect(compare_equality_values(fslist, N_FS, errs));
-            expect(compare_equality_absfs(fslist, N_FS, absfs));
+            expect(compare_equality_absfs(fslist, N_FS, absfs, basepaths));
             unmount_all();
             makelog("END: rmdir\n");
         }

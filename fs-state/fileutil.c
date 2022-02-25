@@ -4,6 +4,10 @@
 #include <sys/wait.h>
 #include <sys/vfs.h>
 
+static char *env_n_fs;
+static const char *n_fs_key = "N_FS";
+
+
 int cur_pid;
 char func[FUNC_NAME_LEN + 1];
 struct timespec begin_time;
@@ -15,7 +19,7 @@ int _n_files;
 size_t count;
 absfs_set_t absfs_set;
 
-int compare_file_content(const char *path1, const char *path2)
+int compare_file_content(char *path1, char *path2)
 {
     const size_t bs = 4096;
     char buf1[bs], buf2[bs];
@@ -77,7 +81,7 @@ end:
     return ret;
 }
 
-bool compare_equality_values(const char **fses, int n_fs, int *nums)
+bool compare_equality_values(char **fses, int n_fs, int *nums)
 {
     bool res = true;
     int base = nums[0];
@@ -87,9 +91,10 @@ bool compare_equality_values(const char **fses, int n_fs, int *nums)
             break;
         }
     }
+    int i;
     if (!res) {
         logwarn("[seqid=%zu] discrepancy in values found:", count);
-        for (int i = 0; i < n_fs; ++i)
+        for (i = 0; i < n_fs; ++i)
             logwarn("[%s]: %d", fses[i], nums[i]);
     }
     return res;
@@ -131,7 +136,7 @@ static void tell_absfs_hash_method()
     fprintf(stderr, "Selected abstraction hash method is %s.\n", hashname);
 }
 
-bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
+bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs, char *basepaths[])
 {
     bool res = true;
     /* The macros are defined in include/abstract_fs.h */
@@ -191,7 +196,7 @@ retry:
     return res;
 }
 
-bool compare_equality_fexists(const char **fses, int n_fs, char **fpaths)
+bool compare_equality_fexists(char **fses, int n_fs, char **fpaths)
 {
     bool res = true;
     bool fexists[n_fs];
@@ -216,7 +221,7 @@ bool compare_equality_fexists(const char **fses, int n_fs, char **fpaths)
     return res;
 }
 
-bool compare_equality_fcontent(const char **fses, int n_fs, char **fpaths)
+bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths)
 {
     bool res = true;
 
@@ -358,21 +363,23 @@ static void dump_device(const char *devname, const char *folder,
     }
 }
 
-static void dump_fs_images(const char *folder)
+/*
+static void dump_fs_images(const char *folder, char* fslist[], char *devlist[])
 {
     char fullpath[PATH_MAX] = {0};
     assert(ensure_dump_dir(folder) == 0);
     for (int i = 0; i < N_FS; ++i) {
-        /* Dump the mmap'ed object */
+        // Dump the mmap'ed object
         snprintf(fullpath, PATH_MAX, "%s/%s-mmap-%zu.img", folder,
                  fslist[i], count);
         dump_mmaped(fullpath, fsfds[i], fsimgs[i]);
-        /* Dump the device by direct copying */
+        // Dump the device by direct copying 
         dump_device(devlist[i], folder, fslist[i]);
     }
 }
+*/
 
-static void mmap_devices()
+static void mmap_devices(int N_FS, char *devlist[], void *fsimgs[], int fsfds[])
 {
     for (int i = 0; i < N_FS; ++i) {
         if (!devlist[i])
@@ -387,7 +394,7 @@ static void mmap_devices()
     }
 }
 
-static void unmap_devices()
+static void unmap_devices(int N_FS, char *devlist[], void *fsimgs[], int fsfds[])
 {
     for (int i = 0; i < N_FS; ++i) {
         if (!devlist[i])
@@ -397,10 +404,10 @@ static void unmap_devices()
     }
 }
 
-static void setup_filesystems()
+static void setup_filesystems(int N_FS, char *fslist[], char *devlist[], size_t devsize_kb[], bool fs_frozen[], char *fssuffix[], char *basepaths[])
 {
     int ret;
-    populate_mountpoints();
+    populate_mountpoints(N_FS, fslist, devlist, fssuffix, basepaths, fs_frozen);
     for (int i = 0; i < N_FS; ++i) {
         if (strcmp(fslist[i], "jffs2") == 0) {
             ret = setup_jffs2(devlist[i], devsize_kb[i]);
@@ -415,10 +422,28 @@ static void setup_filesystems()
     }
 }
 
-static void init_basepaths()
+static int get_fs_params_from_env(void)
+{
+    env_n_fs = getenv(n_fs_key);
+    /* Check if N_FS environment var exists */
+    if (!env_n_fs) {
+        fprintf(stderr, "%s is not set.\n", n_fs_key);
+        return -EINVAL;
+    }
+    int res_N_FS = atoi(env_n_fs);
+    fprintf(stdout, "[getenv] N_FS == %d \n", res_N_FS);
+    return res_N_FS;
+}
+
+static int set_fs_configs()
+{
+    return get_fs_params_from_env();
+}
+
+static void init_basepaths(int N_FS, char* fslist[], char* fssuffix[], char *basepaths[])
 {
     /* Initialize base paths */
-    printf("%ld file systems to test.\n", N_FS);
+    printf("%d file systems to test.\n", N_FS);
     for (int i = 0; i < N_FS; ++i) {
         size_t len = snprintf(NULL, 0, "/mnt/test-%s%s",
                               fslist[i], fssuffix[i]);
@@ -465,13 +490,13 @@ static int restore_verifs(size_t key, const char *mp)
 
 static long checkpoint_before_hook(unsigned char *ptr)
 {
-    mmap_devices();
+    mmap_devices(N_FS, devlist, fsimgs, fsfds);
     return 0;
 }
 
 static long checkpoint_after_hook(unsigned char *ptr)
 {
-    unmap_devices();
+    unmap_devices(N_FS, devlist, fsimgs, fsfds);
     // assert(do_fsck());
     // dump_fs_images("snapshots");
     return 0;
@@ -479,14 +504,14 @@ static long checkpoint_after_hook(unsigned char *ptr)
 
 static long restore_before_hook(unsigned char *ptr)
 {
-    mmap_devices();
+    mmap_devices(N_FS, devlist, fsimgs, fsfds);
     // assert(do_fsck());
     return 0;
 }
 
 static long restore_after_hook(unsigned char *ptr)
 {
-    unmap_devices();
+    unmap_devices(N_FS, devlist, fsimgs, fsfds);
     // assert(do_fsck());
     // dump_fs_images("after-restore");
     return 0;
@@ -547,12 +572,13 @@ extern long (*c_update_after)(unsigned char *);
 extern long (*c_revert_before)(unsigned char *);
 extern long (*c_revert_after)(unsigned char *);
 
-static void equalize_free_spaces(void)
+static void equalize_free_spaces(int N_FS, char *fslist[], char *basepaths[], char *devlist[], bool fs_frozen[])
 {
-    size_t free_spaces[N_FS] = {0};
+    size_t (*free_spaces)[N_FS] = malloc(sizeof(size_t[N_FS]));
+    memset(free_spaces, 0, sizeof(size_t) * N_FS);
     size_t min_space = ULONG_MAX;
     const char *dummy_file = ".mcfs_dummy";
-    mountall();
+    mountall(N_FS, fslist, devlist, basepaths);
     /* Find free space of each file system being checked */
     for (int i = 0; i < N_FS; ++i) {
         if (is_verifs(fslist[i]))
@@ -566,14 +592,14 @@ static void equalize_free_spaces(void)
         size_t free_spc = fsinfo.f_bfree * fsinfo.f_bsize;
         if (free_spc < min_space)
             min_space = free_spc;
-        free_spaces[i] = free_spc;
+        (*free_spaces)[i] = free_spc;
     }
     /* Fill data to file systems who have greater than min_space of free space,
      * so that all file systems will have equal free capacities. */
     for (int i = 0; i < N_FS; ++i) {
         if (is_verifs(fslist[i]))
             continue;
-        size_t fillsz = free_spaces[i] - min_space;
+        size_t fillsz = (*free_spaces)[i] - min_space;
         char fullpath[PATH_MAX] = {0};
         snprintf(fullpath, PATH_MAX, "%s/%s", basepaths[i], dummy_file);
         /* Create/open the dummy file */
@@ -595,7 +621,8 @@ static void equalize_free_spaces(void)
         }
         close(fd);
     }
-    unmount_all_strict();
+    free(free_spaces);
+    unmount_all_strict(N_FS, fslist, devlist, basepaths, fs_frozen);
 }
 
 extern void (*spin_after_argparse)(int argc, char **argv);
@@ -615,9 +642,33 @@ void __attribute__((constructor)) init()
     char seq_log_name[NAME_MAX] = {0};
     char progname[NAME_MAX] = {0};
     ssize_t progname_len;
+    int N_FS = 2;
+    N_FS = set_fs_configs();
+    //init_fs_config_params();
+    char *fslist[] = {"ext4", "jffs2"};
+    char *fssuffix[] = {"", ""};
+    char *devlist[] = {"/dev/ram0", "/dev/mtdblock0"};
+    size_t devsize_kb[] = {256, 256};
+
+    char *basepaths[N_FS];
+    char *testdirs[N_FS];
+    char *testfiles[N_FS];
+
+    /* Pointer to memory-mapped file system images */
+    void *fsimgs[N_FS];
+    /* File descriptors of the opened f/s images */
+    int fsfds[N_FS];
+
+    //absfs_state_t absfs[N_FS];
+    int i = 0;
+
+    int rets[N_FS], errs[N_FS];
+    bool fs_frozen[N_FS];
+    memset(fs_frozen, 0, sizeof(bool) * N_FS);
+
     try_init_myheap();
-    init_basepaths();
-    setup_filesystems();
+    init_basepaths(N_FS, fslist, fssuffix, basepaths);
+    setup_filesystems(N_FS, fslist, devlist, devsize_kb, fs_frozen, fssuffix, basepaths);
 
     /* Initialize log daemon */
     // setvbuf(stdout, NULL, _IONBF, 0);
@@ -652,7 +703,7 @@ void __attribute__((constructor)) init()
     /* Fill dummy data so that all file systems have the same amount of free
      * space (Only for non-VeriFS experiments, because currently VeriFS1 doesn't
      * have support for statvfs() yet) */
-    equalize_free_spaces();
+    equalize_free_spaces(N_FS, fslist, basepaths, devlist, fs_frozen);
 }
 
 /*

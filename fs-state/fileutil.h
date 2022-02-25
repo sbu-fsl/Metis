@@ -188,39 +188,39 @@ static inline bool is_verifs(const char *fsname)
     return strncmp(fsname, VERIFS_PREFIX, VERIFS_PREFIX_LEN) == 0;
 }
 
-bool compare_equality_values(const char **fses, int n_fs, int *nums);
-bool compare_equality_fexists(const char **fses, int n_fs, char **fpaths);
-bool compare_equality_fcontent(const char **fses, int n_fs, char **fpaths);
-bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs);
-int compare_file_content(const char *path1, const char *path2);
+bool compare_equality_values(char **fses, int n_fs, int *nums);
+bool compare_equality_fexists(char **fses, int n_fs, char **fpaths);
+bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths);
+bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs, char *basepaths[]);
+int compare_file_content(char *path1, char *path2);
 
 void show_open_flags(uint64_t flags);
 int myopen(const char *pathname, int flags, mode_t mode);
 void fsimg_checkpoint(const char *mntpoint);
 void closeall();
 void cleanup();
-void mountall();
-void unmount_all(bool strict);
-void record_fs_stat();
+void mountall(int N_FS, char* fslist[], char *devlist[], char *basepaths[]);
+void unmount_all(bool strict, int N_FS, char* fslist[], char *devlist[], char *basepaths[], bool fs_frozen[]);
+void record_fs_stat(int N_FS, char *basepaths[]);
 void start_perf_metrics_thread();
-bool do_fsck();
-int fsfreeze(const char *fstype, const char *devpath, const char *mountpoint);
-int fsthaw(const char *fstype, const char *devpath, const char *mountpoint);
-int unfreeze_all();
+bool do_fsck(int N_FS, char *fslist[], char *devlist[]);
+int fsfreeze(const char *fstype, const char *devpath, const char *mountpoint, int N_FS, char *basepaths[], bool fs_frozen[]);
+int fsthaw(const char *fstype, const char *devpath, const char *mountpoint, int N_FS, char *basepaths[], bool fs_frozen[]);
+int unfreeze_all(bool fs_frozen[], int N_FS, char* fslist[], char *devlist[], char *basepaths[]);
 void clear_excluded_files();
 int setup_generic(const char *fsname, const char *devname, const size_t size_kb);
 int setup_jffs2(const char *devname, const size_t size_kb);
 void execute_cmd(const char *cmd);
-void populate_mountpoints();
+void populate_mountpoints(int N_FS, char* fslist[], char *devlist[], char* fssuffix[], char *basepaths[], bool fs_frozen[]);
 
-static inline void unmount_all_strict()
+static inline void unmount_all_strict(int N_FS, char* fslist[], char *devlist[], char *basepaths[], bool fs_frozen[])
 {
-    unmount_all(true);
+    unmount_all(true, N_FS, fslist, devlist, basepaths, fs_frozen);
 }
 
-static inline void unmount_all_relaxed()
+static inline void unmount_all_relaxed(int N_FS, char* fslist[], char *devlist[], char *basepaths[], bool fs_frozen[])
 {
-    unmount_all(false);
+    unmount_all(false, N_FS, fslist, devlist, basepaths, fs_frozen);
 }
 
 #endif

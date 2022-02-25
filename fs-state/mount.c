@@ -1,8 +1,11 @@
 #define _XOPEN_SOURCE 500
+#ifdef _POSIX_C_SOURCE
+#undef _POSIX_C_SOURCE
+#endif
 #define _POSIX_C_SOURCE 2
 #include "fileutil.h"
 
-static bool fs_frozen[N_FS] = {0};
+//static bool fs_frozen[N_FS] = {0};
 
 static char *receive_output(FILE *cmdfp, size_t *length)
 {
@@ -29,7 +32,7 @@ static char *receive_output(FILE *cmdfp, size_t *length)
     return buffer;
 }
 
-bool do_fsck()
+bool do_fsck(int N_FS, char *fslist[], char *devlist[])
 {
     char cmdbuf[ARG_MAX];
     bool isgood = true;
@@ -53,7 +56,7 @@ bool do_fsck()
     return isgood;
 }
 
-void mountall()
+void mountall(int N_FS, char* fslist[], char *devlist[], char *basepaths[])
 {
     int failpos, err;
     for (int i = 0; i < N_FS; ++i) {
@@ -97,12 +100,12 @@ static void save_lsof()
     ret = system(cmd);
 }
 
-void unmount_all(bool strict)
+void unmount_all(bool strict, int N_FS, char* fslist[], char *devlist[], char *basepaths[], bool fs_frozen[])
 {
     bool has_failure = false;
     int ret;
 #ifndef NO_FS_STAT
-    record_fs_stat();
+    record_fs_stat(N_FS, basepaths);
 #endif
     for (int i = 0; i < N_FS; ++i) {
         if (is_verifs(fslist[i]))
@@ -111,7 +114,7 @@ void unmount_all(bool strict)
         /* We have to unfreeze the frozen file system before unmounting it.
          * Otherwise the system will hang! */
         if (fs_frozen[i]) {
-            fsthaw(fslist[i], devlist[i], basepaths[i]);
+            fsthaw(fslist[i], devlist[i], basepaths[i], N_FS, basepaths, fs_frozen);
         }
 try_unmount:
         ret = umount2(basepaths[i], 0);
@@ -137,10 +140,9 @@ try_unmount:
         exit(1);
 }
 
-static const int warning_limits = N_FS;
 static int warnings_issued = 0;
 
-static void set_fs_frozen_flag(const char *mountpoint, bool value)
+static void set_fs_frozen_flag(const char *mountpoint, bool value, int N_FS, char *basepaths[], bool fs_frozen[])
 {
     for (int i = 0; i < N_FS; ++i) {
         if (strncmp(basepaths[i], mountpoint, PATH_MAX) == 0) {
@@ -151,7 +153,7 @@ static void set_fs_frozen_flag(const char *mountpoint, bool value)
 }
 
 static int freeze_or_thaw(const char *caller, const char *fstype,
-    const char *devpath, const char *mp, unsigned long op)
+    const char *devpath, const char *mp, unsigned long op, int N_FS, char *basepaths[], bool fs_frozen[])
 {
     if (op != FIFREEZE && op != FITHAW)
         return -1;
@@ -174,9 +176,10 @@ static int freeze_or_thaw(const char *caller, const char *fstype,
     close(mpfd);
     if (ret == 0) {
         /* Mark the corresponding file system as being frozen */
-        set_fs_frozen_flag(mp, (op == FIFREEZE));
+        set_fs_frozen_flag(mp, (op == FIFREEZE), N_FS, basepaths, fs_frozen);
         return 0;
     }
+    int warning_limits = N_FS;
     /* fall back to remounting the file system in read-only mode */
     if (warnings_issued < warning_limits) {
         fprintf(stderr, "%s: ioctl %s cannot be used on %s (%s). "
@@ -201,22 +204,35 @@ static int freeze_or_thaw(const char *caller, const char *fstype,
 
 }
 
-int fsfreeze(const char *fstype, const char *devpath, const char *mountpoint)
+int fsfreeze(const char *fstype, const char *devpath, const char *mountpoint, int N_FS, char *basepaths[], bool fs_frozen[])
 {
-    return freeze_or_thaw(__func__, fstype, devpath, mountpoint, FIFREEZE);
+    return freeze_or_thaw(__func__, fstype, devpath, mountpoint, FIFREEZE, N_FS, basepaths, fs_frozen);
 }
 
-int fsthaw(const char *fstype, const char *devpath, const char *mountpoint)
+int fsthaw(const char *fstype, const char *devpath, const char *mountpoint, int N_FS, char *basepaths[], bool fs_frozen[])
 {
-    return freeze_or_thaw(__func__, fstype, devpath, mountpoint, FITHAW);
+    return freeze_or_thaw(__func__, fstype, devpath, mountpoint, FITHAW, N_FS, basepaths, fs_frozen);
 }
 
-int unfreeze_all()
+int unfreeze_all(bool fs_frozen[], int N_FS, char* fslist[], char *devlist[], char *basepaths[])
 {
     for (int i = 0; i < N_FS; ++i) {
         if (fs_frozen[i]) {
             fprintf(stderr, "unfreezing %s at %s\n", fslist[i], basepaths[i]);
-            fsthaw(fslist[i], devlist[i], basepaths[i]);
+            fsthaw(fslist[i], devlist[i], basepaths[i], N_FS, basepaths, fs_frozen);
         }
     }
+    return 0;
 }
+
+/*
+void __attribute__((constructor)) init()
+{
+    memset(fs_frozen, 0, sizeof(bool) * N_FS);
+}
+
+void __attribute__((destructor)) cleanup()
+{
+    free(fs_frozen);
+}
+*/
