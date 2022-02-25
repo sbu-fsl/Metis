@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdlib.h>
 
 int create_file(const char *path, int mode)
 {
@@ -51,6 +52,12 @@ int mv(const char *path1, const char *path2)
    if ( ret != 0 ){
        fprintf(stderr,"error in rename %d, %d", ret, errno);
        return -1;
+   }
+   else{
+      char cmd[1000] = {0};
+    snprintf(cmd, 1000, "ls -lrtha /mnt/test-ext4 >&2");
+    int status = system(cmd);
+      fprintf(stderr,"no error in rename %d ", status);
    }
 
    return 0;

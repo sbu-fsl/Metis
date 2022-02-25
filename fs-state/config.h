@@ -29,7 +29,9 @@ char *basepaths[N_FS];
 char *testdirs[N_FS];
 char *testfiles[N_FS];
 int filecount;
+int directorycount;
 char *filepool[100];
+char *directorypool[100];
 
 /* Pointer to memory-mapped file system images */
 void *fsimgs[N_FS];
