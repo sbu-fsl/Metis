@@ -19,7 +19,7 @@ runcmd() {
 }
 
 # use for loop to run a command 4 times with different number in the command
-for i in {1..4}; do
+for (( i=1; i<=$num_pan; i++ )); do
 	runcmd make install ARGS=$i;
 done
 
