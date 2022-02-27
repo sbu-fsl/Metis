@@ -405,7 +405,7 @@ static void setup_filesystems()
         if (strcmp(fslist[i], "jffs2") == 0) {
             ret = setup_jffs2(devlist[i], devsize_kb[i]);
         } 
-        else if is_verifs(fslist[i]){
+        else if (is_verifs(fslist[i])) {
             continue;
         }
         else {
