@@ -8,10 +8,13 @@ POSITIONAL=()
 _CFLAGS=""
 KEEP_FS=0
 SETUP_ONLY=0
+CLEAN_AFTER_EXP=0
 REPLAY=0
 exclude_dirs=(
     lost+found
 )
+VERIFS_PREFIX="veri"
+VERI_PREFIX_LEN="${#VERIFS_PREFIX}"
 
 exclude_files=()
 
@@ -204,6 +207,10 @@ while [[ $# -gt 0 ]]; do
             _CFLAGS="-DABORT_ON_FAIL=1";
             shift
             ;;
+        -c|--clean-after-exp)
+            CLEAN_AFTER_EXP=1
+            shift
+            ;;
         -k|--keep-fs)
             KEEP_FS=1
             shift
@@ -244,18 +251,19 @@ for i in $(seq 0 $(($n_fs-1))); do
     fs=${FSLIST[$i]};
     DEVICE=${DEVLIST[$i]};
 
-    # Unmount first
-    if [ "$(mount | grep /mnt/test-$fs)" ]; then
-        runcmd umount -f /mnt/test-$fs;
+    if [ "${fs:0:${VERI_PREFIX_LEN}}" != "$VERIFS_PREFIX" ]; then
+        # Unmount first
+        if [ "$(mount | grep /mnt/test-$fs)" ]; then
+            runcmd umount -f /mnt/test-$fs;
+        fi
+
+        setup_$fs $DEVICE;
+
+        if [ -d /mnt/test-$fs ]; then
+            runcmd rm -rf /mnt/test-$fs;
+        fi
+        runcmd mkdir -p /mnt/test-$fs;
     fi
-
-    setup_$fs $DEVICE;
-
-    if [ -d /mnt/test-$fs ]; then
-        runcmd rm -rf /mnt/test-$fs;
-    fi
-    runcmd mkdir -p /mnt/test-$fs;
-
 done
 
 # Run test program
@@ -265,7 +273,11 @@ if [ "$SETUP_ONLY" != "1" ]; then
     echo 'Please check stdout in output.log, stderr in error.log';
     ./pan 2>error.log > output.log
 
-    generic_cleanup;
+    # By default we don't want to clean up the file system for 
+    # better analyzing discrepancies reported by MCFS
+    if [ "$CLEAN_AFTER_EXP" == "1" ]; then
+        generic_cleanup;
+    fi
 fi
 
 # Run replayer
