@@ -21,16 +21,8 @@ runcmd() {
 # use for loop to run a command 4 times with different number in the command
 for (( i=1; i<=$num_pan; i++ )); do
 	runcmd make install ARGS=$i;
+	scp libsmcfs$i.a "$remote":libsmcfs$i.a;
 done
-
-runcmd echo "copying dependencies to $remote..."
-
-scp libsmcfs1.a "$remote":libsmcfs1.a
-scp libsmcfs2.a "$remote":libsmcfs2.a
-scp libsmcfs3.a "$remote":libsmcfs3.a
-scp libsmcfs4.a "$remote":libsmcfs4.a
-
 
 runcmd swarm swarm.lib -f demo.pml
 runcmd ./demo.pml.swarm
-
