@@ -243,12 +243,12 @@ install_swarm() {
     runcmd prepare_repo swarm-mcfs git@github.com:sbu-fsl/swarm-mcfs.git;
 
     cd swarm-mcfs
-    runcmd git checkout for-mcfs;
+    # runcmd git checkout for-mcfs;
     if should_override swarm-mcfs; then
         make clean;
     fi
     runcmd make;
-    runcmd sudo cp Src/swarm-mcfs /usr/local/bin/;
+    runcmd sudo cp Src/swarm /usr/local/bin/;
     popd;
 }
 
