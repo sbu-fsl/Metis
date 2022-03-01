@@ -21,6 +21,7 @@ runcmd() {
 
 runcmd make parameters
 scp parameters.pml "$remote":parameters.pml
+scp Makefile "$remote":Makefile
 # use for loop to run a command 4 times with different number in the command
 for (( i=1; i<=$num_pan; i++ )); do
 	runcmd make install ARGS=$i;
