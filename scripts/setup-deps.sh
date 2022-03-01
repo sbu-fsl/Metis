@@ -243,7 +243,7 @@ install_swarm() {
     runcmd prepare_repo swarm-mcfs git@github.com:sbu-fsl/swarm-mcfs.git;
 
     cd swarm-mcfs
-    # runcmd git checkout for-mcfs;
+    runcmd git checkout master;
     if should_override swarm-mcfs; then
         make clean;
     fi
