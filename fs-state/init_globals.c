@@ -5,7 +5,7 @@ globals_t *globals_t_p;
 void init_all_globals() {
     globals_t_p = malloc(sizeof(globals_t));
     if (!globals_t_p) {
-        fprintf(stderr, "Memory allocation failed: %s:%d:%s\n", 
+        fprintf(stderr, "memory allocation failed: %s:%d:%s\n", 
             __FILE__, __LINE__, __func__);
         exit(EXIT_FAILURE);
     }

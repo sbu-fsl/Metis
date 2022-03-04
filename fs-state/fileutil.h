@@ -37,6 +37,7 @@
 
 extern globals_t *globals_t_p;
 extern bool *fs_frozen;
+extern struct fs_stat *fsinfos;
 extern int cur_pid;
 extern char func[FUNC_NAME_LEN + 1];
 extern struct timespec begin_time;
@@ -49,6 +50,15 @@ extern absfs_set_t absfs_set;
 extern int pan_argc;
 extern char **pan_argv;
 extern int absfs_hash_method;
+
+struct fs_stat {
+    size_t capacity;
+    size_t bytes_free;
+    size_t bytes_avail;
+    size_t total_inodes;
+    size_t free_inodes;
+    size_t block_size;
+};
 
 struct imghash {
     unsigned char md5[16];

@@ -83,15 +83,6 @@ static void get_proc_stat(struct proc_stat *st)
     fclose(statfp);
 }
 
-struct fs_stat {
-    size_t capacity;
-    size_t bytes_free;
-    size_t bytes_avail;
-    size_t total_inodes;
-    size_t free_inodes;
-    size_t block_size;
-};
-
 static int get_fs_stat(const char *mp, struct fs_stat *st)
 {
     struct statfs raw_st;
@@ -110,17 +101,17 @@ static int get_fs_stat(const char *mp, struct fs_stat *st)
     return ret;
 }
 
-static struct fs_stat fsinfos[N_FS];
+// static struct fs_stat fsinfos[N_FS];
 static pthread_mutex_t fsinfo_lock;
 
 void record_fs_stat()
 {
-    struct fs_stat my_fsstats[N_FS];
-    for (int i = 0; i < N_FS; ++i) {
+    struct fs_stat my_fsstats[get_n_fs()];
+    for (int i = 0; i < get_n_fs(); ++i) {
         get_fs_stat(basepaths[i], &my_fsstats[i]);
     }
     pthread_mutex_lock(&fsinfo_lock);
-    memcpy(fsinfos, my_fsstats, sizeof(struct fs_stat) * N_FS);
+    memcpy(fsinfos, my_fsstats, sizeof(struct fs_stat) * get_n_fs());
     pthread_mutex_unlock(&fsinfo_lock);
 }
 
@@ -152,7 +143,7 @@ void record_performance()
                     last_swaps_stat[i].devname, last_swaps_stat[i].devname);
         }
         /* metrics of the file systems being tested */
-        for (int i = 0; i < N_FS; ++i) {
+        for (int i = 0; i < get_n_fs(); ++i) {
             const char *mp = fslist[i];
             fprintf(perflog_fp, "%s_capacity,%s_free,%s_inodes,%s_ifree,",
                     mp, mp, mp, mp);
@@ -204,11 +195,11 @@ void record_performance()
         free(swaps_stat);
     }
     /* Iterate each file system */
-    struct fs_stat cur_fsstats[N_FS];
+    struct fs_stat cur_fsstats[get_n_fs()];
     pthread_mutex_lock(&fsinfo_lock);
-    memcpy(cur_fsstats, fsinfos, sizeof(struct fs_stat) * N_FS);
+    memcpy(cur_fsstats, fsinfos, sizeof(struct fs_stat) * get_n_fs());
     pthread_mutex_unlock(&fsinfo_lock);
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         struct fs_stat *fs = cur_fsstats + i;
         fprintf(perflog_fp, "%zu,%zu,%zu,%zu,", fs->capacity, fs->bytes_free,
                 fs->total_inodes, fs->free_inodes);
