@@ -297,7 +297,4 @@ for repo in ${required_repos[@]}; do
     runcmd install_$repo;
 done
 
-# Load ram devices
-runcmd ../fs-state/loadmods.sh
-
 colorecho green "Environment setup complete!";

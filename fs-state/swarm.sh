@@ -3,7 +3,6 @@
 WD=$(pwd)
 verbose=0
 num_pan=4
-remote=$(grep -Po '\t.*:\d+( |\t)' swarm.lib | awk '{print $2}' | awk -F ':' '{print $1}')
 
 runcmd() {
 	if [ "$verbose" != "0" ]; then
@@ -18,15 +17,27 @@ runcmd() {
 	fi
 }
 
-
 runcmd make parameters
-scp parameters.pml "$remote":parameters.pml
-scp Makefile "$remote":Makefile
 # use for loop to run a command 4 times with different number in the command
 for (( i=1; i<=$num_pan; i++ )); do
 	runcmd make install ARGS=$i;
-	scp libsmcfs$i.a "$remote":libsmcfs$i.a;
+	count=0
+	for j in $(grep -Po '\t.*:\d+( |\t)' swarm.lib); do
+		if [ $count -ge 1 ]; then
+			remote=$(echo $j | awk -F ':' '{print $1}');
+
+			scp libsmcfs$i.a "$remote":libsmcfs$i.a;
+			if [ $num_pan -eq $i ];then
+				scp parameters.pml "$remote":parameters.pml;
+				scp Makefile "$remote":Makefile;
+				scp 'stop.sh' "$remote":'stop.sh'
+				ssh "$remote" "sh ./nfs-validator/fs-state/loadmods.sh" &
+			fi
+		fi
+		count=$((count+1));
+	done
 done
 
 runcmd swarm swarm.lib -f demo.pml
 runcmd ./demo.pml.swarm
+
