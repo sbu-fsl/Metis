@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#define MAX_FS 2
+#define MAX_FS 10
 typedef struct all_global_params {
     unsigned int _n_fs;
     char *fslist[MAX_FS];
