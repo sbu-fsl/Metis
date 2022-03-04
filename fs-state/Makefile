@@ -14,7 +14,7 @@ run: all
 	rm -rf /mnt/test-*/test* || true; \
 
 globals: init_globals.c
-	gcc -o init_globals.o -c $< $(CFLAGS) $(LIBS)
+	gcc -Wall -Werror -o init_globals.o -c $< $(CFLAGS) $(LIBS)
 
 parameters: parameters.py parameter_util.py
 	python3 parameters.py
