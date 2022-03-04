@@ -27,6 +27,7 @@
 #include "whichconfig.h"
 #include "set.h"
 #include "log.h"
+#include "init_globals.h"
 
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
@@ -34,6 +35,7 @@
 #define VERIFS_PREFIX       "veri"
 #define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
 
+extern globals_t *globals_t_p;
 extern int cur_pid;
 extern char func[FUNC_NAME_LEN + 1];
 extern struct timespec begin_time;

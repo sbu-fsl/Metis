@@ -2,7 +2,8 @@
 #define _POSIX_C_SOURCE 2
 #include "fileutil.h"
 
-static bool fs_frozen[N_FS] = {0};
+// static bool fs_frozen[N_FS] = {0};
+static bool *fs_frozen;
 
 static char *receive_output(FILE *cmdfp, size_t *length)
 {
@@ -33,7 +34,7 @@ bool do_fsck()
 {
     char cmdbuf[ARG_MAX];
     bool isgood = true;
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         snprintf(cmdbuf, ARG_MAX, "fsck -N -t %s %s 2>&1", fslist[i],
                  devlist[i]);
         FILE *cmdfp = popen(cmdbuf, "r");
@@ -56,7 +57,7 @@ bool do_fsck()
 void mountall()
 {
     int failpos, err;
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         /* Skip verifs */
         if (is_verifs(fslist[i]))
             continue;
@@ -104,7 +105,7 @@ void unmount_all(bool strict)
 #ifndef NO_FS_STAT
     record_fs_stat();
 #endif
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         if (is_verifs(fslist[i]))
             continue;
         int retry_limit = 20;
@@ -137,12 +138,12 @@ try_unmount:
         exit(1);
 }
 
-static const int warning_limits = N_FS;
+// static const int warning_limits = N_FS;
 static int warnings_issued = 0;
 
 static void set_fs_frozen_flag(const char *mountpoint, bool value)
 {
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         if (strncmp(basepaths[i], mountpoint, PATH_MAX) == 0) {
             fs_frozen[i] = value;
             break;
@@ -178,7 +179,7 @@ static int freeze_or_thaw(const char *caller, const char *fstype,
         return 0;
     }
     /* fall back to remounting the file system in read-only mode */
-    if (warnings_issued < warning_limits) {
+    if (warnings_issued < get_n_fs()) {
         fprintf(stderr, "%s: ioctl %s cannot be used on %s (%s). "
                 "Falling back to remounting in r/o mode.\n", caller, opname,
                 mp, errnoname(err));
@@ -213,10 +214,27 @@ int fsthaw(const char *fstype, const char *devpath, const char *mountpoint)
 
 int unfreeze_all()
 {
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         if (fs_frozen[i]) {
             fprintf(stderr, "unfreezing %s at %s\n", fslist[i], basepaths[i]);
             fsthaw(fslist[i], devlist[i], basepaths[i]);
         }
     }
+}
+
+void __attribute__((constructor)) mount_init()
+{
+    printf("mount_init globals_t_p value: %p\n", globals_t_p);
+    printf("mount_init get_n_fs value: %d\n", get_n_fs());
+    int cur_n_fs = get_n_fs();
+    fs_frozen = calloc(1, sizeof(bool) * cur_n_fs);
+    if (!fs_frozen) {
+        fprintf(stderr, "cannot allocate memory in mount_init for fs_frozen\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void __attribute__((destructor)) mount_cleanup()
+{
+    free(fs_frozen);
 }

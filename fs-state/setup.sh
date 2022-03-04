@@ -275,9 +275,7 @@ if [ "$SETUP_ONLY" != "1" ]; then
 
     # By default we don't want to clean up the file system for 
     # better analyzing discrepancies reported by MCFS
-    if [ "$CLEAN_AFTER_EXP" == "1" ]; then
-        generic_cleanup;
-    fi
+    generic_cleanup;
 fi
 
 # Run replayer

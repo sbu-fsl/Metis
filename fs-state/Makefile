@@ -5,13 +5,16 @@ override CFLAGS += -g -I../include -D PRINTF # -D T_RAND -D P_RAND
 override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz
 PAN = pan
 
-all: demo.pml parameters common-libs absfs-set
+all: demo.pml parameters common-libs absfs-set globals
 	spin -a demo.pml; \
-	gcc -o $(PAN) pan.c set.o fileutil.c perf.c mount.c setup.c common-libs.a $(CFLAGS) $(LIBS); \
+	gcc -g -o $(PAN) pan.c set.o init_globals.o fileutil.c perf.c mount.c setup.c common-libs.a $(CFLAGS) $(LIBS); \
 
 run: all
 	./pan | less -N; \
 	rm -rf /mnt/test-*/test* || true; \
+
+globals: init_globals.c absfs-set
+	gcc -o init_globals.o -c $< $(CFLAGS) $(LIBS)
 
 parameters: parameters.py parameter_util.py
 	python3 parameters.py

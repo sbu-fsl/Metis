@@ -362,7 +362,7 @@ static void dump_fs_images(const char *folder)
 {
     char fullpath[PATH_MAX] = {0};
     assert(ensure_dump_dir(folder) == 0);
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         /* Dump the mmap'ed object */
         snprintf(fullpath, PATH_MAX, "%s/%s-mmap-%zu.img", folder,
                  fslist[i], count);
@@ -374,7 +374,7 @@ static void dump_fs_images(const char *folder)
 
 static void mmap_devices()
 {
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         if (!devlist[i])
             continue;
         int fsfd = open(devlist[i], O_RDWR);
@@ -389,7 +389,7 @@ static void mmap_devices()
 
 static void unmap_devices()
 {
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         if (!devlist[i])
             continue;
         munmap(fsimgs[i], fsize(fsfds[i]));
@@ -401,7 +401,7 @@ static void setup_filesystems()
 {
     int ret;
     populate_mountpoints();
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         if (strcmp(fslist[i], "jffs2") == 0) {
             ret = setup_jffs2(devlist[i], devsize_kb[i]);
         } 
@@ -422,8 +422,8 @@ static void setup_filesystems()
 static void init_basepaths()
 {
     /* Initialize base paths */
-    printf("%ld file systems to test.\n", N_FS);
-    for (int i = 0; i < N_FS; ++i) {
+    printf("%d file systems to test.\n", get_n_fs());
+    for (int i = 0; i < get_n_fs(); ++i) {
         size_t len = snprintf(NULL, 0, "/mnt/test-%s%s",
                               fslist[i], fssuffix[i]);
         basepaths[i] = calloc(1, len + 1);
@@ -503,7 +503,7 @@ static long update_before_hook(unsigned char *ptr)
     makelog("[seqid = %d] checkpoint (%zu)\n", count, state_depth);
     absfs_set_add(absfs_set, absfs);
     state_depth++;
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         if (!is_verifs(fslist[i]))
             continue;
         int res = checkpoint_verifs(state_depth, basepaths[i]); 
@@ -524,7 +524,7 @@ static long revert_before_hook(unsigned char *ptr)
 {
     submit_seq("restore\n");
     makelog("[seqid = %d] restore (%p)\n", count, state_depth);
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         if (!is_verifs(fslist[i]))
             continue;
         int res = restore_verifs(state_depth, basepaths[i]);
@@ -553,12 +553,12 @@ extern long (*c_revert_after)(unsigned char *);
 
 static void equalize_free_spaces(void)
 {
-    size_t free_spaces[N_FS] = {0};
+    size_t free_spaces[MAX_FS] = {0};
     size_t min_space = ULONG_MAX;
     const char *dummy_file = ".mcfs_dummy";
     mountall();
     /* Find free space of each file system being checked */
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         if (is_verifs(fslist[i]))
             continue;
         struct statfs fsinfo;
@@ -574,7 +574,7 @@ static void equalize_free_spaces(void)
     }
     /* Fill data to file systems who have greater than min_space of free space,
      * so that all file systems will have equal free capacities. */
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         if (is_verifs(fslist[i]))
             continue;
         size_t fillsz = free_spaces[i] - min_space;
@@ -607,13 +607,15 @@ static void main_hook(int argc, char **argv)
 {
     tell_absfs_hash_method();
     /* Fill initial abstract states */
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         compute_abstract_state(basepaths[i], absfs[i]);
     }
 }
 
 void __attribute__((constructor)) init()
 {
+    printf("fileutil globals_t_p value: %p\n", globals_t_p);
+    printf("fileutil get_n_fs value: %d\n", get_n_fs());
     char output_log_name[NAME_MAX] = {0};
     char error_log_name[NAME_MAX] = {0};
     char seq_log_name[NAME_MAX] = {0};
