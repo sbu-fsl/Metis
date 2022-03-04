@@ -223,8 +223,6 @@ int unfreeze_all()
 
 void __attribute__((constructor)) mount_init()
 {
-    printf("mount_init globals_t_p value: %p\n", globals_t_p);
-    printf("mount_init get_n_fs value: %d\n", get_n_fs());
     int cur_n_fs = get_n_fs();
     fs_frozen = calloc(1, sizeof(bool) * cur_n_fs);
     if (!fs_frozen) {
