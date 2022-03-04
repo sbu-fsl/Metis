@@ -3,7 +3,6 @@
 #include "fileutil.h"
 
 // static bool fs_frozen[N_FS] = {0};
-static bool *fs_frozen;
 
 static char *receive_output(FILE *cmdfp, size_t *length)
 {

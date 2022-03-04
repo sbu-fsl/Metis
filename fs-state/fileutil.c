@@ -4,6 +4,7 @@
 #include <sys/wait.h>
 #include <sys/vfs.h>
 
+bool *fs_frozen;
 int cur_pid;
 char func[FUNC_NAME_LEN + 1];
 struct timespec begin_time;
@@ -616,6 +617,12 @@ void __attribute__((constructor)) init()
 {
     printf("fileutil globals_t_p value: %p\n", globals_t_p);
     printf("fileutil get_n_fs value: %d\n", get_n_fs());
+    int cur_n_fs = get_n_fs();
+    fs_frozen = calloc(1, sizeof(bool) * cur_n_fs);
+    if (!fs_frozen) {
+        fprintf(stderr, "cannot allocate memory for fs_frozen\n");
+        exit(EXIT_FAILURE);
+    }
     char output_log_name[NAME_MAX] = {0};
     char error_log_name[NAME_MAX] = {0};
     char seq_log_name[NAME_MAX] = {0};
@@ -666,6 +673,7 @@ void __attribute__((constructor)) init()
  */
 void __attribute__((destructor)) cleanup()
 {
+    free(fs_frozen);
     fflush(stdout);
     fflush(stderr);
     unset_myheap();

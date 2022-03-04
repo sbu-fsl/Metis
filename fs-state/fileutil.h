@@ -36,6 +36,7 @@
 #define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
 
 extern globals_t *globals_t_p;
+extern bool *fs_frozen;
 extern int cur_pid;
 extern char func[FUNC_NAME_LEN + 1];
 extern struct timespec begin_time;
