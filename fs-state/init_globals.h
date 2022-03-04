@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-// #include "abstract_fs.h"
+#include "abstract_fs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,7 +21,7 @@ typedef struct all_global_params {
     char *testfiles[MAX_FS];
     void *fsimgs[MAX_FS];
     int fsfds[MAX_FS];
-    // absfs_state_t absfs[MAX_FS];
+    absfs_state_t absfs[MAX_FS];
     int rets[MAX_FS];
     int errs[MAX_FS];
 } globals_t;
