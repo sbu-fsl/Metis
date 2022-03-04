@@ -620,7 +620,8 @@ void __attribute__((constructor)) init()
     int cur_n_fs = get_n_fs();
     fs_frozen = calloc(1, sizeof(bool) * cur_n_fs);
     if (!fs_frozen) {
-        fprintf(stderr, "cannot allocate memory for fs_frozen\n");
+        fprintf(stderr, "Memory allocation failed: %s:%d:%s\n", 
+                __FILE__, __LINE__, __func__);
         exit(EXIT_FAILURE);
     }
     char output_log_name[NAME_MAX] = {0};
