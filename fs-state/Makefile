@@ -5,15 +5,15 @@ override CFLAGS += -g -I../include -D PRINTF # -D T_RAND -D P_RAND
 override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz
 PAN = pan
 
-all: demo.pml parameters common-libs absfs-set globals
+all: demo.pml parameters common-libs globals absfs-set
 	spin -a demo.pml; \
-	gcc -g -o $(PAN) pan.c set.o init_globals.o fileutil.c perf.c mount.c setup.c common-libs.a $(CFLAGS) $(LIBS); \
+	gcc -g -o $(PAN) pan.c init_globals.o set.o fileutil.c perf.c mount.c setup.c common-libs.a $(CFLAGS) $(LIBS); \
 
 run: all
 	./pan | less -N; \
 	rm -rf /mnt/test-*/test* || true; \
 
-globals: init_globals.c absfs-set
+globals: init_globals.c
 	gcc -o init_globals.o -c $< $(CFLAGS) $(LIBS)
 
 parameters: parameters.py parameter_util.py
@@ -28,7 +28,7 @@ common-libs: $(COMMON_OBJ)
 %.cpp.o: $(COMMON_DIR)/%.cpp
 	g++ -std=c++11 -Wall -Werror -o $@ -fPIC -c $< $(CFLAGS) $(LIBS)
 
-absfs-set: set.cpp
+absfs-set: set.cpp globals
 	g++ -std=c++11 -o set.o -c $< $(CFLAGS) $(LIBS)
 	
 abstractfs-test: $(COMMON_DIR)/abstract_fs.cpp common-libs

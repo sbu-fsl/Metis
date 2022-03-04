@@ -113,7 +113,7 @@ int setup_jffs2(const char *devname, const size_t size_kb)
 void populate_mountpoints()
 {
     char cmdbuf[PATH_MAX];
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         snprintf(cmdbuf, PATH_MAX, "mkdir -p /mnt/test-%s%s", fslist[i],
                  fssuffix[i]);
         execute_cmd(cmdbuf);

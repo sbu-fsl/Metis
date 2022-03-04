@@ -19,24 +19,6 @@
 /* Abort the whole program when expect() fails */
 #define ABORT_ON_FAIL    1
 
-#define MAX_FS 2
-
-typedef struct all_global_params {
-    unsigned int _n_fs;
-    char *fslist[MAX_FS];
-    char *fssuffix[MAX_FS];
-    char *devlist[MAX_FS];
-    size_t devsize_kb[MAX_FS];
-    char *basepaths[MAX_FS];
-    char *testdirs[MAX_FS];
-    char *testfiles[MAX_FS];
-    void *fsimgs[MAX_FS];
-    int fsfds[MAX_FS];
-    absfs_state_t absfs[MAX_FS];
-    int rets[MAX_FS];
-    int errs[MAX_FS];
-} globals_t;
-
 /* List of file systems: Modify this to experiment with other file systems */
 static const char *fslist[] = {"ext4", "jffs2"};
 static const char *fssuffix[] = {"", ""};

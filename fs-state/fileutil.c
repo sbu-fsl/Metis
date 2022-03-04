@@ -619,12 +619,12 @@ void __attribute__((constructor)) init()
     printf("fileutil globals_t_p value: %p\n", globals_t_p);
     printf("fileutil get_n_fs value: %d\n", get_n_fs());
     int cur_n_fs = get_n_fs();
-    fs_frozen = calloc(1, sizeof(bool) * cur_n_fs);
+    fs_frozen = calloc(cur_n_fs, sizeof(bool));
     if (!fs_frozen) {
         logerr("memory allocation failed\n");
         exit(EXIT_FAILURE);
     }
-    fsinfos = calloc(1, sizeof(struct fs_stat) * cur_n_fs);
+    fsinfos = calloc(cur_n_fs, sizeof(struct fs_stat));
     if (!fsinfos) {
         logerr("memory allocation failed\n");
         exit(EXIT_FAILURE);
