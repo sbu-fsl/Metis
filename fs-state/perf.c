@@ -144,7 +144,7 @@ void record_performance()
         }
         /* metrics of the file systems being tested */
         for (int i = 0; i < get_n_fs(); ++i) {
-            const char *mp = fslist[i];
+            const char *mp = get_fslist()[i];
             fprintf(perflog_fp, "%s_capacity,%s_free,%s_inodes,%s_ifree,",
                     mp, mp, mp, mp);
         }
