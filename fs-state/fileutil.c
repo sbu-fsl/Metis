@@ -79,7 +79,7 @@ end:
     return ret;
 }
 
-bool compare_equality_values(const char **fses, int n_fs, int *nums)
+bool compare_equality_values(char **fses, int n_fs, int *nums)
 {
     bool res = true;
     int base = nums[0];
@@ -133,7 +133,7 @@ static void tell_absfs_hash_method()
     fprintf(stderr, "Selected abstraction hash method is %s.\n", hashname);
 }
 
-bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
+bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs)
 {
     bool res = true;
     /* The macros are defined in include/abstract_fs.h */
@@ -193,7 +193,7 @@ retry:
     return res;
 }
 
-bool compare_equality_fexists(const char **fses, int n_fs, char **fpaths)
+bool compare_equality_fexists(char **fses, int n_fs, char **fpaths)
 {
     bool res = true;
     bool fexists[n_fs];
@@ -218,7 +218,7 @@ bool compare_equality_fexists(const char **fses, int n_fs, char **fpaths)
     return res;
 }
 
-bool compare_equality_fcontent(const char **fses, int n_fs, char **fpaths)
+bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths)
 {
     bool res = true;
 
@@ -367,10 +367,10 @@ static void dump_fs_images(const char *folder)
     for (int i = 0; i < get_n_fs(); ++i) {
         /* Dump the mmap'ed object */
         snprintf(fullpath, PATH_MAX, "%s/%s-mmap-%zu.img", folder,
-                 fslist[i], count);
+                 get_fslist()[i], count);
         dump_mmaped(fullpath, fsfds[i], fsimgs[i]);
         /* Dump the device by direct copying */
-        dump_device(devlist[i], folder, fslist[i]);
+        dump_device(devlist[i], folder, get_fslist()[i]);
     }
 }
 
@@ -404,18 +404,18 @@ static void setup_filesystems()
     int ret;
     populate_mountpoints();
     for (int i = 0; i < get_n_fs(); ++i) {
-        if (strcmp(fslist[i], "jffs2") == 0) {
+        if (strcmp(get_fslist()[i], "jffs2") == 0) {
             ret = setup_jffs2(devlist[i], devsize_kb[i]);
         } 
-        else if (is_verifs(fslist[i])) {
+        else if (is_verifs(get_fslist()[i])) {
             continue;
         }
         else {
-            ret = setup_generic(fslist[i], devlist[i], devsize_kb[i]);
+            ret = setup_generic(get_fslist()[i], devlist[i], devsize_kb[i]);
         }
         if (ret != 0) {
             fprintf(stderr, "Cannot setup file system %s (ret = %d)\n",
-                    fslist[i], ret);
+                    get_fslist()[i], ret);
             exit(1);
         }
     }
@@ -427,10 +427,10 @@ static void init_basepaths()
     printf("%d file systems to test.\n", get_n_fs());
     for (int i = 0; i < get_n_fs(); ++i) {
         size_t len = snprintf(NULL, 0, "/mnt/test-%s%s",
-                              fslist[i], fssuffix[i]);
+                              get_fslist()[i], fssuffix[i]);
         basepaths[i] = calloc(1, len + 1);
         snprintf(basepaths[i], len + 1, "/mnt/test-%s%s",
-                 fslist[i], fssuffix[i]);
+                 get_fslist()[i], fssuffix[i]);
     }
 }
 
@@ -506,12 +506,12 @@ static long update_before_hook(unsigned char *ptr)
     absfs_set_add(absfs_set, absfs);
     state_depth++;
     for (int i = 0; i < get_n_fs(); ++i) {
-        if (!is_verifs(fslist[i]))
+        if (!is_verifs(get_fslist()[i]))
             continue;
         int res = checkpoint_verifs(state_depth, basepaths[i]); 
         if (res != 0) {
             logerr("Failed to checkpoint a verifiable file system %s.",
-                   fslist[i]);
+                   get_fslist()[i]);
         }
     }
     return 0;
@@ -527,12 +527,12 @@ static long revert_before_hook(unsigned char *ptr)
     submit_seq("restore\n");
     makelog("[seqid = %d] restore (%p)\n", count, state_depth);
     for (int i = 0; i < get_n_fs(); ++i) {
-        if (!is_verifs(fslist[i]))
+        if (!is_verifs(get_fslist()[i]))
             continue;
         int res = restore_verifs(state_depth, basepaths[i]);
         if (res != 0) {
             logerr("Failed to restore a verifiable file system %s.",
-                    fslist[i]);
+                    get_fslist()[i]);
         }
     }
     state_depth--;
@@ -561,7 +561,7 @@ static void equalize_free_spaces(void)
     mountall();
     /* Find free space of each file system being checked */
     for (int i = 0; i < get_n_fs(); ++i) {
-        if (is_verifs(fslist[i]))
+        if (is_verifs(get_fslist()[i]))
             continue;
         struct statfs fsinfo;
         int ret = statfs(basepaths[i], &fsinfo);
@@ -577,7 +577,7 @@ static void equalize_free_spaces(void)
     /* Fill data to file systems who have greater than min_space of free space,
      * so that all file systems will have equal free capacities. */
     for (int i = 0; i < get_n_fs(); ++i) {
-        if (is_verifs(fslist[i]))
+        if (is_verifs(get_fslist()[i]))
             continue;
         size_t fillsz = free_spaces[i] - min_space;
         char fullpath[PATH_MAX] = {0};

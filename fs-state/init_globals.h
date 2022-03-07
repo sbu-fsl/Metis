@@ -5,11 +5,18 @@
 #include <stdlib.h>
 #include "abstract_fs.h"
 
+#ifndef MAX_FS
+#define MAX_FS    10
+#endif
+
+#ifndef FS_NAME_MAX
+#define FS_NAME_MAX    10
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define MAX_FS 10
 typedef struct all_global_params {
     unsigned int _n_fs;
     char *fslist[MAX_FS];
@@ -32,6 +39,7 @@ void init_all_globals();
 void free_all_globals();
 
 unsigned int get_n_fs();
+char **get_fslist();
 
 #ifdef __cplusplus
 }

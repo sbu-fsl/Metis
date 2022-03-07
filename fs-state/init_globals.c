@@ -9,16 +9,37 @@ void init_all_globals() {
             __FILE__, __LINE__, __func__);
         exit(EXIT_FAILURE);
     }
+    // _n_fs
     globals_t_p->_n_fs = 2;
+
+    // fslist
+    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
+        globals_t_p->fslist[i] = calloc(1, FS_NAME_MAX);
+        if (!globals_t_p->fslist[i]) {
+            fprintf(stderr, "memory allocation failed: %s:%d:%s\n", 
+                __FILE__, __LINE__, __func__);
+            exit(EXIT_FAILURE);       
+        }
+    }
+    globals_t_p->fslist[0] = "ext4";
+    globals_t_p->fslist[1] = "jffs2";
 }
 
-void free_all_globals() {
+void free_all_globals() 
+{
+    for (int i = 0; i < globals_t_p->_n_fs; ++i)
+        free(globals_t_p->fslist[i]);
     free(globals_t_p);
 }
 
 unsigned int get_n_fs()
 {
     return globals_t_p->_n_fs;
+}
+
+char **get_fslist()
+{
+    return globals_t_p->fslist;
 }
 
 void __attribute__((constructor)) globals_init()
