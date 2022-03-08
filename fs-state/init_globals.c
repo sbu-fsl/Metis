@@ -96,6 +96,13 @@ static void init_all_steady_globals()
         mem_alloc_err();
         exit(EXIT_FAILURE);
     }
+
+    /* testfiles */
+    globals_t_p->testfiles = calloc(globals_t_p->_n_fs, sizeof(char*));
+    if (!globals_t_p->testfiles) {
+        mem_alloc_err();
+        exit(EXIT_FAILURE);
+    }
 }
 
 
@@ -129,7 +136,12 @@ static void free_all_globals()
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
         free(globals_t_p->testdirs[i]);
     }
-    
+
+    free(globals_t_p->testfiles);
+    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
+        free(globals_t_p->testfiles[i]);
+    }
+
     /* Free global structure pointer */
     free(globals_t_p);
 }
@@ -167,6 +179,11 @@ char **get_basepaths()
 char **get_testdirs()
 {
     return globals_t_p->testdirs;
+}
+
+char **get_testfiles()
+{
+    return globals_t_p->testfiles;
 }
 
 void __attribute__((constructor)) globals_init()
