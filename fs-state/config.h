@@ -27,7 +27,7 @@
 // #define N_FS    nelem(devsize_kb)
 #define N_FS    2
 // char *basepaths[N_FS];
-char *testdirs[N_FS];
+// char *testdirs[N_FS];
 char *testfiles[N_FS];
 
 /* Pointer to memory-mapped file system images */

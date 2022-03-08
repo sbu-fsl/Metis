@@ -29,7 +29,7 @@ typedef struct all_global_params {
     char **devlist;
     size_t *devsize_kb;
     char **basepaths;
-    char *testdirs[MAX_FS];
+    char **testdirs;
     char *testfiles[MAX_FS];
     void *fsimgs[MAX_FS];
     int fsfds[MAX_FS];
@@ -47,6 +47,7 @@ char **get_fssuffix();
 char **get_devlist();
 size_t *get_devsize_kb();
 char **get_basepaths();
+char **get_testdirs();
 
 #ifdef __cplusplus
 }

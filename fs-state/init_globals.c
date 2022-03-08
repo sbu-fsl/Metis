@@ -89,11 +89,19 @@ static void init_all_steady_globals()
         mem_alloc_err();
         exit(EXIT_FAILURE);
     }
+
+    /* testdirs */
+    globals_t_p->testdirs = calloc(globals_t_p->_n_fs, sizeof(char*));
+    if (!globals_t_p->testdirs) {
+        mem_alloc_err();
+        exit(EXIT_FAILURE);
+    }
 }
 
 
 static void free_all_globals() 
 {
+    /* Free all fickle members */
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
         free(globals_t_p->fslist[i]);
     }
@@ -111,6 +119,18 @@ static void free_all_globals()
 
     free(globals_t_p->devsize_kb);
 
+    /* Free all steady members */
+    free(globals_t_p->basepaths);
+    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
+        free(globals_t_p->basepaths[i]);
+    }
+
+    free(globals_t_p->testdirs);
+    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
+        free(globals_t_p->testdirs[i]);
+    }
+    
+    /* Free global structure pointer */
     free(globals_t_p);
 }
 
@@ -144,6 +164,10 @@ char **get_basepaths()
     return globals_t_p->basepaths;
 }
 
+char **get_testdirs()
+{
+    return globals_t_p->testdirs;
+}
 
 void __attribute__((constructor)) globals_init()
 {
