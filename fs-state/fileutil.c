@@ -370,16 +370,16 @@ static void dump_fs_images(const char *folder)
                  get_fslist()[i], count);
         dump_mmaped(fullpath, fsfds[i], fsimgs[i]);
         /* Dump the device by direct copying */
-        dump_device(devlist[i], folder, get_fslist()[i]);
+        dump_device(get_devlist()[i], folder, get_fslist()[i]);
     }
 }
 
 static void mmap_devices()
 {
     for (int i = 0; i < get_n_fs(); ++i) {
-        if (!devlist[i])
+        if (!get_devlist()[i])
             continue;
-        int fsfd = open(devlist[i], O_RDWR);
+        int fsfd = open(get_devlist()[i], O_RDWR);
         assert(fsfd >= 0);
         void *fsimg = mmap(NULL, fsize(fsfd), PROT_READ | PROT_WRITE,
                 MAP_SHARED, fsfd, 0);
@@ -392,7 +392,7 @@ static void mmap_devices()
 static void unmap_devices()
 {
     for (int i = 0; i < get_n_fs(); ++i) {
-        if (!devlist[i])
+        if (!get_devlist()[i])
             continue;
         munmap(fsimgs[i], fsize(fsfds[i]));
         close(fsfds[i]);
@@ -405,13 +405,13 @@ static void setup_filesystems()
     populate_mountpoints();
     for (int i = 0; i < get_n_fs(); ++i) {
         if (strcmp(get_fslist()[i], "jffs2") == 0) {
-            ret = setup_jffs2(devlist[i], devsize_kb[i]);
+            ret = setup_jffs2(get_devlist()[i], devsize_kb[i]);
         } 
         else if (is_verifs(get_fslist()[i])) {
             continue;
         }
         else {
-            ret = setup_generic(get_fslist()[i], devlist[i], devsize_kb[i]);
+            ret = setup_generic(get_fslist()[i], get_devlist()[i], devsize_kb[i]);
         }
         if (ret != 0) {
             fprintf(stderr, "Cannot setup file system %s (ret = %d)\n",
