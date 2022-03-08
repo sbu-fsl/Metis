@@ -32,7 +32,7 @@ typedef struct all_global_params {
     char **testdirs;
     char **testfiles;
     void **fsimgs;
-    int fsfds[MAX_FS];
+    int *fsfds;
     absfs_state_t absfs[MAX_FS];
     int rets[MAX_FS];
     int errs[MAX_FS];
@@ -50,6 +50,7 @@ char **get_basepaths();
 char **get_testdirs();
 char **get_testfiles();
 void **get_fsimgs();
+int *get_fsfds();
 
 #ifdef __cplusplus
 }

@@ -33,7 +33,7 @@
 /* Pointer to memory-mapped file system images */
 // void *fsimgs[N_FS];
 /* File descriptors of the opened f/s images */
-int fsfds[N_FS];
+// int fsfds[N_FS];
 
 absfs_state_t absfs[N_FS];
 
