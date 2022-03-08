@@ -1,6 +1,8 @@
 #include "init_globals.h"
 
 globals_t *globals_t_p;
+static const char *fslist_to_copy[] = {"ext4", "jffs2"};
+static const char *fssuffix_to_copy[] = {"", ""};
 
 void init_all_globals() {
     globals_t_p = malloc(sizeof(globals_t));
@@ -8,11 +10,10 @@ void init_all_globals() {
         mem_alloc_err();
         exit(EXIT_FAILURE);
     }
-    // _n_fs
+    /* _n_fs */
     globals_t_p->_n_fs = 2;
 
-    // fslist
-    static const char *fslist_to_copy[] = {"ext4", "jffs2"};
+    /* fslist */
     globals_t_p->fslist = calloc(globals_t_p->_n_fs, sizeof(char*));
     if (!globals_t_p->fslist) {
         mem_alloc_err();
@@ -29,6 +30,25 @@ void init_all_globals() {
         memcpy(globals_t_p->fslist[i], fslist_to_copy[i], 
                 strlen(fslist_to_copy[i]) + 1);
     }
+
+    /* fssuffix */
+    globals_t_p->fssuffix = calloc(globals_t_p->_n_fs, sizeof(char*));
+    if (!globals_t_p->fssuffix) {
+        mem_alloc_err();
+        exit(EXIT_FAILURE);
+    }  
+    // each string in fssuffix
+    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
+        globals_t_p->fssuffix[i] = calloc(strlen(fssuffix_to_copy[i]) + 1, 
+                                        sizeof(char));
+        if (!globals_t_p->fssuffix[i]) {
+            mem_alloc_err();
+            exit(EXIT_FAILURE);       
+        }        
+        memcpy(globals_t_p->fssuffix[i], fssuffix_to_copy[i], 
+                strlen(fssuffix_to_copy[i]) + 1);
+    }
+
 }
 
 void free_all_globals() 
@@ -48,6 +68,11 @@ unsigned int get_n_fs()
 char **get_fslist()
 {
     return globals_t_p->fslist;
+}
+
+char **get_fssuffix()
+{
+    return globals_t_p->fssuffix;
 }
 
 void __attribute__((constructor)) globals_init()

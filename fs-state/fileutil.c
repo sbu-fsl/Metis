@@ -427,10 +427,10 @@ static void init_basepaths()
     printf("%d file systems to test.\n", get_n_fs());
     for (int i = 0; i < get_n_fs(); ++i) {
         size_t len = snprintf(NULL, 0, "/mnt/test-%s%s",
-                              get_fslist()[i], fssuffix[i]);
+                              get_fslist()[i], get_fssuffix()[i]);
         basepaths[i] = calloc(1, len + 1);
         snprintf(basepaths[i], len + 1, "/mnt/test-%s%s",
-                 get_fslist()[i], fssuffix[i]);
+                 get_fslist()[i], get_fssuffix()[i]);
     }
 }
 

@@ -24,7 +24,7 @@ extern "C" {
 typedef struct all_global_params {
     unsigned int _n_fs;
     char **fslist;
-    char *fssuffix[MAX_FS];
+    char **fssuffix;
     char *devlist[MAX_FS];
     size_t devsize_kb[MAX_FS];
     char *basepaths[MAX_FS];
@@ -44,6 +44,7 @@ void free_all_globals();
 
 unsigned int get_n_fs();
 char **get_fslist();
+char **get_fssuffix();
 
 #ifdef __cplusplus
 }

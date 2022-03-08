@@ -115,7 +115,7 @@ void populate_mountpoints()
     char cmdbuf[PATH_MAX];
     for (int i = 0; i < get_n_fs(); ++i) {
         snprintf(cmdbuf, PATH_MAX, "mkdir -p /mnt/test-%s%s", get_fslist()[i],
-                 fssuffix[i]);
+                 get_fssuffix()[i]);
         execute_cmd(cmdbuf);
         unmount_all_relaxed();
     }
