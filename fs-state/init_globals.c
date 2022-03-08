@@ -6,7 +6,7 @@ static const char *fssuffix_to_copy[] = {"", ""};
 static const char *devlist_to_copy[] = {"/dev/ram0", "/dev/mtdblock0"};
 static const size_t devsize_kb_to_copy[] = {256, 256};
 
-static void init_all_globals() 
+static void init_all_fickle_globals() 
 {
     globals_t_p = malloc(sizeof(globals_t));
     if (!globals_t_p) {
@@ -81,6 +81,17 @@ static void init_all_globals()
     }
 }
 
+static void init_all_steady_globals() 
+{
+    /* basepaths */
+    globals_t_p->basepaths = calloc(globals_t_p->_n_fs, sizeof(char*));
+    if (!globals_t_p->basepaths) {
+        mem_alloc_err();
+        exit(EXIT_FAILURE);
+    }
+}
+
+
 static void free_all_globals() 
 {
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
@@ -128,9 +139,16 @@ size_t *get_devsize_kb()
     return globals_t_p->devsize_kb;
 }
 
+char **get_basepaths()
+{
+    return globals_t_p->basepaths;
+}
+
+
 void __attribute__((constructor)) globals_init()
 {
-    init_all_globals();
+    init_all_fickle_globals();
+    init_all_steady_globals();
 }
 
 /*

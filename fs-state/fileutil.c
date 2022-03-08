@@ -142,7 +142,7 @@ bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs)
 retry:
     /* Calculate the abstract file system states */
     for (int i = 0; i < n_fs; ++i) {
-        compute_abstract_state(basepaths[i], absfs[i]);
+        compute_abstract_state(get_basepaths()[i], absfs[i]);
     }
     /* New: record abstract states in the main log */
     static size_t prev_seqid = 0;
@@ -172,7 +172,7 @@ retry:
         for (int i = 0; i < n_fs; ++i) {
             logwarn("[seqid=%zu, fs=%s]: Directory structure:",
                     count, fses[i]);
-            dump_absfs(basepaths[i]);
+            dump_absfs(get_basepaths()[i]);
             submit_error("hash=", count, fses[i]);
             print_abstract_fs_state(submit_error, absfs[i]);
             submit_error("\n");
@@ -428,8 +428,8 @@ static void init_basepaths()
     for (int i = 0; i < get_n_fs(); ++i) {
         size_t len = snprintf(NULL, 0, "/mnt/test-%s%s",
                               get_fslist()[i], get_fssuffix()[i]);
-        basepaths[i] = calloc(1, len + 1);
-        snprintf(basepaths[i], len + 1, "/mnt/test-%s%s",
+        get_basepaths()[i] = calloc(1, len + 1);
+        snprintf(get_basepaths()[i], len + 1, "/mnt/test-%s%s",
                  get_fslist()[i], get_fssuffix()[i]);
     }
 }
@@ -508,7 +508,7 @@ static long update_before_hook(unsigned char *ptr)
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!is_verifs(get_fslist()[i]))
             continue;
-        int res = checkpoint_verifs(state_depth, basepaths[i]); 
+        int res = checkpoint_verifs(state_depth, get_basepaths()[i]); 
         if (res != 0) {
             logerr("Failed to checkpoint a verifiable file system %s.",
                    get_fslist()[i]);
@@ -529,7 +529,7 @@ static long revert_before_hook(unsigned char *ptr)
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!is_verifs(get_fslist()[i]))
             continue;
-        int res = restore_verifs(state_depth, basepaths[i]);
+        int res = restore_verifs(state_depth, get_basepaths()[i]);
         if (res != 0) {
             logerr("Failed to restore a verifiable file system %s.",
                     get_fslist()[i]);
@@ -564,9 +564,9 @@ static void equalize_free_spaces(void)
         if (is_verifs(get_fslist()[i]))
             continue;
         struct statfs fsinfo;
-        int ret = statfs(basepaths[i], &fsinfo);
+        int ret = statfs(get_basepaths()[i], &fsinfo);
         if (ret != 0) {
-            logerr("cannot statfs %s", basepaths[i]);
+            logerr("cannot statfs %s", get_basepaths()[i]);
             exit(1);
         }
         size_t free_spc = fsinfo.f_bfree * fsinfo.f_bsize;
@@ -581,7 +581,7 @@ static void equalize_free_spaces(void)
             continue;
         size_t fillsz = free_spaces[i] - min_space;
         char fullpath[PATH_MAX] = {0};
-        snprintf(fullpath, PATH_MAX, "%s/%s", basepaths[i], dummy_file);
+        snprintf(fullpath, PATH_MAX, "%s/%s", get_basepaths()[i], dummy_file);
         /* Create/open the dummy file */
         int fd = open(fullpath, O_CREAT | O_TRUNC | O_RDWR, 0666);
         if (fd < 0) {
@@ -594,7 +594,7 @@ static void equalize_free_spaces(void)
             size_t writesz = min(fillsz, PATH_MAX);
             ssize_t ret = write(fd, fullpath, writesz);
             if (ret < 0) {
-                logerr("cannot write data in %s", basepaths[i]);
+                logerr("cannot write data in %s", get_basepaths()[i]);
                 exit(1);
             }
             fillsz -= ret;
@@ -610,7 +610,7 @@ static void main_hook(int argc, char **argv)
     tell_absfs_hash_method();
     /* Fill initial abstract states */
     for (int i = 0; i < get_n_fs(); ++i) {
-        compute_abstract_state(basepaths[i], absfs[i]);
+        compute_abstract_state(get_basepaths()[i], absfs[i]);
     }
 }
 

@@ -61,7 +61,7 @@ void mountall()
         if (is_verifs(get_fslist()[i]))
             continue;
         /* mount(source, target, fstype, mountflags, option_str) */
-        int ret = mount(get_devlist()[i], basepaths[i], get_fslist()[i], MS_NOATIME, "");
+        int ret = mount(get_devlist()[i], get_basepaths()[i], get_fslist()[i], MS_NOATIME, "");
         if (ret != 0) {
             failpos = i;
             err = errno;
@@ -74,10 +74,10 @@ err:
     for (int i = 0; i < failpos; ++i) {
         if (is_verifs(get_fslist()[i]))
             continue;
-        umount2(basepaths[i], MNT_FORCE);
+        umount2(get_basepaths()[i], MNT_FORCE);
     }
     fprintf(stderr, "Could not mount file system %s in %s at %s (%s)\n",
-            get_fslist()[failpos], get_devlist()[failpos], basepaths[failpos],
+            get_fslist()[failpos], get_devlist()[failpos], get_basepaths()[failpos],
             errnoname(err));
     exit(1);
 }
@@ -111,17 +111,17 @@ void unmount_all(bool strict)
         /* We have to unfreeze the frozen file system before unmounting it.
          * Otherwise the system will hang! */
         if (fs_frozen[i]) {
-            fsthaw(get_fslist()[i], get_devlist()[i], basepaths[i]);
+            fsthaw(get_fslist()[i], get_devlist()[i], get_basepaths()[i]);
         }
 try_unmount:
-        ret = umount2(basepaths[i], 0);
+        ret = umount2(get_basepaths()[i], 0);
         if (ret != 0) {
             /* If unmounting failed due to device being busy, again up to
              * retry_limit times with 100 * 2^n ms (n = num_retries) */
             useconds_t waitms = (100 << (10 - retry_limit));
             if (errno == EBUSY && retry_limit > 0) {
                 fprintf(stderr, "File system %s mounted on %s is busy. Retry "
-                        "unmounting after %dms.\n", get_fslist()[i], basepaths[i],
+                        "unmounting after %dms.\n", get_fslist()[i], get_basepaths()[i],
                         waitms);
                 usleep(1000 * waitms);
                 retry_limit--;
@@ -129,7 +129,7 @@ try_unmount:
                 goto try_unmount;
             }
             fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
-                    get_fslist()[i], basepaths[i], errnoname(errno));
+                    get_fslist()[i], get_basepaths()[i], errnoname(errno));
             has_failure = true;
         }
     }
@@ -143,7 +143,7 @@ static int warnings_issued = 0;
 static void set_fs_frozen_flag(const char *mountpoint, bool value)
 {
     for (int i = 0; i < get_n_fs(); ++i) {
-        if (strncmp(basepaths[i], mountpoint, PATH_MAX) == 0) {
+        if (strncmp(get_basepaths()[i], mountpoint, PATH_MAX) == 0) {
             fs_frozen[i] = value;
             break;
         }
@@ -215,8 +215,8 @@ int unfreeze_all()
 {
     for (int i = 0; i < get_n_fs(); ++i) {
         if (fs_frozen[i]) {
-            fprintf(stderr, "unfreezing %s at %s\n", get_fslist()[i], basepaths[i]);
-            fsthaw(get_fslist()[i], get_devlist()[i], basepaths[i]);
+            fprintf(stderr, "unfreezing %s at %s\n", get_fslist()[i], get_basepaths()[i]);
+            fsthaw(get_fslist()[i], get_devlist()[i], get_basepaths()[i]);
         }
     }
 }

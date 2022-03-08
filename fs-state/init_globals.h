@@ -22,12 +22,13 @@ extern "C" {
         __FILE__, __LINE__, __func__, ##__VA_ARGS__);
 
 typedef struct all_global_params {
+    unsigned int _swarm_id;
     unsigned int _n_fs;
     char **fslist;
     char **fssuffix;
     char **devlist;
     size_t *devsize_kb;
-    char *basepaths[MAX_FS];
+    char **basepaths;
     char *testdirs[MAX_FS];
     char *testfiles[MAX_FS];
     void *fsimgs[MAX_FS];
@@ -45,6 +46,7 @@ char **get_fslist();
 char **get_fssuffix();
 char **get_devlist();
 size_t *get_devsize_kb();
+char **get_basepaths();
 
 #ifdef __cplusplus
 }

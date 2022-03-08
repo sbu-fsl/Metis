@@ -108,7 +108,7 @@ void record_fs_stat()
 {
     struct fs_stat my_fsstats[get_n_fs()];
     for (int i = 0; i < get_n_fs(); ++i) {
-        get_fs_stat(basepaths[i], &my_fsstats[i]);
+        get_fs_stat(get_basepaths()[i], &my_fsstats[i]);
     }
     pthread_mutex_lock(&fsinfo_lock);
     memcpy(fsinfos, my_fsstats, sizeof(struct fs_stat) * get_n_fs());
