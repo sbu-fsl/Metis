@@ -39,7 +39,8 @@
 
 // FILE *seqfp; // looks like it's not being used
 
-int rets[N_FS], errs[N_FS];
+//int rets[N_FS], errs[N_FS];
+int errs[N_FS];
 int i;
 
 #endif // _FSSTATE_CONFIG_H_

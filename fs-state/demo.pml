@@ -23,7 +23,7 @@ proctype worker()
            makelog("BEGIN: create_file\n");
            mountall();
            for (i = 0; i < get_n_fs(); ++i) {
-               makecall(rets[i], errs[i], "%s, 0%o", create_file, get_testfiles()[i], 0644);
+               makecall(get_rets()[i], errs[i], "%s, 0%o", create_file, get_testfiles()[i], 0644);
            }
            expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
            expect(compare_equality_values(get_fslist(), get_n_fs(), errs));
@@ -45,12 +45,12 @@ proctype worker()
             char *data = malloc(Pworker->writelen);
             generate_data(data, Pworker->writelen, Pworker->writebyte);
             for (i = 0; i < get_n_fs(); ++i) {
-                makecall(rets[i], errs[i], "%s, %p, %ld, %zu", write_file, get_testfiles()[i], data,
+                makecall(get_rets()[i], errs[i], "%s, %p, %ld, %zu", write_file, get_testfiles()[i], data,
                          (off_t)Pworker->offset, (size_t)Pworker->writelen);
             }
 
             free(data);
-            expect(compare_equality_values(get_fslist(), get_n_fs(), rets));
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), errs));
             expect(compare_equality_fcontent(get_fslist(), get_n_fs(), get_testfiles()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
@@ -68,10 +68,10 @@ proctype worker()
             mountall();
             // off_t flen = pick_value(0, 200000, 10000);
             for (i = 0; i < get_n_fs(); ++i) {
-                makecall(rets[i], errs[i], "%s, %ld", truncate, get_testfiles()[i], (off_t)Pworker->filelen);
+                makecall(get_rets()[i], errs[i], "%s, %ld", truncate, get_testfiles()[i], (off_t)Pworker->filelen);
             }
             expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testfiles()));
-            expect(compare_equality_values(get_fslist(), get_n_fs(), rets));
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), errs));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
@@ -84,10 +84,10 @@ proctype worker()
             makelog("BEGIN: unlink\n");
             mountall();
             for (i = 0; i < get_n_fs(); ++i) {
-                makecall(rets[i], errs[i], "%s", unlink, get_testfiles()[i]);
+                makecall(get_rets()[i], errs[i], "%s", unlink, get_testfiles()[i]);
             }
             expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
-            expect(compare_equality_values(get_fslist(), get_n_fs(), rets));
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), errs));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
@@ -100,10 +100,10 @@ proctype worker()
             makelog("BEGIN: mkdir\n");
             mountall();
             for (i = 0; i < get_n_fs(); ++i) {
-                makecall(rets[i], errs[i], "%s, 0%o", mkdir, get_testdirs()[i], 0755);
+                makecall(get_rets()[i], errs[i], "%s, 0%o", mkdir, get_testdirs()[i], 0755);
             }
             expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
-            expect(compare_equality_values(get_fslist(), get_n_fs(), rets));
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), errs));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
@@ -117,10 +117,10 @@ proctype worker()
             makelog("BEGIN: rmdir\n");
             mountall();
             for (i = 0; i < get_n_fs(); ++i) {
-                makecall(rets[i], errs[i], "%s", rmdir, get_testdirs()[i]);
+                makecall(get_rets()[i], errs[i], "%s", rmdir, get_testdirs()[i]);
             }
             expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
-            expect(compare_equality_values(get_fslist(), get_n_fs(), rets));
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), errs));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
