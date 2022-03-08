@@ -23,8 +23,9 @@
 // static const char *fslist[] = {"ext4", "jffs2"};
 // static const char *fssuffix[] = {"", ""};
 // static const char *devlist[] = {"/dev/ram0", "/dev/mtdblock0"};
-static const size_t devsize_kb[] = {256, 256};
-#define N_FS    nelem(devsize_kb)
+// static const size_t devsize_kb[] = {256, 256};
+// #define N_FS    nelem(devsize_kb)
+#define N_FS    2
 char *basepaths[N_FS];
 char *testdirs[N_FS];
 char *testfiles[N_FS];

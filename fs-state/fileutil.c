@@ -405,13 +405,13 @@ static void setup_filesystems()
     populate_mountpoints();
     for (int i = 0; i < get_n_fs(); ++i) {
         if (strcmp(get_fslist()[i], "jffs2") == 0) {
-            ret = setup_jffs2(get_devlist()[i], devsize_kb[i]);
+            ret = setup_jffs2(get_devlist()[i], get_devsize_kb()[i]);
         } 
         else if (is_verifs(get_fslist()[i])) {
             continue;
         }
         else {
-            ret = setup_generic(get_fslist()[i], get_devlist()[i], devsize_kb[i]);
+            ret = setup_generic(get_fslist()[i], get_devlist()[i], get_devsize_kb()[i]);
         }
         if (ret != 0) {
             fprintf(stderr, "Cannot setup file system %s (ret = %d)\n",

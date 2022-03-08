@@ -4,7 +4,7 @@ globals_t *globals_t_p;
 static const char *fslist_to_copy[] = {"ext4", "jffs2"};
 static const char *fssuffix_to_copy[] = {"", ""};
 static const char *devlist_to_copy[] = {"/dev/ram0", "/dev/mtdblock0"};
-// static const size_t devsize_kb[] = {256, 256};
+static const size_t devsize_kb_to_copy[] = {256, 256};
 
 static void init_all_globals() 
 {
@@ -70,9 +70,15 @@ static void init_all_globals()
     }
 
     /* devsize_kb */
-   // globals_t_p->devsize_kb = calloc(globals_t_p->_n_fs, sizeof(size_t));
-
-
+    globals_t_p->devsize_kb = calloc(globals_t_p->_n_fs, sizeof(size_t));
+    if (!globals_t_p->devsize_kb) {
+        mem_alloc_err();
+        exit(EXIT_FAILURE);
+    }  
+    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
+        memcpy(globals_t_p->devsize_kb, devsize_kb_to_copy, 
+                sizeof(size_t) * (globals_t_p->_n_fs));
+    }
 }
 
 static void free_all_globals() 
@@ -91,6 +97,8 @@ static void free_all_globals()
         free(globals_t_p->devlist[i]);
     }
     free(globals_t_p->devlist);
+
+    free(globals_t_p->devsize_kb);
 
     free(globals_t_p);
 }
@@ -113,6 +121,11 @@ char **get_fssuffix()
 char **get_devlist()
 {
     return globals_t_p->devlist;
+}
+
+size_t *get_devsize_kb()
+{
+    return globals_t_p->devsize_kb;
 }
 
 void __attribute__((constructor)) globals_init()
