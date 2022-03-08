@@ -10,7 +10,7 @@ c_decl {
 c_track "get_fsimgs()[0]" "262144" "UnMatched";
 c_track "get_fsimgs()[1]" "262144" "UnMatched";
 /* Abstract state signatures of the file systems */
-c_track "absfs" "sizeof(absfs)";
+c_track "get_absfs()" "sizeof(get_absfs())";
 
 proctype worker()
 {
@@ -27,7 +27,7 @@ proctype worker()
            }
            expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
            expect(compare_equality_values(get_fslist(), get_n_fs(), errs));
-           expect(compare_equality_absfs(get_fslist(), get_n_fs(), absfs));
+           expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
            unmount_all_strict();
            makelog("END: create_file\n");
        };
@@ -53,7 +53,7 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), rets));
             expect(compare_equality_values(get_fslist(), get_n_fs(), errs));
             expect(compare_equality_fcontent(get_fslist(), get_n_fs(), get_testfiles()));
-            expect(compare_equality_absfs(get_fslist(), get_n_fs(), absfs));
+            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
             makelog("END: write_file\n");
         };
@@ -73,7 +73,7 @@ proctype worker()
             expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testfiles()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), rets));
             expect(compare_equality_values(get_fslist(), get_n_fs(), errs));
-            expect(compare_equality_absfs(get_fslist(), get_n_fs(), absfs));
+            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
             makelog("END: truncate\n");
         };
@@ -89,7 +89,7 @@ proctype worker()
             expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), rets));
             expect(compare_equality_values(get_fslist(), get_n_fs(), errs));
-            expect(compare_equality_absfs(get_fslist(), get_n_fs(), absfs));
+            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
             makelog("END: unlink\n");
         }
@@ -105,7 +105,7 @@ proctype worker()
             expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), rets));
             expect(compare_equality_values(get_fslist(), get_n_fs(), errs));
-            expect(compare_equality_absfs(get_fslist(), get_n_fs(), absfs));
+            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
             makelog("END: mkdir\n");
         }
@@ -122,7 +122,7 @@ proctype worker()
             expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), rets));
             expect(compare_equality_values(get_fslist(), get_n_fs(), errs));
-            expect(compare_equality_absfs(get_fslist(), get_n_fs(), absfs));
+            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
             makelog("END: rmdir\n");
         }

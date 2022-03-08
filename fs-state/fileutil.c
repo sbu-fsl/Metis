@@ -503,7 +503,7 @@ static long update_before_hook(unsigned char *ptr)
 {
     submit_seq("checkpoint\n");
     makelog("[seqid = %d] checkpoint (%zu)\n", count, state_depth);
-    absfs_set_add(absfs_set, absfs);
+    absfs_set_add(absfs_set, get_absfs());
     state_depth++;
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!is_verifs(get_fslist()[i]))
@@ -610,7 +610,7 @@ static void main_hook(int argc, char **argv)
     tell_absfs_hash_method();
     /* Fill initial abstract states */
     for (int i = 0; i < get_n_fs(); ++i) {
-        compute_abstract_state(get_basepaths()[i], absfs[i]);
+        compute_abstract_state(get_basepaths()[i], get_absfs()[i]);
     }
 }
 

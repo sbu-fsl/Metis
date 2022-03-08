@@ -117,6 +117,13 @@ static void init_all_steady_globals()
         mem_alloc_err();
         exit(EXIT_FAILURE);
     }
+
+    /* absfs */
+    globals_t_p->absfs = calloc(globals_t_p->_n_fs, sizeof(absfs_state_t));
+    if (!globals_t_p->absfs) {
+        mem_alloc_err();
+        exit(EXIT_FAILURE);
+    }
 }
 
 
@@ -158,6 +165,7 @@ static void free_all_globals()
 
     free(globals_t_p->fsimgs);
     free(globals_t_p->fsfds);
+    free(globals_t_p->absfs);
 
     /* Free global structure pointer */
     free(globals_t_p);
@@ -211,6 +219,11 @@ void **get_fsimgs()
 int *get_fsfds()
 {
     return globals_t_p->fsfds;
+}
+
+absfs_state_t *get_absfs()
+{
+    return globals_t_p->absfs;
 }
 
 void __attribute__((constructor)) globals_init()

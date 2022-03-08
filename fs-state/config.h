@@ -35,7 +35,7 @@
 /* File descriptors of the opened f/s images */
 // int fsfds[N_FS];
 
-absfs_state_t absfs[N_FS];
+// absfs_state_t absfs[N_FS];
 
 // FILE *seqfp; // looks like it's not being used
 
