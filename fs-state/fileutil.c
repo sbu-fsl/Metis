@@ -368,7 +368,7 @@ static void dump_fs_images(const char *folder)
         /* Dump the mmap'ed object */
         snprintf(fullpath, PATH_MAX, "%s/%s-mmap-%zu.img", folder,
                  get_fslist()[i], count);
-        dump_mmaped(fullpath, fsfds[i], fsimgs[i]);
+        dump_mmaped(fullpath, fsfds[i], get_fsimgs()[i]);
         /* Dump the device by direct copying */
         dump_device(get_devlist()[i], folder, get_fslist()[i]);
     }
@@ -385,7 +385,7 @@ static void mmap_devices()
                 MAP_SHARED, fsfd, 0);
         assert(fsimg != MAP_FAILED);
         fsfds[i] = fsfd;
-        fsimgs[i] = fsimg;
+        get_fsimgs()[i] = fsimg;
     }
 }
 
@@ -394,7 +394,7 @@ static void unmap_devices()
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!get_devlist()[i])
             continue;
-        munmap(fsimgs[i], fsize(fsfds[i]));
+        munmap(get_fsimgs()[i], fsize(fsfds[i]));
         close(fsfds[i]);
     }
 }

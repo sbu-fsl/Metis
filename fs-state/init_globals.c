@@ -103,6 +103,13 @@ static void init_all_steady_globals()
         mem_alloc_err();
         exit(EXIT_FAILURE);
     }
+
+    /* fsimgs */
+    globals_t_p->fsimgs = calloc(globals_t_p->_n_fs, sizeof(void*));
+    if (!globals_t_p->fsimgs) {
+        mem_alloc_err();
+        exit(EXIT_FAILURE);
+    }
 }
 
 
@@ -184,6 +191,11 @@ char **get_testdirs()
 char **get_testfiles()
 {
     return globals_t_p->testfiles;
+}
+
+void **get_fsimgs()
+{
+    return globals_t_p->fsimgs;
 }
 
 void __attribute__((constructor)) globals_init()
