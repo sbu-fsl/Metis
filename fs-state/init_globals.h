@@ -17,9 +17,13 @@
 extern "C" {
 #endif
 
+#define mem_alloc_err(...) \
+    fprintf(stderr, "memory allocation failed: %s:%d:%s\n", \
+        __FILE__, __LINE__, __func__, ##__VA_ARGS__);
+
 typedef struct all_global_params {
     unsigned int _n_fs;
-    char *fslist[MAX_FS];
+    char **fslist;
     char *fssuffix[MAX_FS];
     char *devlist[MAX_FS];
     size_t devsize_kb[MAX_FS];
