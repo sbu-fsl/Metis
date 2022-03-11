@@ -1,8 +1,6 @@
 #ifndef _FSSTATE_CONFIG_H_
 #define _FSSTATE_CONFIG_H_
 
-#define nelem(array)  (sizeof(array) / sizeof(array[0]))
-
 /* This should be a multiple of N_FS
  * in order to avoid false discrepancy in open() tests */
 #define MAX_OPENED_FILES 192

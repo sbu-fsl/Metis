@@ -1,7 +1,9 @@
 #!/bin/bash
 
-FSLIST=(ext4 jffs2)
-DEVLIST=(/dev/ram0 /dev/mtdblock0)
+FSLIST=()
+DEVSIZE_KB=()
+DEVLIST=()
+SWARM_ID=0
 LOOPDEVS=()
 verbose=0
 POSITIONAL=()
@@ -69,9 +71,9 @@ verify_device() {
 
 setup_ext2() {
     DEVFILE=$1;
+    DEVSIZEKB=$2;
     BLOCKSIZE=1k
-    COUNT=256
-    runcmd dd if=/dev/zero of=$DEVFILE bs=$BLOCKSIZE count=$COUNT status=none;
+    runcmd dd if=/dev/zero of=$DEVFILE bs=$BLOCKSIZE count=$DEVSIZEKB status=none;
 
     setup_ext ext2 $DEVFILE 0;
 }
@@ -82,9 +84,9 @@ unset_ext2() {
 
 setup_ext4() {
     DEVFILE=$1;
+    DEVSIZEKB=$2;
     BLOCKSIZE=1k
-    COUNT=256
-    runcmd dd if=/dev/zero of=$DEVFILE bs=$BLOCKSIZE count=$COUNT status=none;
+    runcmd dd if=/dev/zero of=$DEVFILE bs=$BLOCKSIZE count=$DEVSIZEKB status=none;
 
     setup_ext ext4 $DEVFILE 0;
 }
@@ -93,14 +95,14 @@ unset_ext4() {
     :
 }
 
-JFFS2_EMPTY_DIR=/tmp/_empty_dir_$RANDOM
-JFFS2_IMAGE=/tmp/jffs2.img
-JFFS2_SIZE=262144
-
 setup_jffs2() {
     DEVICE=$1;
+    DEVSIZE_KB=$2;
+    JFFS2_SIZE=$(($DEVSIZE_KB * 1024))
+    JFFS2_EMPTY_DIR=/tmp/_empty_dir_$RANDOM
+    JFFS2_IMAGE=/tmp/jffs2.img
     if ! [ "$(lsmod | grep mtdram)" ]; then
-        setup_mtd;
+        setup_mtd $JFFS2_SIZE;
     fi
     runcmd mkdir -p $JFFS2_EMPTY_DIR;
     runcmd mkfs.jffs2 --pad=$JFFS2_SIZE --root=$JFFS2_EMPTY_DIR -o $JFFS2_IMAGE;
@@ -108,6 +110,7 @@ setup_jffs2() {
 }
 
 unset_jffs2() {
+    JFFS2_IMAGE=/tmp/jffs2.img
     runcmd rmdir /tmp/_empty_dir*;
     runcmd rm -f $JFFS2_IMAGE;
 }
@@ -137,6 +140,7 @@ unset_btrfs() {
 }
 
 setup_mtd() {
+    JFFS2_SIZE=$1;
     runcmd modprobe mtdram total_size=$(expr $JFFS2_SIZE / 1024) erase_size=16;
     runcmd modprobe mtdblock;
 }
@@ -154,10 +158,13 @@ unset_xfs() {
 }
 
 generic_cleanup() {
+    n_fs=$1;
+    SWARM_ID=$2;
     if [ "$KEEP_FS" = "0" ]; then
-        for fs in ${FSLIST[@]}; do
-            if [ "$(mount | grep /mnt/test-$fs)" ]; then
-                umount -f /mnt/test-$fs;
+        for i in $(seq 0 $(($n_fs-1))); do
+            fs=${FSLIST[$i]};
+            if [ "$(mount | grep /mnt/test-$fs-$i-$SWARM_ID)" ]; then
+                umount -f /mnt/test-$fs-$i-$SWARM_ID;
             fi
         done
 
@@ -176,26 +183,13 @@ generic_cleanup() {
     chown -R $login_user:$login_user .
 }
 
-runcmd() {
-    if [ $verbose != "0" ]; then
-        echo ">>> $@" >&2 ;
-    fi
-    sleep 0.5;
-    $@;
-    ret=$?;
-    if [ $ret -ne 0 ]; then
-        echo "Command '$0' exited with error ($ret)." >&2;
-        generic_cleanup;
-        exit $ret;
-    fi
-}
-
 mount_all() {
+    SWARM_ID=$1;
     n_fs=${#FSLIST[@]};
     for i in $(seq 0 $(($n_fs-1))); do
         fs=${FSLIST[$i]};
         DEVICE=${DEVLIST[$i]};
-        runcmd mount -t $fs $DEVICE /mnt/test-$fs;
+        runcmd mount -t $fs $DEVICE /mnt/test-$fs-$i-$SWARM_ID;
     done
 }
 
@@ -231,8 +225,13 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -m|--mount-all)
-            mount_all;
+            mount_all $SWARM_ID;
             exit 0;
+            shift
+            ;;
+        -f|--fslist)
+            MCFSLIST="$2"
+            shift
             shift
             ;;
         *)
@@ -242,29 +241,114 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-runcmd losetup -D
+# Create file system and device key-value map
+declare -A FS_DEV_MAP
+FS_DEV_MAP+=( ["btrfs"]="ram" ["ext2"]="ram" ["ext4"]="ram" ["f2fs"]="ram" )
+FS_DEV_MAP+=( ["jffs2"]="mtdblock" ["ramfs"]="" ["tmpfs"]="" )
+FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" )
+
+FIRST_TOK=true
+TOK_CNT="-1"
+# Populate FSLIST and DEVSIZE_KB
+IFS=':' read -ra ADDR <<< "$MCFSLIST"
+for EACH_TOK in "${ADDR[@]}"; do
+    if [ "$FIRST_TOK" = true ] 
+    then
+        SWARM_ID=$EACH_TOK
+        FIRST_TOK=false
+    elif [ "$(($TOK_CNT % 2))" -eq 0 ]
+    then 
+        FSLIST[$(($TOK_CNT / 2))]="$EACH_TOK"
+    else
+        DEVSIZE_KB[$(($TOK_CNT / 2))]="$EACH_TOK"
+    fi
+    TOK_CNT=`expr $TOK_CNT + 1`
+done
 
 n_fs=${#FSLIST[@]};
+
+runcmd() {
+    if [ $verbose != "0" ]; then
+        echo ">>> $@" >&2 ;
+    fi
+    sleep 0.5;
+    $@;
+    ret=$?;
+    if [ $ret -ne 0 ]; then
+        echo "Command '$0' exited with error ($ret)." >&2;
+        generic_cleanup $n_fs $SWARM_ID;
+        exit $ret;
+    fi
+}
+
+runcmd losetup -D
+
+ALL_RAMS=0
+ALL_MTDBLOCKS=0
+RAM_NAME="ram"
+MTDBLOCK_NAME="mtdblock"
+
+# Number of ram and mtdblocks to use
+for i in $(seq 0 $(($n_fs-1))); do
+    fs=${FSLIST[$i]};
+    dev_type=${FS_DEV_MAP[${fs}]}
+    if [ "$dev_type" = "$RAM_NAME" ]
+    then
+        ALL_RAMS=`expr $ALL_RAMS + 1`
+    elif [ "$dev_type" = "$MTDBLOCK_NAME" ]
+    then 
+        ALL_MTDBLOCKS=`expr $ALL_MTDBLOCKS + 1`
+    fi
+done
+
+# Populate DEVLIST
+RAM_CNT=0
+MTDBLOCK_CNT=0
+for i in $(seq 0 $(($n_fs-1))); do
+    fs=${FSLIST[$i]};
+    dev_type=${FS_DEV_MAP[${fs}]}
+    if [ "$dev_type" = "$RAM_NAME" ]
+    then
+        RAM_ID=$(($SWARM_ID * $ALL_RAMS + $RAM_CNT))
+        RAM_CNT=`expr $RAM_CNT + 1`
+        DEVLIST[$i]="/dev/ram$RAM_ID"
+    elif [ "$dev_type" = "$MTDBLOCK_NAME" ]
+    then
+        MTDBLOCK_ID=$(($SWARM_ID * $ALL_MTDBLOCKS + $MTDBLOCK_CNT))
+        MTDBLOCK_CNT=`expr $MTDBLOCK_CNT + 1`
+        DEVLIST[$i]="/dev/mtdblock$MTDBLOCK_ID"
+    elif [ "$dev_type" = "" ]
+    then
+        DEVLIST[$i]=""
+    else
+        echo "[Error] cannot find proper dev type"
+        exit -1;
+    fi
+done
+
 for i in $(seq 0 $(($n_fs-1))); do
 
     # Run individual file system setup scripts defined above
     fs=${FSLIST[$i]};
     DEVICE=${DEVLIST[$i]};
+    DEVSZKB=${DEVSIZE_KB[$i]};
 
     if [ "${fs:0:${VERI_PREFIX_LEN}}" != "$VERIFS_PREFIX" ]; then
         # Unmount first
-        if [ "$(mount | grep /mnt/test-$fs)" ]; then
-            runcmd umount -f /mnt/test-$fs;
+        if [ "$(mount | grep /mnt/test-$fs-$i-$SWARM_ID)" ]; then
+            runcmd umount -f /mnt/test-$fs-$i-$SWARM_ID;
         fi
 
-        setup_$fs $DEVICE;
+        setup_$fs $DEVICE $DEVSZKB;
 
-        if [ -d /mnt/test-$fs ]; then
-            runcmd rm -rf /mnt/test-$fs;
+        if [ -d /mnt/test-$fs-$i-$SWARM_ID ]; then
+            runcmd rm -rf /mnt/test-$fs-$i-$SWARM_ID;
         fi
-        runcmd mkdir -p /mnt/test-$fs;
+        runcmd mkdir -p /mnt/test-$fs-$i-$SWARM_ID;
     fi
 done
+
+export MCFS_FSLIST="$MCFSLIST"
 
 # Run test program
 if [ "$SETUP_ONLY" != "1" ]; then
@@ -275,7 +359,7 @@ if [ "$SETUP_ONLY" != "1" ]; then
 
     # By default we don't want to clean up the file system for 
     # better analyzing discrepancies reported by MCFS
-    generic_cleanup;
+    generic_cleanup $n_fs $SWARM_ID;
 fi
 
 # Run replayer
@@ -284,6 +368,6 @@ if [ "$REPLAY" = "1" ]; then
     echo 'Running the replayer...';
     echo 'The output is in replay.log';
     ./replay 2>&1 > replay.log
-    mount_all;
+    mount_all $SWARM_ID;
 fi
 

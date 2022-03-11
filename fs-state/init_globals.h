@@ -3,23 +3,44 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include "abstract_fs.h"
 
 #ifndef MAX_FS
-#define MAX_FS    10
+#define MAX_FS    20
 #endif
 
-#ifndef FS_NAME_MAX
-#define FS_NAME_MAX    10
-#endif
+#define mem_alloc_err(...) \
+    do { \
+        fprintf(stderr, "memory allocation failed: %s:%d:%s\n", \
+            __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
+        exit(EXIT_FAILURE); \
+    } while(0)
+
+
+#define nelem(array)  (sizeof(array) / sizeof(array[0]))
+
+typedef struct all_dev_nums {
+    int all_rams;
+    int all_mtdblocks;
+} dev_nums_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define mem_alloc_err(...) \
-    fprintf(stderr, "memory allocation failed: %s:%d:%s\n", \
-        __FILE__, __LINE__, __func__, ##__VA_ARGS__);
+static const char *fs_all[] = {"btrfs", "ext2", "ext4", "f2fs",    "jffs2", "ramfs", "tmpfs", "verifs1", "verifs2", "xfs"};
+static const char *dev_all[]= {  "ram",  "ram",  "ram",  "ram", "mtdblock",      "",      "",        "",        "", "ram"};
+#define ALL_FS    nelem(fs_all)
+
+static inline int get_dev_from_fs(char *fs_type) {
+    int ret = -1;
+    for (int i = 0; i < ALL_FS; ++i) {
+        if (strcmp(fs_type, fs_all[i]) == 0) 
+            return i;
+    }
+    return ret;
+}
 
 typedef struct all_global_params {
     unsigned int _swarm_id;

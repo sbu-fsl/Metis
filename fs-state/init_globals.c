@@ -1,83 +1,162 @@
 #include "init_globals.h"
 
 globals_t *globals_t_p;
-static const char *fslist_to_copy[] = {"ext4", "jffs2"};
-static const char *fssuffix_to_copy[] = {"", ""};
-static const char *devlist_to_copy[] = {"/dev/ram0", "/dev/mtdblock0"};
-static const size_t devsize_kb_to_copy[] = {256, 256};
+
+static char *mcfs_globals_env;
+static const char *mcfs_globals_env_key = "MCFS_FSLIST";
+static const char *globals_delim = ":";
+static const char *ramdisk_name = "ram";
+static const char *mtdblock_name = "mtdblock";
+
+static char *fslist_to_copy[MAX_FS];
+static char *fssuffix_to_copy[MAX_FS];
+static char *devlist_to_copy[MAX_FS];
+static size_t devsize_kb_to_copy[MAX_FS];
+
+dev_nums_t dev_nums = {.all_rams = 0, .all_mtdblocks = 0};
+
+static void init_globals_pointer()
+{
+    /* global structure pointer */
+    globals_t_p = malloc(sizeof(globals_t));
+    if (!globals_t_p)
+        mem_alloc_err();
+}
+
+static int get_mcfs_env_arguments() 
+{
+    mcfs_globals_env = getenv(mcfs_globals_env_key);
+
+    /* Validate existence of environment vars */
+    if (!mcfs_globals_env) {
+        fprintf(stderr, "%s is not set.\n", mcfs_globals_env_key);
+        return -EINVAL;
+    }
+
+    /* context variable pointer for strtok_r */
+    char *context = NULL;
+    /* Parsing the MCFS options from env */
+    bool first_tok = true;
+    int tok_cnt = -1;
+    /* Example: 0:ext4:256:jffs2:512 swarm_id:fs1:size1(inKB):fs2:size2 */
+    char *token = strtok_r(mcfs_globals_env, globals_delim, &context);
+    while (token != NULL) {
+        if (first_tok) {
+            globals_t_p->_swarm_id = atoi(token);
+            first_tok = false;
+        }
+        else if (tok_cnt % 2 == 0) { // file system name
+            fslist_to_copy[tok_cnt / 2] = calloc(strlen(token) + 1, sizeof(char));
+            strcpy(fslist_to_copy[tok_cnt / 2], token);
+        }
+        else { // device size
+            devsize_kb_to_copy[tok_cnt / 2] = atoi(token);
+        }
+        ++tok_cnt;
+        token = strtok_r(NULL, globals_delim, &context);
+    }
+    /* _n_fs */
+    globals_t_p->_n_fs = tok_cnt / 2;
+    return 0;
+}
+
+static void prepare_lists_to_copy()
+{
+    /* figure out how many ram/mtdblocks gonna be used */
+    int dev_idx = -1;
+    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
+        dev_idx = get_dev_from_fs(fslist_to_copy[i]);
+        if (dev_idx == -1) {
+            fprintf(stderr, "File system type not supported for device\n");
+        }
+        else if (strcmp(dev_all[dev_idx], ramdisk_name) == 0) {
+            ++dev_nums.all_rams;
+        }
+        else if (strcmp(dev_all[dev_idx], mtdblock_name) == 0) {
+            ++dev_nums.all_mtdblocks;
+        }
+    }
+    dev_idx = -1;
+
+    /* populate device name (including orginal and used dev names) */
+    size_t len;
+    int ram_cnt = 0, mtdblock_cnt = 0;
+    int ram_id = -1, mtdblock_id = -1;
+    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
+        dev_idx = get_dev_from_fs(fslist_to_copy[i]);
+        if (dev_idx == -1) {
+            len = 0;
+            devlist_to_copy[i] = calloc(len + 1, sizeof(char));
+            memset(devlist_to_copy[i], '\0', (len + 1) * sizeof(char));
+        }
+        else if (strcmp(dev_all[dev_idx], ramdisk_name) == 0) {
+            ram_id = ram_cnt + globals_t_p->_swarm_id * dev_nums.all_rams;
+            len = snprintf(NULL, 0, "/dev/%s%d", ramdisk_name, ram_id);
+            devlist_to_copy[i] = calloc(len + 1, sizeof(char));
+            snprintf(devlist_to_copy[i], len + 1, "/dev/%s%d", ramdisk_name, ram_id);
+            ++ram_cnt;
+        }
+        else if (strcmp(dev_all[dev_idx], mtdblock_name) == 0) {
+            mtdblock_id = mtdblock_cnt + globals_t_p->_swarm_id * dev_nums.all_mtdblocks;
+            len = snprintf(NULL, 0, "/dev/%s%d", mtdblock_name, mtdblock_id);
+            devlist_to_copy[i] = calloc(len + 1, sizeof(char));
+            snprintf(devlist_to_copy[i], len + 1, "/dev/%s%d", mtdblock_name, mtdblock_id);
+            ++mtdblock_cnt;
+        }
+
+        /* fs suffix to copy -- format -$fsid-$swarmid */
+        len = snprintf(NULL, 0, "-%d-%d", i, globals_t_p->_swarm_id);
+        fssuffix_to_copy[i] = calloc(len + 1, sizeof(char));
+        snprintf(fssuffix_to_copy[i], len + 1, "-%d-%d", i, globals_t_p->_swarm_id);
+    }
+}
 
 static void init_all_fickle_globals() 
 {
-    globals_t_p = malloc(sizeof(globals_t));
-    if (!globals_t_p) {
-        mem_alloc_err();
-        exit(EXIT_FAILURE);
-    }
-    /* _n_fs */
-    globals_t_p->_n_fs = 2;
-
     /* fslist */
     globals_t_p->fslist = calloc(globals_t_p->_n_fs, sizeof(char*));
-    if (!globals_t_p->fslist) {
+    if (!globals_t_p->fslist) 
         mem_alloc_err();
-        exit(EXIT_FAILURE);
-    }
     // each string in fslist 
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        globals_t_p->fslist[i] = calloc(strlen(fslist_to_copy[i]) + 1, 
-                                        sizeof(char));
-        if (!globals_t_p->fslist[i]) {
-            mem_alloc_err();
-            exit(EXIT_FAILURE);       
-        }
-        memcpy(globals_t_p->fslist[i], fslist_to_copy[i], 
-                strlen(fslist_to_copy[i]) + 1);
+        globals_t_p->fslist[i] = calloc(strlen(fslist_to_copy[i]) + 1, sizeof(char));
+        if (!globals_t_p->fslist[i])
+            mem_alloc_err();     
+        memcpy(globals_t_p->fslist[i], fslist_to_copy[i], strlen(fslist_to_copy[i]) + 1);
+        free(fslist_to_copy[i]);
     }
 
     /* fssuffix */
     globals_t_p->fssuffix = calloc(globals_t_p->_n_fs, sizeof(char*));
-    if (!globals_t_p->fssuffix) {
+    if (!globals_t_p->fssuffix) 
         mem_alloc_err();
-        exit(EXIT_FAILURE);
-    }  
     // each string in fssuffix
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        globals_t_p->fssuffix[i] = calloc(strlen(fssuffix_to_copy[i]) + 1, 
-                                        sizeof(char));
-        if (!globals_t_p->fssuffix[i]) {
-            mem_alloc_err();
-            exit(EXIT_FAILURE);       
-        }        
-        memcpy(globals_t_p->fssuffix[i], fssuffix_to_copy[i], 
-                strlen(fssuffix_to_copy[i]) + 1);
+        globals_t_p->fssuffix[i] = calloc(strlen(fssuffix_to_copy[i]) + 1, sizeof(char));
+        if (!globals_t_p->fssuffix[i])
+            mem_alloc_err();      
+        memcpy(globals_t_p->fssuffix[i], fssuffix_to_copy[i], strlen(fssuffix_to_copy[i]) + 1);
+        free(fssuffix_to_copy[i]);
     }
 
     /* devlist */
     globals_t_p->devlist = calloc(globals_t_p->_n_fs, sizeof(char*));
-    if (!globals_t_p->devlist) {
+    if (!globals_t_p->devlist)
         mem_alloc_err();
-        exit(EXIT_FAILURE);
-    }  
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        globals_t_p->devlist[i] = calloc(strlen(devlist_to_copy[i]) + 1, 
-                                        sizeof(char));        
-        if (!globals_t_p->devlist[i]) {
-            mem_alloc_err();
-            exit(EXIT_FAILURE);       
-        }        
-        memcpy(globals_t_p->devlist[i], devlist_to_copy[i], 
-                strlen(devlist_to_copy[i]) + 1);
+        globals_t_p->devlist[i] = calloc(strlen(devlist_to_copy[i]) + 1, sizeof(char));        
+        if (!globals_t_p->devlist[i]) 
+            mem_alloc_err();    
+        memcpy(globals_t_p->devlist[i], devlist_to_copy[i], strlen(devlist_to_copy[i]) + 1);
+        free(devlist_to_copy[i]);
     }
 
     /* devsize_kb */
     globals_t_p->devsize_kb = calloc(globals_t_p->_n_fs, sizeof(size_t));
-    if (!globals_t_p->devsize_kb) {
-        mem_alloc_err();
-        exit(EXIT_FAILURE);
-    }  
+    if (!globals_t_p->devsize_kb)
+        mem_alloc_err(); 
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        memcpy(globals_t_p->devsize_kb, devsize_kb_to_copy, 
-                sizeof(size_t) * (globals_t_p->_n_fs));
+        memcpy(globals_t_p->devsize_kb, devsize_kb_to_copy, sizeof(size_t) * (globals_t_p->_n_fs));
     }
 }
 
@@ -255,6 +334,9 @@ int *get_errs()
 
 void __attribute__((constructor)) globals_init()
 {
+    init_globals_pointer();
+    get_mcfs_env_arguments();
+    prepare_lists_to_copy();
     init_all_fickle_globals();
     init_all_steady_globals();
 }
