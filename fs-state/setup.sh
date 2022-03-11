@@ -348,6 +348,21 @@ for i in $(seq 0 $(($n_fs-1))); do
     fi
 done
 
+PML_SRC="./demo.pml"
+LINE_NUM=10
+C_TRACK_CNT=0
+
+for i in $(seq 0 $(($n_fs-1))); do
+    DEVICE=${DEVLIST[$i]};
+    DEVSZKB=${DEVSIZE_KB[$i]};
+    if [ "$DEVICE" != "" ]; then
+        sed -i "$LINE_NUM i c_track \"get_fsimgs()[$C_TRACK_CNT]\" \"$(($DEVSZKB * 1024))\" \"UnMatched\";" $PML_SRC
+        LINE_NUM=$(($LINE_NUM+1))
+        C_TRACK_CNT=$(($C_TRACK_CNT+1))
+    fi
+done
+
+
 export MCFS_FSLIST="$MCFSLIST"
 
 # Run test program
