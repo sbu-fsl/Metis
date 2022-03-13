@@ -15,7 +15,7 @@ c_track "absfs" "sizeof(absfs)";
 proctype worker()
 {
     /* Non-deterministic test loop */
-    int offset, writelen, writebyte, filelen;
+    int offset, writelen, writebyte, filelen, num1, num2;
     do 
     :: atomic {
        c_code {
@@ -127,36 +127,51 @@ proctype worker()
             makelog("END: rmdir\n");
         }
     };
-    :: atomic {
+    :: pick_num(num1);
+       pick_num(num2);
+       atomic {
         /* rename */
         c_code {
             makelog("BEGIN: rename\n");
             mountall();
             int dir_or_file = random() % 2;
             if( dir_or_file == 0 ){    
-                int num = random() % filecount;
-                for (i = 0; i < N_FS; ++i) {
-                    char *rename_file;
-                    
-                    size_t rename_filename_len = snprintf(NULL, 0, "%s/%s", basepaths[i], filepool[num]);
-                    rename_file = calloc(1, rename_filename_len+1);
+//                int num1 = random() % filepool_idx;
+//		int num2 = random() % filepool_idx;
 
-                    snprintf(rename_file, rename_filename_len + 1, "%s/%s", basepaths[i], filepool[num]);
+                for (i = 0; i < N_FS; ++i) {
+                    char *rename_file_src;
+		    char *rename_file_dst;
+                    
+                    size_t rename_filename_len = snprintf(NULL, 0, "%s%s", basepaths[i], filepool[Pworker->num1]);
+                    rename_file_src = calloc(1, rename_filename_len+1);
+                    snprintf(rename_file_src, rename_filename_len + 1, "%s%s", basepaths[i], filepool[Pworker->num1]);
+
+		    rename_filename_len = snprintf(NULL, 0, "%s%s", basepaths[i], filepool[Pworker->num2]);
+                    rename_file_dst = calloc(1, rename_filename_len+1);
+                    snprintf(rename_file_dst, rename_filename_len + 1, "%s%s", basepaths[i], filepool[Pworker->num2]);
+
                 
-                    makecall(rets[i], errs[i], "%s,  %s", mv, testfiles[i], rename_file);
+                    makecall(rets[i], errs[i], "%s,  %s", mv, rename_file_src, rename_file_dst);
                 }
             }
             else{
-                int num = random() % directorycount;
-                for (i = 0; i < N_FS; ++i) {
-                    char *rename_dir;
-                    
-                    size_t rename_dirname_len = snprintf(NULL, 0, "%s/%s", basepaths[i], directorypool[num]);
-                    rename_dir = calloc(1, rename_dirname_len+1);
+//                int num1 = random() % dirpool_idx;
+//		int num2 = random() % dirpool_idx;
 
-                    snprintf(rename_dir, rename_dirname_len + 1, "%s/%s", basepaths[i], directorypool[num]);
-                
-                    makecall(rets[i], errs[i], "%s,  %s", mv, testdirs[i], rename_dir);
+                for (i = 0; i < N_FS; ++i) {
+                    char *rename_dir_src;
+		    char *rename_dir_dst;
+                    
+                    size_t rename_dirname_len = snprintf(NULL, 0, "%s%s", basepaths[i], directorypool[Pworker->num1]);
+                    rename_dir_src = calloc(1, rename_dirname_len+1);
+                    snprintf(rename_dir_src, rename_dirname_len + 1, "%s%s", basepaths[i], directorypool[Pworker->num1]);
+               
+ 		    rename_dirname_len = snprintf(NULL, 0, "%s%s", basepaths[i], directorypool[Pworker->num2]);
+                    rename_dir_dst = calloc(1, rename_dirname_len+1);
+                    snprintf(rename_dir_dst, rename_dirname_len + 1, "%s%s", basepaths[i], directorypool[Pworker->num2]);
+
+                    makecall(rets[i], errs[i], "%s,  %s", mv, rename_dir_src, rename_dir_dst);
                 }
 
             }
@@ -177,25 +192,77 @@ proctype driver(int nproc)
 {
     int i;
     c_code {
-        filecount = 10;
-        directorycount = 10;
+        filecount = 3;
+        directorycount = 3;
+	pool_depth = 3;
+	void dfs(int directorycount, int filecount, int pool_depth, char** current, int size){
+        	int newnames_len = 0;
+	        char *newpool[100];
+         	for(int i = 0; i < size; i++){
+                        for(int j = 0; j < directorycount; j++){
+                                char *newname;
+                                size_t len = snprintf(NULL, 0, "%s/d-%d", current[i], j);
+                                newpool[newnames_len] = calloc(1, 1+len);
+                                snprintf(newpool[newnames_len], 1+len, "%s/d-%d", current[i], j);
+
+                                directorypool[dirpool_idx] = calloc(1, 1+len);
+                                snprintf(directorypool[dirpool_idx], 1+len, "%s/d-%d", current[i], j);
+                                dirpool_idx++;
+                                newnames_len++;
+                        }
+                }
+                for(int i = 0; i < size; i++){
+                        for(int j = 0; j < filecount; j++){
+                                char *newname;
+                                size_t len = snprintf(NULL, 0, "%s/f-%d.txt", current[i], j);
+
+                                filepool[filepool_idx] = calloc(1, 1+len);
+                                snprintf(filepool[filepool_idx], 1+len, "%s/f-%d.txt", current[i], j);
+                                filepool_idx++;
+                        }
+                }
+	        if(pool_depth == 1){
+        	        return;
+	        }
+
+        	dfs(directorycount, filecount, pool_depth-1, newpool, newnames_len);
+	}
+
         start_perf_metrics_thread();
         /* Initialize test dirs and files names */
 
-        for(int i = 0; i < filecount; i++){
-            size_t filename_len = snprintf(NULL, 0, "f-%d.txt", i);
-            filepool[i] = calloc(1, filename_len+1);
-            snprintf(filepool[i], filename_len + 1, "f-%d.txt", i);
-            //makelog("filepool entry : %s", filepool[i]);
+	char *current[100];
+
+	size_t len = snprintf(NULL, 0, "%s");
+        current[0] = calloc(1, len + 1);
+        snprintf(current[0], len + 1, "");
+
+
+        len = snprintf(NULL, 0, "/test.txt");
+        filepool[filepool_idx] = calloc(1, 1+len);
+        snprintf(filepool[filepool_idx], 1+len, "/test.txt");
+        filepool_idx++;
+
+
+        len = snprintf(NULL, 0, "/testdir");
+        directorypool[dirpool_idx] = calloc(1, 1+len);
+        snprintf(directorypool[dirpool_idx], 1+len, "/testdir");
+        dirpool_idx++;
+
+ 
+	dfs(directorycount, filecount, pool_depth, current, 1);
+	
+	makelog("Filepool contents: ");
+        for(int i = 0; i < filepool_idx; i++){
+                makelog("%s\n", filepool[i]);
         }
 
-        for(int i = 0; i < directorycount; i++){
-            size_t dirname_len = snprintf(NULL, 0, "d-%d.txt", i);
-            directorypool[i] = calloc(1, dirname_len+1);
-            snprintf(directorypool[i], dirname_len + 1, "d-%d.txt", i);
-            //makelog("filepool entry : %s", filepool[i]);
-        }
+        makelog("Directory pool contents: ");
 
+        for(int i = 0; i < dirpool_idx; i++){
+                makelog("%s\n", directorypool[i]);
+        }	
+	
         for (int i = 0; i < N_FS; ++i) {
             size_t len = snprintf(NULL, 0, "%s/testdir", basepaths[i]);
             testdirs[i] = calloc(1, len + 1);

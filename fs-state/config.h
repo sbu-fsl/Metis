@@ -30,6 +30,9 @@ char *testdirs[N_FS];
 char *testfiles[N_FS];
 int filecount;
 int directorycount;
+int filepool_idx;
+int dirpool_idx;
+int pool_depth;
 char *filepool[100];
 char *directorypool[100];
 
