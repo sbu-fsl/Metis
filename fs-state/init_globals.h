@@ -10,6 +10,8 @@
 #define MAX_FS    20
 #endif
 
+#define ENV_KEY_MAX 20
+
 #define mem_alloc_err(...) \
     do { \
         fprintf(stderr, "memory allocation failed: %s:%d:%s\n", \

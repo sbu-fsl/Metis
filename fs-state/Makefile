@@ -1,7 +1,7 @@
 COMMON_DIR := ../common
 COMMON_SRC := $(wildcard $(COMMON_DIR)/*.c) $(wildcard $(COMMON_DIR)/*.cpp)
 COMMON_OBJ := $(patsubst $(COMMON_DIR)/%,%.o,$(COMMON_SRC))
-override CFLAGS += -g -I../include -D PRINTF # -D T_RAND -D P_RAND
+override CFLAGS += -g -I../include -D PRINTF -DSWARMID=$(ARGS) # -D T_RAND -D P_RAND
 override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz
 PAN = pan
 
@@ -15,6 +15,15 @@ run: all
 
 globals: init_globals.c
 	gcc -Wall -Werror -o init_globals.o -c $< $(CFLAGS) $(LIBS)
+
+install: cleanlib absfs-set libsmcfs
+	spin -a demo.pml;
+
+cleanlib:
+	rm -rf *.o
+
+libsmcfs: init_globals.o set.o fileutil.o perf.o mount.o setup.o $(COMMON_OBJ)
+	ar rvs $@.a $^
 
 parameters: parameters.py parameter_util.py
 	python3 parameters.py
@@ -40,5 +49,5 @@ replayer: replay.c mount.c common-libs
 		-DNO_FS_STAT common-libs.a $(CFLAGS) $(LIBS)
 
 clean:
-	rm -rf test test.txt pan* *.log *.csv *.o *.a absfs *.trail \
+	rm -rf test test.txt pan* *.log *.csv *.o *.a absfs *.trail script* swarm_done* .pml_tmp \
 	rm -rf /mnt/test-*/test*

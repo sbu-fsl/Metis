@@ -25,27 +25,31 @@ static void init_globals_pointer()
 
 static int get_mcfs_env_arguments() 
 {
-    mcfs_globals_env = getenv(mcfs_globals_env_key);
+    char globals_used_env_key[ENV_KEY_MAX];
+    globals_t_p->_swarm_id = 0;
 
+    // No swarm mode, let's use MCFS_FSLIST0
+    sprintf(globals_used_env_key, "%s%d", mcfs_globals_env_key, 0);
+    // USE MCFS_FSLIST${SWARMID} as env name
+#if defined SWARMID && SWARMID >= 1
+    globals_t_p->_swarm_id = SWARMID;
+    sprintf(globals_used_env_key, "%s%d", mcfs_globals_env_key, SWARMID);
+#endif
+    mcfs_globals_env = getenv(globals_used_env_key);
     /* Validate existence of environment vars */
     if (!mcfs_globals_env) {
-        fprintf(stderr, "%s is not set.\n", mcfs_globals_env_key);
+        fprintf(stderr, "globals env %s is not set.\n", globals_used_env_key);
         return -EINVAL;
     }
 
     /* context variable pointer for strtok_r */
     char *context = NULL;
     /* Parsing the MCFS options from env */
-    bool first_tok = true;
-    int tok_cnt = -1;
+    int tok_cnt = 0;
     /* Example: 0:ext4:256:jffs2:512 swarm_id:fs1:size1(inKB):fs2:size2 */
     char *token = strtok_r(mcfs_globals_env, globals_delim, &context);
     while (token != NULL) {
-        if (first_tok) {
-            globals_t_p->_swarm_id = atoi(token);
-            first_tok = false;
-        }
-        else if (tok_cnt % 2 == 0) { // file system name
+        if (tok_cnt % 2 == 0) { // file system name
             fslist_to_copy[tok_cnt / 2] = calloc(strlen(token) + 1, sizeof(char));
             strcpy(fslist_to_copy[tok_cnt / 2], token);
         }
@@ -54,6 +58,10 @@ static int get_mcfs_env_arguments()
         }
         ++tok_cnt;
         token = strtok_r(NULL, globals_delim, &context);
+    }
+    if (tok_cnt % 2 != 0) {
+        fprintf(stderr, "In correct env var format! exp: fs1:size1:fs2:size2 \n");
+        return -EINVAL; 
     }
     /* _n_fs */
     globals_t_p->_n_fs = tok_cnt / 2;
@@ -105,9 +113,9 @@ static void prepare_lists_to_copy()
         }
 
         /* fs suffix to copy -- format -$fsid-$swarmid */
-        len = snprintf(NULL, 0, "-%d-%d", i, globals_t_p->_swarm_id);
+        len = snprintf(NULL, 0, "-i%d-s%d", i, globals_t_p->_swarm_id);
         fssuffix_to_copy[i] = calloc(len + 1, sizeof(char));
-        snprintf(fssuffix_to_copy[i], len + 1, "-%d-%d", i, globals_t_p->_swarm_id);
+        snprintf(fssuffix_to_copy[i], len + 1, "-i%d-s%d", i, globals_t_p->_swarm_id);
     }
 }
 

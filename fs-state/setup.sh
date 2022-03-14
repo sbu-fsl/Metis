@@ -1,9 +1,13 @@
 #!/bin/bash
 
+# Standalong setup script without using swarm
+
 FSLIST=()
 DEVSIZE_KB=()
 DEVLIST=()
-SWARM_ID=0
+SWARM_ID=0 # 0 is the default swarm id without using swarm
+MCFSLIST=""
+
 LOOPDEVS=()
 verbose=0
 POSITIONAL=()
@@ -15,10 +19,184 @@ REPLAY=0
 exclude_dirs=(
     lost+found
 )
+JFFS2_IMAGE=/tmp/jffs2.img
 VERIFS_PREFIX="veri"
 VERI_PREFIX_LEN="${#VERIFS_PREFIX}"
+PML_SRC="./demo.pml"
+PML_TEMP="./.pml_tmp"
+PML_START_PATN="\/\* The persistent content of the file systems \*\/"
+PML_END_PATN="\/\* Abstract state signatures of the file systems \*\/"
 
 exclude_files=()
+# Create file system and device key-value map
+declare -A FS_DEV_MAP
+FS_DEV_MAP+=( ["btrfs"]="ram" ["ext2"]="ram" ["ext4"]="ram" ["f2fs"]="ram" )
+FS_DEV_MAP+=( ["jffs2"]="mtdblock" ["ramfs"]="" ["tmpfs"]="" )
+FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" )
+
+mount_all() {
+    SWARM_ID=$1;
+    n_fs=${#FSLIST[@]};
+    if [ $n_fs -eq 0 ]; then
+        echo "Do not know which file systems and devices to mount"
+        exit -1
+    fi
+    for i in $(seq 0 $(($n_fs-1))); do
+        fs=${FSLIST[$i]};
+        DEVICE=${DEVLIST[$i]};
+        runcmd mount -t $fs $DEVICE /mnt/test-$fs-i$i-s$SWARM_ID;
+    done
+}
+
+# Parse command line options
+while [[ $# -gt 0 ]]; do
+    key=$1;
+    case $key in
+        -a|--abort-on-discrepancy)
+            _CFLAGS="-DABORT_ON_FAIL=1";
+            shift
+            ;;
+        -c|--clean-after-exp)
+            CLEAN_AFTER_EXP=1
+            shift
+            ;;
+        -k|--keep-fs)
+            KEEP_FS=1
+            shift
+            ;;
+        -v|--verbose)
+            verbose=1
+            shift
+            ;;
+        -s|--setup-only)
+            KEEP_FS=1
+            SETUP_ONLY=1
+            shift
+            ;;
+        -r|--replay)
+            REPLAY=1
+            SETUP_ONLY=1
+            KEEP_FS=1
+            shift
+            ;;
+        -m|--mount-all)
+            mount_all $SWARM_ID;
+            exit 0;
+            shift
+            ;;
+        -f|--fslist)
+            MCFSLIST="$2"
+            shift
+            shift
+            ;;
+        *)
+            POSITIONAL+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# Populate file system list and device size list
+TOK_CNT="0"
+IFS=':' read -ra ADDR <<< "$MCFSLIST"
+for EACH_TOK in "${ADDR[@]}"; do
+    if [ "$(($TOK_CNT % 2))" -eq 0 ]
+    then 
+        FSLIST[$(($TOK_CNT / 2))]="$EACH_TOK"
+    else
+        DEVSIZE_KB[$(($TOK_CNT / 2))]="$EACH_TOK"
+    fi
+    TOK_CNT=`expr $TOK_CNT + 1`
+done
+
+# Get the number of file systems
+n_fs=${#FSLIST[@]};
+
+# Get each device name in device list
+ALL_RAMS=0
+ALL_MTDBLOCKS=0
+RAM_NAME="ram"
+MTDBLOCK_NAME="mtdblock"
+
+# Number of ram and mtdblocks to use
+for i in $(seq 0 $(($n_fs-1))); do
+    fs=${FSLIST[$i]};
+    dev_type=${FS_DEV_MAP[${fs}]}
+    if [ "$dev_type" = "$RAM_NAME" ]
+    then
+        ALL_RAMS=`expr $ALL_RAMS + 1`
+    elif [ "$dev_type" = "$MTDBLOCK_NAME" ]
+    then 
+        ALL_MTDBLOCKS=`expr $ALL_MTDBLOCKS + 1`
+    fi
+done
+
+# Populate DEVLIST
+RAM_CNT=0
+MTDBLOCK_CNT=0
+for i in $(seq 0 $(($n_fs-1))); do
+    fs=${FSLIST[$i]};
+    dev_type=${FS_DEV_MAP[${fs}]}
+    if [ "$dev_type" = "$RAM_NAME" ]
+    then
+        RAM_ID=$(($SWARM_ID * $ALL_RAMS + $RAM_CNT))
+        RAM_CNT=`expr $RAM_CNT + 1`
+        DEVLIST[$i]="/dev/ram$RAM_ID"
+    elif [ "$dev_type" = "$MTDBLOCK_NAME" ]
+    then
+        MTDBLOCK_ID=$(($SWARM_ID * $ALL_MTDBLOCKS + $MTDBLOCK_CNT))
+        MTDBLOCK_CNT=`expr $MTDBLOCK_CNT + 1`
+        DEVLIST[$i]="/dev/mtdblock$MTDBLOCK_ID"
+    elif [ "$dev_type" = "" ]
+    then
+        DEVLIST[$i]=""
+    else
+        echo "[Error] cannot find proper dev type"
+        exit -1;
+    fi
+done
+
+generic_cleanup() {
+    n_fs=$1;
+    SWARM_ID=$2;
+    if [ "$KEEP_FS" = "0" ]; then
+        for i in $(seq 0 $(($n_fs-1))); do
+            fs=${FSLIST[$i]};
+            if [ "$(mount | grep /mnt/test-$fs-i$i-s$SWARM_ID)" ]; then
+                umount -f /mnt/test-$fs-i$i-s$SWARM_ID;
+            fi
+        done
+
+        for device in ${LOOPDEVS[@]}; do
+            if [ "$device" ]; then
+                losetup -d $device;
+            fi
+        done
+
+        for fs in ${FSLIST[@]}; do
+            unset_$fs;
+        done
+    fi
+
+    login_user=$(who am i | cut -d ' ' -f 1)
+    chown -R $login_user:$login_user .
+}
+
+runcmd() {
+    if [ $verbose != "0" ]; then
+        echo ">>> $@" >&2 ;
+    fi
+    sleep 0.5;
+    $@;
+    ret=$?;
+    if [ $ret -ne 0 ]; then
+        echo "Command '$0' exited with error ($ret)." >&2;
+        generic_cleanup $n_fs $SWARM_ID;
+        exit $ret;
+    fi
+}
+
+runcmd losetup -D
 
 setup_ext() {
     # First argument is the type of file system (ext2/ext3/ext4)
@@ -100,7 +278,6 @@ setup_jffs2() {
     DEVSIZE_KB=$2;
     JFFS2_SIZE=$(($DEVSIZE_KB * 1024))
     JFFS2_EMPTY_DIR=/tmp/_empty_dir_$RANDOM
-    JFFS2_IMAGE=/tmp/jffs2.img
     if ! [ "$(lsmod | grep mtdram)" ]; then
         setup_mtd $JFFS2_SIZE;
     fi
@@ -110,7 +287,6 @@ setup_jffs2() {
 }
 
 unset_jffs2() {
-    JFFS2_IMAGE=/tmp/jffs2.img
     runcmd rmdir /tmp/_empty_dir*;
     runcmd rm -f $JFFS2_IMAGE;
 }
@@ -157,217 +333,54 @@ unset_xfs() {
     :
 }
 
-generic_cleanup() {
-    n_fs=$1;
-    SWARM_ID=$2;
-    if [ "$KEEP_FS" = "0" ]; then
-        for i in $(seq 0 $(($n_fs-1))); do
-            fs=${FSLIST[$i]};
-            if [ "$(mount | grep /mnt/test-$fs-$i-$SWARM_ID)" ]; then
-                umount -f /mnt/test-$fs-$i-$SWARM_ID;
-            fi
-        done
-
-        for device in ${LOOPDEVS[@]}; do
-            if [ "$device" ]; then
-                losetup -d $device;
-            fi
-        done
-
-        for fs in ${FSLIST[@]}; do
-            unset_$fs;
-        done
-    fi
-
-    login_user=$(who am i | cut -d ' ' -f 1)
-    chown -R $login_user:$login_user .
-}
-
-mount_all() {
-    SWARM_ID=$1;
-    n_fs=${#FSLIST[@]};
-    for i in $(seq 0 $(($n_fs-1))); do
-        fs=${FSLIST[$i]};
-        DEVICE=${DEVLIST[$i]};
-        runcmd mount -t $fs $DEVICE /mnt/test-$fs-$i-$SWARM_ID;
-    done
-}
-
-# Parse command line options
-while [[ $# -gt 0 ]]; do
-    key=$1;
-    case $key in
-        -a|--abort-on-discrepancy)
-            _CFLAGS="-DABORT_ON_FAIL=1";
-            shift
-            ;;
-        -c|--clean-after-exp)
-            CLEAN_AFTER_EXP=1
-            shift
-            ;;
-        -k|--keep-fs)
-            KEEP_FS=1
-            shift
-            ;;
-        -v|--verbose)
-            verbose=1
-            shift
-            ;;
-        -s|--setup-only)
-            KEEP_FS=1
-            SETUP_ONLY=1
-            shift
-            ;;
-        -r|--replay)
-            REPLAY=1
-            SETUP_ONLY=1
-            KEEP_FS=1
-            shift
-            ;;
-        -m|--mount-all)
-            mount_all $SWARM_ID;
-            exit 0;
-            shift
-            ;;
-        -f|--fslist)
-            MCFSLIST="$2"
-            shift
-            shift
-            ;;
-        *)
-            POSITIONAL+=("$1")
-            shift
-            ;;
-    esac
-done
-
-# Create file system and device key-value map
-declare -A FS_DEV_MAP
-FS_DEV_MAP+=( ["btrfs"]="ram" ["ext2"]="ram" ["ext4"]="ram" ["f2fs"]="ram" )
-FS_DEV_MAP+=( ["jffs2"]="mtdblock" ["ramfs"]="" ["tmpfs"]="" )
-FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" )
-
-FIRST_TOK=true
-TOK_CNT="-1"
-# Populate FSLIST and DEVSIZE_KB
-IFS=':' read -ra ADDR <<< "$MCFSLIST"
-for EACH_TOK in "${ADDR[@]}"; do
-    if [ "$FIRST_TOK" = true ] 
-    then
-        SWARM_ID=$EACH_TOK
-        FIRST_TOK=false
-    elif [ "$(($TOK_CNT % 2))" -eq 0 ]
-    then 
-        FSLIST[$(($TOK_CNT / 2))]="$EACH_TOK"
-    else
-        DEVSIZE_KB[$(($TOK_CNT / 2))]="$EACH_TOK"
-    fi
-    TOK_CNT=`expr $TOK_CNT + 1`
-done
-
-n_fs=${#FSLIST[@]};
-
-runcmd() {
-    if [ $verbose != "0" ]; then
-        echo ">>> $@" >&2 ;
-    fi
-    sleep 0.5;
-    $@;
-    ret=$?;
-    if [ $ret -ne 0 ]; then
-        echo "Command '$0' exited with error ($ret)." >&2;
-        generic_cleanup $n_fs $SWARM_ID;
-        exit $ret;
-    fi
-}
-
-runcmd losetup -D
-
-ALL_RAMS=0
-ALL_MTDBLOCKS=0
-RAM_NAME="ram"
-MTDBLOCK_NAME="mtdblock"
-
-# Number of ram and mtdblocks to use
+# Setup mount points and each file system
 for i in $(seq 0 $(($n_fs-1))); do
-    fs=${FSLIST[$i]};
-    dev_type=${FS_DEV_MAP[${fs}]}
-    if [ "$dev_type" = "$RAM_NAME" ]
-    then
-        ALL_RAMS=`expr $ALL_RAMS + 1`
-    elif [ "$dev_type" = "$MTDBLOCK_NAME" ]
-    then 
-        ALL_MTDBLOCKS=`expr $ALL_MTDBLOCKS + 1`
-    fi
-done
-
-# Populate DEVLIST
-RAM_CNT=0
-MTDBLOCK_CNT=0
-for i in $(seq 0 $(($n_fs-1))); do
-    fs=${FSLIST[$i]};
-    dev_type=${FS_DEV_MAP[${fs}]}
-    if [ "$dev_type" = "$RAM_NAME" ]
-    then
-        RAM_ID=$(($SWARM_ID * $ALL_RAMS + $RAM_CNT))
-        RAM_CNT=`expr $RAM_CNT + 1`
-        DEVLIST[$i]="/dev/ram$RAM_ID"
-    elif [ "$dev_type" = "$MTDBLOCK_NAME" ]
-    then
-        MTDBLOCK_ID=$(($SWARM_ID * $ALL_MTDBLOCKS + $MTDBLOCK_CNT))
-        MTDBLOCK_CNT=`expr $MTDBLOCK_CNT + 1`
-        DEVLIST[$i]="/dev/mtdblock$MTDBLOCK_ID"
-    elif [ "$dev_type" = "" ]
-    then
-        DEVLIST[$i]=""
-    else
-        echo "[Error] cannot find proper dev type"
-        exit -1;
-    fi
-done
-
-for i in $(seq 0 $(($n_fs-1))); do
-
     # Run individual file system setup scripts defined above
     fs=${FSLIST[$i]};
     DEVICE=${DEVLIST[$i]};
     DEVSZKB=${DEVSIZE_KB[$i]};
-
+    # Do not need to set up VeriFS
     if [ "${fs:0:${VERI_PREFIX_LEN}}" != "$VERIFS_PREFIX" ]; then
         # Unmount first
-        if [ "$(mount | grep /mnt/test-$fs-$i-$SWARM_ID)" ]; then
-            runcmd umount -f /mnt/test-$fs-$i-$SWARM_ID;
+        if [ "$(mount | grep /mnt/test-$fs-i$i-s$SWARM_ID)" ]; then
+            runcmd umount -f /mnt/test-$fs-i$i-s$SWARM_ID;
         fi
 
         setup_$fs $DEVICE $DEVSZKB;
 
-        if [ -d /mnt/test-$fs-$i-$SWARM_ID ]; then
-            runcmd rm -rf /mnt/test-$fs-$i-$SWARM_ID;
+        if [ -d /mnt/test-$fs-i$i-s$SWARM_ID ]; then
+            runcmd rm -rf /mnt/test-$fs-i$i-s$SWARM_ID;
         fi
-        runcmd mkdir -p /mnt/test-$fs-$i-$SWARM_ID;
+        runcmd mkdir -p /mnt/test-$fs-i$i-s$SWARM_ID;
     fi
 done
 
-PML_SRC="./demo.pml"
-LINE_NUM=10
+# Insert c_track statements in promela code
 C_TRACK_CNT=0
-
+CTRACKLIST=()
 for i in $(seq 0 $(($n_fs-1))); do
     DEVICE=${DEVLIST[$i]};
     DEVSZKB=${DEVSIZE_KB[$i]};
     if [ "$DEVICE" != "" ]; then
-        sed -i "$LINE_NUM i c_track \"get_fsimgs()[$C_TRACK_CNT]\" \"$(($DEVSZKB * 1024))\" \"UnMatched\";" $PML_SRC
-        LINE_NUM=$(($LINE_NUM+1))
+        CTRACKLIST[$i]="c_track \"get_fsimgs()[$C_TRACK_CNT]\" \"$(($DEVSZKB * 1024))\" \"UnMatched\";"
         C_TRACK_CNT=$(($C_TRACK_CNT+1))
     fi
 done
 
+C_TRACK_STMT=""
+for i in $(seq 0 $(($C_TRACK_CNT-1))); do
+    C_TRACK_STMT="${C_TRACK_STMT}${CTRACKLIST[$i]}\\n"
+done
 
-export MCFS_FSLIST="$MCFSLIST"
+sed "/$PML_START_PATN/,/$PML_END_PATN/{//!d}" $PML_SRC > $PML_TEMP
+sed "/$PML_START_PATN/a$C_TRACK_STMT" $PML_TEMP > $PML_SRC
+
+# Set environment variable MCFS_FSLIST for MCFS C Sources
+export MCFS_FSLIST$SWARM_ID="$MCFSLIST"
 
 # Run test program
 if [ "$SETUP_ONLY" != "1" ]; then
-    runcmd make "CFLAGS=$_CFLAGS";
+    runcmd make CFLAGS=$_CFLAGS ARGS=$SWARM_ID;
     echo 'Running file system checker...';
     echo 'Please check stdout in output.log, stderr in error.log';
     ./pan 2>error.log > output.log
