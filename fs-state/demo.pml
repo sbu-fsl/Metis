@@ -136,8 +136,6 @@ proctype worker()
             mountall();
             int dir_or_file = random() % 2;
             if( dir_or_file == 0 ){    
-//                int num1 = random() % filepool_idx;
-//		int num2 = random() % filepool_idx;
 
                 for (i = 0; i < N_FS; ++i) {
                     char *rename_file_src;
@@ -156,8 +154,6 @@ proctype worker()
                 }
             }
             else{
-//                int num1 = random() % dirpool_idx;
-//		int num2 = random() % dirpool_idx;
 
                 for (i = 0; i < N_FS; ++i) {
                     char *rename_dir_src;
@@ -182,6 +178,66 @@ proctype worker()
 
             unmount_all_strict();
             makelog("END: rename\n");
+        }
+    };
+    :: pick_num(num1);
+       pick_num(num2);
+       atomic {
+        /* link */
+        c_code {
+            makelog("BEGIN: link\n");
+            mountall();
+
+            for (i = 0; i < N_FS; ++i) {
+                char *link_file_src;
+	 	char *link_file_dst;
+                    
+                size_t link_filename_len = snprintf(NULL, 0, "%s%s", basepaths[i], filepool[Pworker->num1]);
+                link_file_src = calloc(1, link_filename_len+1);
+                snprintf(link_file_src, link_filename_len + 1, "%s%s", basepaths[i], filepool[Pworker->num1]);
+
+		link_filename_len = snprintf(NULL, 0, "%s%s", basepaths[i], filepool[Pworker->num2]);
+                link_file_dst = calloc(1, link_filename_len+1);
+                snprintf(link_file_dst, link_filename_len + 1, "%s%s", basepaths[i], filepool[Pworker->num2]);
+                makecall(rets[i], errs[i], "%s,  %s", link, link_file_src, link_file_dst);
+            }
+            expect(compare_equality_fexists(fslist, N_FS, testdirs));
+            expect(compare_equality_values(fslist, N_FS, rets));
+            expect(compare_equality_values(fslist, N_FS, errs));
+            expect(compare_equality_absfs(fslist, N_FS, absfs));
+
+            unmount_all_strict();
+            makelog("END: link\n");
+        }
+    };
+    :: pick_num(num1);
+       pick_num(num2);
+       atomic {
+        /* symlink */
+        c_code {
+            makelog("BEGIN: symlink\n");
+            mountall();
+
+            for (i = 0; i < N_FS; ++i) {
+                char *link_file_src;
+	 	char *link_file_dst;
+                    
+                size_t link_filename_len = snprintf(NULL, 0, "%s%s", basepaths[i], filepool[Pworker->num1]);
+                link_file_src = calloc(1, link_filename_len+1);
+                snprintf(link_file_src, link_filename_len + 1, "%s%s", basepaths[i], filepool[Pworker->num1]);
+
+		link_filename_len = snprintf(NULL, 0, "%s%s", basepaths[i], filepool[Pworker->num2]);
+                link_file_dst = calloc(1, link_filename_len+1);
+                snprintf(link_file_dst, link_filename_len + 1, "%s%s", basepaths[i], filepool[Pworker->num2]);
+                makecall(rets[i], errs[i], "%s,  %s", symlink, link_file_src, link_file_dst);
+            }
+            expect(compare_equality_fexists(fslist, N_FS, testdirs));
+            expect(compare_equality_values(fslist, N_FS, rets));
+            expect(compare_equality_values(fslist, N_FS, errs));
+            expect(compare_equality_absfs(fslist, N_FS, absfs));
+
+            unmount_all_strict();
+            makelog("END: symlink\n");
         }
     };
  
