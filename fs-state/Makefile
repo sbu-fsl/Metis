@@ -16,14 +16,16 @@ run: all
 globals: init_globals.c
 	gcc -Wall -Werror -o init_globals.o -c $< $(CFLAGS) $(LIBS)
 
-install: cleanlib absfs-set libsmcfs
+init_globals.o: globals
+
+install: cleanlib globals absfs-set libsmcfs
 	spin -a demo.pml;
 
 cleanlib:
 	rm -rf *.o
 
 libsmcfs: init_globals.o set.o fileutil.o perf.o mount.o setup.o $(COMMON_OBJ)
-	ar rvs $@.a $^
+	ar rvs $@$(ARGS).a $^
 
 parameters: parameters.py parameter_util.py
 	python3 parameters.py
@@ -49,5 +51,5 @@ replayer: replay.c mount.c common-libs
 		-DNO_FS_STAT common-libs.a $(CFLAGS) $(LIBS)
 
 clean:
-	rm -rf test test.txt pan* *.log *.csv *.o *.a absfs *.trail script* swarm_done* .pml_tmp \
+	rm -rf test test.txt pan* *.log *.csv *.o *.a absfs *.trail script* swarm_done* .pml_tmp demo.pml.swarm \
 	rm -rf /mnt/test-*/test*

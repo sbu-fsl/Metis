@@ -26,16 +26,20 @@ static void init_globals_pointer()
 static int get_mcfs_env_arguments() 
 {
     char globals_used_env_key[ENV_KEY_MAX];
+    // No swarm mode, let's use MCFS_FSLIST0
     globals_t_p->_swarm_id = 0;
 
-    // No swarm mode, let's use MCFS_FSLIST0
-    sprintf(globals_used_env_key, "%s%d", mcfs_globals_env_key, 0);
     // USE MCFS_FSLIST${SWARMID} as env name
 #if defined SWARMID && SWARMID >= 1
     globals_t_p->_swarm_id = SWARMID;
-    sprintf(globals_used_env_key, "%s%d", mcfs_globals_env_key, SWARMID);
 #endif
+    sprintf(globals_used_env_key, "%s%d", mcfs_globals_env_key, SWARMID);
+    fprintf(stdout, "get_mcfs_env_arguments() SWARM Macro: %d\n", SWARMID);
+    fprintf(stdout, "get_mcfs_env_arguments() _swarm_id: %u\n", globals_t_p->_swarm_id);
+    fprintf(stdout, "get_mcfs_env_arguments() globals_used_env_key: %s\n", globals_used_env_key);
+
     mcfs_globals_env = getenv(globals_used_env_key);
+    fprintf(stdout, "get_mcfs_env_arguments() mcfs_globals_env: %s\n", mcfs_globals_env);
     /* Validate existence of environment vars */
     if (!mcfs_globals_env) {
         fprintf(stderr, "globals env %s is not set.\n", globals_used_env_key);
@@ -98,14 +102,14 @@ static void prepare_lists_to_copy()
             memset(devlist_to_copy[i], '\0', (len + 1) * sizeof(char));
         }
         else if (strcmp(dev_all[dev_idx], ramdisk_name) == 0) {
-            ram_id = ram_cnt + globals_t_p->_swarm_id * dev_nums.all_rams;
+            ram_id = ram_cnt + (globals_t_p->_swarm_id - 1) * dev_nums.all_rams;
             len = snprintf(NULL, 0, "/dev/%s%d", ramdisk_name, ram_id);
             devlist_to_copy[i] = calloc(len + 1, sizeof(char));
             snprintf(devlist_to_copy[i], len + 1, "/dev/%s%d", ramdisk_name, ram_id);
             ++ram_cnt;
         }
         else if (strcmp(dev_all[dev_idx], mtdblock_name) == 0) {
-            mtdblock_id = mtdblock_cnt + globals_t_p->_swarm_id * dev_nums.all_mtdblocks;
+            mtdblock_id = mtdblock_cnt + (globals_t_p->_swarm_id - 1) * dev_nums.all_mtdblocks;
             len = snprintf(NULL, 0, "/dev/%s%d", mtdblock_name, mtdblock_id);
             devlist_to_copy[i] = calloc(len + 1, sizeof(char));
             snprintf(devlist_to_copy[i], len + 1, "/dev/%s%d", mtdblock_name, mtdblock_id);
@@ -250,21 +254,8 @@ static void free_all_globals()
     free(globals_t_p->devsize_kb);
 
     /* Free all steady members */
-    free(globals_t_p->basepaths);
-    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        free(globals_t_p->basepaths[i]);
-    }
-
-    free(globals_t_p->testdirs);
-    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        free(globals_t_p->testdirs[i]);
-    }
-
-    free(globals_t_p->testfiles);
-    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        free(globals_t_p->testfiles[i]);
-    }
-
+    /* TODO: Do we need to handle basepaths, testdirs, and testfiles*/
+    
     free(globals_t_p->fsimgs);
     free(globals_t_p->fsfds);
     free(globals_t_p->absfs);
@@ -340,6 +331,25 @@ int *get_errs()
     return globals_t_p->errs;
 }
 
+
+static void dump_all_globals()
+{
+    FILE * fp;
+    char dump_fn[MAX_FS + 10];
+    sprintf(dump_fn, "dump_globals%u.log", globals_t_p->_swarm_id);
+    fp = fopen (dump_fn, "w");
+    fprintf(fp, "swarm_id: %u\n", globals_t_p->_swarm_id);
+    fprintf(fp, "n_fs: %u\n", globals_t_p->_n_fs);
+    for(int i = 0; i < globals_t_p->_n_fs; ++i) {
+        fprintf(fp, "fs index: %d\n", i);
+        fprintf(fp, "fs:%s\tsuffix:%s\tdevice:%s\tdevszkb:%ld\n", 
+            globals_t_p->fslist[i], globals_t_p->fssuffix[i], 
+            globals_t_p->devlist[i], globals_t_p->devsize_kb[i]);
+    }
+    fclose(fp);
+}
+
+
 void __attribute__((constructor)) globals_init()
 {
     init_globals_pointer();
@@ -347,6 +357,7 @@ void __attribute__((constructor)) globals_init()
     prepare_lists_to_copy();
     init_all_fickle_globals();
     init_all_steady_globals();
+    dump_all_globals();
 }
 
 /*
