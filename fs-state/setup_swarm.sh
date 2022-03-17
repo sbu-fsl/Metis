@@ -3,13 +3,6 @@
 WD=$(pwd)
 verbose=0
 num_pan=4
-LOOPDEVS=()
-FSLIST=(ext4 ext2)
-DEVSIZE_KB=(256 256)
-VERIFS_PREFIX="veri"
-VERI_PREFIX_LEN="${#VERIFS_PREFIX}"
-SWARM_NUM=4
-n_fs=2
 
 runcmd() {
 	if [ "$verbose" != "0" ]; then

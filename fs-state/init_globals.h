@@ -6,11 +6,17 @@
 #include <errno.h>
 #include "abstract_fs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef MAX_FS
 #define MAX_FS    20
 #endif
 
 #define ENV_KEY_MAX 20
+
+#define nelem(array)  (sizeof(array) / sizeof(array[0]))
 
 #define mem_alloc_err(...) \
     do { \
@@ -19,17 +25,10 @@
         exit(EXIT_FAILURE); \
     } while(0)
 
-
-#define nelem(array)  (sizeof(array) / sizeof(array[0]))
-
 typedef struct all_dev_nums {
     int all_rams;
     int all_mtdblocks;
 } dev_nums_t;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 static const char *fs_all[] = {"btrfs", "ext2", "ext4", "f2fs",    "jffs2", "ramfs", "tmpfs", "verifs1", "verifs2", "xfs"};
 static const char *dev_all[]= {  "ram",  "ram",  "ram",  "ram", "mtdblock",      "",      "",        "",        "", "ram"};

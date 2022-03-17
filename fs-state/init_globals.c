@@ -9,8 +9,6 @@ static const char *ramdisk_name = "ram";
 static const char *mtdblock_name = "mtdblock";
 
 static char *fslist_to_copy[MAX_FS];
-static char *fssuffix_to_copy[MAX_FS];
-static char *devlist_to_copy[MAX_FS];
 static size_t devsize_kb_to_copy[MAX_FS];
 
 dev_nums_t dev_nums = {.all_rams = 0, .all_mtdblocks = 0};
@@ -33,13 +31,9 @@ static int get_mcfs_env_arguments()
 #if defined SWARMID && SWARMID >= 1
     globals_t_p->_swarm_id = SWARMID;
 #endif
-    sprintf(globals_used_env_key, "%s%d", mcfs_globals_env_key, SWARMID);
-    fprintf(stdout, "get_mcfs_env_arguments() SWARM Macro: %d\n", SWARMID);
-    fprintf(stdout, "get_mcfs_env_arguments() _swarm_id: %u\n", globals_t_p->_swarm_id);
-    fprintf(stdout, "get_mcfs_env_arguments() globals_used_env_key: %s\n", globals_used_env_key);
+    sprintf(globals_used_env_key, "%s%u", mcfs_globals_env_key, globals_t_p->_swarm_id);
 
     mcfs_globals_env = getenv(globals_used_env_key);
-    fprintf(stdout, "get_mcfs_env_arguments() mcfs_globals_env: %s\n", mcfs_globals_env);
     /* Validate existence of environment vars */
     if (!mcfs_globals_env) {
         fprintf(stderr, "globals env %s is not set.\n", globals_used_env_key);
@@ -55,6 +49,8 @@ static int get_mcfs_env_arguments()
     while (token != NULL) {
         if (tok_cnt % 2 == 0) { // file system name
             fslist_to_copy[tok_cnt / 2] = calloc(strlen(token) + 1, sizeof(char));
+            if (!fslist_to_copy[tok_cnt / 2])
+                mem_alloc_err();
             strcpy(fslist_to_copy[tok_cnt / 2], token);
         }
         else { // device size
@@ -72,14 +68,15 @@ static int get_mcfs_env_arguments()
     return 0;
 }
 
-static void prepare_lists_to_copy()
+static void prepare_dev_suffix()
 {
-    /* figure out how many ram/mtdblocks gonna be used */
+    /* figure out total number of ram/mtdblocks gonna be used */
     int dev_idx = -1;
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
         dev_idx = get_dev_from_fs(fslist_to_copy[i]);
         if (dev_idx == -1) {
             fprintf(stderr, "File system type not supported for device\n");
+            exit(EXIT_FAILURE);
         }
         else if (strcmp(dev_all[dev_idx], ramdisk_name) == 0) {
             ++dev_nums.all_rams;
@@ -94,32 +91,43 @@ static void prepare_lists_to_copy()
     size_t len;
     int ram_cnt = 0, mtdblock_cnt = 0;
     int ram_id = -1, mtdblock_id = -1;
+
+    globals_t_p->devlist = calloc(globals_t_p->_n_fs, sizeof(char*));
+    if (!globals_t_p->devlist) 
+        mem_alloc_err();
+    globals_t_p->fssuffix = calloc(globals_t_p->_n_fs, sizeof(char*));
+    if (!globals_t_p->fssuffix) 
+        mem_alloc_err();
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
         dev_idx = get_dev_from_fs(fslist_to_copy[i]);
         if (dev_idx == -1) {
-            len = 0;
-            devlist_to_copy[i] = calloc(len + 1, sizeof(char));
-            memset(devlist_to_copy[i], '\0', (len + 1) * sizeof(char));
+            globals_t_p->devlist[i] = calloc(1, sizeof(char));
+            memset(globals_t_p->devlist[i], '\0', sizeof(char));
         }
         else if (strcmp(dev_all[dev_idx], ramdisk_name) == 0) {
-            ram_id = ram_cnt + (globals_t_p->_swarm_id - 1) * dev_nums.all_rams;
+            if (globals_t_p->_swarm_id >= 1)
+                ram_id = ram_cnt + (globals_t_p->_swarm_id - 1) * dev_nums.all_rams;
+            else 
+                ram_id = ram_cnt;
             len = snprintf(NULL, 0, "/dev/%s%d", ramdisk_name, ram_id);
-            devlist_to_copy[i] = calloc(len + 1, sizeof(char));
-            snprintf(devlist_to_copy[i], len + 1, "/dev/%s%d", ramdisk_name, ram_id);
+            globals_t_p->devlist[i] = calloc(len + 1, sizeof(char));
+            snprintf(globals_t_p->devlist[i], len + 1, "/dev/%s%d", ramdisk_name, ram_id);
             ++ram_cnt;
         }
         else if (strcmp(dev_all[dev_idx], mtdblock_name) == 0) {
-            mtdblock_id = mtdblock_cnt + (globals_t_p->_swarm_id - 1) * dev_nums.all_mtdblocks;
+            if (globals_t_p->_swarm_id >= 1)
+                mtdblock_id = mtdblock_cnt + (globals_t_p->_swarm_id - 1) * dev_nums.all_mtdblocks;
+            else
+                mtdblock_id = mtdblock_cnt;
             len = snprintf(NULL, 0, "/dev/%s%d", mtdblock_name, mtdblock_id);
-            devlist_to_copy[i] = calloc(len + 1, sizeof(char));
-            snprintf(devlist_to_copy[i], len + 1, "/dev/%s%d", mtdblock_name, mtdblock_id);
+            globals_t_p->devlist[i] = calloc(len + 1, sizeof(char));
+            snprintf(globals_t_p->devlist[i], len + 1, "/dev/%s%d", mtdblock_name, mtdblock_id);
             ++mtdblock_cnt;
         }
-
-        /* fs suffix to copy -- format -$fsid-$swarmid */
+        /* Populate fs suffix -- format -$fsid-$swarmid */
         len = snprintf(NULL, 0, "-i%d-s%d", i, globals_t_p->_swarm_id);
-        fssuffix_to_copy[i] = calloc(len + 1, sizeof(char));
-        snprintf(fssuffix_to_copy[i], len + 1, "-i%d-s%d", i, globals_t_p->_swarm_id);
+        globals_t_p->fssuffix[i] = calloc(len + 1, sizeof(char));
+        snprintf(globals_t_p->fssuffix[i], len + 1, "-i%d-s%d", i, globals_t_p->_swarm_id);
     }
 }
 
@@ -138,31 +146,6 @@ static void init_all_fickle_globals()
         free(fslist_to_copy[i]);
     }
 
-    /* fssuffix */
-    globals_t_p->fssuffix = calloc(globals_t_p->_n_fs, sizeof(char*));
-    if (!globals_t_p->fssuffix) 
-        mem_alloc_err();
-    // each string in fssuffix
-    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        globals_t_p->fssuffix[i] = calloc(strlen(fssuffix_to_copy[i]) + 1, sizeof(char));
-        if (!globals_t_p->fssuffix[i])
-            mem_alloc_err();      
-        memcpy(globals_t_p->fssuffix[i], fssuffix_to_copy[i], strlen(fssuffix_to_copy[i]) + 1);
-        free(fssuffix_to_copy[i]);
-    }
-
-    /* devlist */
-    globals_t_p->devlist = calloc(globals_t_p->_n_fs, sizeof(char*));
-    if (!globals_t_p->devlist)
-        mem_alloc_err();
-    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        globals_t_p->devlist[i] = calloc(strlen(devlist_to_copy[i]) + 1, sizeof(char));        
-        if (!globals_t_p->devlist[i]) 
-            mem_alloc_err();    
-        memcpy(globals_t_p->devlist[i], devlist_to_copy[i], strlen(devlist_to_copy[i]) + 1);
-        free(devlist_to_copy[i]);
-    }
-
     /* devsize_kb */
     globals_t_p->devsize_kb = calloc(globals_t_p->_n_fs, sizeof(size_t));
     if (!globals_t_p->devsize_kb)
@@ -176,60 +159,43 @@ static void init_all_steady_globals()
 {
     /* basepaths */
     globals_t_p->basepaths = calloc(globals_t_p->_n_fs, sizeof(char*));
-    if (!globals_t_p->basepaths) {
+    if (!globals_t_p->basepaths) 
         mem_alloc_err();
-        exit(EXIT_FAILURE);
-    }
 
     /* testdirs */
     globals_t_p->testdirs = calloc(globals_t_p->_n_fs, sizeof(char*));
-    if (!globals_t_p->testdirs) {
+    if (!globals_t_p->testdirs) 
         mem_alloc_err();
-        exit(EXIT_FAILURE);
-    }
 
     /* testfiles */
     globals_t_p->testfiles = calloc(globals_t_p->_n_fs, sizeof(char*));
-    if (!globals_t_p->testfiles) {
+    if (!globals_t_p->testfiles) 
         mem_alloc_err();
-        exit(EXIT_FAILURE);
-    }
 
     /* fsimgs */
     globals_t_p->fsimgs = calloc(globals_t_p->_n_fs, sizeof(void*));
-    if (!globals_t_p->fsimgs) {
+    if (!globals_t_p->fsimgs) 
         mem_alloc_err();
-        exit(EXIT_FAILURE);
-    }
 
     /* fsfds */
     globals_t_p->fsfds = calloc(globals_t_p->_n_fs, sizeof(int));
-    if (!globals_t_p->fsfds) {
+    if (!globals_t_p->fsfds) 
         mem_alloc_err();
-        exit(EXIT_FAILURE);
-    }
 
     /* absfs */
     globals_t_p->absfs = calloc(globals_t_p->_n_fs, sizeof(absfs_state_t));
-    if (!globals_t_p->absfs) {
+    if (!globals_t_p->absfs) 
         mem_alloc_err();
-        exit(EXIT_FAILURE);
-    }
 
     /* rets */
     globals_t_p->rets = calloc(globals_t_p->_n_fs, sizeof(int));
-    if (!globals_t_p->rets) {
+    if (!globals_t_p->rets) 
         mem_alloc_err();
-        exit(EXIT_FAILURE);
-    }
 
     /* errs */
     globals_t_p->errs = calloc(globals_t_p->_n_fs, sizeof(int));
-    if (!globals_t_p->errs) {
+    if (!globals_t_p->errs) 
         mem_alloc_err();
-        exit(EXIT_FAILURE);
-    }  
-
 }
 
 
@@ -331,33 +297,13 @@ int *get_errs()
     return globals_t_p->errs;
 }
 
-
-static void dump_all_globals()
-{
-    FILE * fp;
-    char dump_fn[MAX_FS + 10];
-    sprintf(dump_fn, "dump_globals%u.log", globals_t_p->_swarm_id);
-    fp = fopen (dump_fn, "w");
-    fprintf(fp, "swarm_id: %u\n", globals_t_p->_swarm_id);
-    fprintf(fp, "n_fs: %u\n", globals_t_p->_n_fs);
-    for(int i = 0; i < globals_t_p->_n_fs; ++i) {
-        fprintf(fp, "fs index: %d\n", i);
-        fprintf(fp, "fs:%s\tsuffix:%s\tdevice:%s\tdevszkb:%ld\n", 
-            globals_t_p->fslist[i], globals_t_p->fssuffix[i], 
-            globals_t_p->devlist[i], globals_t_p->devsize_kb[i]);
-    }
-    fclose(fp);
-}
-
-
 void __attribute__((constructor)) globals_init()
 {
     init_globals_pointer();
     get_mcfs_env_arguments();
-    prepare_lists_to_copy();
+    prepare_dev_suffix();
     init_all_fickle_globals();
     init_all_steady_globals();
-    dump_all_globals();
 }
 
 /*

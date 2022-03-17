@@ -351,6 +351,13 @@ for i in $(seq 0 $(($n_fs-1))); do
         if [ -d /mnt/test-$fs-i$i-s$SWARM_ID ]; then
             runcmd rm -rf /mnt/test-$fs-i$i-s$SWARM_ID;
         fi
+        echo "yifei n_fs: $n_fs"
+        echo "yifei fs: $fs"
+        echo "yifei i: $i"
+        echo "yifei DEVICE: $DEVICE"
+        echo "yifei DEVSZKB: $DEVSZKB"
+        echo "yifei swarm_id: $SWARM_ID"
+        echo "yifei dir name: /mnt/test-$fs-i$i-s$SWARM_ID"
         runcmd mkdir -p /mnt/test-$fs-i$i-s$SWARM_ID;
     fi
 done
