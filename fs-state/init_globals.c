@@ -24,19 +24,21 @@ static void init_globals_pointer()
 static int get_mcfs_env_arguments() 
 {
     char globals_used_env_key[ENV_KEY_MAX];
-    // No swarm mode, let's use MCFS_FSLIST0
+    /* No swarm mode, let's use MCFS_FSLIST0 */
     globals_t_p->_swarm_id = 0;
 
-    // USE MCFS_FSLIST${SWARMID} as env name
 #if defined SWARMID && SWARMID >= 1
     globals_t_p->_swarm_id = SWARMID;
 #endif
-    sprintf(globals_used_env_key, "%s%u", mcfs_globals_env_key, globals_t_p->_swarm_id);
+    /* USE MCFS_FSLIST${SWARMID} as env name */
+    sprintf(globals_used_env_key, "%s%u", mcfs_globals_env_key, 
+        globals_t_p->_swarm_id);
 
     mcfs_globals_env = getenv(globals_used_env_key);
     /* Validate existence of environment vars */
     if (!mcfs_globals_env) {
-        fprintf(stderr, "globals env %s is not set.\n", globals_used_env_key);
+        fprintf(stderr, "globals env %s is not set.\n", 
+            globals_used_env_key);
         return -EINVAL;
     }
 
@@ -60,7 +62,7 @@ static int get_mcfs_env_arguments()
         token = strtok_r(NULL, globals_delim, &context);
     }
     if (tok_cnt % 2 != 0) {
-        fprintf(stderr, "In correct env var format! exp: fs1:size1:fs2:size2 \n");
+        fprintf(stderr, "Incorrect env format! exp: fs1:size1:fs2:size2\n");
         return -EINVAL; 
     }
     /* _n_fs */
@@ -137,7 +139,7 @@ static void init_all_fickle_globals()
     globals_t_p->fslist = calloc(globals_t_p->_n_fs, sizeof(char*));
     if (!globals_t_p->fslist) 
         mem_alloc_err();
-    // each string in fslist 
+    /* copy each string to fslist */
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
         globals_t_p->fslist[i] = calloc(strlen(fslist_to_copy[i]) + 1, sizeof(char));
         if (!globals_t_p->fslist[i])
@@ -220,7 +222,7 @@ static void free_all_globals()
     free(globals_t_p->devsize_kb);
 
     /* Free all steady members */
-    /* TODO: Do we need to handle basepaths, testdirs, and testfiles*/
+    /* TODO: Do we need to handle basepaths, testdirs, and testfiles?*/
     
     free(globals_t_p->fsimgs);
     free(globals_t_p->fsfds);
