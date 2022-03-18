@@ -471,7 +471,11 @@ static void setup_filesystems()
     for (int i = 0; i < N_FS; ++i) {
         if (strcmp(fslist[i], "jffs2") == 0) {
             ret = setup_jffs2(devlist[i], devsize_kb[i]);
-        } else {
+        } 
+        else if (is_verifs(fslist[i])) {
+            continue;
+        }
+        else {
             ret = setup_generic(fslist[i], devlist[i], devsize_kb[i]);
         }
         if (is_xfs(fslist[i])) {

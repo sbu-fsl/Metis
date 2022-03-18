@@ -145,7 +145,8 @@ void record_performance()
         last_swaps_stat = malloc(n_swaps * sizeof(struct iostat));
         assert(last_swaps_stat);
         get_swapstats(last_swaps_stat);
-        fprintf(perflog_fp, "swap_bytes_used,");
+        if(n_swaps > 0)
+            fprintf(perflog_fp, "swap_bytes_used,");
         for (int i = 0; i < n_swaps; ++i) {
             fprintf(perflog_fp, "swap_%s_bytes_read,swap_%s_bytes_written,",
                     last_swaps_stat[i].devname, last_swaps_stat[i].devname);
