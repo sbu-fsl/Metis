@@ -34,6 +34,9 @@
 #define VERIFS_PREFIX       "veri"
 #define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
 
+#define XFS_PREFIX      "xfs"
+#define XFS_PREFIX_LEN  (sizeof(XFS_PREFIX) - 1)
+
 extern int cur_pid;
 extern char func[FUNC_NAME_LEN + 1];
 extern struct timespec begin_time;
@@ -186,6 +189,11 @@ static inline ssize_t fsize(int fd)
 static inline bool is_verifs(const char *fsname)
 {
     return strncmp(fsname, VERIFS_PREFIX, VERIFS_PREFIX_LEN) == 0;
+}
+
+static inline bool is_xfs(const char *fsname)
+{
+    return strncmp(fsname, XFS_PREFIX, XFS_PREFIX_LEN) == 0;
 }
 
 bool compare_equality_values(const char **fses, int n_fs, int *nums);

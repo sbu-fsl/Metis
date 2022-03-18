@@ -4,6 +4,13 @@
 #include <sys/wait.h>
 #include <sys/vfs.h>
 
+/*
+    XFS cannot create new files/folders when the free space reaches
+    less than the XFS_ENOSPC_OFFSET value (in bytes). This value was
+    found after testing the error on a 512 GB xfs disk.
+*/
+#define XFS_ENOSPC_OFFSET 196608
+
 int cur_pid;
 char func[FUNC_NAME_LEN + 1];
 struct timespec begin_time;
@@ -14,6 +21,8 @@ int _opened_files[1024];
 int _n_files;
 size_t count;
 absfs_set_t absfs_set;
+
+bool is_xfs_present;
 
 int compare_file_content(const char *path1, const char *path2)
 {
@@ -77,12 +86,47 @@ end:
     return ret;
 }
 
+bool is_xfs_space_exception(const char *basepath)
+{
+    struct statfs fsinfo;
+    int ret = statfs(basepath, &fsinfo);
+    if (ret != 0) {
+        logerr("cannot statfs %s", basepath);
+        exit(1);
+    }
+    size_t free_spc = fsinfo.f_bfree * fsinfo.f_bsize;
+    return free_spc <= XFS_ENOSPC_OFFSET;
+}
+
+void cleanup_created_files(const char *fpath)
+{
+    struct stat path_stat;
+    stat(fpath, &path_stat);
+    if (S_ISREG(path_stat.st_mode)) {
+        unlink(fpath);
+    } else {
+        rmdir(fpath);
+    }
+}
+
 bool compare_equality_values(const char **fses, int n_fs, int *nums)
 {
     bool res = true;
     int base = nums[0];
-    for (int i = 0; i < n_fs; ++i) {
+    for (int i = 1; i < n_fs; ++i) {
         if (nums[i] != base) {
+            if (is_xfs_present) {
+                if (is_xfs(fses[i]) && nums[i] != 0) {
+                    if (is_xfs_space_exception(basepaths[i])) {
+                        continue;
+                    }
+                // Also check for exception if the first fs is xfs
+                } else if (is_xfs(fses[0]) && nums[0] != 0) {
+                    if (is_xfs_space_exception(basepaths[0])) {
+                        continue;
+                    }
+                }
+            }
             res = false;
             break;
         }
@@ -201,12 +245,33 @@ bool compare_equality_fexists(const char **fses, int n_fs, char **fpaths)
         fexists[i] = check_file_existence(fpaths[i]);
 
     bool base = fexists[0];
-    for (int i = 0; i < n_fs; ++i) {
+    bool should_cleanup = false;
+    for (int i = 1; i < n_fs; ++i) {
         if (fexists[i] != base) {
+            if (is_xfs_present) { // Do the checks only if xfs is in the experiment
+                if (is_xfs(fses[i]) && !fexists[i]) {
+                    if (is_xfs_space_exception(basepaths[i])) {
+                        should_cleanup = true;
+                        continue;
+                    }
+                // Also check for exception if the first fs is xfs
+                } else if (is_xfs(fses[0]) && !fexists[0]) {
+                    if (is_xfs_space_exception(basepaths[0])) {
+                        should_cleanup = true;
+                        continue;
+                    }
+                }
+            }
             res = false;
             break;
         }
     }
+    if (is_xfs_present && should_cleanup) {
+        for (int i = 0; i < n_fs; i++) {
+            cleanup_created_files(fpaths[i]);
+        }
+    }
+ 
     if (!res) {
         logwarn("[%zu] Discrepancy in existence of files found:", count);
         for (int i = 0; i < n_fs; ++i) {
@@ -401,11 +466,16 @@ static void setup_filesystems()
 {
     int ret;
     populate_mountpoints();
+
+    is_xfs_present = false;
     for (int i = 0; i < N_FS; ++i) {
         if (strcmp(fslist[i], "jffs2") == 0) {
             ret = setup_jffs2(devlist[i], devsize_kb[i]);
         } else {
             ret = setup_generic(fslist[i], devlist[i], devsize_kb[i]);
+        }
+        if (is_xfs(fslist[i])) {
+            is_xfs_present = true;
         }
         if (ret != 0) {
             fprintf(stderr, "Cannot setup file system %s (ret = %d)\n",
@@ -519,7 +589,7 @@ static long update_after_hook(unsigned char *ptr)
 static long revert_before_hook(unsigned char *ptr)
 {
     submit_seq("restore\n");
-    makelog("[seqid = %d] restore (%p)\n", count, state_depth);
+    makelog("[seqid = %d] restore (%zu)\n", count, state_depth);
     for (int i = 0; i < N_FS; ++i) {
         if (!is_verifs(fslist[i]))
             continue;
