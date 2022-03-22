@@ -5,7 +5,7 @@ override CFLAGS += -g -I../include -D PRINTF -DSWARMID=$(ARGS) # -D T_RAND -D P_
 override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz
 PAN = pan
 
-all: demo.pml parameters common-libs globals absfs-set
+all: demo.pml parameters common-libs init_globals.o absfs-set
 	spin -a demo.pml; \
 	gcc -g -o $(PAN) pan.c init_globals.o set.o fileutil.c perf.c mount.c setup.c common-libs.a $(CFLAGS) $(LIBS); \
 
@@ -13,12 +13,10 @@ run: all
 	./pan | less -N; \
 	rm -rf /mnt/test-*/test* || true; \
 
-globals: init_globals.c
+init_globals.o: init_globals.c
 	gcc -Wall -Werror -o init_globals.o -c $< $(CFLAGS) $(LIBS)
 
-init_globals.o: globals
-
-install: cleanlib globals absfs-set libsmcfs
+install: cleanlib absfs-set libsmcfs
 	spin -a demo.pml;
 
 cleanlib:
@@ -39,7 +37,7 @@ common-libs: $(COMMON_OBJ)
 %.cpp.o: $(COMMON_DIR)/%.cpp
 	g++ -std=c++11 -Wall -Werror -o $@ -fPIC -c $< $(CFLAGS) $(LIBS)
 
-absfs-set: set.cpp globals
+absfs-set: set.cpp init_globals.o
 	g++ -std=c++11 -o set.o -c $< $(CFLAGS) $(LIBS)
 	
 abstractfs-test: $(COMMON_DIR)/abstract_fs.cpp common-libs

@@ -398,6 +398,9 @@ sed "/$PML_START_PATN/,/$PML_END_PATN/{//!d}" $PML_SRC > $PML_TEMP
 sed "/$PML_START_PATN/a$C_TRACK_STMT" $PML_TEMP > $PML_SRC
 
 runcmd make parameters
+for (( i=1; i<=$NUM_PAN; i++ )); do
+	export MCFS_FSLIST$i="$MCFSLIST"
+done
 # use for loop to run a command 4 times with different number in the command
 for (( i=1; i<=$NUM_PAN; i++ )); do
 	runcmd make install ARGS=$i;
@@ -412,14 +415,11 @@ for (( i=1; i<=$NUM_PAN; i++ )); do
 				scp Makefile "$remote":Makefile;
 				scp 'stop.sh' "$remote":'stop.sh'
 				ssh "$remote" "sh ./nfs-validator/fs-state/loadmods.sh" &
+                ssh "$remote" "MCFS_FSLIST$i=$MCFSLIST"
 			fi
 		fi
 		count=$((count+1));
 	done
-done
-
-for (( i=1; i<=$NUM_PAN; i++ )); do
-	export MCFS_FSLIST$i="$MCFSLIST"
 done
 
 runcmd swarm swarm.lib -f demo.pml

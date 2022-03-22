@@ -17,7 +17,7 @@ k	1	4	# optional: to restrict min and max nr of hash functions
 
 # limits
 d	10000		# optional: to restrict the max search depth
-cpus	4	sgdp02:12       sgdp06:12 # nr available cpus (exact)
+cpus	4	sgdp02:4       sgdp06:4 # nr available cpus (exact)
 memory	512M		# max memory per run; M=megabytes, G=gigabytes
 time	60m		# max time for all runs; h=hours, m=min, s=sec, d=days
 hash	1.5		# hash-factor (estimate)

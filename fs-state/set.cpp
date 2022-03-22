@@ -1,5 +1,5 @@
 #include "set.h"
-#include "whichconfig.h"
+#include "config.h"
 #include "init_globals.h"
 #include <unordered_set>
 
