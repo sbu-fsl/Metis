@@ -114,3 +114,6 @@ struct timespec benchmark_mt(int (*func)(void *), void *arg, unsigned int times)
 `benchmark` will run `func(arg)` once and return the execution time.
 `benchmark_mt` will run `func(arg)` `times` times and return the average
 execution time.
+
+The nfs-validator Github repository should be consistent with FSL nfs4mc repository. 
+
