@@ -1,6 +1,5 @@
 #!/bin/bash
 
-NUM_PAN=4 # this is fixed b/c we provide 4 compilation options in swarm.lib
 FSLIST=()
 DEVSIZE_KB=()
 MCFSLIST=""
@@ -23,6 +22,7 @@ PML_SRC="./demo.pml"
 PML_TEMP="./.pml_tmp"
 PML_START_PATN="\/\* The persistent content of the file systems \*\/"
 PML_END_PATN="\/\* Abstract state signatures of the file systems \*\/"
+NUM_PAN=4 # number of compilation options in swarm.lib
 
 exclude_files=()
 # Create file system and device key-value map
@@ -129,6 +129,11 @@ while [[ $# -gt 0 ]]; do
             ;;
         -f|--fslist)
             MCFSLIST="$2"
+            shift
+            shift
+            ;;
+        -n|--numpan)
+            NUM_PAN="$2"
             shift
             shift
             ;;
@@ -401,7 +406,7 @@ runcmd make parameters
 for (( i=1; i<=$NUM_PAN; i++ )); do
 	export MCFS_FSLIST$i="$MCFSLIST"
 done
-# use for loop to run a command 4 times with different number in the command
+# use for loop to run a command NUM_PAN times with different number in the command
 for (( i=1; i<=$NUM_PAN; i++ )); do
 	runcmd make install ARGS=$i;
 	count=0
@@ -422,6 +427,21 @@ for (( i=1; i<=$NUM_PAN; i++ )); do
 	done
 done
 
-runcmd swarm swarm.lib -f demo.pml
+SWARM_CONF="swarm.lib"
+MAX_PAN_NUM=12
+FIRST_OPT_LINE=31
+LAST_OPT_LINE=42
+
+# Alter swarm.lib compilation options
+if [ "$NUM_PAN" -lt "$MAX_PAN_NUM" ]; then
+    sed -i "$(($NUM_PAN+$FIRST_OPT_LINE)),$LAST_OPT_LINE s/^/#/" $SWARM_CONF
+fi
+
+runcmd swarm $SWARM_CONF -f demo.pml
+
+# Restore swarm.lib
+if [ "$NUM_PAN" -lt "$MAX_PAN_NUM" ]; then
+    sed -i "$(($NUM_PAN+$FIRST_OPT_LINE)),$LAST_OPT_LINE s/^#//" $SWARM_CONF
+fi
 
 runcmd ./demo.pml.swarm
