@@ -24,7 +24,7 @@ truncate_len = make_params_pml('truncate_len',
 
 num = make_params_pml('num',
         SpecialParameters(0),
-        RangeParameters(0, 26, 1))
+        RangeParameters(0, 1000, 1))
 
 if __name__ == '__main__':
     symbols = dict(globals())

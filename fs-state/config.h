@@ -33,8 +33,9 @@ int directorycount;
 int filepool_idx;
 int dirpool_idx;
 int pool_depth;
-char *filepool[100];
-char *directorypool[100];
+int max_name_len;
+char **filepool;
+char **directorypool;
 
 /* Pointer to memory-mapped file system images */
 void *fsimgs[N_FS];
