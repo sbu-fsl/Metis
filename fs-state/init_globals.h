@@ -44,7 +44,7 @@ static inline int get_dev_from_fs(char *fs_type) {
 }
 
 typedef struct all_global_params {
-    unsigned int _swarm_id;
+    int _swarm_id;
     unsigned int _n_fs;
     char **fslist;
     char **fssuffix;
@@ -61,7 +61,6 @@ typedef struct all_global_params {
 } globals_t;
 
 extern globals_t *globals_t_p;
-
 
 unsigned int get_n_fs();
 char **get_fslist();

@@ -10,6 +10,8 @@ static const char *mtdblock_name = "mtdblock";
 
 static char *fslist_to_copy[MAX_FS];
 static size_t devsize_kb_to_copy[MAX_FS];
+static char *global_args = NULL;
+static int opt_ret;
 
 dev_nums_t dev_nums = {.all_rams = 0, .all_mtdblocks = 0};
 
@@ -19,18 +21,97 @@ static void init_globals_pointer()
     globals_t_p = malloc(sizeof(globals_t));
     if (!globals_t_p)
         mem_alloc_err();
+    /* set default erroneous swarm id */
+    globals_t_p->_swarm_id = -1;
+}
+
+static int parse_cli_arguments(char* args_to_parse)
+{
+    /* Parsing the MCFS options from env */
+    int tok_cnt = -1;
+    char *context = NULL;
+    bool first_tok = true;
+    /* Example: ext4:256:jffs2:512 fs1:size1(KB):fs2:size2(KB) */
+    char *token = strtok_r(args_to_parse, globals_delim, &context);
+    while (token != NULL) {
+        /* First token for CLI option is Swarm ID */
+        if (first_tok) {
+            globals_t_p->_swarm_id = atoi(token);
+            first_tok = false;
+        }
+        /* Fetch file system name */
+        else if (tok_cnt % 2 == 0) {
+            fslist_to_copy[tok_cnt / 2] = calloc(strlen(token) + 1, 
+                sizeof(char));
+            if (!fslist_to_copy[tok_cnt / 2])
+                mem_alloc_err();
+            strcpy(fslist_to_copy[tok_cnt / 2], token);
+        }
+        /* Fetch device size */
+        else {
+            devsize_kb_to_copy[tok_cnt / 2] = atoi(token);
+        }
+        ++tok_cnt;
+        token = strtok_r(NULL, globals_delim, &context);
+    }
+    if (tok_cnt % 2 != 0) {
+        fprintf(stderr, "Incorrect args format! Exp: 0:fs1:size1:fs2:size2\n");
+        return -EINVAL; 
+    }
+    /* _n_fs */
+    globals_t_p->_n_fs = tok_cnt / 2;
+    return 0;
+}
+
+static int get_mcfs_cli_arguments()
+{
+    int ret = -1;
+    ret = parse_cli_arguments(global_args);
+    return ret;
+}
+
+/* swarm_id should already be gotten before this function */
+static int parse_env_arguments(char* env_to_parse)
+{
+    /* Parsing the MCFS options from env */
+    int tok_cnt = 0;
+    char *context = NULL;
+    /* Example: ext4:256:jffs2:512 fs1:size1(KB):fs2:size2(KB) */
+    char *token = strtok_r(env_to_parse, globals_delim, &context);
+    while (token != NULL) {
+        /* Fetch file system name */
+        if (tok_cnt % 2 == 0) {
+            fslist_to_copy[tok_cnt / 2] = calloc(strlen(token) + 1, 
+                sizeof(char));
+            if (!fslist_to_copy[tok_cnt / 2])
+                mem_alloc_err();
+            strcpy(fslist_to_copy[tok_cnt / 2], token);
+        }
+        /* Fetch device size */
+        else {
+            devsize_kb_to_copy[tok_cnt / 2] = atoi(token);
+        }
+        ++tok_cnt;
+        token = strtok_r(NULL, globals_delim, &context);
+    }
+    if (tok_cnt % 2 != 0) {
+        fprintf(stderr, "Incorrect env format! Exp: fs1:size1:fs2:size2\n");
+        return -EINVAL; 
+    }
+    /* _n_fs */
+    globals_t_p->_n_fs = tok_cnt / 2;
+    return 0;
 }
 
 static int get_mcfs_env_arguments() 
 {
     char globals_used_env_key[ENV_KEY_MAX];
-    /* No swarm mode, let's use MCFS_FSLIST0 */
-    globals_t_p->_swarm_id = 0;
-
-#if defined SWARMID && SWARMID >= 1
-    globals_t_p->_swarm_id = SWARMID;
-#endif
-    /* USE MCFS_FSLIST${SWARMID} as env name */
+    /* 
+     * No swarm mode (single Spin pan process), Use swarm id 0 
+     * Swarm mode, Use swarm id starting from 1
+     */
+    globals_t_p->_swarm_id = atoi(global_args);
+    /* USE MCFS_FSLIST${_swarm_id} as env name */
     sprintf(globals_used_env_key, "%s%u", mcfs_globals_env_key, 
         globals_t_p->_swarm_id);
 
@@ -41,33 +122,9 @@ static int get_mcfs_env_arguments()
             globals_used_env_key);
         return -EINVAL;
     }
-
-    /* context variable pointer for strtok_r */
-    char *context = NULL;
-    /* Parsing the MCFS options from env */
-    int tok_cnt = 0;
-    /* Example: 0:ext4:256:jffs2:512 swarm_id:fs1:size1(inKB):fs2:size2 */
-    char *token = strtok_r(mcfs_globals_env, globals_delim, &context);
-    while (token != NULL) {
-        if (tok_cnt % 2 == 0) { // file system name
-            fslist_to_copy[tok_cnt / 2] = calloc(strlen(token) + 1, sizeof(char));
-            if (!fslist_to_copy[tok_cnt / 2])
-                mem_alloc_err();
-            strcpy(fslist_to_copy[tok_cnt / 2], token);
-        }
-        else { // device size
-            devsize_kb_to_copy[tok_cnt / 2] = atoi(token);
-        }
-        ++tok_cnt;
-        token = strtok_r(NULL, globals_delim, &context);
-    }
-    if (tok_cnt % 2 != 0) {
-        fprintf(stderr, "Incorrect env format! exp: fs1:size1:fs2:size2\n");
-        return -EINVAL; 
-    }
-    /* _n_fs */
-    globals_t_p->_n_fs = tok_cnt / 2;
-    return 0;
+    int ret = -1;
+    ret = parse_env_arguments(mcfs_globals_env);
+    return ret;
 }
 
 static void prepare_dev_suffix()
@@ -200,38 +257,53 @@ static void init_all_steady_globals()
         mem_alloc_err();
 }
 
-
+/* TODO: Do we need to handle basepaths, testdirs, and testfiles? */
 static void free_all_globals() 
 {
     /* Free all fickle members */
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        free(globals_t_p->fslist[i]);
+        if (globals_t_p->fslist[i])
+            free(globals_t_p->fslist[i]);
     }
-    free(globals_t_p->fslist);
+    if (globals_t_p->fslist)
+        free(globals_t_p->fslist);
 
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        free(globals_t_p->fssuffix[i]);
+        if (globals_t_p->fssuffix[i])
+            free(globals_t_p->fssuffix[i]);
     }
-    free(globals_t_p->fssuffix);
+    if (globals_t_p->fssuffix)
+        free(globals_t_p->fssuffix);
 
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        free(globals_t_p->devlist[i]);
+        if (globals_t_p->devlist[i])
+            free(globals_t_p->devlist[i]);
     }
-    free(globals_t_p->devlist);
+    if (globals_t_p->devlist)
+        free(globals_t_p->devlist);
 
-    free(globals_t_p->devsize_kb);
+    if (globals_t_p->devsize_kb)
+        free(globals_t_p->devsize_kb);
 
     /* Free all steady members */
-    /* TODO: Do we need to handle basepaths, testdirs, and testfiles?*/
-    
-    free(globals_t_p->fsimgs);
-    free(globals_t_p->fsfds);
-    free(globals_t_p->absfs);
-    free(globals_t_p->rets);
-    free(globals_t_p->errs);
+    if (globals_t_p->fsimgs)
+        free(globals_t_p->fsimgs);
+    if (globals_t_p->fsfds)
+        free(globals_t_p->fsfds);
+    if (globals_t_p->absfs)
+        free(globals_t_p->absfs);
+    if (globals_t_p->rets)
+        free(globals_t_p->rets);
+    if (globals_t_p->errs)
+        free(globals_t_p->errs);
 
     /* Free global structure pointer */
-    free(globals_t_p);
+    if (globals_t_p)
+        free(globals_t_p);
+
+    /* Free globals arguments */
+    if (global_args)
+        free(global_args);
 }
 
 unsigned int get_n_fs()
@@ -299,19 +371,79 @@ int *get_errs()
     return globals_t_p->errs;
 }
 
-void __attribute__((constructor)) globals_init()
+static int cli_or_env_args(int argc, char *argv[])
 {
+    if (argc < 3) {
+        fprintf(stderr, "Too few arguments.  Usage: ./pan -K args\n");
+        return -1;
+    }
+    char **args_ptr = &global_args;
+    bool opt_found = false;
+    size_t len = 0;
+    while (argc > 1 && argv[1][0] == '-')
+    {
+        switch (argv[1][1]) {
+            case 'K':
+                if (opt_found) {
+                    fprintf(stderr, "Multiple global arguments not allowed!");
+                    return -1;
+                }
+                argv++;
+                argc--;
+                len = snprintf(NULL, 0, "%s", argv[1]);
+                *args_ptr = calloc(len + 1, sizeof(char));
+                snprintf(*args_ptr, len + 1, "%s", argv[1]);
+                opt_found = true;
+            default:
+                break;
+        }
+        argc--;
+        argv++;
+    }
+    if (!global_args || len == 0) {
+        fprintf(stderr, "No global arguments found!\n");
+        return -1;
+    }
+    /* return 0 indicates use environment var */
+    if (len == 1)
+        return 0; 
+    /* return 1 indicates use command-line arguments */
+    return 1;
+}
+
+void __attribute__((constructor)) globals_init(int argc, char *argv[])
+{
+    int ret = -1;
+    /* Read command-line option and decide CLI or ENV */
+    opt_ret = cli_or_env_args(argc, argv);
+    if (opt_ret < 0) {
+        exit(EXIT_FAILURE);
+    }
+    /* Init a global structure pointer */
     init_globals_pointer();
-    get_mcfs_env_arguments();
+    /* Process enviroment variable */
+    if (opt_ret == 0) {
+        ret = get_mcfs_env_arguments();
+    }
+    /* Process CLI options */
+    else if (opt_ret == 1) {
+        ret = get_mcfs_cli_arguments();
+    }
+    if (ret < 0) {
+        fprintf(stderr, "Error occurred while parsing arguments: %d\n", ret);
+    }
+    /* Get devices and file system suffixes */
     prepare_dev_suffix();
+    /* Initalize fslist and devsize_kb */
     init_all_fickle_globals();
+    /* Initalize other global data */
     init_all_steady_globals();
 }
 
 /*
  * This cleanup procedure will be called when the program exits.
  */
-void __attribute__((destructor)) globals_cleanup()
+void __attribute__((destructor)) globals_cleanup(void)
 {
     free_all_globals();
 }

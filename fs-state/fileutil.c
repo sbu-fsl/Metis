@@ -619,12 +619,12 @@ void __attribute__((constructor)) init()
     int cur_n_fs = get_n_fs();
     fs_frozen = calloc(cur_n_fs, sizeof(bool));
     if (!fs_frozen) {
-        logerr("memory allocation failed\n");
+        logerr("fs_frozen memory allocation failed\n");
         exit(EXIT_FAILURE);
     }
     fsinfos = calloc(cur_n_fs, sizeof(struct fs_stat));
     if (!fsinfos) {
-        logerr("memory allocation failed\n");
+        logerr("fsinfos memory allocation failed\n");
         exit(EXIT_FAILURE);
     }
     char output_log_name[NAME_MAX] = {0};
