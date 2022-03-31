@@ -7,6 +7,7 @@ DEVSIZE_KB=()
 DEVLIST=()
 SWARM_ID=0 # 0 is the default swarm id without using swarm
 MCFSLIST=""
+USE_ENV_VAR=0
 
 LOOPDEVS=()
 verbose=0
@@ -87,6 +88,10 @@ while [[ $# -gt 0 ]]; do
         -f|--fslist)
             MCFSLIST="$2"
             shift
+            shift
+            ;;
+        -e|--use-env)
+            USE_ENV_VAR=1
             shift
             ;;
         *)
@@ -375,15 +380,18 @@ done
 sed "/$PML_START_PATN/,/$PML_END_PATN/{//!d}" $PML_SRC > $PML_TEMP
 sed "/$PML_START_PATN/a$C_TRACK_STMT" $PML_TEMP > $PML_SRC
 
-# Set environment variable MCFS_FSLIST for MCFS C Sources
-export MCFS_FSLIST$SWARM_ID="$MCFSLIST"
-
 # Run test program
 if [ "$SETUP_ONLY" != "1" ]; then
-    runcmd make CFLAGS=$_CFLAGS ARGS=$SWARM_ID;
+    runcmd make CFLAGS=$_CFLAGS;
     echo 'Running file system checker...';
     echo 'Please check stdout in output.log, stderr in error.log';
-    ./pan 2>error.log > output.log
+    # Set environment variable MCFS_FSLIST for MCFS C Sources
+    if [ "$USE_ENV_VAR" = "1" ]; then
+        export MCFS_FSLIST$SWARM_ID="$MCFSLIST"
+        ./pan -K $SWARM_ID 2>error.log > output.log
+    else
+        ./pan -K $SWARM_ID:$MCFSLIST 2>error.log > output.log
+    fi
 
     # By default we don't want to clean up the file system for 
     # better analyzing discrepancies reported by MCFS
@@ -398,4 +406,3 @@ if [ "$REPLAY" = "1" ]; then
     ./replay 2>&1 > replay.log
     mount_all $SWARM_ID;
 fi
-

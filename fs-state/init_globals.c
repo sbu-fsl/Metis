@@ -377,7 +377,6 @@ static int cli_or_env_args(int argc, char *argv[])
         fprintf(stderr, "Too few arguments.  Usage: ./pan -K args\n");
         return -1;
     }
-    char **args_ptr = &global_args;
     bool opt_found = false;
     size_t len = 0;
     while (argc > 1 && argv[1][0] == '-')
@@ -391,8 +390,8 @@ static int cli_or_env_args(int argc, char *argv[])
                 argv++;
                 argc--;
                 len = snprintf(NULL, 0, "%s", argv[1]);
-                *args_ptr = calloc(len + 1, sizeof(char));
-                snprintf(*args_ptr, len + 1, "%s", argv[1]);
+                global_args = calloc(len + 1, sizeof(char));
+                snprintf(global_args, len + 1, "%s", argv[1]);
                 opt_found = true;
             default:
                 break;
