@@ -415,28 +415,25 @@ if [ "$USE_ENV_VAR" = "1" ]; then
     done
 fi
 
-# compile MCFS library: libsmcfs.a
+# Compile MCFS library: libsmcfs.a
 runcmd make install
-# use for loop to run a command NUM_PAN times with different number in the command
-for (( i=1; i<=$NUM_PAN; i++ )); do
-	count=0
-	for j in $(grep -Po '\t.*:\d+( |\t)' swarm.lib); do
-		if [ $count -ge 1 ]; then
-			remote=$(echo $j | awk -F ':' '{print $1}');
-
-			scp libsmcfs.a "$remote":libsmcfs.a;
-			if [ $NUM_PAN -eq $i ];then
-				scp parameters.pml "$remote":parameters.pml;
-				scp Makefile "$remote":Makefile;
-				scp 'stop.sh' "$remote":'stop.sh'
-				ssh "$remote" "sh ./nfs-validator/fs-state/loadmods.sh" &
-                if [ "$USE_ENV_VAR" = "1" ]; then
-                    ssh "$remote" "MCFS_FSLIST$i=$MCFSLIST"
-                fi
-			fi
+# Use ssh and scp to set up swarm for remotes
+count=0
+for i in $(grep -Po '\t.*:\d+( |\t)' swarm.lib); do
+	if [ $count -ge 1 ]; then
+		remote=$(echo $i | awk -F ':' '{print $1}');
+		scp libsmcfs.a "$remote":libsmcfs.a;
+		scp parameters.pml "$remote":parameters.pml;
+		scp Makefile "$remote":Makefile;
+		scp 'stop.sh' "$remote":'stop.sh'
+		ssh "$remote" "sh ./nfs-validator/fs-state/loadmods.sh" &
+		if [ "$USE_ENV_VAR" = "1" ]; then
+			for (( j=1; j<=$NUM_PAN; j++ )); do
+				ssh "$remote" "MCFS_FSLIST$j=$MCFSLIST"
+			done
 		fi
-		count=$((count+1));
-	done
+	fi
+	count=$((count+1));
 done
 
 SWARM_CONF="swarm.lib"
