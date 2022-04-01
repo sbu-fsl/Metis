@@ -3,6 +3,7 @@
 FSLIST=()
 DEVSIZE_KB=()
 MCFSLIST=""
+USE_ENV_VAR=0
 
 LOOPDEVS=()
 verbose=0
@@ -132,6 +133,10 @@ while [[ $# -gt 0 ]]; do
             shift
             shift
             ;;
+        -e|--use-env)
+            USE_ENV_VAR=1
+            shift
+            ;;
         -n|--numpan)
             NUM_PAN="$2"
             shift
@@ -161,7 +166,7 @@ for EACH_TOK in "${ADDR[@]}"; do
     else
         DEVSIZE_KB[$(($TOK_CNT / 2))]="$EACH_TOK"
     fi
-    TOK_CNT=`expr $TOK_CNT + 1`
+    TOK_CNT=$(($TOK_CNT + 1))
 done
 
 # Get the number of file systems
@@ -179,10 +184,10 @@ for i in $(seq 0 $(($n_fs-1))); do
     dev_type=${FS_DEV_MAP[${fs}]}
     if [ "$dev_type" = "$RAM_NAME" ]
     then
-        ALL_RAMS=`expr $ALL_RAMS + 1`
+        ALL_RAMS=$(($ALL_RAMS + 1))
     elif [ "$dev_type" = "$MTDBLOCK_NAME" ]
     then 
-        ALL_MTDBLOCKS=`expr $ALL_MTDBLOCKS + 1`
+        ALL_MTDBLOCKS=$(($ALL_MTDBLOCKS + 1))
     fi
 done
 
@@ -199,12 +204,12 @@ for j in $(seq 1 $(($NUM_PAN))); do
 		if [ "$dev_type" = "$RAM_NAME" ]
 		then
 			RAM_ID=$((($SWARM_ID - 1) * $ALL_RAMS + $RAM_CNT))
-			RAM_CNT=`expr $RAM_CNT + 1`
+			RAM_CNT=$(($RAM_CNT + 1))
 			DEVLISTS[$j,$i]="/dev/ram$RAM_ID"
 		elif [ "$dev_type" = "$MTDBLOCK_NAME" ]
 		then
 			MTDBLOCK_ID=$((($SWARM_ID - 1) * $ALL_MTDBLOCKS + $MTDBLOCK_CNT))
-			MTDBLOCK_CNT=`expr $MTDBLOCK_CNT + 1`
+			MTDBLOCK_CNT=$(($MTDBLOCK_CNT + 1))
 			DEVLISTS[$j,$i]="/dev/mtdblock$MTDBLOCK_ID"
 		elif [ "$dev_type" = "" ]
 		then
@@ -403,24 +408,31 @@ sed "/$PML_START_PATN/,/$PML_END_PATN/{//!d}" $PML_SRC > $PML_TEMP
 sed "/$PML_START_PATN/a$C_TRACK_STMT" $PML_TEMP > $PML_SRC
 
 runcmd make parameters
-for (( i=1; i<=$NUM_PAN; i++ )); do
-	export MCFS_FSLIST$i="$MCFSLIST"
-done
+
+if [ "$USE_ENV_VAR" = "1" ]; then
+    for (( i=1; i<=$NUM_PAN; i++ )); do
+        export MCFS_FSLIST$i="$MCFSLIST"
+    done
+fi
+
+# compile MCFS library: libsmcfs.a
+runcmd make install
 # use for loop to run a command NUM_PAN times with different number in the command
 for (( i=1; i<=$NUM_PAN; i++ )); do
-	runcmd make install ARGS=$i;
 	count=0
 	for j in $(grep -Po '\t.*:\d+( |\t)' swarm.lib); do
 		if [ $count -ge 1 ]; then
 			remote=$(echo $j | awk -F ':' '{print $1}');
 
-			scp libsmcfs$i.a "$remote":libsmcfs$i.a;
+			scp libsmcfs.a "$remote":libsmcfs.a;
 			if [ $NUM_PAN -eq $i ];then
 				scp parameters.pml "$remote":parameters.pml;
 				scp Makefile "$remote":Makefile;
 				scp 'stop.sh' "$remote":'stop.sh'
 				ssh "$remote" "sh ./nfs-validator/fs-state/loadmods.sh" &
-                ssh "$remote" "MCFS_FSLIST$i=$MCFSLIST"
+                if [ "$USE_ENV_VAR" = "1" ]; then
+                    ssh "$remote" "MCFS_FSLIST$i=$MCFSLIST"
+                fi
 			fi
 		fi
 		count=$((count+1));
@@ -428,16 +440,16 @@ for (( i=1; i<=$NUM_PAN; i++ )); do
 done
 
 SWARM_CONF="swarm.lib"
-MAX_PAN_NUM=12
+MAX_PAN_NUM=16
 FIRST_OPT_LINE=31
-LAST_OPT_LINE=42
+LAST_OPT_LINE=46
 
 # Alter swarm.lib compilation options
 if [ "$NUM_PAN" -lt "$MAX_PAN_NUM" ]; then
     sed -i "$(($NUM_PAN+$FIRST_OPT_LINE)),$LAST_OPT_LINE s/^/#/" $SWARM_CONF
 fi
 
-runcmd swarm $SWARM_CONF -f demo.pml
+runcmd swarm $SWARM_CONF -K $MCFSLIST -f demo.pml
 
 # Restore swarm.lib
 if [ "$NUM_PAN" -lt "$MAX_PAN_NUM" ]; then

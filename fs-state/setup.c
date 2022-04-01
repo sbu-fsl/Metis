@@ -18,6 +18,13 @@ void execute_cmd(const char *cmd)
     }
 }
 
+int execute_cmd_status(const char *cmd)
+{
+    int retval = system(cmd);
+    int status = WEXITSTATUS(retval);
+    return status;
+}
+
 int check_device(const char *devname, const size_t exp_size_kb)
 {
     int fd = open(devname, O_RDONLY);
@@ -112,11 +119,27 @@ int setup_jffs2(const char *devname, const size_t size_kb)
 
 void populate_mountpoints()
 {
-    char cmdbuf[PATH_MAX];
+    char check_mount_cmdbuf[PATH_MAX];
+    char unmount_cmdbuf[PATH_MAX];
+    char check_mp_exist_cmdbuf[PATH_MAX];
+    char rm_mp_cmdbuf[PATH_MAX];
+    char mk_mp_cmdbuf[PATH_MAX];
     for (int i = 0; i < get_n_fs(); ++i) {
-        snprintf(cmdbuf, PATH_MAX, "mkdir -p /mnt/test-%s%s", get_fslist()[i],
-                 get_fssuffix()[i]);
-        execute_cmd(cmdbuf);
-        unmount_all_relaxed();
+        snprintf(check_mount_cmdbuf, PATH_MAX, "mount | grep %s", get_basepaths()[i]);    
+        /* If the mountpoint has fs mounted, then unmount it */
+        if (execute_cmd_status(check_mount_cmdbuf) == 0) {
+            snprintf(unmount_cmdbuf, PATH_MAX, "umount -f %s", get_basepaths()[i]);
+            execute_cmd(unmount_cmdbuf);
+        }
+
+        snprintf(check_mp_exist_cmdbuf, PATH_MAX, "test -f %s", get_basepaths()[i]);
+        /* If the mountpoint exists, then remove it */
+        if (execute_cmd_status(check_mp_exist_cmdbuf) == 0) {
+            snprintf(rm_mp_cmdbuf, PATH_MAX, "rm -r %s", get_basepaths()[i]);
+            execute_cmd(rm_mp_cmdbuf);         
+        }
+
+        snprintf(mk_mp_cmdbuf, PATH_MAX, "mkdir -p %s", get_basepaths()[i]);
+        execute_cmd(mk_mp_cmdbuf);
     }
 }

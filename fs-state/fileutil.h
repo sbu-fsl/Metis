@@ -224,6 +224,7 @@ void clear_excluded_files();
 int setup_generic(const char *fsname, const char *devname, const size_t size_kb);
 int setup_jffs2(const char *devname, const size_t size_kb);
 void execute_cmd(const char *cmd);
+int execute_cmd_status(const char *cmd);
 void populate_mountpoints();
 
 static inline void unmount_all_strict()

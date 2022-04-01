@@ -28,18 +28,22 @@ file	demo.pml	# file with the spin model to be verified
 # compilation options (each line defines one complete search mode)
 # each option currently must include -DBITSTATE and -DPUTPID
 
--DBITSTATE -DPUTPID -DP_RAND -DT_RAND libsmcfs1.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF        # same series with randomization
--DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DT_REVERSE libsmcfs2.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
--DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE libsmcfs3.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
--DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE -DT_REVERSE libsmcfs4.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
--DBITSTATE -DPUTPID -DP_RAND -DT_RAND libsmcfs5.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF        # same series with randomization
--DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DT_REVERSE libsmcfs6.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
--DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE libsmcfs7.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
--DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE -DT_REVERSE libsmcfs8.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
--DBITSTATE -DPUTPID -DP_RAND -DT_RAND libsmcfs9.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF        # same series with randomization
--DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DT_REVERSE libsmcfs10.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
--DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE libsmcfs11.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
--DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE -DT_REVERSE libsmcfs12.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF        # same series with randomization
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DT_REVERSE libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE -DT_REVERSE libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF        # same series with randomization
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DT_REVERSE libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE -DT_REVERSE libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF        # same series with randomization
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DT_REVERSE libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE -DT_REVERSE libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF        # same series with randomization
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DT_REVERSE libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
+-DBITSTATE -DPUTPID -DP_RAND -DT_RAND -DREVERSE -DT_REVERSE libsmcfs.a -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -g -I../include -I./nfs-validator/include -I./nfs-validator/fs-state -D PRINTF
 
 # runtime options (one line)
 

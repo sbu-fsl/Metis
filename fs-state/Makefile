@@ -23,7 +23,7 @@ cleanlib:
 	rm -rf *.o
 
 libsmcfs: init_globals.o set.o fileutil.o perf.o mount.o setup.o $(COMMON_OBJ)
-	ar rvs $@$(ARGS).a $^
+	ar rvs $@.a $^
 
 parameters: parameters.py parameter_util.py
 	python3 parameters.py

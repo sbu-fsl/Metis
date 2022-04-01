@@ -111,7 +111,7 @@ for EACH_TOK in "${ADDR[@]}"; do
     else
         DEVSIZE_KB[$(($TOK_CNT / 2))]="$EACH_TOK"
     fi
-    TOK_CNT=`expr $TOK_CNT + 1`
+    TOK_CNT=$(($TOK_CNT + 1))
 done
 
 # Get the number of file systems
@@ -129,10 +129,10 @@ for i in $(seq 0 $(($n_fs-1))); do
     dev_type=${FS_DEV_MAP[${fs}]}
     if [ "$dev_type" = "$RAM_NAME" ]
     then
-        ALL_RAMS=`expr $ALL_RAMS + 1`
+        ALL_RAMS=$(($ALL_RAMS + 1))
     elif [ "$dev_type" = "$MTDBLOCK_NAME" ]
     then 
-        ALL_MTDBLOCKS=`expr $ALL_MTDBLOCKS + 1`
+        ALL_MTDBLOCKS=$(($ALL_MTDBLOCKS + 1))
     fi
 done
 
@@ -145,12 +145,12 @@ for i in $(seq 0 $(($n_fs-1))); do
     if [ "$dev_type" = "$RAM_NAME" ]
     then
         RAM_ID=$(($SWARM_ID * $ALL_RAMS + $RAM_CNT))
-        RAM_CNT=`expr $RAM_CNT + 1`
+        RAM_CNT=$(($RAM_CNT + 1))
         DEVLIST[$i]="/dev/ram$RAM_ID"
     elif [ "$dev_type" = "$MTDBLOCK_NAME" ]
     then
         MTDBLOCK_ID=$(($SWARM_ID * $ALL_MTDBLOCKS + $MTDBLOCK_CNT))
-        MTDBLOCK_CNT=`expr $MTDBLOCK_CNT + 1`
+        MTDBLOCK_CNT=$(($MTDBLOCK_CNT + 1))
         DEVLIST[$i]="/dev/mtdblock$MTDBLOCK_ID"
     elif [ "$dev_type" = "" ]
     then
