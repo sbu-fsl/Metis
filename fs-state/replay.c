@@ -81,6 +81,7 @@ int do_write_file(vector_t *argvec)
 	int err = errno;
 	printf("write_file(%s, %ld, %lu) -> ret=%d, errno=%s\n",
 	       filepath, offset, writelen, ret, errnoname(err));
+	free(buffer);
 	return ret;
 }
 
