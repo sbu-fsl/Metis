@@ -5,13 +5,25 @@ override CFLAGS += -g -I../include -D PRINTF # -D T_RAND -D P_RAND
 override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz
 PAN = pan
 
-all: demo.pml parameters common-libs absfs-set
+all: demo.pml parameters common-libs init_globals.o absfs-set
 	spin -a demo.pml; \
-	gcc -o $(PAN) pan.c set.o fileutil.c perf.c mount.c setup.c common-libs.a $(CFLAGS) $(LIBS); \
+	gcc -g -o $(PAN) pan.c init_globals.o set.o fileutil.c perf.c mount.c setup.c common-libs.a $(CFLAGS) $(LIBS); \
 
 run: all
 	./pan | less -N; \
 	rm -rf /mnt/test-*/test* || true; \
+
+init_globals.o: init_globals.c
+	gcc -Wall -Werror -o init_globals.o -c $< $(CFLAGS) $(LIBS)
+
+install: cleanlib absfs-set libsmcfs
+	spin -a demo.pml;
+
+cleanlib:
+	rm -rf *.o
+
+libsmcfs: init_globals.o set.o fileutil.o perf.o mount.o setup.o $(COMMON_OBJ)
+	ar rvs $@.a $^
 
 parameters: parameters.py parameter_util.py
 	python3 parameters.py
@@ -25,7 +37,7 @@ common-libs: $(COMMON_OBJ)
 %.cpp.o: $(COMMON_DIR)/%.cpp
 	g++ -std=c++11 -Wall -Werror -o $@ -fPIC -c $< $(CFLAGS) $(LIBS)
 
-absfs-set: set.cpp
+absfs-set: set.cpp init_globals.o
 	g++ -std=c++11 -o set.o -c $< $(CFLAGS) $(LIBS)
 	
 abstractfs-test: $(COMMON_DIR)/abstract_fs.cpp common-libs
@@ -37,5 +49,5 @@ replayer: replay.c mount.c common-libs
 		-DNO_FS_STAT common-libs.a $(CFLAGS) $(LIBS)
 
 clean:
-	rm -rf test test.txt pan* *.log *.csv *.o *.a absfs *.trail \
+	rm -rf test test.txt pan* *.log *.csv *.o *.a absfs *.trail script* swarm_done* .pml_tmp demo.pml.swarm \
 	rm -rf /mnt/test-*/test*
