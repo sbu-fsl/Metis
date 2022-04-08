@@ -30,8 +30,6 @@ if __name__ == '__main__':
         # pan_name: pan1, pan2, pan3, etc.
         pan_name = fpath.split('/')[-1].split('-')[1]
         each_abs_path = 'time-absfs-%s.csv' % pan_name
-        if os.path.exists(each_abs_path):
-            os.remove(each_abs_path)
         out_fp = open(each_abs_path, 'a')
         fp = open(fpath, 'r')
         try:
