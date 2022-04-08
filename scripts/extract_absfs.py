@@ -4,6 +4,7 @@ import re
 import subprocess as sp
 
 from sys import argv
+import os
 
 absfs_pat = re.compile(r'\[\s*(\d+\.\d+)\] absfs = \{([0-9a-z]+)\}')
 
@@ -26,6 +27,12 @@ if __name__ == '__main__':
     flist = get_filelist(fnpattern)
 
     for fpath in flist:
+        # pan_name: pan1, pan2, pan3, etc.
+        pan_name = fpath.split('/')[-1].split('-')[1]
+        each_abs_path = 'time-absfs-%s.csv' % pan_name
+        if os.path.exists(each_abs_path):
+            os.remove(each_abs_path)
+        out_fp = open(each_abs_path, 'a')
         fp = open(fpath, 'r')
         try:
             for line in fp:
@@ -34,6 +41,8 @@ if __name__ == '__main__':
                     continue
                 timestamp = result.group(1)
                 absfs = result.group(2)
-                print('%s,%s' % (timestamp, absfs))
+                #print('%s,%s' % (timestamp, absfs))
+                out_fp.write('%s,%s\n' % (timestamp, absfs))
         finally:
             fp.close()
+            out_fp.close()
