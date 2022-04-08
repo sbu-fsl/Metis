@@ -356,7 +356,6 @@ proctype driver(int nproc)
 	filepool = (char **) malloc( filepool_size * sizeof(char*));
 	directorypool = (char **) malloc( directorypool_size * sizeof(char*));
 	size_t len = 0;
-	makelog("len is %d", len);
 	current[0] = calloc(1, len + 1);
 
         len = snprintf(NULL, 0, "/test.txt");
@@ -372,17 +371,6 @@ proctype driver(int nproc)
 
 	if( pool_depth > 0) 
 		dfs(directorycount, filecount, pool_depth, max_name_len, current, 1);
-	
-	makelog("Filepool contents: ");
-        for(int i = 0; i < filepool_idx; i++){
-                makelog("%s\n", filepool[i]);
-        }
-	
-	makelog("Directory pool contents: ");
-
-        for(int i = 0; i < dirpool_idx; i++){
-                makelog("%s\n", directorypool[i]);
-        }	
 	
         for (int i = 0; i < N_FS; ++i) {
             size_t len = snprintf(NULL, 0, "%s/testdir", basepaths[i]);
