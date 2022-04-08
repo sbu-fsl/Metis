@@ -153,6 +153,8 @@ proctype worker()
 
                 
                     makecall(rets[i], errs[i], "%s,  %s", rename, rename_file_src, rename_file_dst);
+                    free(rename_file_src);
+                    free(rename_file_dst);
                 }
             }
             else{
@@ -172,6 +174,8 @@ proctype worker()
                     snprintf(rename_dir_dst, rename_dirname_len + 1, "%s%s", basepaths[i], directorypool[dst_idx]);
 
                     makecall(rets[i], errs[i], "%s,  %s", rename, rename_dir_src, rename_dir_dst);
+                    free(rename_dir_src);
+                    free(rename_dir_dst);
                 }
 
             }
@@ -209,6 +213,8 @@ proctype worker()
                 link_file_dst = calloc(1, link_filename_len+1);
                 snprintf(link_file_dst, link_filename_len + 1, "%s%s", basepaths[i], filepool[dst_idx]);
                 makecall(rets[i], errs[i], "%s,  %s", link, link_file_src, link_file_dst);
+                free(link_file_src);
+                free(link_file_dst);
             }
             expect(compare_equality_fexists(fslist, N_FS, testdirs));
             expect(compare_equality_values(fslist, N_FS, rets));
@@ -242,6 +248,8 @@ proctype worker()
                 link_file_dst = calloc(1, link_filename_len+1);
                 snprintf(link_file_dst, link_filename_len + 1, "%s%s", basepaths[i], filepool[dst_idx]);
                 makecall(rets[i], errs[i], "%s,  %s", symlink, link_file_src, link_file_dst);
+                free(link_file_src);
+                free(link_file_dst);
             }
             expect(compare_equality_fexists(fslist, N_FS, testdirs));
             expect(compare_equality_values(fslist, N_FS, rets));
@@ -321,16 +329,35 @@ proctype driver(int nproc)
         /* Initialize test dirs and files names */
 
 	char *current[100];
-	int directorypool_size = getpowsum(directorycount, pool_depth);
-	int filepool_size = filecount * (directorypool_size / directorycount);
+	int directorypool_size = 0;
+	int filepool_size = 0;
+	if( directorycount > 0){
+		/*
+		Directory pool size  = no. of directories at depth 0 + no. of directories at depth 1 + .....
+		= directorycount + (no. of directories at depth 0)*directorycount + (no. of directories at depth 1)*directory count + ...
+		= directorycount + directorycount*directorycount + directorycount*directorycount*directorycount + .....
+
+		Similarly, file pool size = no. of files at depth 0 + no. of files at depth 1 + ....
+		= filecount + (no. of directories at depth 0)*filecount + (no. of directories at depth 1)*filecount + ...
+		= filecount * ( 1 + (no. of directories at depth 0) + (no. of directories at depth 1) + ....) 
+		= filecount * (directorypool_size / directorycount);
+		*/
+		directorypool_size = getpowsum(directorycount, pool_depth);
+		filepool_size = filecount * (directorypool_size / directorycount);
+	}
+	else
+		filepool_size = filecount;
+	
 	//adding 1 for testdir and test.txt
 	filepool_size++;
 	directorypool_size++;
-
+	
+	//TODO: Free memory for file pool and directory pool.
 	filepool = (char **) malloc( filepool_size * sizeof(char*));
 	directorypool = (char **) malloc( directorypool_size * sizeof(char*));
-	size_t len = snprintf(NULL, 0, "%s", "");	
-        current[0] = calloc(1, len + 1);
+	size_t len = 0;
+	makelog("len is %d", len);
+	current[0] = calloc(1, len + 1);
 
         len = snprintf(NULL, 0, "/test.txt");
         filepool[filepool_idx] = calloc(1, 1+len);
@@ -343,8 +370,8 @@ proctype driver(int nproc)
         snprintf(directorypool[dirpool_idx], 1+len, "/testdir");
         dirpool_idx++;
 
- 
-	dfs(directorycount, filecount, pool_depth, max_name_len, current, 1);
+	if( pool_depth > 0) 
+		dfs(directorycount, filecount, pool_depth, max_name_len, current, 1);
 	
 	makelog("Filepool contents: ");
         for(int i = 0; i < filepool_idx; i++){
@@ -371,21 +398,6 @@ proctype driver(int nproc)
     for (i : 1 .. nproc) {
         run worker();
     }
-
-/*
-    c_code {
-        for(int  i = 0; i < dirpool_idx; i++){
-    	    free(directorypool[i]);
-        }
-	free(directorypool);
-	
-	for( int i = 0; i < filepool_idx; i++){
-    	    free(filepool[i]);
-        }
-	free(filepool);
-
-    };
-*/
 
 }
 
