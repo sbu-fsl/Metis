@@ -56,7 +56,7 @@ int compare_file_content(const char *path1, const char *path2)
         goto end;
     }
     /* Compare the file content */
-    int r1 = -1, r2 = -1;
+    int r1 = 0, r2 = 0;
     lseek(fd1, 0, SEEK_SET);
     lseek(fd2, 0, SEEK_SET);
     while ((r1 = read(fd1, buf1, bs)) > 0 && (r2 = read(fd2, buf2, bs)) > 0) {
@@ -618,15 +618,11 @@ void __attribute__((constructor)) init()
 {
     int cur_n_fs = get_n_fs();
     fs_frozen = calloc(cur_n_fs, sizeof(bool));
-    if (!fs_frozen) {
-        logerr("fs_frozen memory allocation failed\n");
-        exit(EXIT_FAILURE);
-    }
+    if (!fs_frozen)
+        mem_alloc_err();
     fsinfos = calloc(cur_n_fs, sizeof(struct fs_stat));
-    if (!fsinfos) {
-        logerr("fsinfos memory allocation failed\n");
-        exit(EXIT_FAILURE);
-    }
+    if (!fsinfos)
+        mem_alloc_err();
     char output_log_name[NAME_MAX] = {0};
     char error_log_name[NAME_MAX] = {0};
     char seq_log_name[NAME_MAX] = {0};
@@ -677,8 +673,10 @@ void __attribute__((constructor)) init()
  */
 void __attribute__((destructor)) cleanup()
 {
-    free(fs_frozen);
-    free(fsinfos);
+    if (fs_frozen)
+        free(fs_frozen);
+    if (fsinfos)
+        free(fsinfos);
     fflush(stdout);
     fflush(stderr);
     unset_myheap();

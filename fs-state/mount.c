@@ -220,18 +220,3 @@ int unfreeze_all()
         }
     }
 }
-
-void __attribute__((constructor)) mount_init()
-{
-    int cur_n_fs = get_n_fs();
-    fs_frozen = calloc(1, sizeof(bool) * cur_n_fs);
-    if (!fs_frozen) {
-        fprintf(stderr, "cannot allocate memory in mount_init for fs_frozen\n");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void __attribute__((destructor)) mount_cleanup()
-{
-    free(fs_frozen);
-}

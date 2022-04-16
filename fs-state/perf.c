@@ -101,7 +101,6 @@ static int get_fs_stat(const char *mp, struct fs_stat *st)
     return ret;
 }
 
-// static struct fs_stat fsinfos[N_FS];
 static pthread_mutex_t fsinfo_lock;
 
 void record_fs_stat()
