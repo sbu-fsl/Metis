@@ -11,7 +11,7 @@ max_hours = int(args.maxHours)
 num_pan = int(args.numPan)
 
 # print header
-print('time_secs,total_all_states', end='')
+print('time_secs,total_all_states,', end='')
 print('total_unique_states,partial_overlap,partial_waste_ratio,', end='')
 print('total_overlap,total_waste_ratio,', end='')
 for i in range(1, num_pan + 1):
