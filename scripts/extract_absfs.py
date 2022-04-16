@@ -39,7 +39,6 @@ if __name__ == '__main__':
                     continue
                 timestamp = result.group(1)
                 absfs = result.group(2)
-                #print('%s,%s' % (timestamp, absfs))
                 out_fp.write('%s,%s\n' % (timestamp, absfs))
         finally:
             fp.close()
