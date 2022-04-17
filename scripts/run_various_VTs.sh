@@ -33,5 +33,5 @@ for VT_NUM in ${VT_NUMS[@]}; do
     sed -i "16 s/^k\t1\t[0-9]\+.*/k\t1\t${VT_NUM}/" ${SWARM_CONF}
     sed -i "20 s/^cpus\t[0-9]\+.*/cpus\t${VT_NUM}/" ${SWARM_CONF}
     timeout ${HOUR_LIMIT}h ./setup_swarm.sh -f ext4:256:ext2:256 -n $VT_NUM
-    mv script* *.log *.txt *.csv $LOGS_DIR
+    mv script* *.log *.log.gz *.txt *.csv $LOGS_DIR
 done
