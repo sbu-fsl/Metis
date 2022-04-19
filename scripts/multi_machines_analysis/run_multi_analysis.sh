@@ -15,5 +15,5 @@ for VT_NUM in ${VT_NUMS[@]}; do
     # First arg: number of VTs, Second arg: 
     ./multi_extract_absfs.py $VT_NUM $AVAIL_PART/$HOST_NAME-$VT_NUM-saved-202204*/output-pan\*.log
     # Produce results csv
-    multi_analyze_all.py -m $MAX_HOURS -n $VT_NUM > results-$HOST_NAME-VT${VT_NUM}.csv
+    ./multi_analyze_all.py -m $MAX_HOURS -n $VT_NUM > results-$HOST_NAME-VT${VT_NUM}.csv
 done
