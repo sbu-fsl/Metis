@@ -186,6 +186,7 @@ static void do_restore(const char *devpath, char *buffer)
 	assert(ptr != MAP_FAILED);
 	
 	memcpy(ptr, buffer, size);
+        free(buffer);
 
 	munmap(ptr, size);
 	close(devfd);
