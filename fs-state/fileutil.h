@@ -154,13 +154,30 @@ static inline size_t pick_value(size_t min, size_t max, size_t step)
     return min + rand() / (RAND_MAX / (max - min + 1) + 1) / step * step;
 }
 
+enum fill_type {PATTERN, ONES, UNIFORM, RANDOM};
+
 /* Generate data into a given buffer.
  * @value: 0-255 for uniform characters, -1 for random filling */
-static inline void generate_data(char *buffer, size_t len, int value)
+static inline void generate_data(char *buffer, size_t len, size_t offset, enum fill_type type, int value)
 {
-    if (value > 0) {
+    switch (type) {
+    case ONES:
+        memset(buffer, 1, len);
+        break;
+    case UNIFORM:
         memset(buffer, value, len);
-    } else {
+        break;
+    case PATTERN:
+    {
+        int new_offset = 3 - offset % sizeof(int);
+        int *ip = (int *) (buffer + new_offset);
+        for (int i = 0; i <= len / sizeof(int); i++) {
+            ip[i] = offset / sizeof(int) + i;
+        }
+        break;
+    }
+    case RANDOM:
+    {
         size_t i = 0, remaining = len;
         int n = rand();
         while (remaining > 0) {
@@ -169,6 +186,8 @@ static inline void generate_data(char *buffer, size_t len, int value)
             remaining -= min(sizeof(int), remaining);
             i += min(sizeof(int), remaining);
         }
+        break;
+    }
     }
 }
 
