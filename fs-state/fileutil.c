@@ -480,7 +480,7 @@ static void setup_filesystems()
         else {
             ret = setup_generic(get_fslist()[i], get_devlist()[i], get_devsize_kb()[i]);
         }
-        if (is_xfs(fslist[i])) {
+        if (is_xfs(get_fslist()[i])) {
             is_xfs_present = true;
         }
         if (ret != 0) {
