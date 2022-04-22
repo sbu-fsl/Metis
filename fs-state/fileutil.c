@@ -1,6 +1,6 @@
 #include "fileutil.h"
 #include "cr.h"
-#include "custom_heap.h"
+//#include "custom_heap.h"
 #include <sys/wait.h>
 #include <sys/vfs.h>
 
@@ -119,12 +119,12 @@ bool compare_equality_values(char **fses, int n_fs, int *nums)
         if (nums[i] != base) {
             if (is_xfs_present) {
                 if (is_xfs(fses[i]) && nums[i] != 0) {
-                    if (is_xfs_space_exception(basepaths[i])) {
+                    if (is_xfs_space_exception(get_basepaths()[i])) {
                         continue;
                     }
                 // Also check for exception if the first fs is xfs
                 } else if (is_xfs(fses[0]) && nums[0] != 0) {
-                    if (is_xfs_space_exception(basepaths[0])) {
+                    if (is_xfs_space_exception(get_basepaths()[0])) {
                         continue;
                     }
                 }
@@ -252,13 +252,13 @@ bool compare_equality_fexists(char **fses, int n_fs, char **fpaths)
         if (fexists[i] != base) {
             if (is_xfs_present) { // Do the checks only if xfs is in the experiment
                 if (is_xfs(fses[i]) && !fexists[i]) {
-                    if (is_xfs_space_exception(basepaths[i])) {
+                    if (is_xfs_space_exception(get_basepaths()[i])) {
                         should_cleanup = true;
                         continue;
                     }
                 // Also check for exception if the first fs is xfs
                 } else if (is_xfs(fses[0]) && !fexists[0]) {
-                    if (is_xfs_space_exception(basepaths[0])) {
+                    if (is_xfs_space_exception(get_basepaths()[0])) {
                         should_cleanup = true;
                         continue;
                     }
@@ -698,7 +698,7 @@ void __attribute__((constructor)) init()
     char seq_log_name[NAME_MAX] = {0};
     char progname[NAME_MAX] = {0};
     ssize_t progname_len;
-    try_init_myheap();
+    //try_init_myheap();
     init_basepaths();
     setup_filesystems();
 
@@ -749,7 +749,7 @@ void __attribute__((destructor)) cleanup()
         free(fsinfos);
     fflush(stdout);
     fflush(stderr);
-    unset_myheap();
+    //unset_myheap();
     destroy_log_daemon();
     // unfreeze_all();
 }
