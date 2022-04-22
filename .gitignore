@@ -26,3 +26,5 @@ ckpt
 restore
 crmfs
 *.so
+.pml_tmp
+

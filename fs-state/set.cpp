@@ -1,18 +1,20 @@
 #include "set.h"
-#include "whichconfig.h"
+#include "config.h"
+#include "init_globals.h"
 #include <unordered_set>
 
+static size_t *absfs_len;
+
 struct AbsfsData {
-  static const size_t absfs_len = N_FS * sizeof(absfs_state_t);
-  char data[sizeof(absfs_state_t) * N_FS];
+  char* data = new char[sizeof(absfs_state_t) * get_n_fs()];
 
   AbsfsData() {
-    memset(data, 0, absfs_len);
+    memset(data, 0, *absfs_len);
   }
 
   AbsfsData(absfs_state_t* values) {
     char *ptr = data;
-    for (size_t i = 0; i < N_FS; ++i) {
+    for (size_t i = 0; i < get_n_fs(); ++i) {
       memcpy(ptr, values[i], sizeof(absfs_state_t));
       ptr += sizeof(absfs_state_t);
     }
@@ -23,7 +25,7 @@ struct AbsfsData {
     const size_t fnv_prime = 0x00000100000001B3;
     const size_t fnv_offset = 0xcbf29ce484222325;
     size_t hashval = fnv_offset;
-    for (size_t i = 0; i < absfs_len; ++i) {
+    for (size_t i = 0; i < *absfs_len; ++i) {
       hashval = hashval ^ data[i];
       hashval = hashval * fnv_prime;
     }
@@ -32,7 +34,7 @@ struct AbsfsData {
 };
 
 static bool operator==(const AbsfsData &a, const AbsfsData &b) {
-  return memcmp(a.data, b.data, AbsfsData::absfs_len) == 0;
+  return memcmp(a.data, b.data, *absfs_len) == 0;
 }
 
 struct AbsfsStateHasher {
@@ -61,4 +63,20 @@ int absfs_set_add(absfs_set_t set, absfs_state_t* states) {
 
 size_t absfs_set_size(absfs_set_t set) {
   return set->s.size();
+}
+
+extern "C" void __attribute__((constructor)) set_init()
+{
+  absfs_len = (size_t*)calloc(1, sizeof(size_t));
+  if (!absfs_len) {
+    fprintf(stderr, "memory allocation failed: %s:%d:%s\n", 
+            __FILE__, __LINE__, __func__);
+    exit(EXIT_FAILURE);
+  }
+  *absfs_len = get_n_fs() * sizeof(absfs_state_t);
+}
+
+extern "C" void __attribute__((destructor)) set_cleanup()
+{
+  free(absfs_len);
 }

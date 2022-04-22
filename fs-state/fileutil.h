@@ -24,9 +24,10 @@
 #include "errnoname.h"
 #include "vector.h"
 #include "abstract_fs.h"
-#include "whichconfig.h"
+#include "config.h"
 #include "set.h"
 #include "log.h"
+#include "init_globals.h"
 
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
@@ -37,6 +38,9 @@
 #define XFS_PREFIX      "xfs"
 #define XFS_PREFIX_LEN  (sizeof(XFS_PREFIX) - 1)
 
+extern globals_t *globals_t_p;
+extern bool *fs_frozen;
+extern struct fs_stat *fsinfos;
 extern int cur_pid;
 extern char func[FUNC_NAME_LEN + 1];
 extern struct timespec begin_time;
@@ -49,6 +53,15 @@ extern absfs_set_t absfs_set;
 extern int pan_argc;
 extern char **pan_argv;
 extern int absfs_hash_method;
+
+struct fs_stat {
+    size_t capacity;
+    size_t bytes_free;
+    size_t bytes_avail;
+    size_t total_inodes;
+    size_t free_inodes;
+    size_t block_size;
+};
 
 struct imghash {
     unsigned char md5[16];
@@ -196,10 +209,10 @@ static inline bool is_xfs(const char *fsname)
     return strncmp(fsname, XFS_PREFIX, XFS_PREFIX_LEN) == 0;
 }
 
-bool compare_equality_values(const char **fses, int n_fs, int *nums);
-bool compare_equality_fexists(const char **fses, int n_fs, char **fpaths);
-bool compare_equality_fcontent(const char **fses, int n_fs, char **fpaths);
-bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs);
+bool compare_equality_values(char **fses, int n_fs, int *nums);
+bool compare_equality_fexists(char **fses, int n_fs, char **fpaths);
+bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths);
+bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs);
 int compare_file_content(const char *path1, const char *path2);
 
 void show_open_flags(uint64_t flags);
@@ -219,6 +232,7 @@ void clear_excluded_files();
 int setup_generic(const char *fsname, const char *devname, const size_t size_kb);
 int setup_jffs2(const char *devname, const size_t size_kb);
 void execute_cmd(const char *cmd);
+int execute_cmd_status(const char *cmd);
 void populate_mountpoints();
 
 static inline void unmount_all_strict()

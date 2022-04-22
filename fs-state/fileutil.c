@@ -11,6 +11,8 @@
 */
 #define XFS_ENOSPC_OFFSET 196608
 
+bool *fs_frozen;
+struct fs_stat *fsinfos;
 int cur_pid;
 char func[FUNC_NAME_LEN + 1];
 struct timespec begin_time;
@@ -63,7 +65,7 @@ int compare_file_content(const char *path1, const char *path2)
         goto end;
     }
     /* Compare the file content */
-    int r1, r2;
+    int r1 = 0, r2 = 0;
     lseek(fd1, 0, SEEK_SET);
     lseek(fd2, 0, SEEK_SET);
     while ((r1 = read(fd1, buf1, bs)) > 0 && (r2 = read(fd2, buf2, bs)) > 0) {
@@ -109,7 +111,7 @@ void cleanup_created_files(const char *fpath)
     }
 }
 
-bool compare_equality_values(const char **fses, int n_fs, int *nums)
+bool compare_equality_values(char **fses, int n_fs, int *nums)
 {
     bool res = true;
     int base = nums[0];
@@ -175,7 +177,7 @@ static void tell_absfs_hash_method()
     fprintf(stderr, "Selected abstraction hash method is %s.\n", hashname);
 }
 
-bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
+bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs)
 {
     bool res = true;
     /* The macros are defined in include/abstract_fs.h */
@@ -184,7 +186,7 @@ bool compare_equality_absfs(const char **fses, int n_fs, absfs_state_t *absfs)
 retry:
     /* Calculate the abstract file system states */
     for (int i = 0; i < n_fs; ++i) {
-        compute_abstract_state(basepaths[i], absfs[i]);
+        compute_abstract_state(get_basepaths()[i], absfs[i]);
     }
     /* New: record abstract states in the main log */
     static size_t prev_seqid = 0;
@@ -214,7 +216,7 @@ retry:
         for (int i = 0; i < n_fs; ++i) {
             logwarn("[seqid=%zu, fs=%s]: Directory structure:",
                     count, fses[i]);
-            dump_absfs(basepaths[i]);
+            dump_absfs(get_basepaths()[i]);
             submit_error("hash=", count, fses[i]);
             print_abstract_fs_state(submit_error, absfs[i]);
             submit_error("\n");
@@ -235,7 +237,7 @@ retry:
     return res;
 }
 
-bool compare_equality_fexists(const char **fses, int n_fs, char **fpaths)
+bool compare_equality_fexists(char **fses, int n_fs, char **fpaths)
 {
     bool res = true;
     bool fexists[n_fs];
@@ -281,7 +283,7 @@ bool compare_equality_fexists(const char **fses, int n_fs, char **fpaths)
     return res;
 }
 
-bool compare_equality_fcontent(const char **fses, int n_fs, char **fpaths)
+bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths)
 {
     bool res = true;
 
@@ -427,38 +429,38 @@ static void dump_fs_images(const char *folder)
 {
     char fullpath[PATH_MAX] = {0};
     assert(ensure_dump_dir(folder) == 0);
-    for (int i = 0; i < N_FS; ++i) {
+    for (int i = 0; i < get_n_fs(); ++i) {
         /* Dump the mmap'ed object */
         snprintf(fullpath, PATH_MAX, "%s/%s-mmap-%zu.img", folder,
-                 fslist[i], count);
-        dump_mmaped(fullpath, fsfds[i], fsimgs[i]);
+                 get_fslist()[i], count);
+        dump_mmaped(fullpath, get_fsfds()[i], get_fsimgs()[i]);
         /* Dump the device by direct copying */
-        dump_device(devlist[i], folder, fslist[i]);
+        dump_device(get_devlist()[i], folder, get_fslist()[i]);
     }
 }
 
 static void mmap_devices()
 {
-    for (int i = 0; i < N_FS; ++i) {
-        if (!devlist[i])
+    for (int i = 0; i < get_n_fs(); ++i) {
+        if (!get_devlist()[i])
             continue;
-        int fsfd = open(devlist[i], O_RDWR);
+        int fsfd = open(get_devlist()[i], O_RDWR);
         assert(fsfd >= 0);
         void *fsimg = mmap(NULL, fsize(fsfd), PROT_READ | PROT_WRITE,
                 MAP_SHARED, fsfd, 0);
         assert(fsimg != MAP_FAILED);
-        fsfds[i] = fsfd;
-        fsimgs[i] = fsimg;
+        get_fsfds()[i] = fsfd;
+        get_fsimgs()[i] = fsimg;
     }
 }
 
 static void unmap_devices()
 {
-    for (int i = 0; i < N_FS; ++i) {
-        if (!devlist[i])
+    for (int i = 0; i < get_n_fs(); ++i) {
+        if (!get_devlist()[i])
             continue;
-        munmap(fsimgs[i], fsize(fsfds[i]));
-        close(fsfds[i]);
+        munmap(get_fsimgs()[i], fsize(get_fsfds()[i]));
+        close(get_fsfds()[i]);
     }
 }
 
@@ -468,22 +470,22 @@ static void setup_filesystems()
     populate_mountpoints();
 
     is_xfs_present = false;
-    for (int i = 0; i < N_FS; ++i) {
-        if (strcmp(fslist[i], "jffs2") == 0) {
-            ret = setup_jffs2(devlist[i], devsize_kb[i]);
+    for (int i = 0; i < get_n_fs(); ++i) {
+        if (strcmp(get_fslist()[i], "jffs2") == 0) {
+            ret = setup_jffs2(get_devlist()[i], get_devsize_kb()[i]);
         } 
-        else if (is_verifs(fslist[i])) {
+        else if (is_verifs(get_fslist()[i])) {
             continue;
         }
         else {
-            ret = setup_generic(fslist[i], devlist[i], devsize_kb[i]);
+            ret = setup_generic(get_fslist()[i], get_devlist()[i], get_devsize_kb()[i]);
         }
         if (is_xfs(fslist[i])) {
             is_xfs_present = true;
         }
         if (ret != 0) {
             fprintf(stderr, "Cannot setup file system %s (ret = %d)\n",
-                    fslist[i], ret);
+                    get_fslist()[i], ret);
             exit(1);
         }
     }
@@ -492,13 +494,13 @@ static void setup_filesystems()
 static void init_basepaths()
 {
     /* Initialize base paths */
-    printf("%ld file systems to test.\n", N_FS);
-    for (int i = 0; i < N_FS; ++i) {
+    printf("%d file systems to test.\n", get_n_fs());
+    for (int i = 0; i < get_n_fs(); ++i) {
         size_t len = snprintf(NULL, 0, "/mnt/test-%s%s",
-                              fslist[i], fssuffix[i]);
-        basepaths[i] = calloc(1, len + 1);
-        snprintf(basepaths[i], len + 1, "/mnt/test-%s%s",
-                 fslist[i], fssuffix[i]);
+                              get_fslist()[i], get_fssuffix()[i]);
+        get_basepaths()[i] = calloc(1, len + 1);
+        snprintf(get_basepaths()[i], len + 1, "/mnt/test-%s%s",
+                 get_fslist()[i], get_fssuffix()[i]);
     }
 }
 
@@ -571,15 +573,15 @@ static long update_before_hook(unsigned char *ptr)
 {
     submit_seq("checkpoint\n");
     makelog("[seqid = %d] checkpoint (%zu)\n", count, state_depth);
-    absfs_set_add(absfs_set, absfs);
+    absfs_set_add(absfs_set, get_absfs());
     state_depth++;
-    for (int i = 0; i < N_FS; ++i) {
-        if (!is_verifs(fslist[i]))
+    for (int i = 0; i < get_n_fs(); ++i) {
+        if (!is_verifs(get_fslist()[i]))
             continue;
-        int res = checkpoint_verifs(state_depth, basepaths[i]); 
+        int res = checkpoint_verifs(state_depth, get_basepaths()[i]); 
         if (res != 0) {
             logerr("Failed to checkpoint a verifiable file system %s.",
-                   fslist[i]);
+                   get_fslist()[i]);
         }
     }
     return 0;
@@ -594,13 +596,13 @@ static long revert_before_hook(unsigned char *ptr)
 {
     submit_seq("restore\n");
     makelog("[seqid = %d] restore (%zu)\n", count, state_depth);
-    for (int i = 0; i < N_FS; ++i) {
-        if (!is_verifs(fslist[i]))
+    for (int i = 0; i < get_n_fs(); ++i) {
+        if (!is_verifs(get_fslist()[i]))
             continue;
-        int res = restore_verifs(state_depth, basepaths[i]);
+        int res = restore_verifs(state_depth, get_basepaths()[i]);
         if (res != 0) {
             logerr("Failed to restore a verifiable file system %s.",
-                    fslist[i]);
+                    get_fslist()[i]);
         }
     }
     state_depth--;
@@ -623,18 +625,18 @@ extern long (*c_revert_after)(unsigned char *);
 
 static void equalize_free_spaces(void)
 {
-    size_t free_spaces[N_FS] = {0};
+    size_t free_spaces[MAX_FS] = {0};
     size_t min_space = ULONG_MAX;
     const char *dummy_file = ".mcfs_dummy";
     mountall();
     /* Find free space of each file system being checked */
-    for (int i = 0; i < N_FS; ++i) {
-        if (is_verifs(fslist[i]))
+    for (int i = 0; i < get_n_fs(); ++i) {
+        if (is_verifs(get_fslist()[i]))
             continue;
         struct statfs fsinfo;
-        int ret = statfs(basepaths[i], &fsinfo);
+        int ret = statfs(get_basepaths()[i], &fsinfo);
         if (ret != 0) {
-            logerr("cannot statfs %s", basepaths[i]);
+            logerr("cannot statfs %s", get_basepaths()[i]);
             exit(1);
         }
         size_t free_spc = fsinfo.f_bfree * fsinfo.f_bsize;
@@ -644,12 +646,12 @@ static void equalize_free_spaces(void)
     }
     /* Fill data to file systems who have greater than min_space of free space,
      * so that all file systems will have equal free capacities. */
-    for (int i = 0; i < N_FS; ++i) {
-        if (is_verifs(fslist[i]))
+    for (int i = 0; i < get_n_fs(); ++i) {
+        if (is_verifs(get_fslist()[i]))
             continue;
         size_t fillsz = free_spaces[i] - min_space;
         char fullpath[PATH_MAX] = {0};
-        snprintf(fullpath, PATH_MAX, "%s/%s", basepaths[i], dummy_file);
+        snprintf(fullpath, PATH_MAX, "%s/%s", get_basepaths()[i], dummy_file);
         /* Create/open the dummy file */
         int fd = open(fullpath, O_CREAT | O_TRUNC | O_RDWR, 0666);
         if (fd < 0) {
@@ -662,7 +664,7 @@ static void equalize_free_spaces(void)
             size_t writesz = min(fillsz, PATH_MAX);
             ssize_t ret = write(fd, fullpath, writesz);
             if (ret < 0) {
-                logerr("cannot write data in %s", basepaths[i]);
+                logerr("cannot write data in %s", get_basepaths()[i]);
                 exit(1);
             }
             fillsz -= ret;
@@ -677,13 +679,20 @@ static void main_hook(int argc, char **argv)
 {
     tell_absfs_hash_method();
     /* Fill initial abstract states */
-    for (int i = 0; i < N_FS; ++i) {
-        compute_abstract_state(basepaths[i], absfs[i]);
+    for (int i = 0; i < get_n_fs(); ++i) {
+        compute_abstract_state(get_basepaths()[i], get_absfs()[i]);
     }
 }
 
 void __attribute__((constructor)) init()
 {
+    int cur_n_fs = get_n_fs();
+    fs_frozen = calloc(cur_n_fs, sizeof(bool));
+    if (!fs_frozen)
+        mem_alloc_err();
+    fsinfos = calloc(cur_n_fs, sizeof(struct fs_stat));
+    if (!fsinfos)
+        mem_alloc_err();
     char output_log_name[NAME_MAX] = {0};
     char error_log_name[NAME_MAX] = {0};
     char seq_log_name[NAME_MAX] = {0};
@@ -734,6 +743,10 @@ void __attribute__((constructor)) init()
  */
 void __attribute__((destructor)) cleanup()
 {
+    if (fs_frozen)
+        free(fs_frozen);
+    if (fsinfos)
+        free(fsinfos);
     fflush(stdout);
     fflush(stderr);
     unset_myheap();
