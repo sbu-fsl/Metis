@@ -170,6 +170,9 @@ static inline void generate_data(char *buffer, size_t len, size_t offset, enum f
     case PATTERN:
     {
         int new_offset = 3 - offset % sizeof(int);
+        for (int i = 0; i < new_offset; i++) {
+            buffer[i] = 0;
+        }
         int *ip = (int *) (buffer + new_offset);
         for (int i = 0; i <= len / sizeof(int); i++) {
             ip[i] = offset / sizeof(int) + i;
