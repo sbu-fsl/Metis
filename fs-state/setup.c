@@ -1,7 +1,7 @@
 #include "fileutil.h"
 #include <sys/wait.h>
 
-void execute_cmd(const char *cmd)
+static void execute_cmd(const char *cmd)
 {
     int retval = system(cmd);
     int status, signal = 0;
@@ -18,14 +18,14 @@ void execute_cmd(const char *cmd)
     }
 }
 
-int execute_cmd_status(const char *cmd)
+static int execute_cmd_status(const char *cmd)
 {
     int retval = system(cmd);
     int status = WEXITSTATUS(retval);
     return status;
 }
 
-int check_device(const char *devname, const size_t exp_size_kb)
+static int check_device(const char *devname, const size_t exp_size_kb)
 {
     int fd = open(devname, O_RDONLY);
     struct stat devinfo;
@@ -57,7 +57,7 @@ int check_device(const char *devname, const size_t exp_size_kb)
     return 0; 
 }
 
-int setup_generic(const char *fsname, const char *devname, const size_t size_kb)
+static int setup_generic(const char *fsname, const char *devname, const size_t size_kb)
 {
     int ret;
     char cmdbuf[PATH_MAX];
@@ -79,7 +79,7 @@ int setup_generic(const char *fsname, const char *devname, const size_t size_kb)
     return 0;
 }
 
-int setup_jffs2(const char *devname, const size_t size_kb)
+static int setup_jffs2(const char *devname, const size_t size_kb)
 {
     char cmdbuf[PATH_MAX];
     int ret, randnum;
@@ -117,7 +117,7 @@ int setup_jffs2(const char *devname, const size_t size_kb)
     return 0;
 }
 
-void populate_mountpoints()
+static void populate_mountpoints()
 {
     char check_mount_cmdbuf[PATH_MAX];
     char unmount_cmdbuf[PATH_MAX];
@@ -141,5 +141,29 @@ void populate_mountpoints()
 
         snprintf(mk_mp_cmdbuf, PATH_MAX, "mkdir -p %s", get_basepaths()[i]);
         execute_cmd(mk_mp_cmdbuf);
+    }
+}
+
+
+void setup_filesystems()
+{
+    int ret;
+    populate_mountpoints();
+    for (int i = 0; i < get_n_fs(); ++i) {
+        if (strcmp(get_fslist()[i], "jffs2") == 0) {
+            ret = setup_jffs2(get_devlist()[i], get_devsize_kb()[i]);
+        } 
+        // TODO: we need to consider VeriFS1 and VeriFS2 separately here
+        else if (is_verifs(get_fslist()[i])) {
+            continue;
+        }
+        else {
+            ret = setup_generic(get_fslist()[i], get_devlist()[i], get_devsize_kb()[i]);
+        }
+        if (ret != 0) {
+            fprintf(stderr, "Cannot setup file system %s (ret = %d)\n",
+                    get_fslist()[i], ret);
+            exit(1);
+        }
     }
 }

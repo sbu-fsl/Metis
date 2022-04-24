@@ -2,6 +2,8 @@
 
 globals_t *globals_t_p;
 
+bool *fs_frozen;
+
 static char *mcfs_globals_env;
 static const char *mcfs_globals_env_key = "MCFS_FSLIST";
 static const char *globals_delim = ":";
@@ -11,7 +13,7 @@ static const char *mtdblock_name = "mtdblock";
 static char *fslist_to_copy[MAX_FS];
 static size_t devsize_kb_to_copy[MAX_FS];
 static char *global_args = NULL;
-static int opt_ret;
+static int opt_ret = -1;
 
 dev_nums_t dev_nums = {.all_rams = 0, .all_mtdblocks = 0};
 
@@ -416,6 +418,7 @@ void __attribute__((constructor)) globals_init(int argc, char *argv[])
     /* Read command-line option and decide CLI or ENV */
     opt_ret = cli_or_env_args(argc, argv);
     if (opt_ret < 0) {
+        fprintf(stderr, "Cannot decide cli or env for globals.\n");
         exit(EXIT_FAILURE);
     }
     /* Init a global structure pointer */
@@ -437,6 +440,10 @@ void __attribute__((constructor)) globals_init(int argc, char *argv[])
     init_all_fickle_globals();
     /* Initalize other global data */
     init_all_steady_globals();
+    /* Initalize fs_frozen status flags*/
+    fs_frozen = calloc(get_n_fs(), sizeof(bool));
+    if (!fs_frozen)
+        mem_alloc_err();
 }
 
 /*
@@ -445,4 +452,6 @@ void __attribute__((constructor)) globals_init(int argc, char *argv[])
 void __attribute__((destructor)) globals_cleanup(void)
 {
     free_all_globals();
+    if (fs_frozen)
+        free(fs_frozen);
 }

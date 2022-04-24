@@ -4,7 +4,6 @@
 #include <sys/wait.h>
 #include <sys/vfs.h>
 
-bool *fs_frozen;
 struct fs_stat *fsinfos;
 int cur_pid;
 char func[FUNC_NAME_LEN + 1];
@@ -399,28 +398,6 @@ static void unmap_devices()
     }
 }
 
-static void setup_filesystems()
-{
-    int ret;
-    populate_mountpoints();
-    for (int i = 0; i < get_n_fs(); ++i) {
-        if (strcmp(get_fslist()[i], "jffs2") == 0) {
-            ret = setup_jffs2(get_devlist()[i], get_devsize_kb()[i]);
-        } 
-        else if (is_verifs(get_fslist()[i])) {
-            continue;
-        }
-        else {
-            ret = setup_generic(get_fslist()[i], get_devlist()[i], get_devsize_kb()[i]);
-        }
-        if (ret != 0) {
-            fprintf(stderr, "Cannot setup file system %s (ret = %d)\n",
-                    get_fslist()[i], ret);
-            exit(1);
-        }
-    }
-}
-
 static void init_basepaths()
 {
     /* Initialize base paths */
@@ -616,11 +593,7 @@ static void main_hook(int argc, char **argv)
 
 void __attribute__((constructor)) init()
 {
-    int cur_n_fs = get_n_fs();
-    fs_frozen = calloc(cur_n_fs, sizeof(bool));
-    if (!fs_frozen)
-        mem_alloc_err();
-    fsinfos = calloc(cur_n_fs, sizeof(struct fs_stat));
+    fsinfos = calloc(get_n_fs(), sizeof(struct fs_stat));
     if (!fsinfos)
         mem_alloc_err();
     char output_log_name[NAME_MAX] = {0};
@@ -673,8 +646,6 @@ void __attribute__((constructor)) init()
  */
 void __attribute__((destructor)) cleanup()
 {
-    if (fs_frozen)
-        free(fs_frozen);
     if (fsinfos)
         free(fsinfos);
     fflush(stdout);

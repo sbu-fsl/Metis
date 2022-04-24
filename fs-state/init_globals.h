@@ -61,6 +61,7 @@ typedef struct all_global_params {
 } globals_t;
 
 extern globals_t *globals_t_p;
+extern bool *fs_frozen;
 
 unsigned int get_n_fs();
 char **get_fslist();

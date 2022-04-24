@@ -1,42 +1,9 @@
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdarg.h>
-#include <errno.h>
-#include <time.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <sys/mount.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <linux/limits.h>
-#include <linux/fs.h>
-#include <unistd.h>
-#include <openssl/md5.h>
-
-#include "nanotiming.h"
-#include "operations.h"
-#include "errnoname.h"
-#include "vector.h"
-#include "abstract_fs.h"
-#include "config.h"
-#include "set.h"
-#include "log.h"
-#include "init_globals.h"
+#include "setup.h"
 
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
 
-#define VERIFS_PREFIX       "veri"
-#define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
-
 extern globals_t *globals_t_p;
-extern bool *fs_frozen;
 extern struct fs_stat *fsinfos;
 extern int cur_pid;
 extern char func[FUNC_NAME_LEN + 1];
@@ -196,11 +163,6 @@ static inline ssize_t fsize(int fd)
     }
 }
 
-static inline bool is_verifs(const char *fsname)
-{
-    return strncmp(fsname, VERIFS_PREFIX, VERIFS_PREFIX_LEN) == 0;
-}
-
 bool compare_equality_values(char **fses, int n_fs, int *nums);
 bool compare_equality_fexists(char **fses, int n_fs, char **fpaths);
 bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths);
@@ -221,11 +183,11 @@ int fsfreeze(const char *fstype, const char *devpath, const char *mountpoint);
 int fsthaw(const char *fstype, const char *devpath, const char *mountpoint);
 int unfreeze_all();
 void clear_excluded_files();
-int setup_generic(const char *fsname, const char *devname, const size_t size_kb);
-int setup_jffs2(const char *devname, const size_t size_kb);
-void execute_cmd(const char *cmd);
-int execute_cmd_status(const char *cmd);
-void populate_mountpoints();
+// int setup_generic(const char *fsname, const char *devname, const size_t size_kb);
+// int setup_jffs2(const char *devname, const size_t size_kb);
+// void execute_cmd(const char *cmd);
+// int execute_cmd_status(const char *cmd);
+// void populate_mountpoints();
 
 static inline void unmount_all_strict()
 {

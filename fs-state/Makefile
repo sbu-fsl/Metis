@@ -44,8 +44,8 @@ abstractfs-test: $(COMMON_DIR)/abstract_fs.cpp common-libs
 	g++ -std=c++11 -g -Wall -Werror -o absfs $< common-libs.a -DABSFS_TEST \
 		-I../include -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lprofiler -lxxhash -lz
 
-replayer: replay.c mount.c common-libs
-	gcc -o replay replay.c mount.c \
+replayer: replay.c init_globals.o setup.c mount.c common-libs
+	gcc -o replay replay.c init_globals.o setup.c mount.c \
 		-DNO_FS_STAT common-libs.a $(CFLAGS) $(LIBS)
 
 clean:

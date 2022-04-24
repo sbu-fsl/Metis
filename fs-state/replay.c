@@ -19,7 +19,7 @@ int seq = 0;
 
 typedef struct concrete_state {
 	int seqid;
-	char *images[N_FS];
+	char **images;
 } fs_state_t;
 
 vector_t states;
@@ -75,7 +75,7 @@ int do_write_file(vector_t *argvec)
 	assert(buffer != NULL);
 	/* This is to make sure data written to all file systems in the same
 	 * group of operations is the same */
-	int integer_to_write = seq / N_FS;
+	int integer_to_write = seq / get_n_fs();
 	generate_data(buffer, writelen, integer_to_write);
 	int ret = write_file(filepath, buffer, offset, writelen);
 	int err = errno;
@@ -135,10 +135,12 @@ int do_rmdir(vector_t *argvec)
 void replayer_init()
 {
 	srand(time(0));
-	for (int i = 0; i < N_FS; ++i) {
-		size_t len = snprintf(NULL, 0, "/mnt/test-%s", fslist[i]);
-		basepaths[i] = calloc(1, len + 1);
-		snprintf(basepaths[i], len + 1, "/mnt/test-%s", fslist[i]);
+	for (int i = 0; i < get_n_fs(); ++i) {
+		size_t len = snprintf(NULL, 0, "/mnt/test-%s%s", 
+								get_fslist()[i], get_fssuffix()[i]);
+		get_basepaths()[i] = calloc(1, len + 1);
+		snprintf(get_basepaths()[i], len + 1, "/mnt/test-%s%s", 
+								get_fslist()[i], get_fssuffix()[i]);
 	}
 	vector_init(&states, fs_state_t);
 }
@@ -168,8 +170,9 @@ void checkpoint()
 {
 	fs_state_t state;
 	state.seqid = seq;
-	for (int i = 0; i < N_FS; ++i) {
-		do_checkpoint(devlist[i], &state.images[i]);
+	state.images = calloc(get_n_fs(), sizeof(char *));
+	for (int i = 0; i < get_n_fs(); ++i) {
+		do_checkpoint(get_devlist()[i], &state.images[i]);
 	}
 	vector_add(&states, &state);
 	printf("checkpoint\n");
@@ -197,9 +200,11 @@ void restore()
 	fs_state_t *state = vector_peek_top(&states, fs_state_t);
 	if (!state)
 		return;
-	for (int i = 0; i < N_FS; ++i) {
-		do_restore(devlist[i], state->images[i]);
+	for (int i = 0; i < get_n_fs(); ++i) {
+		do_restore(get_devlist()[i], state->images[i]);
 	}
+	if (state->images)
+		free(state->images);
 	vector_pop_back(&states);
 	printf("restore (to the state just before seqid = %d)\n", state->seqid);
 }
@@ -215,6 +220,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	replayer_init();
+	setup_filesystems();
 	while ((len = getline(&linebuf, &linecap, seqfp)) >= 0) {
 		char *line = malloc(len + 1);
 		line[len] = '\0';
