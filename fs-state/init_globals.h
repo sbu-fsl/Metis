@@ -58,6 +58,15 @@ typedef struct all_global_params {
     absfs_state_t *absfs;
     int *rets;
     int *errs;
+    /* Fields related to new operations and dir structure */
+    int filecount;
+    int directorycount;
+    int filepool_idx;
+    int dirpool_idx;
+    int pool_depth;
+    int max_name_len;
+    char **filepool;
+    char **directorypool;
 } globals_t;
 
 extern globals_t *globals_t_p;
@@ -76,6 +85,14 @@ int *get_fsfds();
 absfs_state_t *get_absfs();
 int *get_rets();
 int *get_errs();
+int get_filecount();
+int get_directorycount();
+int get_filepool_idx();
+int get_dirpool_idx();
+int get_pool_depth();
+int get_max_name_len();
+char **get_filepool();
+char **get_directorypool();
 
 #ifdef __cplusplus
 }
