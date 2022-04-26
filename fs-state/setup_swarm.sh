@@ -23,7 +23,8 @@ PML_SRC="./demo.pml"
 PML_TEMP="./.pml_tmp"
 PML_START_PATN="\/\* The persistent content of the file systems \*\/"
 PML_END_PATN="\/\* Abstract state signatures of the file systems \*\/"
-NUM_PAN=4 # number of compilation options in swarm.lib
+NUM_PAN=4 # default number of compilation options in swarm.lib
+SWARM_CONF="swarm.lib"
 
 exclude_files=()
 # Create file system and device key-value map
@@ -82,15 +83,20 @@ mount_all() {
 		echo "Do not know which file systems and devices to mount"
 		exit -1
 	fi
-	for j in $(seq 1 $(($NUM_PAN))); do
-		SWARM_ID=$j;
-		for i in $(seq 0 $(($n_fs-1))); do
-			fs=${FSLIST[$i]};
-			DEVICE=${DEVLISTS[$j,$i]};
-			runcmd mount -t $fs $DEVICE /mnt/test-$fs-i$i-s$SWARM_ID;
+	for i in $(seq 1 $(($NUM_PAN))); do
+		SWARM_ID=$i;
+		for j in $(seq 0 $(($n_fs-1))); do
+			fs=${FSLIST[$j]};
+			DEVICE=${DEVLISTS[$i,$j]};
+			runcmd mount -t $fs $DEVICE /mnt/test-$fs-i$j-s$SWARM_ID;
 		done
 	done
 }
+
+# Get NUM_PAN from swarm.lib
+SWARM_NUM_LINE=20
+line=$(sed "${SWARM_NUM_LINE}!d" $SWARM_CONF)
+NUM_PAN=$(echo "$line" | cut -d $'\t' -f2)
 
 # Parse command line options
 while [[ $# -gt 0 ]]; do
@@ -194,26 +200,26 @@ done
 # Populate DEVLISTS DEVLISTS[i,j]: i: swarm_id j: dev index for i-th swarm id
 RAM_CNT=0
 MTDBLOCK_CNT=0
-for j in $(seq 1 $(($NUM_PAN))); do
-	SWARM_ID=$j
+for i in $(seq 1 $(($NUM_PAN))); do
+	SWARM_ID=$i
 	RAM_CNT=0
 	MTDBLOCK_CNT=0
-	for i in $(seq 0 $(($n_fs-1))); do
-		fs=${FSLIST[$i]};
+	for j in $(seq 0 $(($n_fs-1))); do
+		fs=${FSLIST[$j]};
 		dev_type=${FS_DEV_MAP[${fs}]}
 		if [ "$dev_type" = "$RAM_NAME" ]
 		then
 			RAM_ID=$((($SWARM_ID - 1) * $ALL_RAMS + $RAM_CNT))
 			RAM_CNT=$(($RAM_CNT + 1))
-			DEVLISTS[$j,$i]="/dev/ram$RAM_ID"
+			DEVLISTS[$i,$j]="/dev/ram$RAM_ID"
 		elif [ "$dev_type" = "$MTDBLOCK_NAME" ]
 		then
 			MTDBLOCK_ID=$((($SWARM_ID - 1) * $ALL_MTDBLOCKS + $MTDBLOCK_CNT))
 			MTDBLOCK_CNT=$(($MTDBLOCK_CNT + 1))
-			DEVLISTS[$j,$i]="/dev/mtdblock$MTDBLOCK_ID"
+			DEVLISTS[$i,$j]="/dev/mtdblock$MTDBLOCK_ID"
 		elif [ "$dev_type" = "" ]
 		then
-			DEVLISTS[$j,$i]=""
+			DEVLISTS[$i,$j]=""
 		else
 			echo "[Error] cannot find proper dev type"
 			exit -1;
@@ -256,7 +262,7 @@ fi
 runcmd make install
 # Use ssh and scp to set up swarm for remotes
 count=0
-for i in $(grep -Po '\t.*:\d+( |\t)' swarm.lib); do
+for i in $(grep -Po '\t.*:\d+( |\t)' ${SWARM_CONF}); do
 	if [ $count -ge 1 ]; then
 		remote=$(echo $i | awk -F ':' '{print $1}');
 		scp libsmcfs.a "$remote":libsmcfs.a;
@@ -273,21 +279,6 @@ for i in $(grep -Po '\t.*:\d+( |\t)' swarm.lib); do
 	count=$((count+1));
 done
 
-SWARM_CONF="swarm.lib"
-MAX_PAN_NUM=16
-FIRST_OPT_LINE=31
-LAST_OPT_LINE=46
-
-# Alter swarm.lib compilation options
-if [ "$NUM_PAN" -lt "$MAX_PAN_NUM" ]; then
-    sed -i "$(($NUM_PAN+$FIRST_OPT_LINE)),$LAST_OPT_LINE s/^/#/" $SWARM_CONF
-fi
-
 runcmd swarm $SWARM_CONF -K $MCFSLIST -f demo.pml
-
-# Restore swarm.lib
-if [ "$NUM_PAN" -lt "$MAX_PAN_NUM" ]; then
-    sed -i "$(($NUM_PAN+$FIRST_OPT_LINE)),$LAST_OPT_LINE s/^#//" $SWARM_CONF
-fi
 
 runcmd ./demo.pml.swarm

@@ -96,6 +96,8 @@ static int setup_mtd(const size_t size_kb)
     execute_cmd(cmdbuf);
     snprintf(cmdbuf, PATH_MAX, "runcmd modprobe mtdblock");
     execute_cmd(cmdbuf);
+
+    return 0;
 }
 
 static int setup_jffs2(const char *devname, const size_t size_kb)
