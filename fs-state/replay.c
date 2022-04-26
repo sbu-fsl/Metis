@@ -130,6 +130,40 @@ int do_rmdir(vector_t *argvec)
 	       path, ret, errnoname(err));
 	return ret;
 }
+int do_rename(vector_t *argvec)
+{
+	char *srcpath = *vector_get(argvec, char *, 1);
+	char *dstpath = *vector_get(argvec, char *, 2);
+
+	int ret = rename(srcpath, dstpath);
+	int err = errno;
+	printf("rename(%s, %s) -> ret=%d, errno=%s\n",
+	       srcpath, dstpath, ret, errnoname(err));
+	return ret;
+}
+int do_symlink(vector_t *argvec)
+{
+	char *srcpath = *vector_get(argvec, char *, 1);
+	char *dstpath = *vector_get(argvec, char *, 2);
+
+	int ret = symlink(srcpath, dstpath);
+	int err = errno;
+	printf("symlink(%s, %s) -> ret=%d, errno=%s\n",
+	       srcpath, dstpath, ret, errnoname(err));
+	return ret;
+}
+int do_link(vector_t *argvec)
+{
+	char *srcpath = *vector_get(argvec, char *, 1);
+	char *dstpath = *vector_get(argvec, char *, 2);
+
+	int ret = link(srcpath, dstpath);
+	int err = errno;
+	printf("link(%s, %s) -> ret=%d, errno=%s\n",
+	       srcpath, dstpath, ret, errnoname(err));
+	return ret;
+}
+
 
 /* Now I would expect the setup script to setup file systems instead. */
 void replayer_init()
@@ -247,6 +281,12 @@ int main(int argc, char **argv)
 			do_mkdir(&argvec);
 		} else if (strncmp(funcname, "rmdir", len) == 0) {
 			do_rmdir(&argvec);
+		} else if (strncmp(funcname, "rename", len) == 0) {
+			do_rename(&argvec);
+		} else if (strncmp(funcname, "symlink", len) == 0) {
+			do_symlink(&argvec);
+		} else if (strncmp(funcname, "link", len) == 0) {
+			do_link(&argvec);
 		} else if (strncmp(funcname, "checkpoint", len) == 0) {
 			flag_ckpt = true;
 			seq--;
