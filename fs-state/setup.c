@@ -264,7 +264,7 @@ static int setup_verifs2()
 {
     char cmdbuf[PATH_MAX];
 
-    snprintf(cmdbuf, PATH_MAX, "fuse-ramfs-cpp %s", get_basepaths()[i]);
+    snprintf(cmdbuf, PATH_MAX, "fuse-cpp-ramfs %s", get_basepaths()[i]);
     execute_cmd(cmdbuf);
     return 0;
 }
