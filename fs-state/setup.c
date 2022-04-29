@@ -251,6 +251,24 @@ static int setup_xfs(const char *devname, const size_t size_kb)
     return 0;
 }
 
+static int setup_verifs1()
+{
+    char cmdbuf[PATH_MAX];
+
+    snprintf(cmdbuf, PATH_MAX, "crmfs %s", get_basepaths()[i]);
+    execute_cmd(cmdbuf);
+    return 0;
+}
+
+static int setup_verifs2()
+{
+    char cmdbuf[PATH_MAX];
+
+    snprintf(cmdbuf, PATH_MAX, "fuse-ramfs-cpp %s", get_basepaths()[i]);
+    execute_cmd(cmdbuf);
+    return 0;
+}
+
 void setup_filesystems()
 {
     int ret;
@@ -276,7 +294,17 @@ void setup_filesystems()
         // TODO: we need to consider VeriFS1 and VeriFS2 separately here
         else if (is_verifs(get_fslist()[i]))
         {
-            continue;
+            const char *fsname = get_fslist()[i];
+            size_t strlen = strnlen(fsname, PATH_MAX);
+            switch (fsname[strlen - 1])
+            {
+            case '1':
+                ret = setup_verifs1();
+                break;
+            case '2':
+                ret = setup_verifs2();
+                break;
+            }
         }
         else
         {
