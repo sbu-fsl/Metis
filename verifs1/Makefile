@@ -6,6 +6,9 @@ override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -l
 
 all: crmfs ckpt restore model-checker
 
+install: crmfs
+	cp crmfs /usr/local/bin/
+
 model-checker: mc.pml parameters fileutil.c mount.c perf.c common-libs absfs-set
 	spin -a mc.pml
 	gcc -g -o pan pan.c fileutil.c mount.c perf.c set.o common-libs.a $(CFLAGS) $(LIBS)
