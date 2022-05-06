@@ -446,9 +446,26 @@ static int restore_verifs(size_t key, const char *mp)
     return ret;
 }
 
+static size_t state_depth = 0;
+
 static long checkpoint_before_hook(unsigned char *ptr)
 {
+    submit_seq("checkpoint\n");
+    makelog("[seqid = %d] checkpoint (%zu)\n", count, state_depth);
+
     mmap_devices();
+
+    state_depth++;
+    for (int i = 0; i < get_n_fs(); ++i) {
+        if (!is_verifs(get_fslist()[i]))
+            continue;
+        int res = checkpoint_verifs(state_depth, get_basepaths()[i]); 
+        if (res != 0) {
+            logerr("Failed to checkpoint a verifiable file system %s.",
+                   get_fslist()[i]);
+        }
+    }
+
     return 0;
 }
 
@@ -462,7 +479,20 @@ static long checkpoint_after_hook(unsigned char *ptr)
 
 static long restore_before_hook(unsigned char *ptr)
 {
+    submit_seq("restore\n");
+    makelog("[seqid = %d] restore (%p)\n", count, state_depth);
     mmap_devices();
+    for (int i = 0; i < get_n_fs(); ++i) {
+        if (!is_verifs(get_fslist()[i]))
+            continue;
+        int res = restore_verifs(state_depth, get_basepaths()[i]);
+        if (res != 0) {
+            logerr("Failed to restore a verifiable file system %s.",
+                    get_fslist()[i]);
+        }
+    }
+
+    state_depth--;
     // assert(do_fsck());
     return 0;
 }
@@ -475,22 +505,9 @@ static long restore_after_hook(unsigned char *ptr)
     return 0;
 }
 
-static size_t state_depth = 0;
 static long update_before_hook(unsigned char *ptr)
 {
-    submit_seq("checkpoint\n");
-    makelog("[seqid = %d] checkpoint (%zu)\n", count, state_depth);
     absfs_set_add(absfs_set, get_absfs());
-    state_depth++;
-    for (int i = 0; i < get_n_fs(); ++i) {
-        if (!is_verifs(get_fslist()[i]))
-            continue;
-        int res = checkpoint_verifs(state_depth, get_basepaths()[i]); 
-        if (res != 0) {
-            logerr("Failed to checkpoint a verifiable file system %s.",
-                   get_fslist()[i]);
-        }
-    }
     return 0;
 }
 
@@ -501,18 +518,6 @@ static long update_after_hook(unsigned char *ptr)
 
 static long revert_before_hook(unsigned char *ptr)
 {
-    submit_seq("restore\n");
-    makelog("[seqid = %d] restore (%p)\n", count, state_depth);
-    for (int i = 0; i < get_n_fs(); ++i) {
-        if (!is_verifs(get_fslist()[i]))
-            continue;
-        int res = restore_verifs(state_depth, get_basepaths()[i]);
-        if (res != 0) {
-            logerr("Failed to restore a verifiable file system %s.",
-                    get_fslist()[i]);
-        }
-    }
-    state_depth--;
     return 0;
 }
 

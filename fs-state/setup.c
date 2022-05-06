@@ -92,7 +92,7 @@ static int setup_mtd(const size_t size_kb)
 {
     char cmdbuf[PATH_MAX];
 
-    snprintf(cmdbuf, PATH_MAX, "runcmd modprobe mtdram total_size=%d erase_size=16", size_kb / 1024);
+    snprintf(cmdbuf, PATH_MAX, "runcmd modprobe mtdram total_size=%ld erase_size=16", size_kb / 1024);
     execute_cmd(cmdbuf);
     snprintf(cmdbuf, PATH_MAX, "runcmd modprobe mtdblock");
     execute_cmd(cmdbuf);
@@ -251,7 +251,7 @@ static int setup_xfs(const char *devname, const size_t size_kb)
     return 0;
 }
 
-static int setup_verifs1()
+static int setup_verifs1(int i)
 {
     char cmdbuf[PATH_MAX];
 
@@ -260,11 +260,11 @@ static int setup_verifs1()
     return 0;
 }
 
-static int setup_verifs2()
+static int setup_verifs2(int i)
 {
     char cmdbuf[PATH_MAX];
 
-    snprintf(cmdbuf, PATH_MAX, "fuse-cpp-ramfs %s", get_basepaths()[i]);
+    snprintf(cmdbuf, PATH_MAX, "mount -t fuse.fuse-cpp-ramfs verifs2 %s", get_basepaths()[i]);
     execute_cmd(cmdbuf);
     return 0;
 }
@@ -299,10 +299,10 @@ void setup_filesystems()
             switch (fsname[strlen - 1])
             {
             case '1':
-                ret = setup_verifs1();
+                ret = setup_verifs1(i);
                 break;
             case '2':
-                ret = setup_verifs2();
+                ret = setup_verifs2(i);
                 break;
             }
         }

@@ -161,8 +161,8 @@ static void prepare_dev_suffix()
         mem_alloc_err();
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
         dev_idx = get_dev_from_fs(fslist_to_copy[i]);
-        if (dev_idx == -1) {
-            globals_t_p->devlist[i] = calloc(1, sizeof(char));
+        if (dev_idx == -1) { // file system not supported
+            fprintf(stderr, "File system type not supported\n");
             memset(globals_t_p->devlist[i], '\0', sizeof(char));
         }
         else if (strcmp(dev_all[dev_idx], ramdisk_name) == 0) {
@@ -184,6 +184,9 @@ static void prepare_dev_suffix()
             globals_t_p->devlist[i] = calloc(len + 1, sizeof(char));
             snprintf(globals_t_p->devlist[i], len + 1, "/dev/%s%d", mtdblock_name, mtdblock_id);
             ++mtdblock_cnt;
+        }
+        else { // No Disk required 
+            globals_t_p->devlist[i] = NULL;
         }
         /* Populate fs suffix -- format -$fsid-$swarmid */
         len = snprintf(NULL, 0, "-i%d-s%d", i, globals_t_p->_swarm_id);
@@ -412,6 +415,23 @@ static int cli_or_env_args(int argc, char *argv[])
     return 1;
 }
 
+static void dump_all_globals()
+{
+    FILE * fp;
+    char dump_fn[MAX_FS + 10];
+    sprintf(dump_fn, "dump_globals%u.log", globals_t_p->_swarm_id);
+    fp = fopen (dump_fn, "w");
+    fprintf(fp, "swarm_id: %u\n", globals_t_p->_swarm_id);
+    fprintf(fp, "n_fs: %u\n", globals_t_p->_n_fs);
+    for(int i = 0; i < globals_t_p->_n_fs; ++i) {
+        fprintf(fp, "fs index: %d\n", i);
+        fprintf(fp, "fs:%s\tsuffix:%s\tdevice:%s\tdevszkb:%ld\n", 
+            globals_t_p->fslist[i], globals_t_p->fssuffix[i], 
+            globals_t_p->devlist[i], globals_t_p->devsize_kb[i]);
+    }
+    fclose(fp);
+}
+
 void __attribute__((constructor)) globals_init(int argc, char *argv[])
 {
     int ret = -1;
@@ -444,6 +464,7 @@ void __attribute__((constructor)) globals_init(int argc, char *argv[])
     fs_frozen = calloc(get_n_fs(), sizeof(bool));
     if (!fs_frozen)
         mem_alloc_err();
+    dump_all_globals();
 }
 
 /*
