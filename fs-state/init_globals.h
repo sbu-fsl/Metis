@@ -63,7 +63,7 @@ typedef struct all_global_params {
     int directorycount;
     int filepool_idx;
     int dirpool_idx;
-    int pool_depth;
+    int path_depth;
     int max_name_len;
     char **filepool;
     char **directorypool;

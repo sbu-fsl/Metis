@@ -19,15 +19,15 @@ dev_nums_t dev_nums = {.all_rams = 0, .all_mtdblocks = 0};
 
 //current is the list of directories previous depth
 //size is current's size.
-static void dfs(int directorycount, int filecount, int pool_depth, int max_name_len, char** current, int size) {
+static void pool_dfs(int directorycount, int filecount, int path_depth, int max_name_len, char** current, int size) {
     int newnames_len = 0;
     //newpool -> directories at the current depth.
     char *newpool[100];
     int append = 0;
     //iterate through directories in the previous depth(stored in current), append each d-[j] to each current[i] and add to directorypool
     //also add this to the newpool
-    for(int i = 0; i < size; i++){
-        for(int j = 0; j < directorycount; j++){
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < directorycount; j++) {
             append = max_name_len - 2;
             size_t len = snprintf(NULL, 0, "%s/d-%0*d", current[i], append, j);
             newpool[newnames_len] = calloc(1, 1+len);
@@ -41,8 +41,8 @@ static void dfs(int directorycount, int filecount, int pool_depth, int max_name_
     }
 
     //iterate through directories in the previous depth(stored in current), append "f-j" to current[i] and add to filepool
-    for(int i = 0; i < size; i++){
-        for(int j = 0; j < filecount; j++){
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < filecount; j++) {
             append = max_name_len - 2;
             size_t len = snprintf(NULL, 0, "%s/f-%0*d", current[i], append, j);
 
@@ -50,18 +50,19 @@ static void dfs(int directorycount, int filecount, int pool_depth, int max_name_
             snprintf(get_filepool()[get_filepool_idx()], 1+len, "%s/f-%0*d", current[i], append, j);
             globals_t_p->filepool_idx++;
         }
+        free(current[i]);
     }
-    if(pool_depth == 1){
+    if(path_depth == 1){
         return;
     }
 
-    dfs(directorycount, filecount, pool_depth-1, max_name_len, newpool, newnames_len);
+    pool_dfs(directorycount, filecount, path_depth-1, max_name_len, newpool, newnames_len);
 }
 
-static int getpowsum(int directorycount, int pool_depth) {
+static int getpowsum(int directorycount, int path_depth) {
     int sum = 0;
     int current = 1;
-    for(int i = 0; i < pool_depth; i++){
+    for(int i = 0; i < path_depth; i++){
         current *= directorycount;
         sum += current;
     }
@@ -313,7 +314,7 @@ static void init_all_steady_globals()
 static void init_multi_files_params()
 {
     /* filecount */
-    globals_t_p->filecount = 2;
+    globals_t_p->filecount = 1;
 
     /* directorycount */
     globals_t_p->directorycount = 2;
@@ -324,13 +325,13 @@ static void init_multi_files_params()
     /* dirpool_idx */
     globals_t_p->dirpool_idx = 0;
 
-    /* pool_depth */
-    globals_t_p->pool_depth = 2;
+    /* path_depth */
+    globals_t_p->path_depth = 3;
 
     /* max_name_len */
     globals_t_p->max_name_len = 10;
 
-    char *current[100];
+    char *current[PATH_MAX];
     int directorypool_size = 0;
     int filepool_size = 0;
     if (globals_t_p->directorycount > 0) {
@@ -344,7 +345,7 @@ static void init_multi_files_params()
         = filecount * ( 1 + (no. of directories at depth 0) + (no. of directories at depth 1) + ....) 
         = filecount * (directorypool_size / directorycount);
         */
-        directorypool_size = getpowsum(globals_t_p->directorycount, globals_t_p->pool_depth);
+        directorypool_size = getpowsum(globals_t_p->directorycount, globals_t_p->path_depth);
         filepool_size = globals_t_p->filecount * (directorypool_size / globals_t_p->directorycount);
     }
     else {
@@ -376,7 +377,7 @@ static void init_multi_files_params()
     globals_t_p->dirpool_idx++;
 
     if (get_pool_depth() > 0) 
-        dfs(globals_t_p->directorycount, globals_t_p->filecount, globals_t_p->pool_depth, globals_t_p->max_name_len, current, 1);
+        pool_dfs(globals_t_p->directorycount, globals_t_p->filecount, globals_t_p->path_depth, globals_t_p->max_name_len, current, 1);
 }
 
 
@@ -517,7 +518,7 @@ int get_dirpool_idx()
 
 int get_pool_depth()
 {
-    return globals_t_p->pool_depth;
+    return globals_t_p->path_depth;
 }
 
 int get_max_name_len()
