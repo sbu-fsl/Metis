@@ -313,10 +313,10 @@ static void init_all_steady_globals()
 static void init_multi_files_params()
 {
     /* filecount */
-    globals_t_p->filecount = 3;
+    globals_t_p->filecount = 2;
 
     /* directorycount */
-    globals_t_p->directorycount = 3;
+    globals_t_p->directorycount = 2;
 
     /* filepool_idx */
     globals_t_p->filepool_idx = 0;
@@ -325,7 +325,7 @@ static void init_multi_files_params()
     globals_t_p->dirpool_idx = 0;
 
     /* pool_depth */
-    globals_t_p->pool_depth = 3;
+    globals_t_p->pool_depth = 2;
 
     /* max_name_len */
     globals_t_p->max_name_len = 10;

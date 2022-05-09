@@ -18,24 +18,33 @@ proctype worker()
     /* Non-deterministic test loop */
     int offset, writelen, writebyte, filelen, num1, num2;
     do 
-    :: atomic {
-       c_code {
-           /* creat, check: errno, existence */
-           makelog("BEGIN: create_file\n");
-           mountall();
-           for (i = 0; i < get_n_fs(); ++i) {
-               makecall(get_rets()[i], get_errs()[i], "%s, 0%o", create_file, get_testfiles()[i], 0644);
-           }
-           expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
-           expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
-           expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-           unmount_all_strict();
-           makelog("END: create_file\n");
-       };
+    :: pick_num(num1);
+        atomic {
+        c_code {
+            /* creat, check: errno, existence */
+            makelog("BEGIN: create_file\n");
+            mountall();
+            for (i = 0; i < get_n_fs(); ++i) {
+                char *file_src;
+                int src_idx = Pworker->num1 % get_filepool_idx();
+                size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
+                file_src = calloc(1, filename_len+1);
+                snprintf(file_src, filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
+
+                makecall(get_rets()[i], get_errs()[i], "%s, 0%o", create_file, file_src, 0644);
+                free(file_src);
+            }
+            //expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
+            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
+            unmount_all_strict();
+            makelog("END: create_file\n");
+        };
     };
     :: pick_write_offset(offset);
        pick_write_size(writelen);
        pick_write_byte(writebyte);
+       pick_num(num1);
        atomic {
         /* write, check: retval, errno, content */
         c_code {
@@ -46,20 +55,28 @@ proctype worker()
             char *data = malloc(Pworker->writelen);
             generate_data(data, Pworker->writelen, Pworker->writebyte);
             for (i = 0; i < get_n_fs(); ++i) {
-                makecall(get_rets()[i], get_errs()[i], "%s, %p, %ld, %zu", write_file, get_testfiles()[i], data,
+                char *file_src;
+                int src_idx = Pworker->num1 % get_filepool_idx();
+                size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
+                file_src = calloc(1, filename_len+1);
+                snprintf(file_src, filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
+
+                makecall(get_rets()[i], get_errs()[i], "%s, %p, %ld, %zu", write_file, file_src, data,
                          (off_t)Pworker->offset, (size_t)Pworker->writelen);
+                free(file_src);
             }
 
             free(data);
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
-            expect(compare_equality_fcontent(get_fslist(), get_n_fs(), get_testfiles()));
+            //expect(compare_equality_fcontent(get_fslist(), get_n_fs(), get_testfiles()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
             makelog("END: write_file\n");
         };
     };
     :: pick_truncate_len(filelen);
+       pick_num(num1);
        atomic {
         /* truncate, check: retval, errno, existence */
         /* TODO: compare file length. Currently ftruncate is mainly
@@ -69,9 +86,17 @@ proctype worker()
             mountall();
             // off_t flen = pick_value(0, 200000, 10000);
             for (i = 0; i < get_n_fs(); ++i) {
-                makecall(get_rets()[i], get_errs()[i], "%s, %ld", truncate, get_testfiles()[i], (off_t)Pworker->filelen);
+                char *file_src;
+                int src_idx = Pworker->num1 % get_filepool_idx();
+                size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
+                file_src = calloc(1, filename_len+1);
+                snprintf(file_src, filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
+
+                makecall(get_rets()[i], get_errs()[i], "%s, %ld", truncate, file_src, (off_t)Pworker->filelen);
+
+                free(file_src);
             }
-            expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testfiles()));
+            //expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testfiles()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
@@ -79,15 +104,24 @@ proctype worker()
             makelog("END: truncate\n");
         };
     };
-    :: atomic {
+    :: pick_num(num1);
+       atomic {
         /* unlink, check: retval, errno, existence */
         c_code {
             makelog("BEGIN: unlink\n");
             mountall();
             for (i = 0; i < get_n_fs(); ++i) {
-                makecall(get_rets()[i], get_errs()[i], "%s", unlink, get_testfiles()[i]);
+                char *file_src;
+                int src_idx = Pworker->num1 % get_filepool_idx();
+                size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
+                file_src = calloc(1, filename_len+1);
+
+                snprintf(file_src, filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
+                makecall(get_rets()[i], get_errs()[i], "%s", unlink, file_src);
+
+                free(file_src);
             }
-            expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
+            //expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
@@ -95,15 +129,24 @@ proctype worker()
             makelog("END: unlink\n");
         }
     };
-    :: atomic {
+    :: pick_num(num1);
+       atomic {
         /* mkdir, check: retval, errno, existence */
         c_code {
             makelog("BEGIN: mkdir\n");
             mountall();
             for (i = 0; i < get_n_fs(); ++i) {
-                makecall(get_rets()[i], get_errs()[i], "%s, 0%o", mkdir, get_testdirs()[i], 0755);
+                char *dir_src;
+                int src_idx = Pworker->num1 % get_dirpool_idx();
+                size_t dirname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
+                dir_src = calloc(1, dirname_len+1);
+                snprintf(dir_src, dirname_len + 1, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
+
+                makecall(get_rets()[i], get_errs()[i], "%s, 0%o", mkdir, dir_src, 0755);
+
+                free(dir_src);
             }
-            expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
+            //expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
@@ -112,15 +155,24 @@ proctype worker()
         }
         // assert(! c_expr{ get_errs()[0] == EEXIST && get_errs()[1] == EEXIST && get_errs()[2] == 0 });
     };
-    :: atomic {
+    ::  pick_num(num1);
+        atomic {
         /* rmdir, check: retval, errno, existence */
         c_code {
             makelog("BEGIN: rmdir\n");
             mountall();
             for (i = 0; i < get_n_fs(); ++i) {
+                char *dir_src;
+                int src_idx = Pworker->num1 % get_dirpool_idx();
+                size_t dirname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
+                dir_src = calloc(1, dirname_len+1);
+                snprintf(dir_src, dirname_len + 1, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
+
                 makecall(get_rets()[i], get_errs()[i], "%s", rmdir, get_testdirs()[i]);
+
+                free(dir_src);
             }
-            expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
+            //expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
@@ -136,6 +188,8 @@ proctype worker()
             makelog("BEGIN: rename\n");
             mountall();
             int dir_or_file = random() % 2;
+            int ret = -1;
+            struct stat st;
             if( dir_or_file == 0 ){    
                 int src_idx = Pworker->num1 % get_filepool_idx();
                 int dst_idx = Pworker->num2 % get_filepool_idx();
@@ -150,6 +204,11 @@ proctype worker()
                     rename_filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
                     rename_file_dst = calloc(1, rename_filename_len+1);
                     snprintf(rename_file_dst, rename_filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
+
+                    ret = stat(rename_file_src, &st);
+                    if (ret < 0 && errno == ENOENT) {
+                        makecall(get_rets()[i], get_errs()[i], "%s, 0%o", create_file, rename_file_src, 0644);
+                    }
 
                     makecall(get_rets()[i], get_errs()[i], "%s,  %s", rename, rename_file_src, rename_file_dst);
                     free(rename_file_src);
@@ -171,6 +230,11 @@ proctype worker()
                     rename_dirname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_directorypool()[dst_idx]);
                     rename_dir_dst = calloc(1, rename_dirname_len+1);
                     snprintf(rename_dir_dst, rename_dirname_len + 1, "%s%s", get_basepaths()[i], get_directorypool()[dst_idx]);
+
+                    ret = stat(rename_dir_src, &st);
+                    if (ret < 0 && errno == ENOENT) {
+                        makecall(get_rets()[i], get_errs()[i], "%s, 0%o", mkdir, rename_dir_src, 0755);
+                    }
 
                     makecall(get_rets()[i], get_errs()[i], "%s,  %s", rename, rename_dir_src, rename_dir_dst);
                     free(rename_dir_src);
@@ -195,6 +259,8 @@ proctype worker()
             makelog("BEGIN: link\n");
             mountall();
 
+            int ret = -1;
+            struct stat st;
             int src_idx = Pworker->num1 % get_filepool_idx();
             int dst_idx = Pworker->num2 % get_filepool_idx();
 
@@ -209,6 +275,12 @@ proctype worker()
                 link_filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
                 link_file_dst = calloc(1, link_filename_len+1);
                 snprintf(link_file_dst, link_filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
+
+                ret = stat(link_file_src, &st);
+                if (ret < 0 && errno == ENOENT) {
+                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o", create_file, link_file_src, 0644);
+                }
+
                 makecall(get_rets()[i], get_errs()[i], "%s,  %s", link, link_file_src, link_file_dst);
                 free(link_file_src);
                 free(link_file_dst);
@@ -230,6 +302,9 @@ proctype worker()
             makelog("BEGIN: symlink\n");
             mountall();
 
+            int ret = -1;
+            struct stat st;
+
             int src_idx = Pworker->num1 % get_filepool_idx();
             int dst_idx = Pworker->num2 % get_filepool_idx();
 
@@ -244,6 +319,12 @@ proctype worker()
                 link_filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
                 link_file_dst = calloc(1, link_filename_len+1);
                 snprintf(link_file_dst, link_filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
+
+                ret = stat(link_file_src, &st);
+                if (ret < 0 && errno == ENOENT) {
+                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o", create_file, link_file_src, 0644);
+                }
+
                 makecall(get_rets()[i], get_errs()[i], "%s,  %s", symlink, link_file_src, link_file_dst);
                 free(link_file_src);
                 free(link_file_dst);

@@ -446,42 +446,20 @@ static int restore_verifs(size_t key, const char *mp)
     return ret;
 }
 
-static long checkpoint_before_hook(unsigned char *ptr)
-{
-    mmap_devices();
-    return 0;
-}
-
-static long checkpoint_after_hook(unsigned char *ptr)
-{
-    unmap_devices();
-    // assert(do_fsck());
-    // dump_fs_images("snapshots");
-    return 0;
-}
-
-static long restore_before_hook(unsigned char *ptr)
-{
-    mmap_devices();
-    // assert(do_fsck());
-    return 0;
-}
-
-static long restore_after_hook(unsigned char *ptr)
-{
-    unmap_devices();
-    // assert(do_fsck());
-    // dump_fs_images("after-restore");
-    return 0;
-}
-
 static size_t state_depth = 0;
-static long update_before_hook(unsigned char *ptr)
+
+/*
+ *  Called before the spin's checkpoint of concrete state
+ */
+static long checkpoint_before_hook(unsigned char *ptr)
 {
     submit_seq("checkpoint\n");
     makelog("[seqid = %d] checkpoint (%zu)\n", count, state_depth);
-    absfs_set_add(absfs_set, get_absfs());
+
     state_depth++;
+
+    mmap_devices();
+
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!is_verifs(get_fslist()[i]))
             continue;
@@ -491,18 +469,31 @@ static long update_before_hook(unsigned char *ptr)
                    get_fslist()[i]);
         }
     }
+
     return 0;
 }
 
-static long update_after_hook(unsigned char *ptr)
+/*
+ *  Called after the spin's checkpoint of concrete state
+ */
+static long checkpoint_after_hook(unsigned char *ptr)
 {
+    unmap_devices();
+    // assert(do_fsck());
+    // dump_fs_images("snapshots");
     return 0;
 }
 
-static long revert_before_hook(unsigned char *ptr)
+/*
+ *  Called before the spin's restore of concrete state
+ */
+static long restore_before_hook(unsigned char *ptr)
 {
     submit_seq("restore\n");
     makelog("[seqid = %d] restore (%p)\n", count, state_depth);
+
+    mmap_devices();
+
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!is_verifs(get_fslist()[i]))
             continue;
@@ -512,10 +503,52 @@ static long revert_before_hook(unsigned char *ptr)
                     get_fslist()[i]);
         }
     }
+
     state_depth--;
+
+    // assert(do_fsck());
     return 0;
 }
 
+/*
+ *  Called after the spin's restore of concrete state
+ */
+static long restore_after_hook(unsigned char *ptr)
+{
+    unmap_devices();
+    // assert(do_fsck());
+    // dump_fs_images("after-restore");
+    return 0;
+}
+
+/*
+ *  Called before the spin's checkpoint of abstract state
+ */
+static long update_before_hook(unsigned char *ptr)
+{
+    absfs_set_add(absfs_set, get_absfs());
+    return 0;
+}
+
+/*
+ *  Called after the spin's checkpoint of abstract state
+ */
+static long update_after_hook(unsigned char *ptr)
+{
+    return 0;
+}
+
+/*
+ *  Called before the spin's restore of abstract state
+ */
+static long revert_before_hook(unsigned char *ptr)
+{
+    return 0;
+}
+
+/*
+ *  Called after the spin's restore of abstract state
+ */
 static long revert_after_hook(unsigned char *ptr)
 {
     return 0;
