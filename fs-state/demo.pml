@@ -346,16 +346,6 @@ proctype driver(int nproc)
     int i;
     c_code {
         start_perf_metrics_thread();
-        /* Initialize test dirs and files names */
-        for (int i = 0; i < get_n_fs(); ++i) {
-            size_t len = snprintf(NULL, 0, "%s/testdir", get_basepaths()[i]);
-            get_testdirs()[i] = calloc(1, len + 1);
-            snprintf(get_testdirs()[i], len + 1, "%s/testdir", get_basepaths()[i]);
-
-            len = snprintf(NULL, 0, "%s/test.txt", get_basepaths()[i]);
-            get_testfiles()[i] = calloc(1, len + 1);
-            snprintf(get_testfiles()[i], len + 1, "%s/test.txt", get_basepaths()[i]);
-        }
     };
 
     for (i : 1 .. nproc) {

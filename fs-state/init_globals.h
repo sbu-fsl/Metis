@@ -11,10 +11,14 @@ extern "C" {
 #endif
 
 #ifndef MAX_FS
-#define MAX_FS    20
+#define MAX_FS      20
 #endif
 
 #define ENV_KEY_MAX 20
+
+#ifndef MAX_DIR_NUM
+#define MAX_DIR_NUM 200
+#endif
 
 #define nelem(array)  (sizeof(array) / sizeof(array[0]))
 
