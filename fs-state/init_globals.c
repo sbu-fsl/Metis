@@ -288,9 +288,19 @@ static void init_all_steady_globals()
     if (!globals_t_p->testdirs) 
         mem_alloc_err();
 
+    /* testdirs_dst */
+    globals_t_p->testdirs_dst = calloc(globals_t_p->_n_fs, sizeof(char*));
+    if (!globals_t_p->testdirs_dst) 
+        mem_alloc_err();
+
     /* testfiles */
     globals_t_p->testfiles = calloc(globals_t_p->_n_fs, sizeof(char*));
     if (!globals_t_p->testfiles) 
+        mem_alloc_err();
+
+    /* testfiles_dst */
+    globals_t_p->testfiles_dst = calloc(globals_t_p->_n_fs, sizeof(char*));
+    if (!globals_t_p->testfiles_dst) 
         mem_alloc_err();
 
     /* fsimgs */
@@ -460,9 +470,19 @@ char **get_testdirs()
     return globals_t_p->testdirs;
 }
 
+char **get_testdirs_dst()
+{
+    return globals_t_p->testdirs_dst;
+}
+
 char **get_testfiles()
 {
     return globals_t_p->testfiles;
+}
+
+char **get_testfiles_dst()
+{
+    return globals_t_p->testfiles_dst;
 }
 
 void **get_fsimgs()
