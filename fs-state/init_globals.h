@@ -47,6 +47,13 @@ static inline int get_dev_from_fs(char *fs_type) {
     return ret;
 }
 
+static inline bool is_prefix(const char *pre, const char *str)
+{
+    if (strlen(pre) > strlen(str))
+        return false;
+    return strncmp(pre, str, strlen(pre)) == 0;
+}
+
 typedef struct all_global_params {
     int _swarm_id;
     unsigned int _n_fs;

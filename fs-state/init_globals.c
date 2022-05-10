@@ -33,6 +33,7 @@ static void pool_dfs(int directorycount, int filecount, int path_depth, int max_
      */
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < directorycount; j++) {
+            /* -2 is for "d-" */
             append = max_name_len - 2;
             size_t len = snprintf(NULL, 0, "%s/d-%0*d", current[i], append, j);
             newpool[newnames_len] = calloc(1, 1 + len);
@@ -51,6 +52,7 @@ static void pool_dfs(int directorycount, int filecount, int path_depth, int max_
      */
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < filecount; j++) {
+            /* -2 is for "f-" */
             append = max_name_len - 2;
             size_t len = snprintf(NULL, 0, "%s/f-%0*d", current[i], append, j);
 
@@ -383,6 +385,51 @@ static void init_multi_files_params()
         pool_dfs(globals_t_p->directorycount, globals_t_p->filecount, 
             globals_t_p->path_depth, globals_t_p->max_name_len, current, 1);
     }
+
+    /* BFS the file and directory pools to pre-create some files & dirs to reduce ENOENT */
+    char **bfs_file_dir_pool = calloc(filepool_size + directorypool_size, sizeof(char*));
+    int file_cur_idx = 0;
+    int dir_cur_idx = 0;
+    int combo_pool_idx = 0;
+    bool root_files = true;
+    while (file_cur_idx < filepool_size && dir_cur_idx < directorypool_size) {
+        if (root_files) {
+            while (globals_t_p->filepool[file_cur_idx][1] == 'f') {
+                bfs_file_dir_pool[combo_pool_idx] = globals_t_p->filepool[file_cur_idx];
+                ++combo_pool_idx;
+                ++file_cur_idx;
+            }
+            root_files = false;
+        }
+        if (is_prefix(globals_t_p->directorypool[dir_cur_idx], globals_t_p->filepool[file_cur_idx])) {
+            bfs_file_dir_pool[combo_pool_idx] = globals_t_p->directorypool[dir_cur_idx];
+            ++combo_pool_idx;
+            bfs_file_dir_pool[combo_pool_idx] = globals_t_p->filepool[file_cur_idx];
+            ++combo_pool_idx;
+            ++file_cur_idx;
+            while(file_cur_idx < filepool_size && is_prefix(globals_t_p->directorypool[dir_cur_idx], globals_t_p->filepool[file_cur_idx])) {
+                bfs_file_dir_pool[combo_pool_idx] = globals_t_p->filepool[file_cur_idx];
+                ++combo_pool_idx;
+                ++file_cur_idx;
+            }
+            ++dir_cur_idx;
+        }
+    }
+    while (dir_cur_idx < directorypool_size) {
+        bfs_file_dir_pool[combo_pool_idx] = globals_t_p->directorypool[dir_cur_idx];
+        ++combo_pool_idx;
+        ++dir_cur_idx;
+    }
+    /*
+    fprintf(stdout, "BFS output: \n");
+    fprintf(stdout, "combo_pool_idx: %d\n", combo_pool_idx);
+    fprintf(stdout, "dir_cur_idx: %d\n", dir_cur_idx);
+    fprintf(stdout, "file_cur_idx: %d\n", file_cur_idx);
+    for (int i = 0; i < combo_pool_idx; ++i) {
+        fprintf(stdout, "%d: %s\n", i + 1, bfs_file_dir_pool[i]);
+    }
+    fflush(stdout);
+    */
 }
 
 /* TODO 1: Do we need to handle basepaths, testdirs, and testfiles? */
