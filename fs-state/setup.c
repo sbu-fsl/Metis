@@ -92,9 +92,9 @@ static int setup_mtd(const size_t size_kb)
 {
     char cmdbuf[PATH_MAX];
 
-    snprintf(cmdbuf, PATH_MAX, "runcmd modprobe mtdram total_size=%ld erase_size=16", size_kb / 1024);
+    snprintf(cmdbuf, PATH_MAX, "mtdram total_size=%ld erase_size=16", size_kb / 1024);
     execute_cmd(cmdbuf);
-    snprintf(cmdbuf, PATH_MAX, "runcmd modprobe mtdblock");
+    snprintf(cmdbuf, PATH_MAX, "mtdblock");
     execute_cmd(cmdbuf);
 
     return 0;
