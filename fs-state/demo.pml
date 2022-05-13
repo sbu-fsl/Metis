@@ -8,6 +8,8 @@ c_decl {
 
 /* DO NOT TOUCH THE COMMENT LINE BELOW */
 /* The persistent content of the file systems */
+c_track "get_fsimgs()[0]" "262144" "UnMatched";
+c_track "get_fsimgs()[1]" "262144" "UnMatched";
 
 /* Abstract state signatures of the file systems */
 /* DO NOT TOUCH THE COMMENT LINE ABOVE */
@@ -31,7 +33,12 @@ proctype worker()
            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
            unmount_all_strict();
            makelog("END: create_file\n");
-       };
+           if ( count % get_ss_count() == 0 ){
+               makelog("Taking snapshot");
+               dump_fs_images("snapshots");
+               record_seq("taking_snapshot\n");
+           }
+       }
     };
     :: pick_write_offset(offset);
        pick_write_size(writelen);

@@ -58,6 +58,7 @@ typedef struct all_global_params {
     absfs_state_t *absfs;
     int *rets;
     int *errs;
+    int ss_count;
 } globals_t;
 
 extern globals_t *globals_t_p;
@@ -76,7 +77,7 @@ int *get_fsfds();
 absfs_state_t *get_absfs();
 int *get_rets();
 int *get_errs();
-
+int get_ss_count();
 #ifdef __cplusplus
 }
 #endif

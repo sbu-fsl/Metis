@@ -342,8 +342,8 @@ static void dump_device(const char *devname, const char *folder,
         const char *fsname)
 {
     char cmd[ARG_MAX] = {0};
-    snprintf(cmd, ARG_MAX, "dd if=%s of=%s/%s-dev-%zu.img bs=4k status=none",
-             devname, folder, fsname, count);
+    snprintf(cmd, ARG_MAX, "dd if=%s of=%s/%s.img bs=4k status=none",
+             devname, folder, fsname);
     int status = system(cmd);
     if (WIFEXITED(status)) {
         if (WEXITSTATUS(status) != 0) {
@@ -359,14 +359,14 @@ static void dump_device(const char *devname, const char *folder,
     }
 }
 
-static void dump_fs_images(const char *folder)
+void dump_fs_images(const char *folder)
 {
     char fullpath[PATH_MAX] = {0};
     assert(ensure_dump_dir(folder) == 0);
     for (int i = 0; i < get_n_fs(); ++i) {
         /* Dump the mmap'ed object */
-        snprintf(fullpath, PATH_MAX, "%s/%s-mmap-%zu.img", folder,
-                 get_fslist()[i], count);
+        snprintf(fullpath, PATH_MAX, "%s/%s.img", folder,
+                 get_fslist()[i]);
         dump_mmaped(fullpath, get_fsfds()[i], get_fsimgs()[i]);
         /* Dump the device by direct copying */
         dump_device(get_devlist()[i], folder, get_fslist()[i]);

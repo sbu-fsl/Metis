@@ -9,6 +9,8 @@
 
 #define __USE_XOPEN_EXTENDED 1
 #include <ftw.h>
+#include <linux/loop.h>
+#include <string.h>
 
 #include "errnoname.h"
 #include "fileutil.h"

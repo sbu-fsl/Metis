@@ -14,6 +14,7 @@ static char *fslist_to_copy[MAX_FS];
 static size_t devsize_kb_to_copy[MAX_FS];
 static char *global_args = NULL;
 static int opt_ret = -1;
+//static int ss_count = 10;
 
 dev_nums_t dev_nums = {.all_rams = 0, .all_mtdblocks = 0};
 
@@ -62,6 +63,7 @@ static int parse_cli_arguments(char* args_to_parse)
     }
     /* _n_fs */
     globals_t_p->_n_fs = tok_cnt / 2;
+    globals_t_p->ss_count = 10; 
     return 0;
 }
 
@@ -372,6 +374,13 @@ int *get_errs()
 {
     return globals_t_p->errs;
 }
+
+
+int get_ss_count()
+{
+    return globals_t_p->ss_count;
+}
+
 
 static int cli_or_env_args(int argc, char *argv[])
 {
