@@ -101,6 +101,11 @@ static inline void print_expect_failed(const char *expr, const char *file,
            count, file, line, expr);
 }
 
+static inline bool need_pre_create(double prob)
+{
+    return rand() <  prob * ((double)RAND_MAX + 1.0);
+}
+
 #ifndef ABORT_ON_FAIL
 #define ABORT_ON_FAIL 0
 #endif

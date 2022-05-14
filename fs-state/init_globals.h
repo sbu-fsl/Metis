@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <fcntl.h>
 #include "abstract_fs.h"
 
 #ifdef __cplusplus
@@ -84,6 +85,8 @@ typedef struct all_global_params {
 
 extern globals_t *globals_t_p;
 extern bool *fs_frozen;
+extern char **bfs_file_dir_pool;
+extern int combo_pool_idx;
 
 unsigned int get_n_fs();
 char **get_fslist();

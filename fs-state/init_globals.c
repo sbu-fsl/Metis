@@ -1,8 +1,9 @@
 #include "init_globals.h"
 
 globals_t *globals_t_p;
-
 bool *fs_frozen;
+char **bfs_file_dir_pool;
+int combo_pool_idx;
 
 static char *mcfs_globals_env;
 static const char *mcfs_globals_env_key = "MCFS_FSLIST";
@@ -387,10 +388,10 @@ static void init_multi_files_params()
     }
 
     /* BFS the file and directory pools to pre-create some files & dirs to reduce ENOENT */
-    char **bfs_file_dir_pool = calloc(filepool_size + directorypool_size, sizeof(char*));
+    bfs_file_dir_pool = calloc(filepool_size + directorypool_size, sizeof(char*));
     int file_cur_idx = 0;
     int dir_cur_idx = 0;
-    int combo_pool_idx = 0;
+    combo_pool_idx = 0;
     bool root_files = true;
     while (file_cur_idx < filepool_size && dir_cur_idx < directorypool_size) {
         if (root_files) {
@@ -420,16 +421,6 @@ static void init_multi_files_params()
         ++combo_pool_idx;
         ++dir_cur_idx;
     }
-    /*
-    fprintf(stdout, "BFS output: \n");
-    fprintf(stdout, "combo_pool_idx: %d\n", combo_pool_idx);
-    fprintf(stdout, "dir_cur_idx: %d\n", dir_cur_idx);
-    fprintf(stdout, "file_cur_idx: %d\n", file_cur_idx);
-    for (int i = 0; i < combo_pool_idx; ++i) {
-        fprintf(stdout, "%d: %s\n", i + 1, bfs_file_dir_pool[i]);
-    }
-    fflush(stdout);
-    */
 }
 
 /* TODO 1: Do we need to handle basepaths, testdirs, and testfiles? */
