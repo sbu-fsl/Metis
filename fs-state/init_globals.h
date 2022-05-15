@@ -59,6 +59,8 @@ typedef struct all_global_params {
     int *rets;
     int *errs;
     int ss_count;
+    char **loopdevlist;
+    char **devlist_replayer;
 } globals_t;
 
 extern globals_t *globals_t_p;
@@ -78,6 +80,8 @@ absfs_state_t *get_absfs();
 int *get_rets();
 int *get_errs();
 int get_ss_count();
+char **get_loopdevlist();
+char **get_devlist_replayer();
 #ifdef __cplusplus
 }
 #endif

@@ -220,3 +220,25 @@ int unfreeze_all()
         }
     }
 }
+
+void mount_fs_images(){
+    //mounting the loop devices.
+    int failpos, err;
+    for (int i = 0; i < get_n_fs(); ++i) {
+        //mount loop device onto /mnt/test-<fs name>
+        int ret = mount(get_loopdevlist()[i], get_basepaths()[i], get_fslist()[i], MS_NOATIME, "");
+        if (ret != 0) {
+            failpos = i;
+            err = errno;
+            goto err;
+        }
+    }
+    return;
+err:
+   for (int j = 0; j < failpos; ++i) {
+       umount2(get_loopdevlist()[j], MNT_FORCE);
+   }
+   printf("Could not mount file system %s in %s at %s (%s)\n",
+       get_fslist()[failpos], get_loopdevlist()[failpos], get_basepaths()[failpos], errnoname(errno));
+   exit(1);
+}

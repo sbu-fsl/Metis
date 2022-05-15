@@ -64,6 +64,11 @@ proctype worker()
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
             makelog("END: write_file\n");
+            if ( count % get_ss_count() == 0 ){
+                makelog("Taking snapshot");
+                dump_fs_images("snapshots");
+                record_seq("taking_snapshot\n");
+            }
         };
     };
     :: pick_truncate_len(filelen);
@@ -84,6 +89,11 @@ proctype worker()
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
             makelog("END: truncate\n");
+            if ( count % get_ss_count() == 0 ){
+                makelog("Taking snapshot");
+                dump_fs_images("snapshots");
+                record_seq("taking_snapshot\n");
+            }
         };
     };
     :: atomic {
@@ -100,6 +110,11 @@ proctype worker()
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
             makelog("END: unlink\n");
+            if ( count % get_ss_count() == 0 ){
+                makelog("Taking snapshot");
+                dump_fs_images("snapshots");
+                record_seq("taking_snapshot\n");
+            }
         }
     };
     :: atomic {
@@ -116,6 +131,12 @@ proctype worker()
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
             makelog("END: mkdir\n");
+            if ( count % get_ss_count() == 0 ){
+                makelog("Taking snapshot");
+                dump_fs_images("snapshots");
+                record_seq("taking_snapshot\n");
+            }
+
         }
         // assert(! c_expr{ get_errs()[0] == EEXIST && get_errs()[1] == EEXIST && get_errs()[2] == 0 });
     };
@@ -133,6 +154,11 @@ proctype worker()
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
             makelog("END: rmdir\n");
+            if ( count % get_ss_count() == 0 ){
+                makelog("Taking snapshot");
+                dump_fs_images("snapshots");
+                record_seq("taking_snapshot\n");
+            }
         }
     };
     

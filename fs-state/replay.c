@@ -19,6 +19,8 @@
 
 int seq = 0;
 
+int fds[2][3];
+
 typedef struct concrete_state {
 	int seqid;
 	char **images;
@@ -174,7 +176,7 @@ void checkpoint()
 	state.seqid = seq;
 	state.images = calloc(get_n_fs(), sizeof(char *));
 	for (int i = 0; i < get_n_fs(); ++i) {
-		do_checkpoint(get_devlist()[i], &state.images[i]);
+		do_checkpoint(get_loopdevlist()[i], &state.images[i]);
 	}
 	vector_add(&states, &state);
 	printf("checkpoint\n");
@@ -203,12 +205,56 @@ void restore()
 	if (!state)
 		return;
 	for (int i = 0; i < get_n_fs(); ++i) {
-		do_restore(get_devlist()[i], state->images[i]);
+		do_restore(get_devlist_replayer()[i], state->images[i]);
 	}
 	if (state->images)
 		free(state->images);
 	vector_pop_back(&states);
 	printf("restore (to the state just before seqid = %d)\n", state->seqid);
+}
+
+void associate_loop_devs(){
+	int err;
+	for (int i = 0; i < get_n_fs(); ++i) {
+		//create loop device and mount.
+		//open fs img
+		fds[i][0] = openat(AT_FDCWD, get_devlist_replayer()[i], O_RDWR|O_CLOEXEC);
+		if( fds[i][0] == -1 ){
+			err = errno;
+			printf("Could not open fsimg %s.\n", get_devlist_replayer()[i]);
+			goto err;
+		}
+
+		//open loop dev
+		fds[i][1] = openat(AT_FDCWD, get_loopdevlist()[i], O_RDWR|O_CLOEXEC);
+		if( fds[i][1] == -1 ){
+			err = errno;
+			printf("Could not open loop device %s.\n", get_loopdevlist()[i]);
+			goto err;
+		}
+
+		//associate loop dev to fs img.
+		fds[i][2]  = ioctl(fds[i][1], LOOP_SET_FD, fds[i][0]);
+		if ( fds[i][2] == -1 ) {
+			err = errno;
+			printf("Could not associate fsimg %s to loop device %s .\n", get_devlist_replayer()[i], get_loopdevlist()[i]);
+			goto err;
+		}
+		printf("Associated loop dev %s to fs img %s\n", get_loopdevlist()[i], get_devlist_replayer()[i]);
+	}
+
+	for (int i = 0; i < get_n_fs(); ++i) {
+		for(int j = 0; j < 2; j++ ){
+			if( close(fds[i][j]) == -1 ) {
+				err = errno;
+				goto err;
+			}
+		}
+	}
+	return;
+err:
+	printf("Could not associate/mount loop device, errno %s", errnoname(errno));		
+	exit(1);
 }
 
 int main(int argc, char **argv)
@@ -221,7 +267,44 @@ int main(int argc, char **argv)
 		printf("Cannot open sequence.log. Does it exist?\n");
 		exit(1);
 	}
+
+	//reading the file from end to find out first "taking_snapshot"
+	if( argc == 4 && strcmp(argv[3], "-c") == 0 ){
+		fseek(seqfp, 0, SEEK_END);
+		int count = 0;
+		while (ftell(seqfp) > 1 ){
+			fseek(seqfp, -2, SEEK_CUR);
+			if(ftell(seqfp) <= 2)
+				break;
+			char ch =fgetc(seqfp);
+			count = 0;
+			char line[400] = "";
+			while(ch != '\n'){
+				line[count++] = ch;
+				if(ftell(seqfp) < 2)
+					break;
+				fseek(seqfp, -2, SEEK_CUR);
+				ch = fgetc(seqfp);
+			}
+			//TODO: Reverse the string and compare.
+			if(strcmp(line, "tohspans_gnikat") == 0){
+				//going to next line
+				while(fgetc(seqfp) != '\n'){
+
+				}
+				break;
+			}
+			long offset = ftell(seqfp);
+			fseek ( seqfp , offset , SEEK_SET );
+		}
+	}
+
 	replayer_init();
+
+	if( argc == 4 && strcmp(argv[3],"-c") == 0 ){
+		associate_loop_devs();
+	}
+
 	setup_filesystems();
 	while ((len = getline(&linebuf, &linecap, seqfp)) >= 0) {
 		char *line = malloc(len + 1);
@@ -236,7 +319,16 @@ int main(int argc, char **argv)
 		extract_fields(&argvec, line, ", ");
 		char *funcname = *vector_get(&argvec, char *, 0);
 		bool flag_ckpt = false, flag_restore = false;
-		mountall();
+		
+		if( argc == 4 && strcmp(argv[3],"-c") == 0 ){
+			//mounting the fs image -- need to skip verifs?
+			mount_fs_images();
+		}
+		else{
+			mountall();
+		}
+
+
 		if (strncmp(funcname, "create_file", len) == 0) {
 			do_create_file(&argvec);
 		} else if (strncmp(funcname, "write_file", len) == 0) {

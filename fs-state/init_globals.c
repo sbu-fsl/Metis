@@ -194,6 +194,37 @@ static void prepare_dev_suffix()
     }
 }
 
+static void prepare_loop_devices()
+{
+    size_t len;
+    globals_t_p->loopdevlist = calloc(globals_t_p->_n_fs, sizeof(char*));
+    if (!globals_t_p->loopdevlist) 
+        mem_alloc_err();
+    int loopcnt = 8;
+    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
+        len = snprintf(NULL, 0, "/dev/loop%d", loopcnt);
+        globals_t_p->loopdevlist[i] = calloc(len + 1, sizeof(char));
+        snprintf(globals_t_p->loopdevlist[i], len + 1, "/dev/loop%d", loopcnt);
+        loopcnt++;
+    }
+
+}
+
+static void prepare_devlist_replayer()
+{
+    size_t len;
+    globals_t_p->devlist_replayer = calloc(globals_t_p->_n_fs, sizeof(char*));
+    if (!globals_t_p->devlist_replayer) 
+        mem_alloc_err();
+    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
+	//change to relative path.
+        len = snprintf(NULL, 0, "/home/ubuntu/nfs4mc/fs-state/snapshots/%s.img", globals_t_p->fslist[i]);
+        globals_t_p->devlist_replayer[i] = calloc(len + 1, sizeof(char));
+        snprintf(globals_t_p->devlist_replayer[i], len + 1, "/home/ubuntu/nfs4mc/fs-state/snapshots/%s.img", globals_t_p->fslist[i]);
+    }
+
+}
+
 static void init_all_fickle_globals() 
 {
     /* fslist */
@@ -381,6 +412,18 @@ int get_ss_count()
     return globals_t_p->ss_count;
 }
 
+char **get_loopdevlist()
+{
+    return globals_t_p->loopdevlist;
+}
+
+char **get_devlist_replayer()
+{
+    return globals_t_p->devlist_replayer;
+}
+
+
+
 
 static int cli_or_env_args(int argc, char *argv[])
 {
@@ -453,6 +496,8 @@ void __attribute__((constructor)) globals_init(int argc, char *argv[])
     fs_frozen = calloc(get_n_fs(), sizeof(bool));
     if (!fs_frozen)
         mem_alloc_err();
+    prepare_loop_devices();
+    prepare_devlist_replayer();
 }
 
 /*
