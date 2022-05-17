@@ -22,10 +22,6 @@ truncate_len = make_params_pml('truncate_len',
         RangeParameters(0, 262144, 32768),
         RangeParameters(0, 260000, 29876))
 
-num = make_params_pml('num',
-        SpecialParameters(0),
-        RangeParameters(0, 1000, 1))
-
 if __name__ == '__main__':
     symbols = dict(globals())
     f = open('parameters.pml', 'w')

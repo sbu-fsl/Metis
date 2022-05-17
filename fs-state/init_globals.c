@@ -338,7 +338,7 @@ static void init_multi_files_params()
     globals_t_p->filecount = 1;
 
     /* directorycount */
-    globals_t_p->directorycount = 2;
+    globals_t_p->directorycount = 1;
 
     /* filepool_idx */
     globals_t_p->filepool_idx = 0;
@@ -347,7 +347,7 @@ static void init_multi_files_params()
     globals_t_p->dirpool_idx = 0;
 
     /* path_depth */
-    globals_t_p->path_depth = 3;
+    globals_t_p->path_depth = 1;
 
     /* max_name_len */
     globals_t_p->max_name_len = 10;
@@ -395,14 +395,14 @@ static void init_multi_files_params()
     bool root_files = true;
     while (file_cur_idx < filepool_size && dir_cur_idx < directorypool_size) {
         if (root_files) {
-            while (globals_t_p->filepool[file_cur_idx][1] == 'f') {
+            while (file_cur_idx < filepool_size && globals_t_p->filepool[file_cur_idx][1] == 'f') {
                 bfs_file_dir_pool[combo_pool_idx] = globals_t_p->filepool[file_cur_idx];
                 ++combo_pool_idx;
                 ++file_cur_idx;
             }
             root_files = false;
         }
-        if (is_prefix(globals_t_p->directorypool[dir_cur_idx], globals_t_p->filepool[file_cur_idx])) {
+        if (file_cur_idx < filepool_size && dir_cur_idx < directorypool_size && is_prefix(globals_t_p->directorypool[dir_cur_idx], globals_t_p->filepool[file_cur_idx])) {
             bfs_file_dir_pool[combo_pool_idx] = globals_t_p->directorypool[dir_cur_idx];
             ++combo_pool_idx;
             bfs_file_dir_pool[combo_pool_idx] = globals_t_p->filepool[file_cur_idx];

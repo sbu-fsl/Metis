@@ -470,7 +470,7 @@ static int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode)
 
 static void precreate_pools()
 {
-    double fs_exist_prob = 1;
+    double fs_exist_prob = 0;
     size_t path_len;
     char *path_name;
     mountall();
