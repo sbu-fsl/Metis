@@ -27,8 +27,8 @@ proctype worker()
             /* creat, check: errno, existence */
             makelog("BEGIN: create_file\n");
             mountall();
+            int src_idx = pick_random(0, get_filepool_idx() - 1);
             for (i = 0; i < get_n_fs(); ++i) {
-                int src_idx = pick_random(0, get_filepool_idx() - 1);
                 size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
                 get_testfiles()[i] = calloc(1, filename_len+1);
                 snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
@@ -58,8 +58,8 @@ proctype worker()
             // size_t writelen = pick_value(0, 32768, 2048);
             char *data = malloc(Pworker->writelen);
             generate_data(data, Pworker->writelen, Pworker->writebyte);
+            int src_idx = pick_random(0, get_filepool_idx() - 1);
             for (i = 0; i < get_n_fs(); ++i) {
-                int src_idx = pick_random(0, get_filepool_idx() - 1);
                 size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
                 get_testfiles()[i] = calloc(1, filename_len+1);
                 snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
@@ -89,8 +89,8 @@ proctype worker()
             makelog("BEGIN: truncate\n");
             mountall();
             // off_t flen = pick_value(0, 200000, 10000);
+            int src_idx = pick_random(0, get_filepool_idx() - 1);
             for (i = 0; i < get_n_fs(); ++i) {
-                int src_idx = pick_random(0, get_filepool_idx() - 1);
                 size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
                 get_testfiles()[i] = calloc(1, filename_len+1);
                 snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
@@ -114,8 +114,8 @@ proctype worker()
         c_code {
             makelog("BEGIN: unlink\n");
             mountall();
+            int src_idx = pick_random(0, get_filepool_idx() - 1);
             for (i = 0; i < get_n_fs(); ++i) {
-                int src_idx = pick_random(0, get_filepool_idx() - 1);
                 size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
                 get_testfiles()[i] = calloc(1, filename_len+1);
                 snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
@@ -139,8 +139,8 @@ proctype worker()
         c_code {
             makelog("BEGIN: mkdir\n");
             mountall();
+            int src_idx = pick_random(0, get_dirpool_idx() - 1);
             for (i = 0; i < get_n_fs(); ++i) {
-                int src_idx = pick_random(0, get_dirpool_idx() - 1);
                 size_t dirname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
                 get_testdirs()[i] = calloc(1, dirname_len+1);
                 snprintf(get_testdirs()[i], dirname_len + 1, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
@@ -165,8 +165,8 @@ proctype worker()
         c_code {
             makelog("BEGIN: rmdir\n");
             mountall();
+            int src_idx = pick_random(0, get_dirpool_idx() - 1);
             for (i = 0; i < get_n_fs(); ++i) {
-                int src_idx = pick_random(0, get_dirpool_idx() - 1);
                 size_t dirname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
                 get_testdirs()[i] = calloc(1, dirname_len+1);
                 snprintf(get_testdirs()[i], dirname_len + 1, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
