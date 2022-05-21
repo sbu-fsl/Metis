@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     ssize_t len = atoi(argv[3]);
     int byte = atoi(argv[4]);
 
-    int fd = open(path, O_RDWR);
+    int fd = open(path, O_RDWR|O_CREAT);
     if (fd < 0) {
       perror(path);
       exit(1);
