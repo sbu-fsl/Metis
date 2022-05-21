@@ -61,13 +61,12 @@ remount;
 ls -l $JFFS2_TEST_FILE;
 
 echo "writing 4 bytes from 16 offset";
-./write_file $JFFS2_TEST_FILE 16 4 2;
-./write_file $JFFS2_TEST_FILE 10 2 3;
+./write_file $JFFS2_TEST_FILE 20 4 2;
 
 hexdump -C -v $JFFS2_TEST_FILE;
 md5sum $MTDBLK_DEVICE $MTD_DEVICE;
 
-# remounting jffs2
-remount;
+# dropping all caches
+echo 3 > /proc/sys/vm/drop_caches
 hexdump -C -v $JFFS2_TEST_FILE;
 md5sum $MTDBLK_DEVICE $MTD_DEVICE;
