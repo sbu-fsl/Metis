@@ -8,8 +8,8 @@ To reproduce:
 
 3. write new bytes (say 2s) from an offset past the original size of the
 file, say at offset 20, for 4 bytes.  This is supposed to create a "hole" in
-teh file, meaning that the bytes from offset 8 (where it was trucnated
-above) up to the new write at offset 20, shuould all be 0s (zeros).
+the file, meaning that the bytes from offset 8 (where it was truncated
+above) up to the new write at offset 20, should all be 0s (zeros).
 
 4. flush all caches using "echo 3 > /proc/sys/vm/drop_caches" (or unmount
 and remount) the f/s
@@ -21,4 +21,22 @@ The script reproduce_jffs2_issue.sh + the small C program write_file.c, can
 be used to reproduce this bug.  There's a small Makefile to build + run them.
 
 The above example is shown when writing a small file within the same first
-page.  But the bug happens for larger files, as long as steps 1, 2, and 3 above all happen within the same page.
+page.  But the bug happens for larger files, as long as steps 1, 2, and 3
+above all happen within the same page.
+
+The problem was traced to the jffs2_begin_write code, where it goes into an
+'if' statement intended to handle writes past the current EOF (i.e., writes
+that may create a hole).  The code computes a 'pageofs' that is the floor of
+the write position (pos), aligned to the page size boundary.  In other
+words, 'pageofs' will never be larger than 'pos'.  The code then sets the
+internal jffs2_raw_inode->isize to the size of max(current inode size,
+pageofs) but that is wrong: the new file size should be the 'pos', which is
+larger than both the current inode size and pageofs.
+
+Similarly, the code incorrectly sets the internal jffs2_raw_inode->dsize to
+the difference between the pageofs minus current inode size; instead it
+should be the current pos minus the current inode size.
+
+The patch below fixes this bug.  The bug was discovered using a new tool for
+finding f/s bugs using model checking, called MCFS (Model Checking File
+Systems).
