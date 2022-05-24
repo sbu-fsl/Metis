@@ -14,11 +14,13 @@ above) up to the new write at offset 20, should all be 0s (zeros).
 4. flush all caches using "echo 3 > /proc/sys/vm/drop_caches" (or unmount
 and remount) the f/s
 
-5. Check the content of the file.  It is wrong.  The 1s that used to be b/t
-bytes 9 and 16, before the truncation, have REAPPEARED (they should be 0s).
+5. Check the content of the file.  It is wrong.  The 1s that used to be
+between bytes 9 and 16, before the truncation, have REAPPEARED (they should
+be 0s).
 
-The script reproduce_jffs2_issue.sh + the small C program write_file.c, can
-be used to reproduce this bug.  There's a small Makefile to build + run them.
+The script reproduce_jffs2_write_begin_issue.sh + the small C program
+write_file.c, can be used to reproduce this bug.  There's a small Makefile
+to build + run them.
 
 The above example is shown when writing a small file within the same first
 page.  But the bug happens for larger files, as long as steps 1, 2, and 3
