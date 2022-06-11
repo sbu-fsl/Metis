@@ -443,6 +443,20 @@ for i in $(grep -Po '\t.*:\d+( |\t)' ${SWARM_CONF}); do
 	count=$((count+1));
 done
 
+MAX_PAN_NUM=16
+FIRST_OPT_LINE=31
+LAST_OPT_LINE=46
+
+# Alter swarm.lib compilation options
+if [ "$NUM_PAN" -lt "$MAX_PAN_NUM" ]; then
+    sed -i "$(($NUM_PAN+$FIRST_OPT_LINE)),$LAST_OPT_LINE s/^/#/" $SWARM_CONF
+fi
+
 runcmd swarm $SWARM_CONF -K $MCFSLIST -f demo.pml
+
+# Restore swarm.lib
+if [ "$NUM_PAN" -lt "$MAX_PAN_NUM" ]; then
+    sed -i "$(($NUM_PAN+$FIRST_OPT_LINE)),$LAST_OPT_LINE s/^#//" $SWARM_CONF
+fi
 
 runcmd ./demo.pml.swarm
