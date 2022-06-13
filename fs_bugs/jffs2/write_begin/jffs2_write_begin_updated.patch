@@ -1,5 +1,6 @@
---- file.c	2022-05-09 03:16:33.000000000 -0400
-+++ file_updated.c	2022-06-13 02:38:26.579510787 -0400
+diff -urpN a/fs/jffs2/file.c b/fs/jffs2/file.c
+--- a/fs/jffs2/file.c	2022-05-09 03:16:33.000000000 -0400
++++ b/fs/jffs2/file.c	2022-06-13 03:11:10.118734028 -0400
 @@ -138,19 +138,18 @@ static int jffs2_write_begin(struct file
  	struct jffs2_inode_info *f = JFFS2_INODE_INFO(inode);
  	struct jffs2_sb_info *c = JFFS2_SB_INFO(inode->i_sb);
@@ -18,7 +19,7 @@
  
  		jffs2_dbg(1, "Writing new hole frag 0x%x-0x%x between current EOF and new page\n",
 -			  (unsigned int)inode->i_size, pageofs);
-+			  (unsigned int)inode->i_size, pos);
++			  (unsigned int)inode->i_size, (uint32_t)pos);
  
  		ret = jffs2_reserve_space(c, sizeof(ri), &alloc_len,
  					  ALLOC_NORMAL, JFFS2_SUMMARY_INODE_SIZE);
