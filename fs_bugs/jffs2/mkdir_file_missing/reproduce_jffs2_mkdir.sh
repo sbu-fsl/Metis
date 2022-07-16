@@ -55,11 +55,17 @@ setup_ext4() {
     mount -t ext4 $EXT4_DEVICE $EXT4_MNT_DIR || exit $?
 }
 
-setup_jffs2
-#setup_ext4
-
-# Compile the driver and run JFFS2 test
-./driver $JFFS2_MNT_DIR $MTDBLK_DEVICE jffs2 $DRIVER_LOOP_MAX 
-
-# Compile the driver and run EXT4 test
-# ./driver $EXT4_MNT_DIR $EXT4_DEVICE ext4 $DRIVER_LOOP_MAX 
+if [ $1 == "jffs2" ]; then
+    setup_jffs2
+    # Compile the driver and run JFFS2 test
+    # sudo ./driver /mnt/test-jffs2 /dev/mtdblock0 jffs2 10000 2>&1 > jffs2_reproduce.log
+    ./driver $JFFS2_MNT_DIR $MTDBLK_DEVICE jffs2 $DRIVER_LOOP_MAX 2>&1 > jffs2_reproduce.log
+elif [ $1 == "ext4" ]; then
+    setup_ext4
+    # Compile the driver and run EXT4 test
+    ./driver $EXT4_MNT_DIR $EXT4_DEVICE ext4 $DRIVER_LOOP_MAX 2>&1 > ext4_reproduce.log
+else
+    echo "[Error] file system not supported"
+    echo "Usage: ./reproduce_jffs2_mkdir.sh <fs-name>"
+    exit -1
+fi

@@ -16,12 +16,18 @@
 #include <linux/limits.h>
 #include <linux/fs.h>
 #include <unistd.h>
+#include <sys/vfs.h>
 
-//#define ENABLE_LOG
+#define ERASE_EIO_MTD
+
+/* To reproduce EIO, we have to disable logs, not sure why */
+// #define ENABLE_LOG
 
 #ifdef ENABLE_LOG
-const char *log_file = "mkdir_bug.csv"
+#define LOG_INTERVAL 1000 // log the stats with every LOG_INTERVAL loops
+const char *log_file = "mkdir_bug.csv";
 #endif
+
 char *state_ptr = NULL; 
 char *mp = NULL;
 char *dev = NULL;
@@ -61,7 +67,6 @@ static void do_checkpoint(const char *devpath, char **bufptr)
 	int devfd = open(devpath, O_RDWR);
 	assert(devfd >= 0);
 	size_t fs_size = fsize(devfd);
-    // fprintf(stdout, "checkpoint size: %zu\n", fs_size);
 	char *buffer, *ptr;
 
 	ptr = mmap(NULL, fs_size, PROT_READ | PROT_WRITE, MAP_SHARED, devfd, 0);
@@ -81,7 +86,6 @@ static void do_restore(const char *devpath, char *buffer)
 	int devfd = open(devpath, O_RDWR);
 	assert(devfd >= 0);
 	size_t size = fsize(devfd);
-    // fprintf(stdout, "restore size: %zu\n", size);
 	char *ptr;
 
 	ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, devfd, 0);
@@ -113,15 +117,20 @@ static void execute_cmd(const char *cmd)
 
 void mount_fs()
 {
-    //printf ("Caller name: %pS\n", __builtin_return_address(0));
     int ret = -1; 
     int retry_limit = 1;
+    int err = 0;
 try_mount:    
     ret = mount(dev, mp, fs_type, MS_NOATIME, "");
     if (ret != 0) {
-        if (errno == EIO && retry_limit > 0) {
+#ifdef ERASE_EIO_MTD
+        if (errno == EIO) {
+            fprintf(stdout, "EIO error occurred in mount.\n");
             execute_cmd("flash_erase /dev/mtd0 0 0");
-            fprintf(stdout, "retry mount...\n");
+            // exit(1);
+        }
+#endif
+        if (retry_limit > 0) {
             retry_limit--;
             goto try_mount;
         }
@@ -141,11 +150,13 @@ void unmount_fs()
     bool has_failure = false;
     int retry_limit = 20;
     int ret = -1;
+    int err = 0;
 try_unmount:
     ret = umount2(mp, 0);
+    err = errno;
     if (ret != 0) {
         useconds_t waitms = (100 << (10 - retry_limit));
-        if (errno == EBUSY && retry_limit > 0) {
+        if (err == EBUSY && retry_limit > 0) {
             fprintf(stderr, "File system %s mounted on %s is busy. Retry "
                         "unmounting after %dms.\n", fs_type, mp, waitms);
             usleep(1000 * waitms);
@@ -153,12 +164,47 @@ try_unmount:
             goto try_unmount;
         }
         fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
-                fs_type, mp, strerror(errno));
+                fs_type, mp, strerror(err));
         has_failure = true;
     }
     if (has_failure)
         exit(1);
 }
+
+#ifdef ENABLE_LOG
+struct fs_stat {
+    size_t capacity;
+    size_t bytes_free;
+    size_t bytes_avail;
+    size_t total_inodes;
+    size_t free_inodes;
+    size_t block_size;
+};
+
+static int get_fs_stat(const char *mp, struct fs_stat *st)
+{
+    struct statfs raw_st;
+    int ret = statfs(mp, &raw_st);
+    if (ret < 0) {
+        fprintf(stderr, "Cannot stat file system at %s: %d\n", mp, errno);
+        return ret;
+    }
+    size_t bs = raw_st.f_bsize;
+    st->capacity = raw_st.f_blocks * bs;
+    st->bytes_free = raw_st.f_bfree * bs;
+    st->bytes_avail = raw_st.f_bavail * bs;
+    st->total_inodes = raw_st.f_files;
+    st->free_inodes = raw_st.f_ffree;
+    st->block_size = bs;
+    return ret;
+}
+
+static void write_stats_to_log(long id, FILE *fp, struct fs_stat st)
+{
+    fprintf(fp, "%ld,%zu,%zu,%zu,", id, st.capacity, st.bytes_free, st.bytes_avail);
+    fprintf(fp, "%zu,%zu,%zu\n", st.total_inodes, st.free_inodes, st.block_size);
+}
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -174,11 +220,13 @@ int main(int argc, char *argv[])
 
     /* Set up log file */
 #ifdef ENABLE_LOG
+    struct fs_stat jffs2_stats;
     FILE *logfp = fopen(log_file, "w");
     if (!logfp) {
         fprintf(stderr, "Failed to open log file %s\n", log_file);
         exit(1);
     }
+    fprintf(logfp, "loopid,capacity,bytes_free,bytes_avail,total_inodes,free_inodes,block_size\n");
 #endif
     long loop_id = 0;
     int rand_num;
@@ -227,21 +275,45 @@ int main(int argc, char *argv[])
 
         /* Op. 4 Restore to the previous concrete state */
         do_restore(dev, state_ptr);
-        /* statfs before mkdir */
-
-        /* Op. 5 Create a directory */
+        /* Here checks if restore ops brings the regular file back */
         mount_fs();
+        if (access(file_path, F_OK) != 0) {
+            fprintf(stderr, "[ERROR] restore failed without regular file!\n");
+            unmount_fs();
+            exit(1);
+        }
+
+#ifdef ENABLE_LOG
+        if (loop_id % LOG_INTERVAL == 0)
+        {
+            /* statfs before mkdir */
+            ret = get_fs_stat(mp, &jffs2_stats);
+            if (ret < 0)
+                exit(1);
+            write_stats_to_log(loop_id, logfp, jffs2_stats);
+        }
+#endif
+        /* Op. 5 Create a directory */
         snprintf(dir_path, PATH_MAX, "%s/testdir-%d", mp, rand_num);
         errno = 0;
         ret = mkdir(dir_path, 0755);
         err = errno;
-        unmount_fs();
         if (ret < 0) {
             fprintf(stderr, "mkdir failed, ret = %d, err = %d (%s)\n", ret, err, strerror(err));
+            unmount_fs();
             exit(1);
         }
-
-        /* statfs after mkdir */
+#ifdef ENABLE_LOG
+        if (loop_id % LOG_INTERVAL == 0)
+        {
+            /* statfs after mkdir */
+            ret = get_fs_stat(mp, &jffs2_stats);
+            if (ret < 0)
+                exit(1);
+            write_stats_to_log(loop_id, logfp, jffs2_stats);
+        }
+#endif
+        unmount_fs();
 
         /* If the regular file does not exist, there is a bug */
         mount_fs();
@@ -270,7 +342,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "rmdir failed, ret = %d, err = %d (%s)\n", ret, err, strerror(err));
             exit(1);
         }
-        printf("loop id: %ld passed!\n", loop_id);
+        fprintf(stdout, "loop id: %ld passed\n", loop_id);
         ++loop_id;
     }
 #ifdef ENABLE_LOG
@@ -278,5 +350,3 @@ int main(int argc, char *argv[])
 #endif
     return 0;
 }
-
-
