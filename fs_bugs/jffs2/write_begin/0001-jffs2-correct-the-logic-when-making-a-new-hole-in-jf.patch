@@ -1,14 +1,55 @@
 From 3c6dc7b6007006c188cfd0286839f729cb0f566e Mon Sep 17 00:00:00 2001
 From: Yifei Liu <yifeliu@cs.stonybrook.edu>
 Date: Sun, 24 Jul 2022 08:04:14 +0000
-Subject: [PATCH] jffs2: correct the logic when making a new hole in
- jffs2_write_begin()
+Subject: [PATCH] jffs2: correct logic when creating a hole in jffs2_write_begin
 
-When writes create a hole, we need to use write position (pos) instead of
-pageofs to ensure the inode reflects the entire hole that should be zeroed 
-out.
+To reproduce:
+
+1. Write data to a file, say all 1s from offset 0 to 16.
+
+2. Truncate the file to a smaller size, say 8 bytes.
+
+3. Write new bytes (say 2s) from an offset past the original size of the
+file, say at offset 20, for 4 bytes.  This is supposed to create a "hole" in
+the file, meaning that the bytes from offset 8 (where it was truncated
+above) up to the new write at offset 20, should all be 0s (zeros).
+
+4. flush all caches using "echo 3 > /proc/sys/vm/drop_caches" (or unmount
+and remount) the f/s.
+
+5. Check the content of the file.  It is wrong.  The 1s that used to be
+between bytes 9 and 16, before the truncation, have REAPPEARED (they should
+be 0s).
+
+We wrote a script and helper C program to reproduce the bug
+(reproduce_jffs2_write_begin_issue.sh, write_file.c, and Makefile).  We can
+make them available to anyone.
+
+The above example is shown when writing a small file within the same first
+page.  But the bug happens for larger files, as long as steps 1, 2, and 3
+above all happen within the same page.
+
+The problem was traced to the jffs2_write_begin code, where it goes into an
+'if' statement intended to handle writes past the current EOF (i.e., writes
+that may create a hole).  The code computes a 'pageofs' that is the floor of
+the write position (pos), aligned to the page size boundary.  In other
+words, 'pageofs' will never be larger than 'pos'.  The code then sets the
+internal jffs2_raw_inode->isize to the size of max(current inode size,
+pageofs) but that is wrong: the new file size should be the 'pos', which is
+larger than both the current inode size and pageofs.
+
+Similarly, the code incorrectly sets the internal jffs2_raw_inode->dsize to
+the difference between the pageofs minus current inode size; instead it
+should be the current pos minus the current inode size.  Finally,
+inode->i_size was also set incorrectly.
+
+The patch below fixes this bug.  The bug was discovered using a new tool for
+finding f/s bugs using model checking, called MCFS (Model Checking File
+Systems).
 
 Signed-off-by: Yifei Liu <yifeliu@cs.stonybrook.edu>
+Signed-off-by: Erez Zadok <ezk@cs.stonybrook.edu>
+Signed-off-by: Manish Adkar <madkar@cs.stonybrook.edu>
 ---
  fs/jffs2/file.c | 15 +++++++--------
  1 file changed, 7 insertions(+), 8 deletions(-)
