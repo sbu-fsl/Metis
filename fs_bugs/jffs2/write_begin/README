@@ -1,6 +1,4 @@
-JFFS2 bug description
-
-To reproduce:
+Bug description and fix:
 
 1. Write data to a file, say all 1s from offset 0 to 16.
 

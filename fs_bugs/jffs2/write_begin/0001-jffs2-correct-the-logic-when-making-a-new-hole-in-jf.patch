@@ -3,7 +3,7 @@ From: Yifei Liu <yifeliu@cs.stonybrook.edu>
 Date: Sun, 24 Jul 2022 08:04:14 +0000
 Subject: [PATCH] jffs2: correct logic when creating a hole in jffs2_write_begin
 
-To reproduce:
+Bug description and fix:
 
 1. Write data to a file, say all 1s from offset 0 to 16.
 
