@@ -1,7 +1,22 @@
-diff -urpN a/fs/jffs2/file.c b/fs/jffs2/file.c
---- a/fs/jffs2/file.c	2022-05-09 03:16:33.000000000 -0400
-+++ b/fs/jffs2/file.c	2022-06-13 03:11:10.118734028 -0400
-@@ -138,19 +138,18 @@ static int jffs2_write_begin(struct file
+From 3c6dc7b6007006c188cfd0286839f729cb0f566e Mon Sep 17 00:00:00 2001
+From: Yifei Liu <yifeliu@cs.stonybrook.edu>
+Date: Sun, 24 Jul 2022 08:04:14 +0000
+Subject: [PATCH] jffs2: correct the logic when making a new hole in
+ jffs2_write_begin()
+
+When writes create a hole, we need to use write position (pos) instead of
+pageofs to ensure the inode reflects the entire hole that should be zeroed out.
+
+Signed-off-by: Yifei Liu <yifeliu@cs.stonybrook.edu>
+---
+ fs/jffs2/file.c | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
+
+diff --git a/fs/jffs2/file.c b/fs/jffs2/file.c
+index ba86acbe12d3..0479096b96e4 100644
+--- a/fs/jffs2/file.c
++++ b/fs/jffs2/file.c
+@@ -137,19 +137,18 @@ static int jffs2_write_begin(struct file *filp, struct address_space *mapping,
  	struct jffs2_inode_info *f = JFFS2_INODE_INFO(inode);
  	struct jffs2_sb_info *c = JFFS2_SB_INFO(inode->i_sb);
  	pgoff_t index = pos >> PAGE_SHIFT;
@@ -11,19 +26,21 @@ diff -urpN a/fs/jffs2/file.c b/fs/jffs2/file.c
  	jffs2_dbg(1, "%s()\n", __func__);
  
 -	if (pageofs > inode->i_size) {
+-		/* Make new hole frag from old EOF to new page */
 +	if (pos > inode->i_size) {
- 		/* Make new hole frag from old EOF to new page */
++		/* Make new hole frag from old EOF to new position */
  		struct jffs2_raw_inode ri;
  		struct jffs2_full_dnode *fn;
  		uint32_t alloc_len;
  
- 		jffs2_dbg(1, "Writing new hole frag 0x%x-0x%x between current EOF and new page\n",
+-		jffs2_dbg(1, "Writing new hole frag 0x%x-0x%x between current EOF and new page\n",
 -			  (unsigned int)inode->i_size, pageofs);
++		jffs2_dbg(1, "Writing new hole frag 0x%x-0x%x between current EOF and new position\n",
 +			  (unsigned int)inode->i_size, (uint32_t)pos);
  
  		ret = jffs2_reserve_space(c, sizeof(ri), &alloc_len,
  					  ALLOC_NORMAL, JFFS2_SUMMARY_INODE_SIZE);
-@@ -170,10 +169,10 @@ static int jffs2_write_begin(struct file
+@@ -169,10 +168,10 @@ static int jffs2_write_begin(struct file *filp, struct address_space *mapping,
  		ri.mode = cpu_to_jemode(inode->i_mode);
  		ri.uid = cpu_to_je16(i_uid_read(inode));
  		ri.gid = cpu_to_je16(i_gid_read(inode));
@@ -36,7 +53,7 @@ diff -urpN a/fs/jffs2/file.c b/fs/jffs2/file.c
  		ri.csize = cpu_to_je32(0);
  		ri.compr = JFFS2_COMPR_ZERO;
  		ri.node_crc = cpu_to_je32(crc32(0, &ri, sizeof(ri)-8));
-@@ -203,7 +202,7 @@ static int jffs2_write_begin(struct file
+@@ -202,7 +201,7 @@ static int jffs2_write_begin(struct file *filp, struct address_space *mapping,
  			goto out_err;
  		}
  		jffs2_complete_reservation(c);
@@ -45,3 +62,6 @@ diff -urpN a/fs/jffs2/file.c b/fs/jffs2/file.c
  		mutex_unlock(&f->sem);
  	}
  
+-- 
+2.25.1
+

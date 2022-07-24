@@ -26,7 +26,7 @@ The above example is shown when writing a small file within the same first
 page.  But the bug happens for larger files, as long as steps 1, 2, and 3
 above all happen within the same page.
 
-The problem was traced to the jffs2_begin_write code, where it goes into an
+The problem was traced to the jffs2_write_begin code, where it goes into an
 'if' statement intended to handle writes past the current EOF (i.e., writes
 that may create a hole).  The code computes a 'pageofs' that is the floor of
 the write position (pos), aligned to the page size boundary.  In other
