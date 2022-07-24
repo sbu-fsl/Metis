@@ -5,7 +5,8 @@ Subject: [PATCH] jffs2: correct the logic when making a new hole in
  jffs2_write_begin()
 
 When writes create a hole, we need to use write position (pos) instead of
-pageofs to ensure the inode reflects the entire hole that should be zeroed out.
+pageofs to ensure the inode reflects the entire hole that should be zeroed 
+out.
 
 Signed-off-by: Yifei Liu <yifeliu@cs.stonybrook.edu>
 ---
