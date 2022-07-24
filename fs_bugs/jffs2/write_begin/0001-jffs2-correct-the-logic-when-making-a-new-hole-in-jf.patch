@@ -10,8 +10,8 @@ Bug description and fix:
 2. Truncate the file to a smaller size, say 8 bytes.
 
 3. Write new bytes (say 2s) from an offset past the original size of the
-file, say at offset 20, for 4 bytes.  This is supposed to create a "hole" in
-the file, meaning that the bytes from offset 8 (where it was truncated
+file, say at offset 20, for 4 bytes.  This is supposed to create a "hole" 
+in the file, meaning that the bytes from offset 8 (where it was truncated
 above) up to the new write at offset 20, should all be 0s (zeros).
 
 4. flush all caches using "echo 3 > /proc/sys/vm/drop_caches" (or unmount
@@ -31,8 +31,8 @@ above all happen within the same page.
 
 The problem was traced to the jffs2_write_begin code, where it goes into an
 'if' statement intended to handle writes past the current EOF (i.e., writes
-that may create a hole).  The code computes a 'pageofs' that is the floor of
-the write position (pos), aligned to the page size boundary.  In other
+that may create a hole).  The code computes a 'pageofs' that is the floor 
+of the write position (pos), aligned to the page size boundary.  In other
 words, 'pageofs' will never be larger than 'pos'.  The code then sets the
 internal jffs2_raw_inode->isize to the size of max(current inode size,
 pageofs) but that is wrong: the new file size should be the 'pos', which is
@@ -43,8 +43,8 @@ the difference between the pageofs minus current inode size; instead it
 should be the current pos minus the current inode size.  Finally,
 inode->i_size was also set incorrectly.
 
-The patch below fixes this bug.  The bug was discovered using a new tool for
-finding f/s bugs using model checking, called MCFS (Model Checking File
+The patch below fixes this bug.  The bug was discovered using a new tool 
+for finding f/s bugs using model checking, called MCFS (Model Checking File
 Systems).
 
 Signed-off-by: Yifei Liu <yifeliu@cs.stonybrook.edu>
