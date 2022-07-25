@@ -1,7 +1,8 @@
 From 6cb09212daf5936168abc431f278e1329f235563 Mon Sep 17 00:00:00 2001
 From: Yifei Liu <yifeliu@cs.stonybrook.edu>
 Date: Sun, 24 Jul 2022 08:04:14 +0000
-Subject: [PATCH] jffs2: correct logic when creating a hole in jffs2_write_begin
+Subject: [PATCH] jffs2: correct logic when creating a hole in
+ jffs2_write_begin
 
 Bug description and fix:
 
