@@ -16,6 +16,8 @@ int _n_files;
 size_t count;
 absfs_set_t absfs_set;
 
+static size_t state_depth = 0;
+
 int compare_file_content(const char *path1, const char *path2)
 {
     const size_t bs = 4096;
@@ -343,7 +345,7 @@ static void dump_device(const char *devname, const char *folder,
 {
     char cmd[ARG_MAX] = {0};
     snprintf(cmd, ARG_MAX, "dd if=%s of=%s/%s-dev-%zu.img bs=4k status=none",
-             devname, folder, fsname, count);
+             devname, folder, fsname, state_depth);
     int status = system(cmd);
     if (WIFEXITED(status)) {
         if (WEXITSTATUS(status) != 0) {
@@ -366,7 +368,7 @@ static void dump_fs_images(const char *folder)
     for (int i = 0; i < get_n_fs(); ++i) {
         /* Dump the mmap'ed object */
         snprintf(fullpath, PATH_MAX, "%s/%s-mmap-%zu.img", folder,
-                 get_fslist()[i], count);
+                 get_fslist()[i], state_depth);
         dump_mmaped(fullpath, get_fsfds()[i], get_fsimgs()[i]);
         /* Dump the device by direct copying */
         dump_device(get_devlist()[i], folder, get_fslist()[i]);
@@ -446,8 +448,6 @@ static int restore_verifs(size_t key, const char *mp)
     return ret;
 }
 
-static size_t state_depth = 0;
-
 /*
  *  Called before the spin's checkpoint of concrete state
  */
@@ -480,7 +480,7 @@ static long checkpoint_after_hook(unsigned char *ptr)
 {
     unmap_devices();
     // assert(do_fsck());
-    // dump_fs_images("snapshots");
+    dump_fs_images("snapshots");
     return 0;
 }
 
@@ -517,7 +517,7 @@ static long restore_after_hook(unsigned char *ptr)
 {
     unmap_devices();
     // assert(do_fsck());
-    // dump_fs_images("after-restore");
+    dump_fs_images("after-restore");
     return 0;
 }
 
