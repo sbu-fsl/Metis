@@ -215,19 +215,16 @@ int main(int argc, char *argv[])
     fprintf(logfp, "loopid,capacity,bytes_free,bytes_avail,total_inodes,free_inodes,block_size\n");
 #endif
     long loop_id = 0;
-    int rand_num;
     char file_path[PATH_MAX] = {0};
     char dir_path[PATH_MAX] = {0};
 
     /* Start Loop */
     int ret = -1;
-    srand(time(0));
     while (loop_id < loop_max) {
         /* Op. 1 Create a regular file */
 
         mount_fs();
-        rand_num = rand() % 65536;
-        snprintf(file_path, PATH_MAX, "%s/test-%d", mp, rand_num);
+        snprintf(file_path, PATH_MAX, "%s/test.txt", mp);
         errno = 0;
         ret = create_file(file_path, 0644);
         err = errno;
@@ -277,7 +274,7 @@ int main(int argc, char *argv[])
         }
 #endif
         /* Op. 5 Create a directory */
-        snprintf(dir_path, PATH_MAX, "%s/testdir-%d", mp, rand_num);
+        snprintf(dir_path, PATH_MAX, "%s/testdir", mp);
         errno = 0;
         ret = mkdir(dir_path, 0755);
         err = errno;

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DRIVER_LOOP_MAX=100000
+DRIVER_LOOP_MAX=10000
 
 # jffs2 parameters
 JFFS2_TMP_IMG_DIR="/tmp/temp_image_dir"
@@ -34,6 +34,7 @@ setup_jffs2() {
     fi
     mkdir -p $JFFS2_TMP_IMG_DIR || exit $?
     dd if=$REPLAY_IMAGE of=$MTDBLK_DEVICE || exit $?
+    # mount -t jffs2 $MTDBLK_DEVICE $JFFS2_MNT_DIR || exit $?
 }
 
 setup_jffs2
@@ -41,6 +42,7 @@ setup_jffs2
 # Loop: mount image, run driver, unmount image
 COUNTER=0
 while [  $COUNTER -lt $DRIVER_LOOP_MAX ]; do
+    echo "counter $COUNTER of $DRIVER_LOOP_MAX"
     ./driver $JFFS2_MNT_DIR $MTDBLK_DEVICE jffs2 1
     dd if=$REPLAY_IMAGE of=$MTDBLK_DEVICE || exit $?
     let COUNTER=COUNTER+1 
