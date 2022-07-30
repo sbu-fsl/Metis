@@ -35,8 +35,6 @@ setup_jffs2() {
 
     mkfs.jffs2 --pad=$JFFS2_SIZE --root=$JFFS2_TMP_IMG_DIR -o $JFFS2_IMG || exit $?
     dd if=$JFFS2_IMG of=$MTDBLK_DEVICE || exit $?
-
-    mount -t jffs2 $MTDBLK_DEVICE $JFFS2_MNT_DIR || exit $?
 }
 
 setup_ext4() {
@@ -52,7 +50,6 @@ setup_ext4() {
     mkdir -p $EXT4_MNT_DIR
 
     mkfs.ext4 $EXT4_DEVICE
-    mount -t ext4 $EXT4_DEVICE $EXT4_MNT_DIR || exit $?
 }
 
 if [ $1 == "jffs2" ]; then
@@ -66,6 +63,6 @@ elif [ $1 == "ext4" ]; then
     ./driver $EXT4_MNT_DIR $EXT4_DEVICE ext4 $DRIVER_LOOP_MAX 2>&1 > ext4_reproduce.log
 else
     echo "[Error] file system not supported"
-    echo "Usage: ./reproduce_jffs2_mkdir.sh <fs-name>"
+    echo "Usage: $0 <fs-name>"
     exit -1
 fi

@@ -18,8 +18,6 @@
 #include <unistd.h>
 #include <sys/vfs.h>
 
-#define ERASE_EIO_MTD
-
 /* To reproduce EIO, we have to disable logs, not sure why */
 // #define ENABLE_LOG
 
@@ -120,20 +118,8 @@ void mount_fs()
     int ret = -1; 
     int retry_limit = 1;
     int err = 0;
-try_mount:    
     ret = mount(dev, mp, fs_type, MS_NOATIME, "");
     if (ret != 0) {
-#ifdef ERASE_EIO_MTD
-        if (errno == EIO) {
-            fprintf(stdout, "EIO error occurred in mount.\n");
-            execute_cmd("flash_erase /dev/mtd0 0 0");
-            // exit(1);
-        }
-#endif
-        if (retry_limit > 0) {
-            retry_limit--;
-            goto try_mount;
-        }
         err = errno;
         goto err;
     }
@@ -232,9 +218,6 @@ int main(int argc, char *argv[])
     int rand_num;
     char file_path[PATH_MAX] = {0};
     char dir_path[PATH_MAX] = {0};
-
-    /* umount it first */
-    unmount_fs();
 
     /* Start Loop */
     int ret = -1;
