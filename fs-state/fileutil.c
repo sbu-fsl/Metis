@@ -482,7 +482,7 @@ static long checkpoint_after_hook(unsigned char *ptr)
     unmap_devices();
     // assert(do_fsck());
     if (count >= DUMP_FSOPS_THRES && state_depth >= DUMP_DEPTH_THRES)
-        dump_fs_images("snapshots");
+        dump_fs_images("after-checkpoint");
     return 0;
 }
 
