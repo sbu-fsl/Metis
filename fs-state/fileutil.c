@@ -367,10 +367,11 @@ static void dump_fs_images(const char *folder)
     assert(ensure_dump_dir(folder) == 0);
     for (int i = 0; i < get_n_fs(); ++i) {
         /* Dump the mmap'ed object */
-        snprintf(fullpath, PATH_MAX, "%s/%s-mmap-%zu.img", folder,
-                 get_fslist()[i], state_depth);
-        dump_mmaped(fullpath, get_fsfds()[i], get_fsimgs()[i]);
+        // snprintf(fullpath, PATH_MAX, "%s/%s-mmap-%zu.img", folder,
+        //         get_fslist()[i], state_depth);
+        // dump_mmaped(fullpath, get_fsfds()[i], get_fsimgs()[i]);
         /* Dump the device by direct copying */
+        // Only use dd method to dump images for reproducing jffs2 mkdir bug
         dump_device(get_devlist()[i], folder, get_fslist()[i]);
     }
 }
@@ -480,7 +481,8 @@ static long checkpoint_after_hook(unsigned char *ptr)
 {
     unmap_devices();
     // assert(do_fsck());
-    dump_fs_images("snapshots");
+    if (count >= DUMP_FSOPS_THRES && state_depth >= DUMP_DEPTH_THRES)
+        dump_fs_images("snapshots");
     return 0;
 }
 
@@ -517,7 +519,8 @@ static long restore_after_hook(unsigned char *ptr)
 {
     unmap_devices();
     // assert(do_fsck());
-    dump_fs_images("after-restore");
+    if (count >= DUMP_FSOPS_THRES && state_depth >= DUMP_DEPTH_THRES)
+        dump_fs_images("after-restore");
     return 0;
 }
 

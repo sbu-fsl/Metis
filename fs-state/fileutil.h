@@ -3,6 +3,9 @@
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
 
+#define DUMP_FSOPS_THRES 4000000 // For reproducing MCFS mkdir bug
+#define DUMP_DEPTH_THRES 3800 // For reproducing MCFS mkdir bug
+
 extern globals_t *globals_t_p;
 extern struct fs_stat *fsinfos;
 extern int cur_pid;
