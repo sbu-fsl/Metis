@@ -39,7 +39,13 @@ while [  $COUNTER -lt $DRIVER_LOOP_MAX ]; do
     mount -t ext4 $EXT4_DEV $EXT4_MP
     mount -t jffs2 $JFFS2_DEV $JFFS2_MP
 
-    diff $EXT4_TEST_FILE $JFFS2_TEST_FILE
+    DIFF=$(diff <(hexdump $EXT4_TEST_FILE) <(hexdump $JFFS2_TEST_FILE))
+    if [ "$DIFF" != "" ] 
+    then
+        echo "JFFS2 BEFORE UNLINK BUG REPRODUCED (before driver)!"
+        echo $DIFF
+        exit -1
+    fi
 
     ./driver $EXT4_TEST_FILE 57344 1021 149 $EXT4_MP $EXT4_DEV ext4
     ./driver $JFFS2_TEST_FILE 57344 1021 149 $JFFS2_MP $JFFS2_DEV jffs2
@@ -47,7 +53,7 @@ while [  $COUNTER -lt $DRIVER_LOOP_MAX ]; do
     DIFF=$(diff <(hexdump $EXT4_TEST_FILE) <(hexdump $JFFS2_TEST_FILE))
     if [ "$DIFF" != "" ] 
     then
-        echo "JFFS2 BEFORE UNLINK BUG REPRODUCED!"
+        echo "JFFS2 BEFORE UNLINK BUG REPRODUCED (after driver)!"
         echo $DIFF
         exit -1
     fi
