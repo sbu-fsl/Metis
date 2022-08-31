@@ -489,8 +489,10 @@ static long checkpoint_after_hook(unsigned char *ptr)
  */
 static long restore_before_hook(unsigned char *ptr)
 {
+    state_depth--;
+    
     submit_seq("restore\n");
-    makelog("[seqid = %d] restore (%p)\n", count, state_depth);
+    makelog("[seqid = %d] restore (%zu)\n", count, state_depth);
 
     mmap_devices();
 
@@ -503,8 +505,6 @@ static long restore_before_hook(unsigned char *ptr)
                     get_fslist()[i]);
         }
     }
-
-    state_depth--;
 
     // assert(do_fsck());
     return 0;
