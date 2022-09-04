@@ -548,10 +548,14 @@ static long restore_after_hook(unsigned char *ptr)
 
     /* 
      * After restore: 
-     * 1. print the absfs that is SUPPOSED to restore
-     * 2. mount, compare absfs for two f/s, unmount 
+     * 1. mount, compare absfs for two f/s, unmount 
+     * 2. print the absfs that is SUPPOSED to restore
      * 3. check if checkpoint/restore has the same absfs
      */
+    
+    // Compute the restored absfs
+    after_ssr_compare_absfs();
+
     absfs_state_t ckpted_absfs;
     int ret = -1;
     ret = get_absfs_by_depth(state_depth, &ckpted_absfs);
@@ -568,8 +572,7 @@ static long restore_after_hook(unsigned char *ptr)
         strp += res;
     }
     makelog("Supposed restored absfs = {%s}\n", abs_state_str);
-    // Compute the restored absfs
-    after_ssr_compare_absfs();
+    
     strp = abs_state_str;
     for (int i = 0; i < 16; ++i) {
         size_t res = snprintf(strp, 3, "%02x", ssr_absfs[i]);
