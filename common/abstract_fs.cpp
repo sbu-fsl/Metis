@@ -18,6 +18,7 @@
 #include "path_utils.h"
 
 #include <unordered_set>
+#include <unordered_map>
 
 struct md5sum {
     uint64_t a;
@@ -30,6 +31,8 @@ std::unordered_set<std::string> exclusion_list = {
         {"/.mcfs_dummy"},
         {"/build"}
 };
+
+std::unordered_map<size_t, absfs_state_t> ssr_htable;
 
 static inline bool is_excluded(const std::string &path) {
     return (exclusion_list.find(path) != exclusion_list.end());
@@ -412,6 +415,32 @@ int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
     }
 
     return ret;
+}
+
+int insert_absfs_to_htable(size_t state_depth, absfs_state_t ckpt_absfs)
+{
+    absfs_state_t saved_absfs;
+    memcpy(saved_absfs, ckpt_absfs, sizeof(absfs_state_t));
+    // Check if the state depth hashkey exists in the table
+    if (ssr_htable.count(state_depth) == 0) {
+        memcpy(ssr_htable[state_depth], saved_absfs, sizeof(absfs_state_t));
+        return 0;
+    }
+    // If already exists, check if the absfs value is the same 
+    if (memcmp(saved_absfs, ssr_htable.at(state_depth), sizeof(absfs_state_t)) != 0) {
+        fprintf(stderr, "Checkpoint asbfs discrepancy:\n new: %s\n old: %s\n", 
+            saved_absfs, ssr_htable.at(state_depth));
+        return -1;
+    }
+    return 0;
+}
+
+int get_absfs_by_depth(size_t state_depth, absfs_state_t *ckpted_absfs)
+{
+    if (ssr_htable.count(state_depth) == 0)
+        return -1;
+    memcpy(*ckpted_absfs, ssr_htable.at(state_depth), sizeof(absfs_state_t));
+    return 0;
 }
 
 /**

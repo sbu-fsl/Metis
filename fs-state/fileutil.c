@@ -15,6 +15,7 @@ int _opened_files[1024];
 int _n_files;
 size_t count;
 absfs_set_t absfs_set;
+absfs_state_t ssr_absfs;
 
 int compare_file_content(const char *path1, const char *path2)
 {
@@ -287,6 +288,14 @@ void closeall()
     _n_files = 0;
 }
 
+static void after_ssr_compare_absfs()
+{
+    mountall();
+    expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
+    unmount_all_strict();
+    memcpy(ssr_absfs, get_absfs()[0], sizeof(absfs_state_t));
+}
+
 static int ensure_dump_dir(const char *folder)
 {
     struct stat st;
@@ -481,6 +490,17 @@ static long checkpoint_after_hook(unsigned char *ptr)
     unmap_devices();
     // assert(do_fsck());
     // dump_fs_images("snapshots");
+
+    /* Compute and compare absfs, if equal then insert it to htable */
+    after_ssr_compare_absfs();
+    int ret = -1;
+    ret = insert_absfs_to_htable(state_depth, ssr_absfs);
+    // If there is a discrepancy between two checkpointed absfs, log and abort
+    if (ret < 0) {
+        logerr("Checkpint absfs diff: seqid = %zu; state_depth = %zu\n", 
+            count, state_depth);
+        exit(-1);
+    }
     return 0;
 }
 
@@ -518,6 +538,43 @@ static long restore_after_hook(unsigned char *ptr)
     unmap_devices();
     // assert(do_fsck());
     // dump_fs_images("after-restore");
+
+    /* 
+     * After restore: 
+     * 1. print the absfs that is SUPPOSED to restore
+     * 2. mount, compare absfs for two f/s, unmount 
+     * 3. check if checkpoint/restore has the same absfs
+     */
+    absfs_state_t ckpted_absfs;
+    int ret = -1;
+    ret = get_absfs_by_depth(state_depth + 1, &ckpted_absfs);
+    if (ret < 0) {
+        logerr("Could not find the absfs with depth %zu when restoration\n", 
+            state_depth + 1);
+        exit(-1);
+    }
+    // Log the absfs from checkpoint and is supposed to restore
+    char abs_state_str[33] = {0};
+    char *strp = abs_state_str;
+    for (int i = 0; i < 16; ++i) {
+        size_t res = snprintf(strp, 3, "%02x", ckpted_absfs[i]);
+        strp += res;
+    }
+    makelog("Supposed restored absfs = {%s}\n", abs_state_str);
+    // Compute the restored absfs
+    after_ssr_compare_absfs();
+    strp = abs_state_str;
+    for (int i = 0; i < 16; ++i) {
+        size_t res = snprintf(strp, 3, "%02x", ssr_absfs[i]);
+        strp += res;
+    }
+    makelog("Actual restored absfs = {%s}\n", abs_state_str);
+
+    if (memcmp(ckpted_absfs, ssr_absfs, sizeof(absfs_state_t)) != 0) {
+        logerr("Restored absfs is not identical to checkpoint one: depth %zu\n", 
+            state_depth);
+        exit(-1);
+    }
     return 0;
 }
 
