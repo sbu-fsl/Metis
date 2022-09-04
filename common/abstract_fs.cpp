@@ -419,17 +419,30 @@ int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
 
 int insert_absfs_to_htable(size_t state_depth, absfs_state_t ckpt_absfs)
 {
-    absfs_state_t saved_absfs;
-    memcpy(saved_absfs, ckpt_absfs, sizeof(absfs_state_t));
+    absfs_state_t new_ckpt_absfs;
+    memcpy(new_ckpt_absfs, ckpt_absfs, sizeof(absfs_state_t));
     // Check if the state depth hashkey exists in the table
     if (ssr_htable.count(state_depth) == 0) {
-        memcpy(ssr_htable[state_depth], saved_absfs, sizeof(absfs_state_t));
-        return 0;
+        memcpy(ssr_htable[state_depth], new_ckpt_absfs, sizeof(absfs_state_t));
+        return 1;
     }
     // If already exists, check if the absfs value is the same 
-    if (memcmp(saved_absfs, ssr_htable.at(state_depth), sizeof(absfs_state_t)) != 0) {
-        fprintf(stderr, "Checkpoint asbfs discrepancy:\n new: %s\n old: %s\n", 
-            saved_absfs, ssr_htable.at(state_depth));
+    if (memcmp(new_ckpt_absfs, ssr_htable.at(state_depth), sizeof(absfs_state_t)) != 0) {
+        fprintf(stderr, "\nCheckpoint asbfs discrepancy on depth %zu :\n", state_depth);
+        char abs_state_str[33] = {0};
+        char *strp = abs_state_str;
+        for (int i = 0; i < 16; ++i) {
+            size_t res = snprintf(strp, 3, "%02x", ssr_htable.at(state_depth)[i]);
+            strp += res;
+        }
+        fprintf(stderr, "\tSaved ckpt absfs: %s\n", abs_state_str);
+
+        strp = abs_state_str;
+        for (int i = 0; i < 16; ++i) {
+            size_t res = snprintf(strp, 3, "%02x", new_ckpt_absfs[i]);
+            strp += res;
+        }        
+        fprintf(stderr, "\tNew ckpt absfs: %s\n", abs_state_str);
         return -1;
     }
     return 0;
