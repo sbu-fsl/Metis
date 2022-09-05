@@ -59,7 +59,7 @@ extern "C" {
     void destroy_abstract_fs(absfs_t *absfs);
     int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
                          printer_t verbose_printer);
-    int insert_absfs_to_htable(size_t state_depth, absfs_state_t ckpt_absfs);
+    void insert_absfs_to_htable(size_t state_depth, absfs_state_t ckpt_absfs);
     int get_absfs_by_depth(size_t state_depth, absfs_state_t *ckpted_absfs);
     void print_abstract_fs_state(printer_t printer, const absfs_state_t state);
     void print_filemode(printer_t printer, mode_t mode);

@@ -494,20 +494,7 @@ static long checkpoint_after_hook(unsigned char *ptr)
     /* Compute and compare absfs, if equal then insert it to htable */
     after_ssr_compare_absfs();
     size_t depth = state_depth - 1;
-    int ret = -1;
-    ret = insert_absfs_to_htable(depth, ssr_absfs);
-    // If there is a discrepancy between two checkpointed absfs, log and abort
-    if (ret < 0) {
-        logerr("Checkpint absfs diff: seqid = %zu; state_depth = %zu\n", 
-            count, depth);
-        exit(-1);
-    }
-    else if (ret > 0) {
-        makelog("Checkpoint new absfs recorded (%zu)\n", depth);
-    }
-    else {
-        makelog("Checkpoint absfs matched (%zu)\n", depth);
-    }
+    insert_absfs_to_htable(depth, ssr_absfs);
     return 0;
 }
 
@@ -572,7 +559,7 @@ static long restore_after_hook(unsigned char *ptr)
         strp += res;
     }
     makelog("Supposed restored absfs = {%s}\n", abs_state_str);
-    
+
     strp = abs_state_str;
     for (int i = 0; i < 16; ++i) {
         size_t res = snprintf(strp, 3, "%02x", ssr_absfs[i]);
