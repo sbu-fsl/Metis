@@ -169,6 +169,7 @@ bool compare_equality_fexists(char **fses, int n_fs, char **fpaths);
 bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths);
 bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs);
 int compare_file_content(const char *path1, const char *path2);
+bool compare_ckpt_presyscall_absfs(absfs_state_t ckpt_absfs, absfs_state_t pre_absfs);
 
 void show_open_flags(uint64_t flags);
 int myopen(const char *pathname, int flags, mode_t mode);

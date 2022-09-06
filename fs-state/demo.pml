@@ -27,7 +27,7 @@ proctype worker()
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             makelog("MID: pre-syscall absfs check\n");
             expect(compare_ckpt_presyscall_absfs(latest_ckpt_absfs, get_absfs()[0]));
-            makelog("MID: syscall");
+            makelog("MID: syscall\n");
             for (i = 0; i < get_n_fs(); ++i) {
                 makecall(get_rets()[i], get_errs()[i], "%s, 0%o", create_file, get_testfiles()[i], 0644);
             }
@@ -50,7 +50,7 @@ proctype worker()
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             makelog("MID: pre-syscall absfs check\n");
             expect(compare_ckpt_presyscall_absfs(latest_ckpt_absfs, get_absfs()[0]));
-            makelog("MID: syscall");
+            makelog("MID: syscall\n");
             // off_t offset = pick_value(0, 32768, 1024);
             // size_t writelen = pick_value(0, 32768, 2048);
             char *data = malloc(Pworker->writelen);
@@ -81,7 +81,7 @@ proctype worker()
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             makelog("MID: pre-syscall absfs check\n");
             expect(compare_ckpt_presyscall_absfs(latest_ckpt_absfs, get_absfs()[0]));
-            makelog("MID: syscall");
+            makelog("MID: syscall\n");
             // off_t flen = pick_value(0, 200000, 10000);
             for (i = 0; i < get_n_fs(); ++i) {
                 makecall(get_rets()[i], get_errs()[i], "%s, %ld", truncate, get_testfiles()[i], (off_t)Pworker->filelen);
@@ -103,7 +103,7 @@ proctype worker()
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             makelog("MID: pre-syscall absfs check\n");
             expect(compare_ckpt_presyscall_absfs(latest_ckpt_absfs, get_absfs()[0]));
-            makelog("MID: syscall");
+            makelog("MID: syscall\n");
             for (i = 0; i < get_n_fs(); ++i) {
                 makecall(get_rets()[i], get_errs()[i], "%s", unlink, get_testfiles()[i]);
             }
@@ -124,7 +124,7 @@ proctype worker()
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             makelog("MID: pre-syscall absfs check\n");
             expect(compare_ckpt_presyscall_absfs(latest_ckpt_absfs, get_absfs()[0]));
-            makelog("MID: syscall");
+            makelog("MID: syscall\n");
             for (i = 0; i < get_n_fs(); ++i) {
                 makecall(get_rets()[i], get_errs()[i], "%s, 0%o", mkdir, get_testdirs()[i], 0755);
             }
@@ -146,7 +146,7 @@ proctype worker()
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             makelog("MID: pre-syscall absfs check\n");
             expect(compare_ckpt_presyscall_absfs(latest_ckpt_absfs, get_absfs()[0]));
-            makelog("MID: syscall");
+            makelog("MID: syscall\n");
             for (i = 0; i < get_n_fs(); ++i) {
                 makecall(get_rets()[i], get_errs()[i], "%s", rmdir, get_testdirs()[i]);
             }
