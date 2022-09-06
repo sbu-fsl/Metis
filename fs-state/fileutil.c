@@ -503,7 +503,7 @@ static long checkpoint_after_hook(unsigned char *ptr)
         size_t res = snprintf(strp, 3, "%02x", ssr_absfs[i]);
         strp += res;
     }
-    makelog("[seqid = %d] Checkpoint absfs = {%s}\n", count, abs_state_str);
+    makelog("[seqid = %d] Checkpointed absfs = {%s}\n", count, abs_state_str);
 
     return 0;
 }

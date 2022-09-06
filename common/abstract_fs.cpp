@@ -419,9 +419,7 @@ int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
 
 void insert_absfs_to_htable(size_t state_depth, absfs_state_t ckpt_absfs)
 {
-    absfs_state_t new_ckpt_absfs;
-    memcpy(new_ckpt_absfs, ckpt_absfs, sizeof(absfs_state_t));
-    memcpy(ssr_htable[state_depth], new_ckpt_absfs, sizeof(absfs_state_t));
+    memcpy(ssr_htable[state_depth], ckpt_absfs, sizeof(absfs_state_t));
 }
 
 int get_absfs_by_depth(size_t state_depth, absfs_state_t *ckpted_absfs)
