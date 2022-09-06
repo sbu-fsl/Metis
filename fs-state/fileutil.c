@@ -16,6 +16,7 @@ int _n_files;
 size_t count;
 absfs_set_t absfs_set;
 absfs_state_t ssr_absfs;
+absfs_state_t latest_ckpt_absfs;
 
 int compare_file_content(const char *path1, const char *path2)
 {
@@ -237,6 +238,16 @@ bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths)
                     "(%s)", count, fses[i-1], fpaths[i-1], fses[i],
                     fpaths[i]);
         }
+    }
+    return res;
+}
+
+bool compare_ckpt_presyscall_absfs(absfs_state_t ckpt_absfs, absfs_state_t pre_absfs)
+{
+    bool res = true;
+    if (memcmp(ckpt_absfs, pre_absfs, sizeof(absfs_state_t)) != 0) {
+        res = false;
+        logwarn("[seqid=%zu] Presyscall absfs is not equal to latest checkpoint", count);
     }
     return res;
 }
@@ -495,6 +506,9 @@ static long checkpoint_after_hook(unsigned char *ptr)
     after_ssr_compare_absfs();
     size_t depth = state_depth - 1;
     insert_absfs_to_htable(depth, ssr_absfs);
+
+    /* Reset latest checkpointed absfs */
+    memcpy(latest_ckpt_absfs, ssr_absfs, sizeof(absfs_state_t));
 
     /* Log checkpointed abstract state */
     char abs_state_str[33] = {0};

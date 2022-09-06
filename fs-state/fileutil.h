@@ -17,6 +17,7 @@ extern absfs_set_t absfs_set;
 extern int pan_argc;
 extern char **pan_argv;
 extern int absfs_hash_method;
+extern absfs_state_t latest_ckpt_absfs;
 
 struct fs_stat {
     size_t capacity;

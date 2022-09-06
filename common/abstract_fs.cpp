@@ -424,7 +424,7 @@ void insert_absfs_to_htable(size_t state_depth, absfs_state_t ckpt_absfs)
 
 int get_absfs_by_depth(size_t state_depth, absfs_state_t *ckpted_absfs)
 {
-    if (ssr_htable.count(state_depth) == 0)
+    if (ssr_htable.find(state_depth) == ssr_htable.end())
         return -1;
     memcpy(*ckpted_absfs, ssr_htable.at(state_depth), sizeof(absfs_state_t));
     return 0;
