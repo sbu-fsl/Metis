@@ -495,6 +495,16 @@ static long checkpoint_after_hook(unsigned char *ptr)
     after_ssr_compare_absfs();
     size_t depth = state_depth - 1;
     insert_absfs_to_htable(depth, ssr_absfs);
+
+    /* Log checkpointed abstract state */
+    char abs_state_str[33] = {0};
+    char *strp = abs_state_str;
+    for (int i = 0; i < 16; ++i) {
+        size_t res = snprintf(strp, 3, "%02x", ssr_absfs[i]);
+        strp += res;
+    }
+    makelog("[seqid = %d] Checkpoint absfs = {%s}\n", count, abs_state_str);
+
     return 0;
 }
 
@@ -556,7 +566,7 @@ static long restore_after_hook(unsigned char *ptr)
         size_t res = snprintf(strp, 3, "%02x", ckpted_absfs[i]);
         strp += res;
     }
-    makelog("Supposed restored absfs = {%s}\n", abs_state_str);
+    makelog("[seqid = %d] Supposed restored absfs = {%s}\n", count, abs_state_str);
 
     /* Compute the absfs after restoration */
     after_ssr_compare_absfs();
@@ -566,7 +576,7 @@ static long restore_after_hook(unsigned char *ptr)
         size_t res = snprintf(strp, 3, "%02x", ssr_absfs[i]);
         strp += res;
     }
-    makelog("Actual restored absfs = {%s}\n", abs_state_str);
+    makelog("[seqid = %d] Actual restored absfs = {%s}\n", count, abs_state_str);
 
     if (memcmp(ckpted_absfs, ssr_absfs, sizeof(absfs_state_t)) != 0) {
         logerr("Restored absfs is not identical to checkpoint one: depth %zu\n", 
