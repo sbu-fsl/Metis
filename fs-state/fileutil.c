@@ -15,8 +15,10 @@ int _opened_files[1024];
 int _n_files;
 size_t count;
 absfs_set_t absfs_set;
+#ifdef CR_CHECK
 absfs_state_t ssr_absfs;
 absfs_state_t latest_ckpt_absfs;
+#endif
 
 int compare_file_content(const char *path1, const char *path2)
 {
@@ -242,6 +244,7 @@ bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths)
     return res;
 }
 
+#ifdef CR_CHECK
 bool compare_ckpt_presyscall_absfs(absfs_state_t ckpt_absfs, absfs_state_t pre_absfs)
 {
     bool res = true;
@@ -251,6 +254,15 @@ bool compare_ckpt_presyscall_absfs(absfs_state_t ckpt_absfs, absfs_state_t pre_a
     }
     return res;
 }
+
+static void after_ssr_compare_absfs()
+{
+    mountall();
+    expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
+    unmount_all_strict();
+    memcpy(ssr_absfs, get_absfs()[0], sizeof(absfs_state_t));
+}
+#endif
 
 void show_open_flags(uint64_t flags)
 {
@@ -297,14 +309,6 @@ void closeall()
         _opened_files[i] = -1;
     }
     _n_files = 0;
-}
-
-static void after_ssr_compare_absfs()
-{
-    mountall();
-    expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-    unmount_all_strict();
-    memcpy(ssr_absfs, get_absfs()[0], sizeof(absfs_state_t));
 }
 
 static int ensure_dump_dir(const char *folder)
@@ -502,6 +506,7 @@ static long checkpoint_after_hook(unsigned char *ptr)
     // assert(do_fsck());
     // dump_fs_images("snapshots");
 
+#ifdef CR_CHECK
     /* Compute and compare absfs, if equal then insert it to htable */
     after_ssr_compare_absfs();
     size_t depth = state_depth - 1;
@@ -518,7 +523,7 @@ static long checkpoint_after_hook(unsigned char *ptr)
         strp += res;
     }
     makelog("[seqid = %d] Checkpointed absfs = {%s}\n", count, abs_state_str);
-
+#endif
     return 0;
 }
 
@@ -556,7 +561,7 @@ static long restore_after_hook(unsigned char *ptr)
     unmap_devices();
     // assert(do_fsck());
     // dump_fs_images("after-restore");
-
+#ifdef CR_CHECK
     /* 
      * After restore: 
      * 1. print the absfs that is SUPPOSED to restore
@@ -597,6 +602,7 @@ static long restore_after_hook(unsigned char *ptr)
             state_depth);
         exit(-1);
     }
+#endif
     return 0;
 }
 

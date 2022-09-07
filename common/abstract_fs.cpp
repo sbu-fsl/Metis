@@ -18,7 +18,12 @@
 #include "path_utils.h"
 
 #include <unordered_set>
+
+#ifdef CR_CHECK
 #include <unordered_map>
+
+std::unordered_map<size_t, absfs_state_t> ssr_htable;
+#endif
 
 struct md5sum {
     uint64_t a;
@@ -31,8 +36,6 @@ std::unordered_set<std::string> exclusion_list = {
         {"/.mcfs_dummy"},
         {"/build"}
 };
-
-std::unordered_map<size_t, absfs_state_t> ssr_htable;
 
 static inline bool is_excluded(const std::string &path) {
     return (exclusion_list.find(path) != exclusion_list.end());
@@ -417,6 +420,7 @@ int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
     return ret;
 }
 
+#ifdef CR_CHECK
 void insert_absfs_to_htable(size_t state_depth, absfs_state_t ckpt_absfs)
 {
     memcpy(ssr_htable[state_depth], ckpt_absfs, sizeof(absfs_state_t));
@@ -429,6 +433,7 @@ int get_absfs_by_depth(size_t state_depth, absfs_state_t *ckpted_absfs)
     memcpy(*ckpted_absfs, ssr_htable.at(state_depth), sizeof(absfs_state_t));
     return 0;
 }
+#endif
 
 /**
  * print_abstract_fs_state: Print the whole 128-bit abstract file

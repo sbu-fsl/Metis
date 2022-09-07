@@ -17,7 +17,9 @@ extern absfs_set_t absfs_set;
 extern int pan_argc;
 extern char **pan_argv;
 extern int absfs_hash_method;
+#ifdef CR_CHECK
 extern absfs_state_t latest_ckpt_absfs;
+#endif
 
 struct fs_stat {
     size_t capacity;
@@ -169,7 +171,9 @@ bool compare_equality_fexists(char **fses, int n_fs, char **fpaths);
 bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths);
 bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs);
 int compare_file_content(const char *path1, const char *path2);
+#ifdef CR_CHECK
 bool compare_ckpt_presyscall_absfs(absfs_state_t ckpt_absfs, absfs_state_t pre_absfs);
+#endif
 
 void show_open_flags(uint64_t flags);
 int myopen(const char *pathname, int flags, mode_t mode);
