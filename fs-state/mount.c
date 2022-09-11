@@ -4,6 +4,25 @@
 
 // static bool fs_frozen[N_FS] = {0};
 
+#ifdef DROP_CACHE
+static void execute_shell_cmd(const char *cmd)
+{
+    int retval = system(cmd);
+    int status, signal = 0;
+    if ((status = WEXITSTATUS(retval)) != 0) {
+        fprintf(stderr, "Command `%s` failed with %d.\n", cmd, status);
+    }
+    if (WIFSIGNALED(retval)) {
+        signal = WTERMSIG(retval);
+        fprintf(stderr, "Command `%s` terminated with signal %d.\n", cmd,
+                signal);
+    }
+    if (status || signal) {
+        exit(1);
+    }
+}
+#endif
+
 static char *receive_output(FILE *cmdfp, size_t *length)
 {
     const size_t block = 4096;
@@ -133,6 +152,14 @@ try_unmount:
             has_failure = true;
         }
     }
+#ifdef SYNC_FS
+    sync();
+#endif 
+#ifdef DROP_CACHE
+    char cmdbuf[PATH_MAX];
+    snprintf(cmdbuf, PATH_MAX, "echo 3 > /proc/sys/vm/drop_caches");
+    execute_shell_cmd(cmdbuf);
+#endif
     if (has_failure && strict)
         exit(1);
 }
