@@ -6,3 +6,4 @@ pkill -9 -f "sh ./script"
 pkill -9 -f "./pan"
 umount /dev/ram*
 umount /mnt/test-*
+rmmod ftfs

@@ -30,14 +30,14 @@ typedef struct all_dev_nums {
     int all_mtdblocks;
 } dev_nums_t;
 
-static const char *fs_all[] = {"btrfs", "ext2", "ext4", "f2fs",    "jffs2", "ramfs", "tmpfs", "verifs1", "verifs2", "xfs"};
-static const char *dev_all[]= {  "ram",  "ram",  "ram",  "ram", "mtdblock",      "",      "",        "",        "", "ram"};
+static const char *fs_all[] = {"btrfs", "ext2", "ext4", "f2fs",    "jffs2", "ramfs", "tmpfs", "verifs1", "verifs2", "xfs", "ftfs"};
+static const char *dev_all[]= {  "ram",  "ram",  "ram",  "ram", "mtdblock",      "",      "",        "",        "",        "ram", "ram"};
 #define ALL_FS    nelem(fs_all)
 
 static inline int get_dev_from_fs(char *fs_type) {
     int ret = -1;
     for (int i = 0; i < ALL_FS; ++i) {
-        if (strcmp(fs_type, fs_all[i]) == 0) 
+        if (strcmp(fs_type, fs_all[i]) == 0)
             return i;
     }
     return ret;

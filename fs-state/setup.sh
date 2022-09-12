@@ -34,6 +34,12 @@ declare -A FS_DEV_MAP
 FS_DEV_MAP+=( ["btrfs"]="ram" ["ext2"]="ram" ["ext4"]="ram" ["f2fs"]="ram" )
 FS_DEV_MAP+=( ["jffs2"]="mtdblock" ["ramfs"]="" ["tmpfs"]="" )
 FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" )
+FS_DEV_MAP+=( ["ftfs"]="ram" )
+
+FTFS_DEVFILE=/dev/loop7
+FTFS_PARTITION=/dev/sdc
+FTFS_LOOP_FD=./dummy.dev
+FTFS_KMOD=/home/tgurram/betrfs/filesystem/ftfs.ko
 
 mount_all() {
     SWARM_ID=$1;
@@ -106,7 +112,7 @@ TOK_CNT="0"
 IFS=':' read -ra ADDR <<< "$MCFSLIST"
 for EACH_TOK in "${ADDR[@]}"; do
     if [ "$(($TOK_CNT % 2))" -eq 0 ]
-    then 
+    then
         FSLIST[$(($TOK_CNT / 2))]="$EACH_TOK"
     else
         DEVSIZE_KB[$(($TOK_CNT / 2))]="$EACH_TOK"
@@ -131,7 +137,7 @@ for i in $(seq 0 $(($n_fs-1))); do
     then
         ALL_RAMS=$(($ALL_RAMS + 1))
     elif [ "$dev_type" = "$MTDBLOCK_NAME" ]
-    then 
+    then
         ALL_MTDBLOCKS=$(($ALL_MTDBLOCKS + 1))
     fi
 done
@@ -338,6 +344,21 @@ unset_xfs() {
     :
 }
 
+setup_ftfs() {
+    DEVICE=$1
+    DEVSIZEKB=$2
+    BLOCKSIZE=1k
+    runcmd dd if=/dev/zero of=$DEVICE bs=$BLOCKSIZE count=$DEVSIZE_KB status=none;
+
+    runcmd ./mkfs.ftfs $DEVICE
+    runcmd insmod $FTFS_KMOD sb_dev=$FTFS_PARTITION sb_fstype=ext4
+}
+
+unset_ftfs() {
+    rmmod ftfs
+    losetup -D
+}
+
 # Setup mount points and each file system
 for i in $(seq 0 $(($n_fs-1))); do
     # Run individual file system setup scripts defined above
@@ -393,7 +414,7 @@ if [ "$SETUP_ONLY" != "1" ]; then
         ./pan -K $SWARM_ID:$MCFSLIST 2>error.log > output.log
     fi
 
-    # By default we don't want to clean up the file system for 
+    # By default we don't want to clean up the file system for
     # better analyzing discrepancies reported by MCFS
     generic_cleanup $n_fs $SWARM_ID;
 fi
