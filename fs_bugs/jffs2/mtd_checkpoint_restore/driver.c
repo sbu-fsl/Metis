@@ -1,36 +1,11 @@
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdarg.h>
-#include <errno.h>
-#include <time.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <sys/mount.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <linux/limits.h>
-#include <linux/fs.h>
-#include <unistd.h>
-#include <sys/vfs.h>
 #include <zlib.h>
 #include "mounts.h"
-#include "operations.h"
+#include "fstestutil.h"
 
 #define SYSCALL_NUM 6
 #define BUF_SIZE 4096
 
 typedef unsigned char crc32_state_t[4];
-
-/* Random number [lower, upper) */
-int getRandNum(int lower, int upper)
-{
-    return (rand() % (upper - lower)) + lower;
-}
 
 int main(int argc, char **argv)
 {
@@ -52,7 +27,6 @@ int main(int argc, char **argv)
     long loop_id = 0;
     int ops_num = 0;
     int ret = 0;
-    int offset = 0, writelen = 0, writebyte = 0, filelen = 0;
     int sleep_interval;
     ssize_t readsize;
     char buffer[BUF_SIZE] = {0};
@@ -62,38 +36,9 @@ int main(int argc, char **argv)
         // mount the file system
         mount_fs(dev, mp, fs_type);
         // Randomly select an operation
-        ops_num = getRandNum(0, SYSCALL_NUM);
-        // fprintf(stdout, "ops_num: %d\n", ops_num);
-        switch(ops_num) {
-            case 0:
-                ret = create_file(test_file, 0644);
-                break;
-            case 1:
-                offset = getRandNum(0, 65537);
-                writelen = getRandNum(0, 64410);
-                writebyte = getRandNum(1, 256);
-                char *data = malloc(writelen);
-                generate_data(data, writelen, writebyte);
-                ret = write_file(test_file, data, (off_t)offset, (size_t)writelen);
-                free(data);
-                break;
-            case 2:
-                filelen = getRandNum(0, 262145);
-                ret = truncate(test_file, (off_t)filelen);
-                break;
-            case 3:
-                ret = unlink(test_file);
-                break;
-            case 4:
-                ret = mkdir(test_dir, 0755);
-                break;
-            case 5:
-                ret = rmdir(test_dir);
-                break;
-            default:
-                fprintf(stderr, "Unrecognized ops_num: %d\n", ops_num);
-                exit(1);
-        }
+        ops_num = getRandNum(0, SYSCALL_NUM - 1);
+        fprintf(stdout, "ops_num: %d\n", ops_num);
+        ret = randSyscallCreator(ops_num, test_file, test_dir);
         // unmount the file system
         unmount_fs(mp, fs_type);
         
