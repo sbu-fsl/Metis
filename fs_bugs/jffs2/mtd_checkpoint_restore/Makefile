@@ -19,4 +19,4 @@ utility-libs: $(UTILITY_OBJ)
 	gcc -Wall -Werror -o $@ -fPIC -c $< $(CFLAGS) $(LIBS)
 
 clean:
-	rm -f driver
+	rm -f *.o *.a driver

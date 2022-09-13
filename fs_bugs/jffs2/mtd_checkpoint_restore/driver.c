@@ -63,7 +63,7 @@ int main(int argc, char **argv)
         mount_fs(dev, mp, fs_type);
         // Randomly select an operation
         ops_num = getRandNum(0, SYSCALL_NUM);
-        fprintf(stdout, "ops_num: %d\n", ops_num);
+        // fprintf(stdout, "ops_num: %d\n", ops_num);
         switch(ops_num) {
             case 0:
                 ret = create_file(test_file, 0644);
@@ -121,19 +121,9 @@ int main(int argc, char **argv)
         memcpy(&state_first, &crc32_state_first, sizeof(crc32_state_first));
         close(dev_fd);
 
-        char abs_state_str[5] = {0};
-        char *strp = abs_state_str;
-        for (int i = 0; i < 4; ++i) {
-            // second arg of snprintf: count the null-terminator. However, the
-    	    // return value does not include the terminator.
-            size_t res = snprintf(strp, 3, "%02x", state_first[i]);
-            strp += res;
-        }
-        fprintf(stdout, "CRC32 State 1: %s\n", abs_state_str);
-
         // Sleep a short time
         sleep_interval = getRandNum(0, 1000);
-        fprintf(stdout, "sleep time: %d\n", sleep_interval);
+        // fprintf(stdout, "sleep time: %d\n", sleep_interval);
         usleep(sleep_interval);
 
         // Checkpoint jffs2 and calculate CRC32 again and compare
@@ -155,17 +145,6 @@ int main(int argc, char **argv)
         }
         memcpy(&state_second, &crc32_state_second, sizeof(crc32_state_second));
         close(dev_fd);
-
-        char abs_state_str2[5] = {0};
-        char *strp2 = abs_state_str2;
-        for (int i = 0; i < 4; ++i) {
-            // second arg of snprintf: count the null-terminator. However, the
-    	    // return value does not include the terminator.
-            size_t res = snprintf(strp2, 3, "%02x", state_second[i]);
-            strp2 += res;
-        }
-
-        fprintf(stdout, "CRC32 State 2: %s\n", abs_state_str2);
 
         if(memcmp(state_first, state_second, sizeof(crc32_state_t)) != 0)
         {
