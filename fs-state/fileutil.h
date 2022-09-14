@@ -112,6 +112,9 @@ static inline void print_expect_failed(const char *expr, const char *file,
         if (!(expr)) { \
             print_expect_failed(#expr, __FILE__, __LINE__); \
             if (ABORT_ON_FAIL) { \
+#ifdef DUMP_LATEST_CKPT_IMG
+                dump_checkpoint_images(); \
+#endif
                 fflush(stderr); \
                 exit(1); \
             } \
