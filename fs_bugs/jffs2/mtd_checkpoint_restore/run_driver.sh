@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DRIVER_LOOP_MAX=100000
+DRIVER_LOOP_MAX=1000000
 
 # jffs2 parameters
 JFFS2_TMP_IMG_DIR="/tmp/temp_image_dir"
