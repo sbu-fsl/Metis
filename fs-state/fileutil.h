@@ -104,22 +104,36 @@ static inline void print_expect_failed(const char *expr, const char *file,
            count, file, line, expr);
 }
 
+void dump_checkpoint_images();
+
 #ifndef ABORT_ON_FAIL
 #define ABORT_ON_FAIL 0
 #endif
+
+#ifdef DUMP_LATEST_CKPT_IMG
 #define expect(expr) \
     do { \
         if (!(expr)) { \
             print_expect_failed(#expr, __FILE__, __LINE__); \
             if (ABORT_ON_FAIL) { \
-#ifdef DUMP_LATEST_CKPT_IMG
                 dump_checkpoint_images(); \
-#endif
                 fflush(stderr); \
                 exit(1); \
             } \
         } \
     } while(0)
+#else
+#define expect(expr) \
+    do { \
+        if (!(expr)) { \
+            print_expect_failed(#expr, __FILE__, __LINE__); \
+            if (ABORT_ON_FAIL) { \
+                fflush(stderr); \
+                exit(1); \
+            } \
+        } \
+    } while(0)
+#endif
 
 /* Randomly pick a value in the range of [min, max] */
 static inline size_t pick_value(size_t min, size_t max, size_t step)
