@@ -33,11 +33,13 @@ int main(int argc, char **argv)
     srand(time(NULL));
     // Start the Loop
     while (loop_id < loop_max) {
+	if (loop_id % 100 == 0)
+	    fprintf(stdout, "loop_id: %ld\n", loop_id);
         // mount the file system
         mount_fs(dev, mp, fs_type);
         // Randomly select an operation
         ops_num = getRandNum(0, SYSCALL_NUM - 1);
-        fprintf(stdout, "ops_num: %d\n", ops_num);
+        // fprintf(stdout, "ops_num: %d\n", ops_num);
         ret = randSyscallCreator(ops_num, test_file, test_dir);
         // unmount the file system
         unmount_fs(mp, fs_type);
@@ -96,6 +98,7 @@ int main(int argc, char **argv)
             fprintf(stderr, "Two checkpoint state is NOT equal!\n");
             exit(1);
         }
+	++loop_id;
     }
 
     return 0;
