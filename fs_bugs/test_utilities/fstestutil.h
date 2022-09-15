@@ -47,5 +47,6 @@ static inline int getRandNum(int lower, int upper)
 }
 
 int randSyscallCreator(int ops_num, char *test_file, char *test_dir);
+void execute_cmd(const char *cmd);
 
 #endif // _FSTESTUTIL_H

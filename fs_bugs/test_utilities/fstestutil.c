@@ -36,3 +36,20 @@ int randSyscallCreator(int ops_num, char *test_file, char *test_dir)
     }
     return ret;
 }
+
+void execute_cmd(const char *cmd)
+{
+    int retval = system(cmd);
+    int status, signal = 0;
+    if ((status = WEXITSTATUS(retval)) != 0) {
+        fprintf(stderr, "Command `%s` failed with %d.\n", cmd, status);
+    }
+    if (WIFSIGNALED(retval)) {
+        signal = WTERMSIG(retval);
+        fprintf(stderr, "Command `%s` terminated with signal %d.\n", cmd,
+                signal);
+    }
+    if (status || signal) {
+        exit(1);
+    }
+}
