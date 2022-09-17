@@ -21,12 +21,12 @@ setup_jffs2() {
         rm -rf $JFFS2_MNT_DIR
     fi
     mkdir -p $JFFS2_MNT_DIR
-    mount -t jffs2 $MTDBLK_DEVICE $JFFS2_MNT_DIR
+    # mount -t jffs2 $MTDBLK_DEVICE $JFFS2_MNT_DIR
 }
 
 # Run driver
 setup_jffs2
 
 # Usage: ./driver mountpoint loop_max
-
+./driver $JFFS2_MNT_DIR $DRIVER_LOOP_MAX
 
