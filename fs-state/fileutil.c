@@ -684,7 +684,7 @@ void __attribute__((constructor)) init()
      * have support for statvfs() yet) */
     equalize_free_spaces();
 #ifdef CBUF_IMAGE
-    circular_buf_init(fsimg_bufs, get_n_fs(), get_devsize_kb());
+    circular_buf_init(&fsimg_bufs, get_n_fs(), get_devsize_kb());
 #endif
 }
 
@@ -700,4 +700,7 @@ void __attribute__((destructor)) cleanup()
     unset_myheap();
     destroy_log_daemon();
     // unfreeze_all();
+#ifdef CBUF_IMAGE
+    cleanup_cir_bufs(fsimg_bufs);
+#endif
 }
