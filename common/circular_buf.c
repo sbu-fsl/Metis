@@ -56,12 +56,12 @@ void dump_all_circular_bufs(circular_buf_sum_t *fsimg_bufs, char **fslist,
             // example: cbuf-ext4-state-3846-seq-123456-ckpt-0.img
             if (is_ckpt) {
                 snprintf(dump_path, PATH_MAX, 
-                    "cbuf-%s-state-%zu-seq-%zu-ckpt-%zu", 
+                    "cbuf-%s-state-%zu-seq-%zu-ckpt-%zu.img", 
                     fslist[i], state_depth, seq_id, j);
             }
             else {
                 snprintf(dump_path, PATH_MAX, 
-                    "cbuf-%s-state-%zu-seq-%zu-restore-%zu", 
+                    "cbuf-%s-state-%zu-seq-%zu-restore-%zu.img", 
                     fslist[i], state_depth, seq_id, j);                
             }
 
