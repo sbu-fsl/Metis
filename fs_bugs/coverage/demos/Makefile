@@ -9,7 +9,7 @@ syscall_seqs: syscall_seqs.c utility-libs
 	$(CC) -o syscall_seqs syscall_seqs.c utility-libs.a $(CFLAGS)
 
 test: syscall_seqs
-	sudo bash -x run_syscalls.sh
+	sudo bash -x run_syscalls.sh ext4
 
 utility-libs: $(UTILITY_OBJ)
 	ar rvs $@.a $^

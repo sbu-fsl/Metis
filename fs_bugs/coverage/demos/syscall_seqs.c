@@ -10,20 +10,22 @@ void print_error(char *name) {
 
 int main(int argc, char **argv)
 {
-    if (argc < 4) {
-        fprintf(stderr, "Usage: %s <mountpoint> <device> <fs-type>\n", argv[0]);
+    if (argc < 3) {
+        fprintf(stderr, "Usage: %s <fs-type> <mountpoint> [device]\n", argv[0]);
         exit(1);
     }
     char *mp = NULL, *dev = NULL, *fs_type = NULL;
-    mp = argv[1];
-    dev = argv[2];
-    fs_type = argv[3];
+    fs_type = argv[1];
+    mp = argv[2];
+    if (strcmp("ext4", fs_type) == 0) {
+        dev = argv[3];
+        // Mount for ext4
+        mount_fs(dev, mp, fs_type);
+    }
 
     char test_file[PATH_MAX] = {0};
     char test_dir[PATH_MAX] = {0};
 
-    // Mount
-    mount_fs(dev, mp, fs_type);
     int loop_id = 0;
     int ret = -1;
     int offset = 0, writelen = 0, writebyte = 0, filelen = 0;
