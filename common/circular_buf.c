@@ -1,20 +1,20 @@
 #include "circular_buf.h"
 
-void circular_buf_init(circular_buf_sum_t *fsimg_bufs, int n_fs, size_t *devsize_kb) {
+void circular_buf_init(circular_buf_sum_t **fsimg_bufs, int n_fs, size_t *devsize_kb) {
     // init circular_buf_sum
-    fsimg_bufs = malloc(sizeof(circular_buf_sum_t));
-    fsimg_bufs->buf_num = n_fs;
-    fsimg_bufs->cir_bufs = calloc(n_fs, sizeof(circular_buf_t));
+    (*fsimg_bufs) = malloc(sizeof(circular_buf_sum_t));
+    (*fsimg_bufs)->buf_num = n_fs;
+    (*fsimg_bufs)->cir_bufs = calloc(n_fs, sizeof(circular_buf_t));
 
     // init circular_buf
     for(int i = 0; i < n_fs; ++i) {
-        fsimg_bufs->cir_bufs[i].head_idx = 0;
+        (*fsimg_bufs)->cir_bufs[i].head_idx = 0;
         // init fsimg_buf
         for (int j = 0; j < BUF_SIZE; ++j) {
-            fsimg_bufs->cir_bufs[i].img_buf[j].state = malloc(devsize_kb[i] * KB_TO_BYTES);
-            fsimg_bufs->cir_bufs[i].img_buf[j].ckpt = true;
-            fsimg_bufs->cir_bufs[i].img_buf[j].depth = 0;
-            fsimg_bufs->cir_bufs[i].img_buf[j].seqid = 0;
+            (*fsimg_bufs)->cir_bufs[i].img_buf[j].state = malloc(devsize_kb[i] * KB_TO_BYTES);
+            (*fsimg_bufs)->cir_bufs[i].img_buf[j].ckpt = true;
+            (*fsimg_bufs)->cir_bufs[i].img_buf[j].depth = 0;
+            (*fsimg_bufs)->cir_bufs[i].img_buf[j].seqid = 0;
         }
     }
 }
@@ -88,4 +88,20 @@ void dump_all_circular_bufs(circular_buf_sum_t *fsimg_bufs, char **fslist,
         }
     }
 
+}
+
+void cleanup_cir_bufs(circular_buf_sum_t *fsimg_bufs)
+{
+    for(size_t i = 0; i < fsimg_bufs->buf_num; ++i) {
+        for(size_t j = 0; j < BUF_SIZE; ++j) {
+            if (fsimg_bufs->cir_bufs[i].img_buf[j].state)
+                free(fsimg_bufs->cir_bufs[i].img_buf[j].state);
+        }
+    }
+
+    if (fsimg_bufs->cir_bufs)
+        free(fsimg_bufs->cir_bufs);
+
+    if (fsimg_bufs)
+        free(fsimg_bufs);
 }

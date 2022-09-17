@@ -47,11 +47,12 @@ struct circular_buf_sum {
 
 typedef struct circular_buf_sum circular_buf_sum_t;
 
-void circular_buf_init(circular_buf_sum_t *fsimg_bufs, int n_fs, size_t *devsize_kb);
+void circular_buf_init(circular_buf_sum_t **fsimg_bufs, int n_fs, size_t *devsize_kb);
 void insert_circular_buf(circular_buf_sum_t *fsimg_bufs, int fs_idx, 
                             size_t devsize_kb, void *save_state, 
                             size_t state_depth, size_t seq_id, bool is_ckpt);
 void dump_all_circular_bufs(circular_buf_sum_t *fsimg_bufs, char **fslist, 
     size_t *devsize_kb);
+void cleanup_cir_bufs(circular_buf_sum_t *fsimg_bufs);
 
 #endif // _CIRCULAR_BUF_H
