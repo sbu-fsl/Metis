@@ -36,7 +36,13 @@ int main(int argc, char **argv)
         if (loop_id % 100 == 0)
             fprintf(stdout, "loop_id: %ld\n", loop_id);
         // mount the file system
+#ifdef MOUNT_MTD_CHAR
+        char cmdbuf[PATH_MAX];
+        snprintf(cmdbuf, PATH_MAX, "mount -t jffs2 mtd0 %s", mp);
+        execute_cmd(cmdbuf);
+#else
         mount_fs(dev, mp, fs_type);
+#endif
         // Randomly select an operation
         ops_num = getRandNum(0, SYSCALL_NUM - 1);
         // fprintf(stdout, "ops_num: %d\n", ops_num);
@@ -98,6 +104,7 @@ int main(int argc, char **argv)
             fprintf(stderr, "Two checkpoint state is NOT equal!\n");
             exit(1);
         }
+        
 	    ++loop_id;
     }
 
