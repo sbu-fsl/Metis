@@ -17,6 +17,9 @@ extern absfs_set_t absfs_set;
 extern int pan_argc;
 extern char **pan_argv;
 extern int absfs_hash_method;
+#ifdef CBUF_IMAGE
+extern circular_buf_sum_t *fsimg_bufs;
+#endif
 
 struct fs_stat {
     size_t capacity;
@@ -101,9 +104,30 @@ static inline void print_expect_failed(const char *expr, const char *file,
            count, file, line, expr);
 }
 
+#ifdef CBUF_IMAGE
+static inline void dump_all_cbufs()
+{
+    dump_all_circular_bufs(fsimg_bufs, get_fslist(), get_devsize_kb());
+}
+#endif
+
 #ifndef ABORT_ON_FAIL
 #define ABORT_ON_FAIL 0
 #endif
+
+#ifdef CBUF_IMAGE
+#define expect(expr) \
+    do { \
+        if (!(expr)) { \
+            print_expect_failed(#expr, __FILE__, __LINE__); \
+            dump_all_cbufs(); \
+            if (ABORT_ON_FAIL) { \
+                fflush(stderr); \
+                exit(1); \
+            } \
+        } \
+    } while(0)
+#else
 #define expect(expr) \
     do { \
         if (!(expr)) { \
@@ -114,6 +138,7 @@ static inline void print_expect_failed(const char *expr, const char *file,
             } \
         } \
     } while(0)
+#endif
 
 /* Randomly pick a value in the range of [min, max] */
 static inline size_t pick_value(size_t min, size_t max, size_t step)

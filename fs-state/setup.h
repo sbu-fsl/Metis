@@ -28,6 +28,9 @@
 #include "set.h"
 #include "log.h"
 #include "init_globals.h"
+#ifdef CBUF_IMAGE
+#include "circular_buf.h"
+#endif
 
 #ifndef _SETUP_H_
 #define _SETUP_H_

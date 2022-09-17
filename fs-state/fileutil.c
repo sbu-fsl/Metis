@@ -16,6 +16,10 @@ int _n_files;
 size_t count;
 absfs_set_t absfs_set;
 
+#ifdef CBUF_IMAGE
+circular_buf_sum_t *fsimg_bufs;
+#endif
+
 int compare_file_content(const char *path1, const char *path2)
 {
     const size_t bs = 4096;
@@ -456,9 +460,16 @@ static long checkpoint_before_hook(unsigned char *ptr)
     submit_seq("checkpoint\n");
     makelog("[seqid = %d] checkpoint (%zu)\n", count, state_depth);
 
-    state_depth++;
-
     mmap_devices();
+
+#ifdef CBUF_IMAGE
+    for (int i = 0; i < get_n_fs(); ++i) {
+        insert_circular_buf(fsimg_bufs, i, get_devsize_kb()[i], get_fsimgs()[i],
+            state_depth, count, true);
+    }
+#endif
+
+    state_depth++;
 
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!is_verifs(get_fslist()[i]))
@@ -672,6 +683,9 @@ void __attribute__((constructor)) init()
      * space (Only for non-VeriFS experiments, because currently VeriFS1 doesn't
      * have support for statvfs() yet) */
     equalize_free_spaces();
+#ifdef CBUF_IMAGE
+    circular_buf_init(fsimg_bufs, get_n_fs(), get_devsize_kb());
+#endif
 }
 
 /*
