@@ -3,7 +3,7 @@ UTILITY_DIR := ../../test_utilities
 UTILITY_SRC := $(wildcard $(UTILITY_DIR)/*.c)
 UTILITY_OBJ := $(patsubst $(UTILITY_DIR)/%,%.o,$(UTILITY_SRC))
 
-override CFLAGS += -g -I../../test_utilities 
+override CFLAGS += -g -I../../test_utilities -DMOUNT_MTD_CHAR
 override LIBS += -lssl -lcrypto -lrt -lpthread -lz
 
 driver: driver.c utility-libs
