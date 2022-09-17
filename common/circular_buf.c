@@ -57,12 +57,12 @@ void dump_all_circular_bufs(circular_buf_sum_t *fsimg_bufs, char **fslist,
             if (is_ckpt) {
                 snprintf(dump_path, PATH_MAX, 
                     "cbuf-%s-state-%zu-seq-%zu-ckpt-%zu.img", 
-                    fslist[i], state_depth, seq_id, j);
+                    fslist[i], state_depth, seq_id, idx);
             }
             else {
                 snprintf(dump_path, PATH_MAX, 
                     "cbuf-%s-state-%zu-seq-%zu-restore-%zu.img", 
-                    fslist[i], state_depth, seq_id, j);                
+                    fslist[i], state_depth, seq_id, idx);                
             }
 
             dmpfd = open(dump_path, O_CREAT | O_RDWR | O_TRUNC, 0666);
