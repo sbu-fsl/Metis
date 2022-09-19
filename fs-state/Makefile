@@ -1,7 +1,7 @@
 COMMON_DIR := ../common
 COMMON_SRC := $(wildcard $(COMMON_DIR)/*.c) $(wildcard $(COMMON_DIR)/*.cpp)
 COMMON_OBJ := $(patsubst $(COMMON_DIR)/%,%.o,$(COMMON_SRC))
-override CFLAGS += -g -I../include -D PRINTF -DDUMP_LATEST_CKPT_IMG # -DCR_CHECK -DDROP_CACHE -DSYNC_FS # -D T_RAND -D P_RAND
+override CFLAGS += -g -I../include -D PRINTF -DTWO_CKPT_CMP # -DDUMP_LATEST_CKPT_IMG -DCR_CHECK -DDROP_CACHE -DSYNC_FS # -D T_RAND -D P_RAND
 override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz
 PAN = pan
 

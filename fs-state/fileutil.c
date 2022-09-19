@@ -402,8 +402,11 @@ static void dump_fs_images(const char *folder)
         dump_device(get_devlist()[i], folder, get_fslist()[i]);
     }
 }
-
+#ifdef TWO_CKPT_CMP
+static void mmap_devices(bool ckpt)
+#else
 static void mmap_devices()
+#endif
 {
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!get_devlist()[i])
@@ -416,6 +419,24 @@ static void mmap_devices()
         get_fsfds()[i] = fsfd;
         get_fsimgs()[i] = fsimg;
     }
+#ifdef TWO_CKPT_CMP
+    if (ckpt) {
+        unmap_devices();
+        usleep(50);
+        for (int i = 0; i < get_n_fs(); ++i) {
+            if (!get_devlist()[i])
+                continue;
+            int fsfd2 = open(get_devlist()[i], O_RDWR);
+            assert(fsfd2 >= 0);
+            void *fsimg2 = mmap(NULL, fsize(fsfd2), PROT_READ | PROT_WRITE,
+                    MAP_SHARED, fsfd2, 0);
+            assert(fsimg2 != MAP_FAILED);
+            if (memcmp(get_fsimgs()[i], fsimg2, fsize(fsfd2)) != 0) {
+                logerr("Two checkpoint images not equal reproduced!\n");
+            }
+        }
+    }
+#endif
 }
 
 static void unmap_devices()
@@ -540,7 +561,11 @@ static long checkpoint_before_hook(unsigned char *ptr)
 
     state_depth++;
 
+#ifdef TWO_CKPT_CMP
+    mmap_devices(true);
+#else
     mmap_devices();
+#endif
 
 #ifdef DUMP_LATEST_CKPT_IMG
     memcpy(ext4_ckpt_img, get_fsimgs()[0], get_devsize_kb()[0] * 1024);
@@ -601,7 +626,11 @@ static long restore_before_hook(unsigned char *ptr)
     submit_seq("restore\n");
     makelog("[seqid = %d] restore (%zu)\n", count, state_depth);
 
+#ifdef TWO_CKPT_CMP
+    mmap_devices(false);
+#else
     mmap_devices();
+#endif
 
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!is_verifs(get_fslist()[i]))
