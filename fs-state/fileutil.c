@@ -421,8 +421,19 @@ static void mmap_devices()
     }
 #ifdef TWO_CKPT_CMP
     if (ckpt) {
-        unmap_devices();
-        usleep(50);
+        void **fsimg_copy = calloc(get_n_fs(), sizeof(void*));
+        for (int i = 0; i < get_n_fs(); ++i) {
+            fsimg_copy[i] = malloc(get_devsize_kb()[i] * 1024);
+            memcpy(fsimg_copy[i], get_fsimgs()[i], get_devsize_kb()[i] * 1024);
+        }
+
+        for (int i = 0; i < get_n_fs(); ++i) {
+            if (!get_devlist()[i])
+                continue;
+            munmap(get_fsimgs()[i], fsize(get_fsfds()[i]));
+            close(get_fsfds()[i]);
+        }
+        usleep(100);
         for (int i = 0; i < get_n_fs(); ++i) {
             if (!get_devlist()[i])
                 continue;
@@ -431,10 +442,19 @@ static void mmap_devices()
             void *fsimg2 = mmap(NULL, fsize(fsfd2), PROT_READ | PROT_WRITE,
                     MAP_SHARED, fsfd2, 0);
             assert(fsimg2 != MAP_FAILED);
-            if (memcmp(get_fsimgs()[i], fsimg2, fsize(fsfd2)) != 0) {
-                logerr("Two checkpoint images not equal reproduced!\n");
+            if (memcmp(fsimg_copy[i], fsimg2, fsize(fsfd2)) != 0) {
+                logerr("Two ckpt images not equal for FS %s reproduced!\n", 
+                    get_fslist()[i]);
             }
+            get_fsfds()[i] = fsfd2;
+            get_fsimgs()[i] = fsimg2;
         }
+        for (int i = 0; i < get_n_fs(); ++i) {
+            if (fsimg_copy[i])
+                free(fsimg_copy[i]);
+        }
+        if (fsimg_copy)
+            free(fsimg_copy);
     }
 #endif
 }
