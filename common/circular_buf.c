@@ -48,7 +48,7 @@ void dump_all_circular_bufs(circular_buf_sum_t *fsimg_bufs, char **fslist,
     for(size_t i = 0; i < fsimg_bufs->buf_num; ++i) {
         head = fsimg_bufs->cir_bufs[i].head_idx;
         for(size_t j = 0; j < BUF_SIZE; ++j) {
-            size_t idx = (j + head) % BUF_SIZE;
+            size_t idx = (head - j - 1 + BUF_SIZE) % BUF_SIZE;
             state_depth = fsimg_bufs->cir_bufs[i].img_buf[idx].depth;
             seq_id = fsimg_bufs->cir_bufs[i].img_buf[idx].seqid;
             is_ckpt = fsimg_bufs->cir_bufs[i].img_buf[idx].ckpt;
@@ -57,12 +57,12 @@ void dump_all_circular_bufs(circular_buf_sum_t *fsimg_bufs, char **fslist,
             if (is_ckpt) {
                 snprintf(dump_path, PATH_MAX, 
                     "cbuf-%s-state-%zu-seq-%zu-ckpt-%zu.img", 
-                    fslist[i], state_depth, seq_id, idx);
+                    fslist[i], state_depth, seq_id, j);
             }
             else {
                 snprintf(dump_path, PATH_MAX, 
                     "cbuf-%s-state-%zu-seq-%zu-restore-%zu.img", 
-                    fslist[i], state_depth, seq_id, idx);                
+                    fslist[i], state_depth, seq_id, j);                
             }
 
             dmpfd = open(dump_path, O_CREAT | O_RDWR | O_TRUNC, 0666);
