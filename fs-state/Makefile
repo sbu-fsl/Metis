@@ -49,5 +49,5 @@ replayer: replay.c init_globals.o setup.c mount.c common-libs
 		-DNO_FS_STAT common-libs.a $(CFLAGS) $(LIBS)
 
 clean:
-	rm -rf test test.txt pan* *.log *.csv *.o *.a absfs *.trail script* swarm_done* .pml_tmp demo.pml.swarm \
+	rm -rf test test.txt pan* *.log *.csv *.o *.a *.img absfs *.trail script* swarm_done* .pml_tmp demo.pml.swarm \
 	rm -rf /mnt/test-*/test*
