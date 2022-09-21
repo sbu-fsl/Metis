@@ -9,8 +9,9 @@ void circular_buf_init(circular_buf_sum_t **fsimg_bufs, int n_fs, size_t *devsiz
     // init circular_buf
     for(int i = 0; i < n_fs; ++i) {
         (*fsimg_bufs)->cir_bufs[i].head_idx = 0;
+        (*fsimg_bufs)->cir_bufs[i].size = 0;
         // init fsimg_buf
-        for (int j = 0; j < BUF_SIZE; ++j) {
+        for (int j = 0; j < CBUF_SIZE; ++j) {
             (*fsimg_bufs)->cir_bufs[i].img_buf[j].state = malloc(devsize_kb[i] * KB_TO_BYTES);
             (*fsimg_bufs)->cir_bufs[i].img_buf[j].ckpt = true;
             (*fsimg_bufs)->cir_bufs[i].img_buf[j].depth = 0;
@@ -31,13 +32,15 @@ void insert_circular_buf(circular_buf_sum_t *fsimg_bufs, int fs_idx,
     fsimg_bufs->cir_bufs[fs_idx].img_buf[head].seqid = seq_id;
     fsimg_bufs->cir_bufs[fs_idx].img_buf[head].ckpt = is_ckpt;
 
-    fsimg_bufs->cir_bufs[fs_idx].head_idx = (head + 1) % BUF_SIZE;
+    fsimg_bufs->cir_bufs[fs_idx].head_idx = (head + 1) % CBUF_SIZE;
+    if (fsimg_bufs->cir_bufs[fs_idx].size < CBUF_SIZE)
+        fsimg_bufs->cir_bufs[fs_idx].size++;
 }
 
 void dump_all_circular_bufs(circular_buf_sum_t *fsimg_bufs, char **fslist, 
     size_t *devsize_kb)
 {
-    size_t head = 0; 
+    size_t head = 0, cbuf_sz = 0, idx = 0; 
     size_t state_depth = 0;
     size_t seq_id = 0;
     bool is_ckpt = true;
@@ -47,8 +50,12 @@ void dump_all_circular_bufs(circular_buf_sum_t *fsimg_bufs, char **fslist,
 
     for(size_t i = 0; i < fsimg_bufs->buf_num; ++i) {
         head = fsimg_bufs->cir_bufs[i].head_idx;
-        for(size_t j = 0; j < BUF_SIZE; ++j) {
-            size_t idx = (head - j - 1 + BUF_SIZE) % BUF_SIZE;
+        cbuf_sz = fsimg_bufs->cir_bufs[i].size;
+        for(size_t j = 0; j < cbuf_sz; ++j) {
+            if (cbuf_sz < CBUF_SIZE)
+                idx = head - j - 1;
+            else
+                idx = (head - j - 1 + CBUF_SIZE) % CBUF_SIZE;
             state_depth = fsimg_bufs->cir_bufs[i].img_buf[idx].depth;
             seq_id = fsimg_bufs->cir_bufs[i].img_buf[idx].seqid;
             is_ckpt = fsimg_bufs->cir_bufs[i].img_buf[idx].ckpt;
@@ -93,7 +100,7 @@ void dump_all_circular_bufs(circular_buf_sum_t *fsimg_bufs, char **fslist,
 void cleanup_cir_bufs(circular_buf_sum_t *fsimg_bufs)
 {
     for(size_t i = 0; i < fsimg_bufs->buf_num; ++i) {
-        for(size_t j = 0; j < BUF_SIZE; ++j) {
+        for(size_t j = 0; j < CBUF_SIZE; ++j) {
             if (fsimg_bufs->cir_bufs[i].img_buf[j].state)
                 free(fsimg_bufs->cir_bufs[i].img_buf[j].state);
         }

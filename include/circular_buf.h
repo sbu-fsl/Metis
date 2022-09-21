@@ -18,7 +18,7 @@
 #include <fcntl.h>
 #include <linux/limits.h>
 
-#define BUF_SIZE 10
+#define CBUF_SIZE 10
 #define KB_TO_BYTES 1024
 
 struct fsimg_buf {
@@ -32,8 +32,9 @@ typedef struct fsimg_buf fsimg_buf_t;
 
 // Circular buffer structure for each file system
 struct circular_buf {
-    fsimg_buf_t img_buf[BUF_SIZE];
-    size_t head_idx; // [0, BUF_SIZE - 1]
+    fsimg_buf_t img_buf[CBUF_SIZE];
+    size_t head_idx; // [0, CBUF_SIZE - 1]
+    size_t size; // The size of currently saved images, size <= CBUF_SIZE
 };
 
 typedef struct circular_buf circular_buf_t;
