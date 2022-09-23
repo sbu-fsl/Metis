@@ -20,6 +20,9 @@ extern int absfs_hash_method;
 #ifdef CR_CHECK
 extern absfs_state_t latest_ckpt_absfs;
 #endif
+#ifdef CBUF_IMAGE
+extern circular_buf_sum_t *fsimg_bufs;
+#endif
 
 struct fs_stat {
     size_t capacity;
@@ -104,19 +107,24 @@ static inline void print_expect_failed(const char *expr, const char *file,
            count, file, line, expr);
 }
 
-void dump_checkpoint_images();
+#ifdef CBUF_IMAGE
+static inline void dump_all_cbufs()
+{
+    dump_all_circular_bufs(fsimg_bufs, get_fslist(), get_devsize_kb());
+}
+#endif
 
 #ifndef ABORT_ON_FAIL
 #define ABORT_ON_FAIL 0
 #endif
 
-#ifdef DUMP_LATEST_CKPT_IMG
+#ifdef CBUF_IMAGE
 #define expect(expr) \
     do { \
         if (!(expr)) { \
             print_expect_failed(#expr, __FILE__, __LINE__); \
+            dump_all_cbufs(); \
             if (ABORT_ON_FAIL) { \
-                dump_checkpoint_images(); \
                 fflush(stderr); \
                 exit(1); \
             } \
@@ -141,13 +149,33 @@ static inline size_t pick_value(size_t min, size_t max, size_t step)
     return min + rand() / (RAND_MAX / (max - min + 1) + 1) / step * step;
 }
 
+enum fill_type {PATTERN, ONES, UNIFORM, RANDOM};
+
 /* Generate data into a given buffer.
  * @value: 0-255 for uniform characters, -1 for random filling */
-static inline void generate_data(char *buffer, size_t len, int value)
+static inline void generate_data(char *buffer, size_t len, size_t offset, enum fill_type type, int value)
 {
-    if (value > 0) {
+    switch (type) {
+    case ONES:
+        memset(buffer, 1, len);
+        break;
+    case UNIFORM:
         memset(buffer, value, len);
-    } else {
+        break;
+    case PATTERN:
+    {
+        int new_offset = 3 - offset % sizeof(int);
+        for (int i = 0; i < new_offset; i++) {
+            buffer[i] = 0;
+        }
+        int *ip = (int *) (buffer + new_offset);
+        for (int i = 0; i <= len / sizeof(int); i++) {
+            ip[i] = offset / sizeof(int) + i;
+        }
+        break;
+    }
+    case RANDOM:
+    {
         size_t i = 0, remaining = len;
         int n = rand();
         while (remaining > 0) {
@@ -156,6 +184,8 @@ static inline void generate_data(char *buffer, size_t len, int value)
             remaining -= min(sizeof(int), remaining);
             i += min(sizeof(int), remaining);
         }
+        break;
+    }
     }
 }
 

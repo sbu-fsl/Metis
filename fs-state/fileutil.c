@@ -26,6 +26,10 @@ void *jffs2_ckpt_img = NULL;
 size_t latest_ckpt_depth = 0;
 #endif
 
+#ifdef CBUF_IMAGE
+circular_buf_sum_t *fsimg_bufs;
+#endif
+
 int compare_file_content(const char *path1, const char *path2)
 {
     const size_t bs = 4096;
@@ -593,6 +597,15 @@ static long checkpoint_before_hook(unsigned char *ptr)
     latest_ckpt_depth = state_depth - 1;
 #endif
 
+#ifdef CBUF_IMAGE
+    for (int i = 0; i < get_n_fs(); ++i) {
+        insert_circular_buf(fsimg_bufs, i, get_devsize_kb()[i], get_fsimgs()[i],
+            state_depth, count, true);
+    }
+#endif
+
+    state_depth++;
+
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!is_verifs(get_fslist()[i]))
             continue;
@@ -875,6 +888,9 @@ void __attribute__((constructor)) init()
     ext4_ckpt_img = malloc(get_devsize_kb()[0] * 1024);
     jffs2_ckpt_img = malloc(get_devsize_kb()[1] * 1024);
 #endif
+#ifdef CBUF_IMAGE
+    circular_buf_init(&fsimg_bufs, get_n_fs(), get_devsize_kb());
+#endif
 }
 
 /*
@@ -895,4 +911,7 @@ void __attribute__((destructor)) cleanup()
     unset_myheap();
     destroy_log_daemon();
     // unfreeze_all();
+#ifdef CBUF_IMAGE
+    cleanup_cir_bufs(fsimg_bufs);
+#endif
 }

@@ -1,7 +1,7 @@
 COMMON_DIR := ../common
 COMMON_SRC := $(wildcard $(COMMON_DIR)/*.c) $(wildcard $(COMMON_DIR)/*.cpp)
 COMMON_OBJ := $(patsubst $(COMMON_DIR)/%,%.o,$(COMMON_SRC))
-override CFLAGS += -g -I../include -D PRINTF -DTWO_CKPT_CMP # -DDUMP_LATEST_CKPT_IMG -DCR_CHECK -DDROP_CACHE -DSYNC_FS # -D T_RAND -D P_RAND
+override CFLAGS += -g -I../include -D PRINTF -fcommon -DCBUF_IMAGE -DTWO_CKPT_CMP # -DDUMP_LATEST_CKPT_IMG -DCR_CHECK -DDROP_CACHE -DSYNC_FS # -D T_RAND -D P_RAND
 override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz
 PAN = pan
 
@@ -49,5 +49,5 @@ replayer: replay.c init_globals.o setup.c mount.c common-libs
 		-DNO_FS_STAT common-libs.a $(CFLAGS) $(LIBS)
 
 clean:
-	rm -rf test test.txt pan* *.log *.csv *.o *.a absfs *.trail script* swarm_done* .pml_tmp demo.pml.swarm \
+	rm -rf test test.txt pan* *.log *.csv *.o *.a *.img absfs *.trail script* swarm_done* .pml_tmp demo.pml.swarm \
 	rm -rf /mnt/test-*/test*
