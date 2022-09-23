@@ -431,7 +431,7 @@ static void mmap_devices()
             munmap(get_fsimgs()[i], fsize(get_fsfds()[i]));
             close(get_fsfds()[i]);
         }
-        usleep(100);
+        usleep(1000);
         for (int i = 0; i < get_n_fs(); ++i) {
             if (!get_devlist()[i])
                 continue;

@@ -115,6 +115,11 @@ proctype worker()
             #endif
             for (i = 0; i < get_n_fs(); ++i) {
                 makecall(get_rets()[i], get_errs()[i], "%s", unlink, get_testfiles()[i]);
+                #ifdef OPS_CHECK
+                if (access(get_testfiles()[i], F_OK) == 0) {
+                    makelog("ERROR: unlink file exists\n");
+                }
+                #endif
             }
             expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testfiles()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
@@ -162,6 +167,13 @@ proctype worker()
             #endif
             for (i = 0; i < get_n_fs(); ++i) {
                 makecall(get_rets()[i], get_errs()[i], "%s", rmdir, get_testdirs()[i]);
+                #ifdef OPS_CHECK
+                DIR* dir = opendir(get_testdirs()[i]);
+                if (dir) {
+                    makelog("ERROR: rmdir directory exists\n");
+                    closedir(dir);
+                }
+                #endif
             }
             expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
