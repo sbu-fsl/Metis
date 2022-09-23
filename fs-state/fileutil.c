@@ -20,12 +20,6 @@ absfs_state_t ssr_absfs;
 absfs_state_t latest_ckpt_absfs;
 #endif
 
-#ifdef DUMP_LATEST_CKPT_IMG
-void *ext4_ckpt_img = NULL;
-void *jffs2_ckpt_img = NULL;
-size_t latest_ckpt_depth = 0;
-#endif
-
 #ifdef CBUF_IMAGE
 circular_buf_sum_t *fsimg_bufs;
 #endif
@@ -523,58 +517,6 @@ static int restore_verifs(size_t key, const char *mp)
 
 static size_t state_depth = 0;
 
-#ifdef DUMP_LATEST_CKPT_IMG
-void dump_checkpoint_images()
-{
-    const size_t bs = 4096;
-    char ext4_dump_path[PATH_MAX] = {0};
-    snprintf(ext4_dump_path, PATH_MAX, "ext4-latest-c%zu-d%zu.img", count, state_depth);
-    int dmpfd = open(ext4_dump_path, O_CREAT | O_RDWR | O_TRUNC, 0666);
-    if (dmpfd < 0) {
-        logerr("cannot create file %s", ext4_dump_path);
-        return;
-    }
-    size_t remaining = get_devsize_kb()[0] * 1024;
-    char *ptr = ext4_ckpt_img;
-    while (remaining > 0) {
-        size_t writelen = (remaining >= bs) ? bs : remaining;
-        ssize_t writeres = write(dmpfd, ptr, writelen);
-        if (writeres < 0) {
-            logerr("cannot write data to image dump %s", ext4_dump_path);
-            close(dmpfd);
-            break;
-        }
-        ptr += writeres;
-        remaining -= writeres;
-    }
-    close(dmpfd);
-
-    char jffs2_dump_path[PATH_MAX] = {0};
-    snprintf(jffs2_dump_path, PATH_MAX, "jffs2-latest-c%zu-d%zu.img", count, state_depth);
-    int dmpfd2 = open(jffs2_dump_path, O_CREAT | O_RDWR | O_TRUNC, 0666);
-    if (dmpfd2 < 0) {
-        logerr("cannot create file %s", jffs2_dump_path);
-        return;
-    }
-    size_t remaining2 = get_devsize_kb()[1] * 1024;
-    char *ptr2 = jffs2_ckpt_img;
-    while (remaining2 > 0) {
-        size_t writelen = (remaining2 >= bs) ? bs : remaining2;
-        ssize_t writeres = write(dmpfd2, ptr2, writelen);
-        if (writeres < 0) {
-            logerr("cannot write data to image dump %s", jffs2_dump_path);
-            close(dmpfd2);
-            break;
-        }
-        ptr2 += writeres;
-        remaining2 -= writeres;
-    }
-    close(dmpfd2);
-
-    logerr("Latest checkpoint state_depth: %zu", latest_ckpt_depth);
-}
-#endif
-
 /*
  *  Called before the spin's checkpoint of concrete state
  */
@@ -589,12 +531,6 @@ static long checkpoint_before_hook(unsigned char *ptr)
     mmap_devices(true);
 #else
     mmap_devices();
-#endif
-
-#ifdef DUMP_LATEST_CKPT_IMG
-    memcpy(ext4_ckpt_img, get_fsimgs()[0], get_devsize_kb()[0] * 1024);
-    memcpy(jffs2_ckpt_img, get_fsimgs()[1], get_devsize_kb()[1] * 1024);
-    latest_ckpt_depth = state_depth - 1;
 #endif
 
 #ifdef CBUF_IMAGE
@@ -884,10 +820,6 @@ void __attribute__((constructor)) init()
      * have support for statvfs() yet) */
     equalize_free_spaces();
 
-#ifdef DUMP_LATEST_CKPT_IMG
-    ext4_ckpt_img = malloc(get_devsize_kb()[0] * 1024);
-    jffs2_ckpt_img = malloc(get_devsize_kb()[1] * 1024);
-#endif
 #ifdef CBUF_IMAGE
     circular_buf_init(&fsimg_bufs, get_n_fs(), get_devsize_kb());
 #endif
@@ -900,12 +832,7 @@ void __attribute__((destructor)) cleanup()
 {
     if (fsinfos)
         free(fsinfos);
-#ifdef DUMP_LATEST_CKPT_IMG
-    if (ext4_ckpt_img)
-        free(ext4_ckpt_img);
-    if (jffs2_ckpt_img)
-        free(jffs2_ckpt_img);
-#endif
+
     fflush(stdout);
     fflush(stderr);
     unset_myheap();
