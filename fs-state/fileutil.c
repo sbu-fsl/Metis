@@ -525,8 +525,6 @@ static long checkpoint_before_hook(unsigned char *ptr)
     submit_seq("checkpoint\n");
     makelog("[seqid = %d] checkpoint (%zu)\n", count, state_depth);
 
-    state_depth++;
-
 #ifdef TWO_CKPT_CMP
     mmap_devices(true);
 #else
