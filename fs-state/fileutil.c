@@ -404,7 +404,8 @@ static void unmap_devices()
         // error verify fsize returns > 0, assert if munmap failed
         munmap(get_fsimgs()[i], fsize(get_fsfds()[i])); 
         // error assert if close() failed
-        close(get_fsfds()[i]); #error assert if close() failed
+        close(get_fsfds()[i]); 
+        
     }
 }
 
