@@ -377,15 +377,19 @@ static void dump_fs_images(const char *folder)
     }
 }
 
-static void mmap_devices() #error pass boolean or flag and only open/mmap for R or W, not both.
+// error pass boolean or flag and only open/mmap for R or W, not both.
+static void mmap_devices()
 {
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!get_devlist()[i])
             continue;
         int fsfd = open(get_devlist()[i], O_RDWR);
         assert(fsfd >= 0);
-        void *fsimg = mmap(NULL, fsize(fsfd), PROT_READ | PROT_WRITE, #error call fsize before, assert if size is <=0
-                MAP_SHARED, fsfd, 0); # use MAP_PRIVATE for Read/checkpoint, but for Write/restore may need MAP_SHARED (but try MAP_PRIVATE)
+        // error call fsize before, assert if size is <= 0
+        // use MAP_PRIVATE for Read/checkpoint, 
+        // but for Write/restore may need MAP_SHARED (but try MAP_PRIVATE)
+        void *fsimg = mmap(NULL, fsize(fsfd), PROT_READ | PROT_WRITE, 
+                MAP_SHARED, fsfd, 0);
         assert(fsimg != MAP_FAILED);
         get_fsfds()[i] = fsfd;
         get_fsimgs()[i] = fsimg;
@@ -397,7 +401,9 @@ static void unmap_devices()
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!get_devlist()[i])
             continue;
-        munmap(get_fsimgs()[i], fsize(get_fsfds()[i])); #error verify fsize returns > 0, assert if munmap failed
+        // error verify fsize returns > 0, assert if munmap failed
+        munmap(get_fsimgs()[i], fsize(get_fsfds()[i])); 
+        // error assert if close() failed
         close(get_fsfds()[i]); #error assert if close() failed
     }
 }
