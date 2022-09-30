@@ -198,16 +198,19 @@ static inline ssize_t fsize(int fd)
     if (ret != 0)
         return -1;
     if (info.st_mode & S_IFREG) {
-        // error verify st_size is even multiple of 4096
+        // verify st_size is even multiple of 4096
+        const size_t bs = 4096;
+        if (info.st_size % bs % 2 != 0)
+            return -1;
         return info.st_size;
     } else if (info.st_mode & S_IFBLK) {
         size_t devsz;
         ret = ioctl(fd, BLKGETSIZE64, &devsz);
         if (ret == -1)
-            return 0; // error return -1
+            return -1;
         return devsz;
     } else {
-        return 0; // error return -1
+        return -1;
     }
 }
 

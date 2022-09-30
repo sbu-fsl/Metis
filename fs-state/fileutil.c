@@ -377,19 +377,28 @@ static void dump_fs_images(const char *folder)
     }
 }
 
-// error pass boolean or flag and only open/mmap for R or W, not both.
-static void mmap_devices()
+// Pass boolean or flag and only open/mmap for R or W, not both.
+static void mmap_devices(bool ckpt)
 {
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!get_devlist()[i])
             continue;
-        int fsfd = open(get_devlist()[i], O_RDWR);
+        int fsfd = -1;
+        if (ckpt) 
+            fsfd = open(get_devlist()[i], O_RDONLY);
+        else
+            fsfd = open(get_devlist()[i], O_RDWR);
         assert(fsfd >= 0);
-        // error call fsize before, assert if size is <= 0
-        // use MAP_PRIVATE for Read/checkpoint, 
-        // but for Write/restore may need MAP_SHARED (but try MAP_PRIVATE)
-        void *fsimg = mmap(NULL, fsize(fsfd), PROT_READ | PROT_WRITE, 
-                MAP_SHARED, fsfd, 0);
+        // Call fsize before, assert if size is <= 0
+        ssize_t devsz = fsize(fsfd);
+        assert(devsz > 0);
+        // Use MAP_PRIVATE for Read/checkpoint 
+        // But for Write/restore may need MAP_SHARED (but try MAP_PRIVATE)
+        void *fsimg = MAP_FAILED;
+        if (ckpt)
+            fsimg = mmap(NULL, devsz, PROT_READ, MAP_PRIVATE, fsfd, 0);
+        else
+            fsimg = mmap(NULL, devsz, PROT_READ | PROT_WRITE, MAP_SHARED, fsfd, 0);
         assert(fsimg != MAP_FAILED);
         get_fsfds()[i] = fsfd;
         get_fsimgs()[i] = fsimg;
@@ -398,14 +407,19 @@ static void mmap_devices()
 
 static void unmap_devices()
 {
+    int ret = -1;
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!get_devlist()[i])
             continue;
-        // error verify fsize returns > 0, assert if munmap failed
-        munmap(get_fsimgs()[i], fsize(get_fsfds()[i])); 
-        // error assert if close() failed
-        close(get_fsfds()[i]); 
-        
+        // Verify fsize returns > 0, assert if munmap failed
+        ssize_t devsz = fsize(get_fsfds()[i]);
+        assert(devsz > 0);
+
+        ret = munmap(get_fsimgs()[i], devsz); 
+        assert(ret == 0);
+        // Assert if close() failed
+        ret = close(get_fsfds()[i]); 
+        assert(ret == 0);
     }
 }
 
@@ -467,7 +481,7 @@ static long checkpoint_before_hook(unsigned char *ptr)
     submit_seq("checkpoint\n");
     makelog("[seqid = %d] checkpoint (%zu)\n", count, state_depth);
 
-    mmap_devices();
+    mmap_devices(true);
 
 #ifdef CBUF_IMAGE
     for (int i = 0; i < get_n_fs(); ++i) {
@@ -512,7 +526,7 @@ static long restore_before_hook(unsigned char *ptr)
     submit_seq("restore\n");
     makelog("[seqid = %d] restore (%zu)\n", count, state_depth);
 
-    mmap_devices();
+    mmap_devices(false);
 
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!is_verifs(get_fslist()[i]))
