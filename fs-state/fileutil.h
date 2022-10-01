@@ -200,7 +200,7 @@ static inline ssize_t fsize(int fd)
     if (info.st_mode & S_IFREG) {
         // verify st_size is even multiple of 4096
         const size_t bs = 4096;
-        if (info.st_size % bs % 2 != 0)
+        if (info.st_size % bs != 0)
             return -1;
         return info.st_size;
     } else if (info.st_mode & S_IFBLK) {

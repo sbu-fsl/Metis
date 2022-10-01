@@ -4,6 +4,9 @@
 #include <sys/wait.h>
 #include <sys/vfs.h>
 
+#define IS_CHECKPOINT true
+#define IS_SNAPSHOT false
+
 struct fs_stat *fsinfos;
 int cur_pid;
 char func[FUNC_NAME_LEN + 1];
@@ -387,7 +390,7 @@ static void mmap_devices(bool ckpt)
         if (ckpt) 
             fsfd = open(get_devlist()[i], O_RDONLY);
         else
-            fsfd = open(get_devlist()[i], O_RDWR);
+            fsfd = open(get_devlist()[i], O_WRONLY);
         assert(fsfd >= 0);
         // Call fsize before, assert if size is <= 0
         ssize_t devsz = fsize(fsfd);
@@ -398,7 +401,7 @@ static void mmap_devices(bool ckpt)
         if (ckpt)
             fsimg = mmap(NULL, devsz, PROT_READ, MAP_PRIVATE, fsfd, 0);
         else
-            fsimg = mmap(NULL, devsz, PROT_READ | PROT_WRITE, MAP_SHARED, fsfd, 0);
+            fsimg = mmap(NULL, devsz, PROT_WRITE, MAP_SHARED, fsfd, 0);
         assert(fsimg != MAP_FAILED);
         get_fsfds()[i] = fsfd;
         get_fsimgs()[i] = fsimg;
@@ -481,12 +484,12 @@ static long checkpoint_before_hook(unsigned char *ptr)
     submit_seq("checkpoint\n");
     makelog("[seqid = %d] checkpoint (%zu)\n", count, state_depth);
 
-    mmap_devices(true);
+    mmap_devices(IS_CHECKPOINT);
 
 #ifdef CBUF_IMAGE
     for (int i = 0; i < get_n_fs(); ++i) {
         insert_circular_buf(fsimg_bufs, i, get_devsize_kb()[i], get_fsimgs()[i],
-            state_depth, count, true);
+            state_depth, count, IS_CHECKPOINT);
     }
 #endif
 
@@ -526,7 +529,7 @@ static long restore_before_hook(unsigned char *ptr)
     submit_seq("restore\n");
     makelog("[seqid = %d] restore (%zu)\n", count, state_depth);
 
-    mmap_devices(false);
+    mmap_devices(IS_SNAPSHOT);
 
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!is_verifs(get_fslist()[i]))
