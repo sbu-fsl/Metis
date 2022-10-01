@@ -45,7 +45,7 @@ proctype worker()
             // size_t writelen = pick_value(0, 32768, 2048);
             char *data = malloc(Pworker->writelen);
             // Change Write Pattern Here
-            generate_data(data, Pworker->writelen, Pworker->offset, PATTERN, Pworker->writebyte);
+            generate_data(data, Pworker->writelen, Pworker->offset, UNIFORM, Pworker->writebyte);
             for (i = 0; i < get_n_fs(); ++i) {
                 makecall(get_rets()[i], get_errs()[i], "%s, %p, %ld, %zu", write_file, get_testfiles()[i], data,
                          (off_t)Pworker->offset, (size_t)Pworker->writelen);
