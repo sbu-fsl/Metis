@@ -390,7 +390,7 @@ static void mmap_devices(bool ckpt)
         if (ckpt) 
             fsfd = open(get_devlist()[i], O_RDONLY);
         else
-            fsfd = open(get_devlist()[i], O_WRONLY);
+            fsfd = open(get_devlist()[i], O_RDWR);
         assert(fsfd >= 0);
         // Call fsize before, assert if size is <= 0
         ssize_t devsz = fsize(fsfd);
