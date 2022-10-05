@@ -439,6 +439,89 @@ static void init_basepaths()
     }
 }
 
+#ifdef FILEDIR_POOL
+static int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode)
+{
+    const size_t len = strlen(path);
+    char _path[PATH_MAX];
+    char *p; 
+
+    errno = 0;
+
+    /* Copy string so its mutable */
+    if (len > sizeof(_path)-1) {
+        errno = ENAMETOOLONG;
+        return -1; 
+    }   
+    strcpy(_path, path);
+
+    bool next_f = false;
+    bool next_d = false;
+    /* Iterate the string */
+    for (p = _path + 1; *p; p++) {
+        if (*p == '/') {
+            /* Temporarily truncate */
+            *p = '\0';
+            if (mkdir(_path, dir_mode) != 0) {
+                if (errno != EEXIST) {
+                    return -1; 
+                }
+            }
+            
+            *p = '/';
+
+            if (*(p + 1) == 'f')
+                next_f = true;
+            else if (*(p + 1) == 'd')
+                next_d = true;
+        }
+    }
+    if (next_f) {
+        int fd = creat(_path, file_mode);
+        if (fd >= 0) {
+            close(fd);
+        }
+        else if (errno != EEXIST) {
+            return -1;
+        }
+    }
+    if (next_d) {
+        if (mkdir(_path, dir_mode) != 0) {
+            if (errno != EEXIST) {
+                return -1; 
+            }
+        }
+    }
+
+    return 0;
+}
+
+static void precreate_pools()
+{
+    double fs_exist_prob = 0;
+    size_t path_len;
+    char *path_name;
+    mountall();
+    for (int i = 0; i < combo_pool_idx; ++i) {
+        if (need_pre_create(fs_exist_prob)) {
+            for (int j = 0; j < get_n_fs(); ++j) {
+                path_len = snprintf(NULL, 0, "%s%s", get_basepaths()[j], bfs_file_dir_pool[i]);
+                path_name = calloc(1, path_len + 1);
+                snprintf(path_name, path_len + 1, "%s%s", get_basepaths()[j], bfs_file_dir_pool[i]);
+                int ret = -1;
+                ret = mkdir_p(path_name, 0755, 0644);
+                if (ret < 0) {
+                    fprintf(stderr, "mkdir_p error happened!\n");
+                    exit(EXIT_FAILURE);
+                }
+                free(path_name);
+            }
+        }
+    }
+    unmount_all_strict();
+}
+#endif
+
 static int checkpoint_verifs(size_t key, const char *mp)
 {
     int mpfd = open(mp, O_RDONLY | __O_DIRECTORY);
@@ -672,6 +755,10 @@ void __attribute__((constructor)) init()
     try_init_myheap();
     init_basepaths();
     setup_filesystems();
+#ifdef FILEDIR_POOL
+    /* Pre-create files and dirs from pools AFTER fs setup */
+    precreate_pools();
+#endif
 
     /* Initialize log daemon */
     // setvbuf(stdout, NULL, _IONBF, 0);

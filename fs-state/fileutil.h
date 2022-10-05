@@ -111,6 +111,13 @@ static inline void dump_all_cbufs()
 }
 #endif
 
+#ifdef FILEDIR_POOL
+static inline bool need_pre_create(double prob)
+{
+    return rand() <  prob * ((double)RAND_MAX + 1.0);
+}
+#endif
+
 #ifndef ABORT_ON_FAIL
 #define ABORT_ON_FAIL 0
 #endif
@@ -147,6 +154,14 @@ static inline size_t pick_value(size_t min, size_t max, size_t step)
 }
 
 enum fill_type {PATTERN, ONES, UNIFORM, RANDOM};
+
+#ifdef FILEDIR_POOL
+/* Randomly pick a value in the range of [min, max] without steps */
+static inline size_t pick_random(size_t min, size_t max)
+{
+   return min + rand() / (RAND_MAX / (max - min + 1) + 1);
+}
+#endif
 
 /* Generate data into a given buffer.
  * @value: 0-255 for uniform characters, -1 for random filling */
