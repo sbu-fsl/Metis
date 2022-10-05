@@ -68,24 +68,7 @@ void mountall()
         /* Skip verifs */
         if (is_verifs(get_fslist()[i]))
             continue;
-
-        // mount -t ftfs $dummy_dev $mntpnt -o max=$circle_size
-        if (strcmp(get_fslist()[i], "ftfs") == 0) {
-            snprintf(cmdbuf, PATH_MAX,
-                     "mount -t ftfs %s %s -o max=%d",
-                     get_devlist()[i],
-                     get_basepaths()[i],
-                     128);
-            if (execute_cmd_status(cmdbuf) == 0) {
-                continue;
-            } else {
-                fprintf(stderr, "Failed to mount ftfs.\n");
-                failpos = i;
-                err = errno;
-                goto err;
-            }
-        }
-
+        
         /* mount(source, target, fstype, mountflags, option_str) */
         int ret = mount(get_devlist()[i], get_basepaths()[i], get_fslist()[i], MS_NOATIME, "");
         if (ret != 0) {

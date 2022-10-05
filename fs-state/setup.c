@@ -73,7 +73,10 @@ static int setup_generic(const char *fsname, const char *devname, const size_t s
              devname, size_kb);
     execute_cmd(cmdbuf);
     // format the device with the specified file system
-    snprintf(cmdbuf, PATH_MAX, "mkfs.%s %s", fsname, devname);
+    if (is_betrfs(get_fslist()[i])
+        snprintf(cmdbuf, PATH_MAX, "mkfs.%s %s", fsname, BETRFS_WORKDEV);
+    else
+        snprintf(cmdbuf, PATH_MAX, "mkfs.%s %s", fsname, devname);
     execute_cmd(cmdbuf);
 
     return 0;

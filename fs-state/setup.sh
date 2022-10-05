@@ -36,10 +36,11 @@ FS_DEV_MAP+=( ["jffs2"]="mtdblock" ["ramfs"]="" ["tmpfs"]="" )
 FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" )
 FS_DEV_MAP+=( ["ftfs"]="ram" )
 
-FTFS_DEVFILE=/dev/loop7
+FTFS_DEVFILE=$(losetup -f)
 FTFS_PARTITION=/dev/sdc
 FTFS_LOOP_FD=./dummy.dev
-FTFS_KMOD=/home/tgurram/betrfs/filesystem/ftfs.ko
+# BetrFS TODO: Set the ftfs ko path automatically
+FTFS_KMOD=/home/yifei/betrfs/filesystem/ftfs.ko
 
 mount_all() {
     SWARM_ID=$1;
@@ -350,7 +351,7 @@ setup_ftfs() {
     BLOCKSIZE=1k
     runcmd dd if=/dev/zero of=$DEVICE bs=$BLOCKSIZE count=$DEVSIZE_KB status=none;
 
-    runcmd ./mkfs.ftfs $DEVICE
+    runcmd ./mkfs.ftfs $FTFS_PARTITION
     runcmd insmod $FTFS_KMOD sb_dev=$FTFS_PARTITION sb_fstype=ext4
 }
 

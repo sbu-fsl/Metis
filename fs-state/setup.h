@@ -34,11 +34,22 @@
 
 #define VERIFS_PREFIX       "veri"
 #define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
+#define FTFS_NAME "ftfs"
+#define BETRFS_NAME "betrfs"
+#define BETRFS_WORKDEV "/dev/sdc"
 
 static inline bool is_verifs(const char *fsname)
 {
     return strncmp(fsname, VERIFS_PREFIX, VERIFS_PREFIX_LEN) == 0;
 }
+
+static inline bool is_betrfs(const char *fsname)
+{
+    if (strcmp(fsname, FTFS_NAME) == 0 || strcmp(fsname, BETRFS_NAME) == 0)
+        return true;
+    return false;
+}
+
 
 void setup_filesystems();
 
