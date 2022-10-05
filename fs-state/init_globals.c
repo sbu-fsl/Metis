@@ -2,8 +2,10 @@
 
 globals_t *globals_t_p;
 bool *fs_frozen;
+#ifdef FILEDIR_POOL
 char **bfs_file_dir_pool;
 int combo_pool_idx;
+#endif
 
 static char *mcfs_globals_env;
 static const char *mcfs_globals_env_key = "MCFS_FSLIST";
@@ -18,6 +20,7 @@ static int opt_ret = -1;
 
 dev_nums_t dev_nums = {.all_rams = 0, .all_mtdblocks = 0};
 
+#ifdef FILEDIR_POOL
 /*
  * current is the list of directories previous depth
  * size is current's size.
@@ -79,6 +82,7 @@ static int getpowsum(int directorycount, int path_depth) {
     }
     return sum;
 }
+#ifdef FILEDIR_POOL
 
 static void init_globals_pointer()
 {
@@ -291,20 +295,22 @@ static void init_all_steady_globals()
     if (!globals_t_p->testdirs) 
         mem_alloc_err();
 
-    /* testdirs_dst */
-    globals_t_p->testdirs_dst = calloc(globals_t_p->_n_fs, sizeof(char*));
-    if (!globals_t_p->testdirs_dst) 
-        mem_alloc_err();
-
     /* testfiles */
     globals_t_p->testfiles = calloc(globals_t_p->_n_fs, sizeof(char*));
     if (!globals_t_p->testfiles) 
+        mem_alloc_err();
+
+#ifdef FILEDIR_POOL
+    /* testdirs_dst */
+    globals_t_p->testdirs_dst = calloc(globals_t_p->_n_fs, sizeof(char*));
+    if (!globals_t_p->testdirs_dst) 
         mem_alloc_err();
 
     /* testfiles_dst */
     globals_t_p->testfiles_dst = calloc(globals_t_p->_n_fs, sizeof(char*));
     if (!globals_t_p->testfiles_dst) 
         mem_alloc_err();
+#endif
 
     /* fsimgs */
     globals_t_p->fsimgs = calloc(globals_t_p->_n_fs, sizeof(void*));
@@ -332,6 +338,7 @@ static void init_all_steady_globals()
         mem_alloc_err();
 }
 
+#ifdef FILEDIR_POOL
 static void init_multi_files_params()
 {
     /* filecount */
@@ -422,6 +429,7 @@ static void init_multi_files_params()
         ++dir_cur_idx;
     }
 }
+#endif
 
 /* TODO 1: Do we need to handle basepaths, testdirs, and testfiles? */
 /* TODO 2: Free memory for file pool and directory pool. */
@@ -508,19 +516,9 @@ char **get_testdirs()
     return globals_t_p->testdirs;
 }
 
-char **get_testdirs_dst()
-{
-    return globals_t_p->testdirs_dst;
-}
-
 char **get_testfiles()
 {
     return globals_t_p->testfiles;
-}
-
-char **get_testfiles_dst()
-{
-    return globals_t_p->testfiles_dst;
 }
 
 void **get_fsimgs()
@@ -546,6 +544,17 @@ int *get_rets()
 int *get_errs()
 {
     return globals_t_p->errs;
+}
+
+#ifdef FILEDIR_POOL
+char **get_testdirs_dst()
+{
+    return globals_t_p->testdirs_dst;
+}
+
+char **get_testfiles_dst()
+{
+    return globals_t_p->testfiles_dst;
 }
 
 int get_filecount()
@@ -587,6 +596,7 @@ char **get_directorypool()
 {
     return globals_t_p->directorypool;
 }
+#endif
 
 static int cli_or_env_args(int argc, char *argv[])
 {
@@ -627,6 +637,7 @@ static int cli_or_env_args(int argc, char *argv[])
     return 1;
 }
 
+#ifdef FILEDIR_POOL
 static void dump_file_dir_pools()
 {
     FILE * fp;
@@ -651,6 +662,7 @@ static void dump_file_dir_pools()
     fprintf(fp, "\n");
     fclose(fp);
 }
+#endif
 
 void __attribute__((constructor)) globals_init(int argc, char *argv[])
 {
@@ -680,10 +692,12 @@ void __attribute__((constructor)) globals_init(int argc, char *argv[])
     init_all_fickle_globals();
     /* Initalize other global data */
     init_all_steady_globals();
+#ifdef FILEDIR_POOL
     /* Initalize parameters related multi-file and multi-dir structure */
     init_multi_files_params();
     /* Dump the file and dir pools */
     dump_file_dir_pools();
+#endif
     /* Initalize fs_frozen status flags*/
     fs_frozen = calloc(get_n_fs(), sizeof(bool));
     if (!fs_frozen)
