@@ -17,6 +17,15 @@
 /* Abort the whole program when expect() fails */
 #define ABORT_ON_FAIL    1
 
+/* File/Dir Pool Related Configurations */
+#ifdef FILEDIR_POOL
+#define FILE_COUNT 1
+#define DIR_COUNT 1
+#define PATH_DEPTH 1
+#define MAX_PATHLEN 10
+
+#endif
+
 int i;
 
 #endif // _FSSTATE_CONFIG_H_

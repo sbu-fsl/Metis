@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <fcntl.h>
+#include "config.h"
 #include "abstract_fs.h"
 
 #ifdef __cplusplus

@@ -342,10 +342,10 @@ static void init_all_steady_globals()
 static void init_multi_files_params()
 {
     /* filecount */
-    globals_t_p->filecount = 1;
+    globals_t_p->filecount = FILE_COUNT;
 
     /* directorycount */
-    globals_t_p->directorycount = 1;
+    globals_t_p->directorycount = DIR_COUNT;
 
     /* filepool_idx */
     globals_t_p->filepool_idx = 0;
@@ -354,10 +354,10 @@ static void init_multi_files_params()
     globals_t_p->dirpool_idx = 0;
 
     /* path_depth */
-    globals_t_p->path_depth = 1;
+    globals_t_p->path_depth = PATH_DEPTH;
 
     /* max_name_len */
-    globals_t_p->max_name_len = 10;
+    globals_t_p->max_name_len = MAX_PATHLEN;
 
     char *current[PATH_MAX];
     int directorypool_size = 0;
@@ -695,8 +695,8 @@ void __attribute__((constructor)) globals_init(int argc, char *argv[])
 #ifdef FILEDIR_POOL
     /* Initalize parameters related multi-file and multi-dir structure */
     init_multi_files_params();
-    /* Dump the file and dir pools */
-    dump_file_dir_pools();
+    /* Dump the file and dir pools (dump_file_dir_pools_0.log ) */
+    // dump_file_dir_pools();
 #endif
     /* Initalize fs_frozen status flags*/
     fs_frozen = calloc(get_n_fs(), sizeof(bool));
