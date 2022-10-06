@@ -82,7 +82,7 @@ static int getpowsum(int directorycount, int path_depth) {
     }
     return sum;
 }
-#ifdef FILEDIR_POOL
+#endif
 
 static void init_globals_pointer()
 {

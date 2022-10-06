@@ -19,6 +19,22 @@ int _n_files;
 size_t count;
 absfs_set_t absfs_set;
 
+#ifdef FILEDIR_POOL
+bool enable_fdpool = true;
+#else
+bool enable_fdpool = false;
+#endif
+
+#if defined(FILEDIR_POOL) && defined(COMPLEX_FSOPS)
+bool enable_complex_ops = true;
+#else
+bool enable_complex_ops = false;
+#endif
+
+#ifdef FILEDIR_POOL
+#define FILEDIR_EXIST_PROB 0.5
+#endif
+
 #ifdef CBUF_IMAGE
 circular_buf_sum_t *fsimg_bufs;
 #endif
@@ -498,7 +514,7 @@ static int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode)
 
 static void precreate_pools()
 {
-    double fs_exist_prob = 0;
+    double fs_exist_prob = FILEDIR_EXIST_PROB;
     size_t path_len;
     char *path_name;
     mountall();

@@ -17,6 +17,9 @@ extern absfs_set_t absfs_set;
 extern int pan_argc;
 extern char **pan_argv;
 extern int absfs_hash_method;
+extern bool enable_fdpool;
+extern bool enable_complex_ops;
+
 #ifdef CBUF_IMAGE
 extern circular_buf_sum_t *fsimg_bufs;
 #endif
