@@ -635,6 +635,7 @@ static int cli_or_env_args(int argc, char *argv[])
     return 1;
 }
 
+/*
 #ifdef FILEDIR_POOL
 static void dump_file_dir_pools()
 {
@@ -661,6 +662,7 @@ static void dump_file_dir_pools()
     fclose(fp);
 }
 #endif
+*/
 
 void __attribute__((constructor)) globals_init(int argc, char *argv[])
 {
