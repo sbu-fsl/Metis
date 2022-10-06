@@ -23,7 +23,6 @@
 #define DIR_COUNT 1
 #define PATH_DEPTH 1
 #define MAX_PATHLEN 10
-
 #endif
 
 int i;

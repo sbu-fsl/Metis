@@ -238,26 +238,101 @@ proctype worker()
         }
     };
     :: atomic {
-        /* rename */
-        c_code [enable_complex_ops] {
-            makelog("BEGIN: rename\n");
-            mountall();
-            int dir_or_file = random() % 2;
-            /* Case of file */
+        /* rename: run it only if the complex ops option enabled */
+        c_expr {enable_complex_ops} ->
+            c_code { 
+                makelog("BEGIN: rename\n");
+                mountall();
+                int dir_or_file = random() % 2;
+                /* Case of file */
+                if (dir_or_file == 0) {
             if (dir_or_file == 0) {    
+                if (dir_or_file == 0) {
+                    int src_idx = pick_random(0, get_filepool_idx() - 1);
+                    int dst_idx = pick_random(0, get_filepool_idx() - 1);
+
+                    for (i = 0; i < get_n_fs(); ++i) {                   
+                for (i = 0; i < get_n_fs(); ++i) {                   
+                    for (i = 0; i < get_n_fs(); ++i) {                   
+                        size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
+                        get_testfiles()[i] = calloc(1, filename_len + 1);
+                        snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
+
+                        filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
+                        get_testfiles_dst()[i] = calloc(1, filename_len + 1);
+                        snprintf(get_testfiles_dst()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
+
+                        makecall(get_rets()[i], get_errs()[i], "%s,  %s", rename, get_testfiles()[i], get_testfiles_dst()[i]);
+                    }
+                    expect(compare_equality_fcontent(get_fslist(), get_n_fs(), get_testfiles()));
+                    expect(compare_equality_fcontent(get_fslist(), get_n_fs(), get_testfiles_dst()));
+                    for (i = 0; i < get_n_fs(); ++i) {
+                        free(get_testfiles()[i]);
+                        free(get_testfiles_dst()[i]);
+                        get_testfiles()[i] = NULL;
+                        get_testfiles_dst()[i] = NULL;
+                    }
+                }
+                /* Case of directory */
+                else {
+                    int src_idx = pick_random(0, get_dirpool_idx() - 1);
+                    int dst_idx = pick_random(0, get_dirpool_idx() - 1);
+
+                    for (i = 0; i < get_n_fs(); ++i) {
+                        size_t dirname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
+                        get_testdirs()[i] = calloc(1, dirname_len+1);
+                        snprintf(get_testdirs()[i], dirname_len + 1, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
+                
+                        dirname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_directorypool()[dst_idx]);
+                        get_testdirs_dst()[i] = calloc(1, dirname_len+1);
+                        snprintf(get_testdirs_dst()[i], dirname_len + 1, "%s%s", get_basepaths()[i], get_directorypool()[dst_idx]);
+
+                        makecall(get_rets()[i], get_errs()[i], "%s,  %s", rename, get_testdirs()[i], get_testdirs_dst()[i]);
+                    }
+                    expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
+                    expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs_dst()));
+                    for (i = 0; i < get_n_fs(); ++i) {
+                        free(get_testdirs()[i]);
+                        free(get_testdirs_dst()[i]);
+                        get_testdirs()[i] = NULL;
+                        get_testdirs_dst()[i] = NULL;
+                    }
+                }
+                expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
+                expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
+                expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
+
+                unmount_all_strict();
+                makelog("END: rename\n");                
+            makelog("END: rename\n");
+                makelog("END: rename\n");                
+            }
+    };
+
+    :: atomic {
+        /* link: run it only if the complex ops option enabled */
+        c_expr {enable_complex_ops} ->
+            c_code {
+                makelog("BEGIN: link\n");
+                mountall();
+
                 int src_idx = pick_random(0, get_filepool_idx() - 1);
                 int dst_idx = pick_random(0, get_filepool_idx() - 1);
 
-                for (i = 0; i < get_n_fs(); ++i) {                   
+                for (i = 0; i < get_n_fs(); ++i) {                    
+            for (i = 0; i < get_n_fs(); ++i) {                    
+                for (i = 0; i < get_n_fs(); ++i) {                    
                     size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-                    get_testfiles()[i] = calloc(1, filename_len + 1);
+                    get_testfiles()[i] = calloc(1, filename_len+1);
                     snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
 
                     filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
-                    get_testfiles_dst()[i] = calloc(1, filename_len + 1);
-                    snprintf(get_testfiles_dst()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
+                    get_testfiles_dst()[i] = calloc(1, filename_len+1);
+                    snprintf(get_testfiles_dst()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);               
+                snprintf(get_testfiles_dst()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);               
+                    snprintf(get_testfiles_dst()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);               
 
-                    makecall(get_rets()[i], get_errs()[i], "%s,  %s", rename, get_testfiles()[i], get_testfiles_dst()[i]);
+                    makecall(get_rets()[i], get_errs()[i], "%s,  %s", link, get_testfiles()[i], get_testfiles_dst()[i]);
                 }
                 expect(compare_equality_fcontent(get_fslist(), get_n_fs(), get_testfiles()));
                 expect(compare_equality_fcontent(get_fslist(), get_n_fs(), get_testfiles_dst()));
@@ -267,113 +342,51 @@ proctype worker()
                     get_testfiles()[i] = NULL;
                     get_testfiles_dst()[i] = NULL;
                 }
+                expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
+                expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
+                expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
+
+                unmount_all_strict();
+                makelog("END: link\n");
             }
-            /* Case of directory */
-            else {
-                int src_idx = pick_random(0, get_dirpool_idx() - 1);
-                int dst_idx = pick_random(0, get_dirpool_idx() - 1);
-
-                for (i = 0; i < get_n_fs(); ++i) {
-                    size_t dirname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
-                    get_testdirs()[i] = calloc(1, dirname_len+1);
-                    snprintf(get_testdirs()[i], dirname_len + 1, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
-               
-                    dirname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_directorypool()[dst_idx]);
-                    get_testdirs_dst()[i] = calloc(1, dirname_len+1);
-                    snprintf(get_testdirs_dst()[i], dirname_len + 1, "%s%s", get_basepaths()[i], get_directorypool()[dst_idx]);
-
-                    makecall(get_rets()[i], get_errs()[i], "%s,  %s", rename, get_testdirs()[i], get_testdirs_dst()[i]);
-                }
-                expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs()));
-                expect(compare_equality_fexists(get_fslist(), get_n_fs(), get_testdirs_dst()));
-                for (i = 0; i < get_n_fs(); ++i) {
-                    free(get_testdirs()[i]);
-                    free(get_testdirs_dst()[i]);
-                    get_testdirs()[i] = NULL;
-                    get_testdirs_dst()[i] = NULL;
-                }
-            }
-            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
-            expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
-            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-
-            unmount_all_strict();
-            makelog("END: rename\n");
-        }
-    };
-
-    :: atomic {
-        /* link */
-        c_code [enable_complex_ops] {
-            makelog("BEGIN: link\n");
-            mountall();
-
-            int src_idx = pick_random(0, get_filepool_idx() - 1);
-            int dst_idx = pick_random(0, get_filepool_idx() - 1);
-
-            for (i = 0; i < get_n_fs(); ++i) {                    
-                size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-                get_testfiles()[i] = calloc(1, filename_len+1);
-                snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-
-                filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
-                get_testfiles_dst()[i] = calloc(1, filename_len+1);
-                snprintf(get_testfiles_dst()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);               
-
-                makecall(get_rets()[i], get_errs()[i], "%s,  %s", link, get_testfiles()[i], get_testfiles_dst()[i]);
-            }
-            expect(compare_equality_fcontent(get_fslist(), get_n_fs(), get_testfiles()));
-            expect(compare_equality_fcontent(get_fslist(), get_n_fs(), get_testfiles_dst()));
-            for (i = 0; i < get_n_fs(); ++i) {
-                free(get_testfiles()[i]);
-                free(get_testfiles_dst()[i]);
-                get_testfiles()[i] = NULL;
-                get_testfiles_dst()[i] = NULL;
-            }
-            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
-            expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
-            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-
-            unmount_all_strict();
-            makelog("END: link\n");
-        }
     };
     :: atomic {
-        /* symlink */
-        c_code [enable_complex_ops] {
-            makelog("BEGIN: symlink\n");
-            mountall();
+        /* symlink: run it only if the complex ops option enabled */
+        c_expr {enable_complex_ops} ->
+            c_code {
+                makelog("BEGIN: symlink\n");
+                mountall();
 
-            int src_idx = pick_random(0, get_filepool_idx() - 1);
-            int dst_idx = pick_random(0, get_filepool_idx() - 1);
+                int src_idx = pick_random(0, get_filepool_idx() - 1);
+                int dst_idx = pick_random(0, get_filepool_idx() - 1);
 
-            for (i = 0; i < get_n_fs(); ++i) {
-                    
-                size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-                get_testfiles()[i] = calloc(1, filename_len+1);
-                snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
+                for (i = 0; i < get_n_fs(); ++i) {
+                        
+                    size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
+                    get_testfiles()[i] = calloc(1, filename_len+1);
+                    snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
 
-                filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
-                get_testfiles_dst()[i] = calloc(1, filename_len+1);
-                snprintf(get_testfiles_dst()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
+                    filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
+                    get_testfiles_dst()[i] = calloc(1, filename_len+1);
+                    snprintf(get_testfiles_dst()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
 
-                makecall(get_rets()[i], get_errs()[i], "%s,  %s", symlink, get_testfiles()[i], get_testfiles_dst()[i]);
+                    makecall(get_rets()[i], get_errs()[i], "%s,  %s", symlink, get_testfiles()[i], get_testfiles_dst()[i]);
+                }
+                expect(compare_equality_fcontent(get_fslist(), get_n_fs(), get_testfiles()));
+                expect(compare_equality_fcontent(get_fslist(), get_n_fs(), get_testfiles_dst()));
+                for (i = 0; i < get_n_fs(); ++i) {
+                    free(get_testfiles()[i]);
+                    free(get_testfiles_dst()[i]);
+                    get_testfiles()[i] = NULL;
+                    get_testfiles_dst()[i] = NULL;
+                }
+                expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
+                expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
+                expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
+
+                unmount_all_strict();
+                makelog("END: symlink\n");
             }
-            expect(compare_equality_fcontent(get_fslist(), get_n_fs(), get_testfiles()));
-            expect(compare_equality_fcontent(get_fslist(), get_n_fs(), get_testfiles_dst()));
-            for (i = 0; i < get_n_fs(); ++i) {
-                free(get_testfiles()[i]);
-                free(get_testfiles_dst()[i]);
-                get_testfiles()[i] = NULL;
-                get_testfiles_dst()[i] = NULL;
-            }
-            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
-            expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
-            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-
-            unmount_all_strict();
-            makelog("END: symlink\n");
-        }
     };
     od
 };

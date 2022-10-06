@@ -20,11 +20,11 @@ static int opt_ret = -1;
 
 dev_nums_t dev_nums = {.all_rams = 0, .all_mtdblocks = 0};
 
-#ifdef FILEDIR_POOL
 /*
  * current is the list of directories previous depth
  * size is current's size.
  */
+#ifdef FILEDIR_POOL
 static void pool_dfs(int directorycount, int filecount, int path_depth, int max_name_len, char** current, int size) {
     int newnames_len = 0;
     /* newpool: directories at the current depth. */
@@ -546,7 +546,6 @@ int *get_errs()
     return globals_t_p->errs;
 }
 
-#ifdef FILEDIR_POOL
 char **get_testdirs_dst()
 {
     return globals_t_p->testdirs_dst;
@@ -596,7 +595,6 @@ char **get_directorypool()
 {
     return globals_t_p->directorypool;
 }
-#endif
 
 static int cli_or_env_args(int argc, char *argv[])
 {
