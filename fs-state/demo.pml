@@ -246,13 +246,9 @@ proctype worker()
                 int dir_or_file = random() % 2;
                 /* Case of file */
                 if (dir_or_file == 0) {
-            if (dir_or_file == 0) {    
-                if (dir_or_file == 0) {
                     int src_idx = pick_random(0, get_filepool_idx() - 1);
                     int dst_idx = pick_random(0, get_filepool_idx() - 1);
 
-                    for (i = 0; i < get_n_fs(); ++i) {                   
-                for (i = 0; i < get_n_fs(); ++i) {                   
                     for (i = 0; i < get_n_fs(); ++i) {                   
                         size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
                         get_testfiles()[i] = calloc(1, filename_len + 1);
@@ -304,8 +300,6 @@ proctype worker()
 
                 unmount_all_strict();
                 makelog("END: rename\n");                
-            makelog("END: rename\n");
-                makelog("END: rename\n");                
             }
     };
 
@@ -320,16 +314,12 @@ proctype worker()
                 int dst_idx = pick_random(0, get_filepool_idx() - 1);
 
                 for (i = 0; i < get_n_fs(); ++i) {                    
-            for (i = 0; i < get_n_fs(); ++i) {                    
-                for (i = 0; i < get_n_fs(); ++i) {                    
                     size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
                     get_testfiles()[i] = calloc(1, filename_len+1);
                     snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
 
                     filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
                     get_testfiles_dst()[i] = calloc(1, filename_len+1);
-                    snprintf(get_testfiles_dst()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);               
-                snprintf(get_testfiles_dst()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);               
                     snprintf(get_testfiles_dst()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);               
 
                     makecall(get_rets()[i], get_errs()[i], "%s,  %s", link, get_testfiles()[i], get_testfiles_dst()[i]);
