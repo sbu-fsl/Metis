@@ -380,6 +380,14 @@ static void init_multi_files_params()
         filepool_size = globals_t_p->filecount;
     }
 
+    if (directorypool_size > MAX_DIR_NUM || filepool_size > MAX_DIR_NUM) {
+        fprintf(stderr, "Error: configured too many files or directories\nMaximum size: %d\n", 
+            MAX_DIR_NUM);
+        fprintf(stderr, "[FILEDIR POOL]: filepool_size: %d\n", filepool_size);
+        fprintf(stderr, "[FILEDIR POOL]: directorypool_size: %d\n", directorypool_size);
+        exit(1);
+    }
+
     /* filepool */
     globals_t_p->filepool = calloc(filepool_size, sizeof(char*));
 
