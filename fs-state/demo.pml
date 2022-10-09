@@ -66,7 +66,7 @@ proctype worker()
             // size_t writelen = pick_value(0, 32768, 2048);
             char *data = malloc(Pworker->writelen);
             // Change Write Pattern Here
-            generate_data(data, Pworker->writelen, Pworker->offset, UNIFORM, Pworker->writebyte);
+            generate_data(data, Pworker->writelen, Pworker->offset, RANDOM_BUT_UNIFORM, Pworker->writebyte);
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_filepool_idx() - 1);
                 for (i = 0; i < get_n_fs(); ++i) {

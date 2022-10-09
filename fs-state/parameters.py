@@ -15,7 +15,7 @@ write_size = make_params_pml('write_size',
         RangeParameters(13, 33333, 7777))
 
 write_byte = make_params_pml('write_byte',
-        RangeParameters(1, 255, 1))
+        RangeParameters(0, 255, 1))
 
 truncate_len = make_params_pml('truncate_len',
         SpecialParameters(47, 995, 4111, 131001, 151111),
