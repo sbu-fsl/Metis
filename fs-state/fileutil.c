@@ -414,6 +414,15 @@ static void mmap_devices(bool ckpt)
         // Use MAP_PRIVATE for Read/checkpoint 
         // But for Write/restore may need MAP_SHARED (but try MAP_PRIVATE)
         void *fsimg = MAP_FAILED;
+        /*
+         * ATTENTION: NEVER USE MAP_PRIVATE FOR SPIN'S RESTORE BECAUSE
+         * MAP_PRIVATE PREVENTS UPDATES TO THE MAPPING CARRY THROUGH TO THE
+         * FILE (i.e., FILE SYSTEM DEVICES).  THUS, THE FILE SYSTEMS CANNOT 
+         * BE RESTORED TO PREVIOUS STATE.  WE OBSERVED THAT THE NUMBER OF 
+         * UNIQUE ABSTRACT STATES DID NOT INCREASE EVEN THE NUMBER OF F/S
+         * OPERATIONS WERE GROWING WHILE USING MMAP() WITH MAP_PRIVATE FOR
+         * RESTORATION.
+         */
         if (ckpt)
             fsimg = mmap(NULL, devsz, PROT_READ, MAP_PRIVATE, fsfd, 0);
         else
