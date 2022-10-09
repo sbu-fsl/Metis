@@ -19,10 +19,10 @@
 
 /* File/Dir Pool Related Configurations */
 #ifdef FILEDIR_POOL
-#define FILE_COUNT 1
-#define DIR_COUNT 1
-#define PATH_DEPTH 1
-#define MAX_PATHLEN 10
+#define FILE_COUNT 3
+#define DIR_COUNT 2
+#define PATH_DEPTH 2
+#define MCFS_NAME_LEN 4
 #endif
 
 int i;

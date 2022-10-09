@@ -357,7 +357,7 @@ static void init_multi_files_params()
     globals_t_p->path_depth = PATH_DEPTH;
 
     /* max_name_len */
-    globals_t_p->max_name_len = MAX_PATHLEN;
+    globals_t_p->max_name_len = MCFS_NAME_LEN;
 
     char *current[PATH_MAX];
     int directorypool_size = 0;
