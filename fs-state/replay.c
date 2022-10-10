@@ -76,7 +76,7 @@ int do_write_file(vector_t *argvec)
 	/* This is to make sure data written to all file systems in the same
 	 * group of operations is the same */
 	int integer_to_write = seq / get_n_fs();
-	generate_data(buffer, writelen, offset, RANDOM_BUT_UNIFORM, integer_to_write);
+	generate_data(buffer, writelen, offset, BYTE_REPEAT, integer_to_write);
 	int ret = write_file(filepath, buffer, offset, writelen);
 	int err = errno;
 	printf("write_file(%s, %ld, %lu) -> ret=%d, errno=%s\n",

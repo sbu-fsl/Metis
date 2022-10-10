@@ -388,6 +388,10 @@ static void init_multi_files_params()
         exit(1);
     }
 
+    fprintf(stdout, "MCFS: the file pool size: %d\n", filepool_size);
+    fprintf(stdout, "MCFS: the directory pool size: %d\n", directorypool_size);
+    fflush(stdout);
+
     /* filepool */
     globals_t_p->filepool = calloc(filepool_size, sizeof(char*));
 

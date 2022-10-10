@@ -56,7 +56,8 @@ proctype worker()
     };
     :: pick_write_offset(offset);
        pick_write_size(writelen);
-       pick_write_byte(writebyte);
+       pick_write_special_byte(writebyte);
+       /* pick_write_byte(writebyte); */
        atomic {
         /* write, check: retval, errno, content */
         c_code {
@@ -66,7 +67,7 @@ proctype worker()
             // size_t writelen = pick_value(0, 32768, 2048);
             char *data = malloc(Pworker->writelen);
             // Change Write Pattern Here
-            generate_data(data, Pworker->writelen, Pworker->offset, RANDOM_BUT_UNIFORM, Pworker->writebyte);
+            generate_data(data, Pworker->writelen, Pworker->offset, BYTE_REPEAT, Pworker->writebyte);
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_filepool_idx() - 1);
                 for (i = 0; i < get_n_fs(); ++i) {

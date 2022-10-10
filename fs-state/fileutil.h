@@ -156,7 +156,7 @@ static inline size_t pick_value(size_t min, size_t max, size_t step)
     return min + rand() / (RAND_MAX / (max - min + 1) + 1) / step * step;
 }
 
-enum fill_type {PATTERN, ONES, RANDOM_BUT_UNIFORM, RANDOM_EACH_BYTE};
+enum fill_type {PATTERN, ONES, BYTE_REPEAT, RANDOM_EACH_BYTE};
 
 /* Randomly pick a value in the range of [min, max] without steps */
 static inline size_t pick_random(size_t min, size_t max)
@@ -173,8 +173,8 @@ static inline void generate_data(char *buffer, size_t len, size_t offset, enum f
     case ONES:
         memset(buffer, 1, len);
         break;
-    /* RANDOM_BUT_UNIFORM: select a random byte but write this byte uniformly */
-    case RANDOM_BUT_UNIFORM:
+    /* BYTE_REPEAT: select a random byte but write this byte uniformly */
+    case BYTE_REPEAT:
         memset(buffer, value, len);
         break;
     /* PATTERN: write the bytes that are the same as the value of offsets */
