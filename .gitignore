@@ -27,4 +27,4 @@ restore
 crmfs
 *.so
 .pml_tmp
-
+*.img
