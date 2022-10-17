@@ -13,10 +13,6 @@ c_decl {
 /* DO NOT TOUCH THE COMMENT LINE ABOVE */
 c_track "get_absfs()" "sizeof(get_absfs())";
 
-/* 
- * URGENT TODO: Let us create file & dir pools for each fs under testing 
- * then we do not need to calloc & free in every operation
- */
 proctype worker()
 {
     /* Non-deterministic test loop */
@@ -28,22 +24,16 @@ proctype worker()
             makelog("BEGIN: create_file\n");
             mountall();
             if (enable_fdpool) {
-                int src_idx = pick_random(0, get_filepool_idx() - 1);
+                int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (i = 0; i < get_n_fs(); ++i) {
-                    size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-                    get_testfiles()[i] = calloc(1, filename_len+1);
-                    snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-
-                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o", create_file, get_testfiles()[i], 0644);
-                }
-                for (i = 0; i < get_n_fs(); ++i) {
-                    free(get_testfiles()[i]);
-                    get_testfiles()[i] = NULL;
+                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o", 
+                        create_file, get_filepool()[i][src_idx], 0644);
                 }
             }
             else {
                 for (i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o", create_file, get_testfiles()[i], 0644);
+                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o", 
+                        create_file, get_testfiles()[i], 0644);
                 }
             }
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -67,24 +57,18 @@ proctype worker()
             // Change Write Pattern Here
             generate_data(data, Pworker->writelen, Pworker->offset, BYTE_REPEAT, Pworker->writebyte);
             if (enable_fdpool) {
-                int src_idx = pick_random(0, get_filepool_idx() - 1);
+                int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (i = 0; i < get_n_fs(); ++i) {
-                    size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-                    get_testfiles()[i] = calloc(1, filename_len+1);
-                    snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-
-                    makecall(get_rets()[i], get_errs()[i], "%s, %p, %ld, %zu", write_file, get_testfiles()[i], data,
+                    makecall(get_rets()[i], get_errs()[i], "%s, %p, %ld, %zu", 
+                            write_file, get_filepool()[i][src_idx], data,
                             (off_t)Pworker->offset, (size_t)Pworker->writelen);
                 }
                 free(data);
-                for (i = 0; i < get_n_fs(); ++i) {
-                    free(get_testfiles()[i]);
-                    get_testfiles()[i] = NULL;
-                }
             }
             else {
                 for (i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s, %p, %ld, %zu", write_file, get_testfiles()[i], data,
+                    makecall(get_rets()[i], get_errs()[i], "%s, %p, %ld, %zu", 
+                            write_file, get_testfiles()[i], data,
                             (off_t)Pworker->offset, (size_t)Pworker->writelen);
                 }
 
@@ -107,22 +91,16 @@ proctype worker()
             mountall();
             // off_t flen = pick_value(0, 200000, 10000);
             if (enable_fdpool) {
-                int src_idx = pick_random(0, get_filepool_idx() - 1);
+                int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (i = 0; i < get_n_fs(); ++i) {
-                    size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-                    get_testfiles()[i] = calloc(1, filename_len+1);
-                    snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-
-                    makecall(get_rets()[i], get_errs()[i], "%s, %ld", truncate, get_testfiles()[i], (off_t)Pworker->filelen);
-                }
-                for (i = 0; i < get_n_fs(); ++i) {
-                    free(get_testfiles()[i]);
-                    get_testfiles()[i] = NULL;
+                    makecall(get_rets()[i], get_errs()[i], "%s, %ld", truncate, 
+                        get_filepool()[i][src_idx], (off_t)Pworker->filelen);
                 }
             }
             else {
                 for (i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s, %ld", truncate, get_testfiles()[i], (off_t)Pworker->filelen);
+                    makecall(get_rets()[i], get_errs()[i], "%s, %ld", truncate, 
+                        get_testfiles()[i], (off_t)Pworker->filelen);
                 }
             }
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
@@ -138,22 +116,16 @@ proctype worker()
             makelog("BEGIN: unlink\n");
             mountall();
             if (enable_fdpool) {
-                int src_idx = pick_random(0, get_filepool_idx() - 1);
+                int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (i = 0; i < get_n_fs(); ++i) {
-                    size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-                    get_testfiles()[i] = calloc(1, filename_len+1);
-                    snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-
-                    makecall(get_rets()[i], get_errs()[i], "%s", unlink, get_testfiles()[i]);
-                }
-                for (i = 0; i < get_n_fs(); ++i) {
-                    free(get_testfiles()[i]);
-                    get_testfiles()[i] = NULL;
+                    makecall(get_rets()[i], get_errs()[i], "%s", unlink, 
+                        get_filepool()[i][src_idx]);
                 }
             }
             else {
                 for (i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s", unlink, get_testfiles()[i]);
+                    makecall(get_rets()[i], get_errs()[i], "%s", unlink, 
+                        get_testfiles()[i]);
                 }
             }
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
@@ -169,22 +141,16 @@ proctype worker()
             makelog("BEGIN: mkdir\n");
             mountall();
             if (enable_fdpool) {
-                int src_idx = pick_random(0, get_dirpool_idx() - 1);
+                int src_idx = pick_random(0, get_dpoolsize() - 1);
                 for (i = 0; i < get_n_fs(); ++i) {
-                    size_t dirname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
-                    get_testdirs()[i] = calloc(1, dirname_len+1);
-                    snprintf(get_testdirs()[i], dirname_len + 1, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
-
-                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o", mkdir, get_testdirs()[i], 0755);
-                }
-                for (i = 0; i < get_n_fs(); ++i) {
-                    free(get_testdirs()[i]);
-                    get_testdirs()[i] = NULL;
+                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o", mkdir, 
+                        get_directorypool()[i][src_idx], 0755);
                 }
             }
             else {
                 for (i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o", mkdir, get_testdirs()[i], 0755);
+                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o", mkdir, 
+                        get_testdirs()[i], 0755);
                 }
             }
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
@@ -201,22 +167,16 @@ proctype worker()
             makelog("BEGIN: rmdir\n");
             mountall();
             if (enable_fdpool) {
-                int src_idx = pick_random(0, get_dirpool_idx() - 1);
+                int src_idx = pick_random(0, get_dpoolsize() - 1);
                 for (i = 0; i < get_n_fs(); ++i) {
-                    size_t dirname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
-                    get_testdirs()[i] = calloc(1, dirname_len+1);
-                    snprintf(get_testdirs()[i], dirname_len + 1, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
-
-                    makecall(get_rets()[i], get_errs()[i], "%s", rmdir, get_testdirs()[i]);
-                }
-                for (i = 0; i < get_n_fs(); ++i) {
-                    free(get_testdirs()[i]);
-                    get_testdirs()[i] = NULL;
+                    makecall(get_rets()[i], get_errs()[i], "%s", rmdir, 
+                        get_directorypool()[i][src_idx]);
                 }
             }
             else {
                 for (i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s", rmdir, get_testdirs()[i]);
+                    makecall(get_rets()[i], get_errs()[i], "%s", rmdir, 
+                        get_testdirs()[i]);
                 }
             }
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
@@ -235,48 +195,22 @@ proctype worker()
                 int dir_or_file = random() % 2;
                 /* Case of file */
                 if (dir_or_file == 0) {
-                    int src_idx = pick_random(0, get_filepool_idx() - 1);
-                    int dst_idx = pick_random(0, get_filepool_idx() - 1);
+                    int src_idx = pick_random(0, get_fpoolsize() - 1);
+                    int dst_idx = pick_random(0, get_fpoolsize() - 1);
 
-                    for (i = 0; i < get_n_fs(); ++i) {                   
-                        size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-                        get_testfiles()[i] = calloc(1, filename_len + 1);
-                        snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-
-                        filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
-                        get_testfiles_dst()[i] = calloc(1, filename_len + 1);
-                        snprintf(get_testfiles_dst()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
-
-                        makecall(get_rets()[i], get_errs()[i], "%s,  %s", rename, get_testfiles()[i], get_testfiles_dst()[i]);
-                    }
                     for (i = 0; i < get_n_fs(); ++i) {
-                        free(get_testfiles()[i]);
-                        free(get_testfiles_dst()[i]);
-                        get_testfiles()[i] = NULL;
-                        get_testfiles_dst()[i] = NULL;
+                        makecall(get_rets()[i], get_errs()[i], "%s, %s", rename, 
+                            get_filepool()[i][src_idx], get_filepool()[i][dst_idx]);
                     }
                 }
                 /* Case of directory */
                 else {
-                    int src_idx = pick_random(0, get_dirpool_idx() - 1);
-                    int dst_idx = pick_random(0, get_dirpool_idx() - 1);
+                    int src_idx = pick_random(0, get_dpoolsize() - 1);
+                    int dst_idx = pick_random(0, get_dpoolsize() - 1);
 
                     for (i = 0; i < get_n_fs(); ++i) {
-                        size_t dirname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
-                        get_testdirs()[i] = calloc(1, dirname_len+1);
-                        snprintf(get_testdirs()[i], dirname_len + 1, "%s%s", get_basepaths()[i], get_directorypool()[src_idx]);
-                
-                        dirname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_directorypool()[dst_idx]);
-                        get_testdirs_dst()[i] = calloc(1, dirname_len+1);
-                        snprintf(get_testdirs_dst()[i], dirname_len + 1, "%s%s", get_basepaths()[i], get_directorypool()[dst_idx]);
-
-                        makecall(get_rets()[i], get_errs()[i], "%s,  %s", rename, get_testdirs()[i], get_testdirs_dst()[i]);
-                    }
-                    for (i = 0; i < get_n_fs(); ++i) {
-                        free(get_testdirs()[i]);
-                        free(get_testdirs_dst()[i]);
-                        get_testdirs()[i] = NULL;
-                        get_testdirs_dst()[i] = NULL;
+                        makecall(get_rets()[i], get_errs()[i], "%s, %s", rename, 
+                            get_directorypool()[i][src_idx], get_directorypool()[i][dst_idx]);
                     }
                 }
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
@@ -295,25 +229,12 @@ proctype worker()
                 makelog("BEGIN: link\n");
                 mountall();
 
-                int src_idx = pick_random(0, get_filepool_idx() - 1);
-                int dst_idx = pick_random(0, get_filepool_idx() - 1);
+                int src_idx = pick_random(0, get_fpoolsize() - 1);
+                int dst_idx = pick_random(0, get_fpoolsize() - 1);
 
-                for (i = 0; i < get_n_fs(); ++i) {                    
-                    size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-                    get_testfiles()[i] = calloc(1, filename_len+1);
-                    snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-
-                    filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
-                    get_testfiles_dst()[i] = calloc(1, filename_len+1);
-                    snprintf(get_testfiles_dst()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);               
-
-                    makecall(get_rets()[i], get_errs()[i], "%s,  %s", link, get_testfiles()[i], get_testfiles_dst()[i]);
-                }
                 for (i = 0; i < get_n_fs(); ++i) {
-                    free(get_testfiles()[i]);
-                    free(get_testfiles_dst()[i]);
-                    get_testfiles()[i] = NULL;
-                    get_testfiles_dst()[i] = NULL;
+                    makecall(get_rets()[i], get_errs()[i], "%s, %s", link, 
+                       get_filepool()[i][src_idx], get_filepool()[i][dst_idx]);
                 }
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -330,26 +251,12 @@ proctype worker()
                 makelog("BEGIN: symlink\n");
                 mountall();
 
-                int src_idx = pick_random(0, get_filepool_idx() - 1);
-                int dst_idx = pick_random(0, get_filepool_idx() - 1);
+                int src_idx = pick_random(0, get_fpoolsize() - 1);
+                int dst_idx = pick_random(0, get_fpoolsize() - 1);
 
                 for (i = 0; i < get_n_fs(); ++i) {
-                        
-                    size_t filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-                    get_testfiles()[i] = calloc(1, filename_len+1);
-                    snprintf(get_testfiles()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[src_idx]);
-
-                    filename_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
-                    get_testfiles_dst()[i] = calloc(1, filename_len+1);
-                    snprintf(get_testfiles_dst()[i], filename_len + 1, "%s%s", get_basepaths()[i], get_filepool()[dst_idx]);
-
-                    makecall(get_rets()[i], get_errs()[i], "%s,  %s", symlink, get_testfiles()[i], get_testfiles_dst()[i]);
-                }
-                for (i = 0; i < get_n_fs(); ++i) {
-                    free(get_testfiles()[i]);
-                    free(get_testfiles_dst()[i]);
-                    get_testfiles()[i] = NULL;
-                    get_testfiles_dst()[i] = NULL;
+                    makecall(get_rets()[i], get_errs()[i], "%s, %s", symlink, 
+                        get_filepool()[i][src_idx], get_filepool()[i][dst_idx]);
                 }
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -368,7 +275,12 @@ proctype driver(int nproc)
     c_code {
         start_perf_metrics_thread();
         if (!enable_fdpool) {
-            /* Initialize test dirs and files names */
+            /*
+             * Initialize test dirs and files names
+             * Even though we do not need testfiles and testdirs with file
+             * and dir pools, we cannot remove the definitions and 
+             * declarations of these functions, otherwise SPIN pan.m complains
+             */
             for (int i = 0; i < get_n_fs(); ++i) {
                 size_t len = snprintf(NULL, 0, "%s/testdir", get_basepaths()[i]);
                 get_testdirs()[i] = calloc(1, len + 1);

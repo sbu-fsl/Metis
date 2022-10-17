@@ -18,6 +18,13 @@ static size_t devsize_kb_to_copy[MAX_FS];
 static char *global_args = NULL;
 static int opt_ret = -1;
 
+static int filepool_idx = 0;
+static int dirpool_idx = 0;
+
+/* Temp file and dir pools are freed in precreate_pools */
+static char **tmp_fpool = NULL;
+static char **tmp_dpool = NULL;
+
 dev_nums_t dev_nums = {.all_rams = 0, .all_mtdblocks = 0};
 
 /*
@@ -37,15 +44,15 @@ static void pool_dfs(int directorycount, int filecount, int path_depth, int max_
      */
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < directorycount; j++) {
-            /* -2 is for "d-" */
+            /* -2 is for length of "d-" */
             append = max_name_len - 2;
             size_t len = snprintf(NULL, 0, "%s/d-%0*d", current[i], append, j);
             newpool[newnames_len] = calloc(1, 1 + len);
             snprintf(newpool[newnames_len], 1 + len, "%s/d-%0*d", current[i], append, j);
 
-            get_directorypool()[get_dirpool_idx()] = calloc(1, 1 + len);
-            snprintf(get_directorypool()[get_dirpool_idx()], 1 + len, "%s/d-%0*d", current[i], append, j);
-            globals_t_p->dirpool_idx++;
+            tmp_dpool[dirpool_idx] = calloc(1, 1 + len);
+            snprintf(tmp_dpool[dirpool_idx], 1 + len, "%s/d-%0*d", current[i], append, j);
+            dirpool_idx++;
             newnames_len++;
         }
     }
@@ -60,9 +67,9 @@ static void pool_dfs(int directorycount, int filecount, int path_depth, int max_
             append = max_name_len - 2;
             size_t len = snprintf(NULL, 0, "%s/f-%0*d", current[i], append, j);
 
-            get_filepool()[get_filepool_idx()] = calloc(1, 1+len);
-            snprintf(get_filepool()[get_filepool_idx()], 1+len, "%s/f-%0*d", current[i], append, j);
-            globals_t_p->filepool_idx++;
+            tmp_fpool[filepool_idx] = calloc(1, 1+len);
+            snprintf(tmp_fpool[filepool_idx], 1+len, "%s/f-%0*d", current[i], append, j);
+            filepool_idx++;
         }
         free(current[i]);
     }
@@ -290,6 +297,7 @@ static void init_all_steady_globals()
     if (!globals_t_p->basepaths) 
         mem_alloc_err();
 
+#ifndef FILEDIR_POOL
     /* testdirs */
     globals_t_p->testdirs = calloc(globals_t_p->_n_fs, sizeof(char*));
     if (!globals_t_p->testdirs) 
@@ -298,17 +306,6 @@ static void init_all_steady_globals()
     /* testfiles */
     globals_t_p->testfiles = calloc(globals_t_p->_n_fs, sizeof(char*));
     if (!globals_t_p->testfiles) 
-        mem_alloc_err();
-
-#ifdef FILEDIR_POOL
-    /* testdirs_dst */
-    globals_t_p->testdirs_dst = calloc(globals_t_p->_n_fs, sizeof(char*));
-    if (!globals_t_p->testdirs_dst) 
-        mem_alloc_err();
-
-    /* testfiles_dst */
-    globals_t_p->testfiles_dst = calloc(globals_t_p->_n_fs, sizeof(char*));
-    if (!globals_t_p->testfiles_dst) 
         mem_alloc_err();
 #endif
 
@@ -338,21 +335,22 @@ static void init_all_steady_globals()
         mem_alloc_err();
 }
 
+static void init_basepaths()
+{
+    /* Initialize base paths */
+    printf("%d file systems to test.\n", get_n_fs());
+    for (int i = 0; i < get_n_fs(); ++i) {
+        size_t len = snprintf(NULL, 0, "/mnt/test-%s%s",
+                              get_fslist()[i], get_fssuffix()[i]);
+        get_basepaths()[i] = calloc(1, len + 1);
+        snprintf(get_basepaths()[i], len + 1, "/mnt/test-%s%s",
+                 get_fslist()[i], get_fssuffix()[i]);
+    }
+}
+
 #ifdef FILEDIR_POOL
 static void init_multi_files_params()
 {
-    /* filecount */
-    globals_t_p->filecount = FILE_COUNT;
-
-    /* directorycount */
-    globals_t_p->directorycount = DIR_COUNT;
-
-    /* filepool_idx */
-    globals_t_p->filepool_idx = 0;
-
-    /* dirpool_idx */
-    globals_t_p->dirpool_idx = 0;
-
     /* path_depth */
     globals_t_p->path_depth = PATH_DEPTH;
 
@@ -362,7 +360,7 @@ static void init_multi_files_params()
     char *current[PATH_MAX];
     int directorypool_size = 0;
     int filepool_size = 0;
-    if (globals_t_p->directorycount > 0) {
+    if (DIR_COUNT > 0) {
         /*
          * Directory pool size  = no. of directories at depth 0 + no. of directories at depth 1 + .....
          * = directorycount + (no. of directories at depth 0)*directorycount + (no. of directories at depth 1)*directory count + ...
@@ -373,11 +371,11 @@ static void init_multi_files_params()
          * = filecount * ( 1 + (no. of directories at depth 0) + (no. of directories at depth 1) + ....) 
          * = filecount * (directorypool_size / directorycount);
          */
-        directorypool_size = getpowsum(globals_t_p->directorycount, globals_t_p->path_depth);
-        filepool_size = globals_t_p->filecount * (directorypool_size / globals_t_p->directorycount);
+        directorypool_size = getpowsum(DIR_COUNT, globals_t_p->path_depth);
+        filepool_size = FILE_COUNT * (directorypool_size / DIR_COUNT);
     }
     else {
-        filepool_size = globals_t_p->filecount;
+        filepool_size = FILE_COUNT;
     }
 
     if (directorypool_size > MAX_DIR_NUM || filepool_size > MAX_DIR_NUM) {
@@ -392,21 +390,56 @@ static void init_multi_files_params()
     fprintf(stdout, "MCFS: the directory pool size: %d\n", directorypool_size);
     fflush(stdout);
 
-    /* filepool */
-    globals_t_p->filepool = calloc(filepool_size, sizeof(char*));
+    /* Set File and Dir Pool Sizes */
+    globals_t_p->fpoolsize = filepool_size;
+    globals_t_p->dpoolsize = directorypool_size;
 
-    /* directorypool */
-    globals_t_p->directorypool = calloc(directorypool_size, sizeof(char*));
+    /* Initialize filepool */
+    globals_t_p->filepool = calloc(globals_t_p->_n_fs, sizeof(char*));
+
+    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
+        globals_t_p->filepool[i] = calloc(filepool_size, sizeof(char*));
+    }
+
+    /* Initialize directorypool */
+    globals_t_p->directorypool = calloc(globals_t_p->_n_fs, sizeof(char*));
+
+    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
+        globals_t_p->directorypool[i] = calloc(directorypool_size, sizeof(char*));
+    }
 
     size_t len = 0;
     current[0] = calloc(1, len + 1);
 
     if (get_pool_depth() > 0) {
-        pool_dfs(globals_t_p->directorycount, globals_t_p->filecount, 
+        pool_dfs(DIR_COUNT, FILE_COUNT, 
             globals_t_p->path_depth, globals_t_p->max_name_len, current, 1);
     }
 
-    /* BFS the file and directory pools to pre-create some files & dirs to reduce ENOENT */
+    /* Populate the file/dir pool in globals */
+    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
+        for (int j = 0; j < filepool_size; ++j) {
+            size_t fname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], 
+                                        tmp_fpool[j]);
+            globals_t_p->filepool[i][j] = calloc(1, fname_len + 1);
+            snprintf(globals_t_p->filepool[i][j], fname_len + 1, "%s%s", 
+                    get_basepaths()[i], tmp_fpool[j]);
+        }
+
+        for (int j = 0; j < directorypool_size; ++j) {
+            size_t dname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], 
+                                        tmp_dpool[j]);
+            globals_t_p->directorypool[i][j] = calloc(1, dname_len + 1);
+            snprintf(globals_t_p->directorypool[i][j], dname_len + 1, "%s%s", 
+                    get_basepaths()[i], tmp_dpool[j]);       
+        }
+    }
+
+    /* 
+     * BFS the file and directory pools to pre-create some files & dirs to 
+     * reduce ENOENT, need to revisit if this function is really needed
+     * bfs_file_dir_pool free'd at precreate_pools() function
+     */
     bfs_file_dir_pool = calloc(filepool_size + directorypool_size, sizeof(char*));
     int file_cur_idx = 0;
     int dir_cur_idx = 0;
@@ -414,21 +447,21 @@ static void init_multi_files_params()
     bool root_files = true;
     while (file_cur_idx < filepool_size && dir_cur_idx < directorypool_size) {
         if (root_files) {
-            while (file_cur_idx < filepool_size && globals_t_p->filepool[file_cur_idx][1] == 'f') {
-                bfs_file_dir_pool[combo_pool_idx] = globals_t_p->filepool[file_cur_idx];
+            while (file_cur_idx < filepool_size && tmp_fpool[file_cur_idx][1] == 'f') {
+                bfs_file_dir_pool[combo_pool_idx] = tmp_fpool[file_cur_idx];
                 ++combo_pool_idx;
                 ++file_cur_idx;
             }
             root_files = false;
         }
-        if (file_cur_idx < filepool_size && dir_cur_idx < directorypool_size && is_prefix(globals_t_p->directorypool[dir_cur_idx], globals_t_p->filepool[file_cur_idx])) {
-            bfs_file_dir_pool[combo_pool_idx] = globals_t_p->directorypool[dir_cur_idx];
+        if (file_cur_idx < filepool_size && dir_cur_idx < directorypool_size && is_prefix(tmp_dpool[dir_cur_idx], tmp_fpool[file_cur_idx])) {
+            bfs_file_dir_pool[combo_pool_idx] = tmp_dpool[dir_cur_idx];
             ++combo_pool_idx;
-            bfs_file_dir_pool[combo_pool_idx] = globals_t_p->filepool[file_cur_idx];
+            bfs_file_dir_pool[combo_pool_idx] = tmp_fpool[file_cur_idx];
             ++combo_pool_idx;
             ++file_cur_idx;
-            while(file_cur_idx < filepool_size && is_prefix(globals_t_p->directorypool[dir_cur_idx], globals_t_p->filepool[file_cur_idx])) {
-                bfs_file_dir_pool[combo_pool_idx] = globals_t_p->filepool[file_cur_idx];
+            while(file_cur_idx < filepool_size && is_prefix(tmp_dpool[dir_cur_idx], tmp_fpool[file_cur_idx])) {
+                bfs_file_dir_pool[combo_pool_idx] = tmp_fpool[file_cur_idx];
                 ++combo_pool_idx;
                 ++file_cur_idx;
             }
@@ -436,11 +469,12 @@ static void init_multi_files_params()
         }
     }
     while (dir_cur_idx < directorypool_size) {
-        bfs_file_dir_pool[combo_pool_idx] = globals_t_p->directorypool[dir_cur_idx];
+        bfs_file_dir_pool[combo_pool_idx] = tmp_dpool[dir_cur_idx];
         ++combo_pool_idx;
         ++dir_cur_idx;
     }
 }
+
 #endif
 
 /* TODO 1: Do we need to handle basepaths, testdirs, and testfiles? */
@@ -558,34 +592,15 @@ int *get_errs()
     return globals_t_p->errs;
 }
 
-char **get_testdirs_dst()
+#ifdef FILEDIR_POOL
+int get_fpoolsize()
 {
-    return globals_t_p->testdirs_dst;
+    return globals_t_p->fpoolsize;
 }
 
-char **get_testfiles_dst()
+int get_dpoolsize()
 {
-    return globals_t_p->testfiles_dst;
-}
-
-int get_filecount()
-{
-    return globals_t_p->filecount;
-}
-
-int get_directorycount()
-{
-    return globals_t_p->directorycount;
-}
-
-int get_filepool_idx()
-{
-    return globals_t_p->filepool_idx;
-}
-
-int get_dirpool_idx()
-{
-    return globals_t_p->dirpool_idx;
+    return globals_t_p->dpoolsize;
 }
 
 int get_pool_depth()
@@ -598,15 +613,16 @@ int get_max_name_len()
     return globals_t_p->max_name_len;
 }
 
-char **get_filepool()
+char ***get_filepool()
 {
     return globals_t_p->filepool;
 }
 
-char **get_directorypool()
+char ***get_directorypool()
 {
     return globals_t_p->directorypool;
 }
+#endif
 
 static int cli_or_env_args(int argc, char *argv[])
 {
@@ -658,16 +674,16 @@ static void dump_file_dir_pools()
     fprintf(fp, "swarm_id: %u\n", globals_t_p->_swarm_id);
     fprintf(fp, "n_fs: %u\n\n", globals_t_p->_n_fs);
     // dump the pool information
-    fprintf(fp, "filepool_idx: %d\n", get_filepool_idx());
-    fprintf(fp, "dirpool_idx: %d\n", get_dirpool_idx());
+    fprintf(fp, "filepool_idx: %d\n", filepool_idx);
+    fprintf(fp, "dirpool_idx: %d\n", dirpool_idx);
 
     fprintf(fp, "FILE POOL:\n");
-    for (int i = 0; i < get_filepool_idx(); ++i) {
+    for (int i = 0; i < filepool_idx; ++i) {
         fprintf(fp, "%s\n", get_filepool()[i]);
     }
     fprintf(fp, "\n");
     fprintf(fp, "DIRECTORY POOL:\n");
-    for (int i = 0; i < get_dirpool_idx(); ++i) {
+    for (int i = 0; i < dirpool_idx; ++i) {
         fprintf(fp, "%s\n", get_directorypool()[i]);
     }
     fprintf(fp, "\n");
@@ -700,17 +716,19 @@ void __attribute__((constructor)) globals_init(int argc, char *argv[])
     }
     /* Get devices and file system suffixes */
     prepare_dev_suffix();
-    /* Initalize fslist and devsize_kb */
+    /* Initialize fslist and devsize_kb */
     init_all_fickle_globals();
-    /* Initalize other global data */
+    /* Initialize other global data */
     init_all_steady_globals();
+    /* Initialize basepaths (mountpoints) */
+    init_basepaths();
 #ifdef FILEDIR_POOL
-    /* Initalize parameters related multi-file and multi-dir structure */
+    /* Initialize parameters related multi-file and multi-dir structure */
     init_multi_files_params();
     /* Dump the file and dir pools (dump_file_dir_pools_0.log ) */
     // dump_file_dir_pools();
 #endif
-    /* Initalize fs_frozen status flags*/
+    /* Initialize fs_frozen status flags*/
     fs_frozen = calloc(get_n_fs(), sizeof(bool));
     if (!fs_frozen)
         mem_alloc_err();

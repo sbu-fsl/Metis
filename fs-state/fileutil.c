@@ -451,19 +451,6 @@ static void unmap_devices()
     }
 }
 
-static void init_basepaths()
-{
-    /* Initialize base paths */
-    printf("%d file systems to test.\n", get_n_fs());
-    for (int i = 0; i < get_n_fs(); ++i) {
-        size_t len = snprintf(NULL, 0, "/mnt/test-%s%s",
-                              get_fslist()[i], get_fssuffix()[i]);
-        get_basepaths()[i] = calloc(1, len + 1);
-        snprintf(get_basepaths()[i], len + 1, "/mnt/test-%s%s",
-                 get_fslist()[i], get_fssuffix()[i]);
-    }
-}
-
 #ifdef FILEDIR_POOL
 static int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode)
 {
@@ -544,6 +531,11 @@ static void precreate_pools()
         }
     }
     unmount_all_strict();
+    /* Free the temp file/dir pool to save memory */
+    for (int i = 0; i < combo_pool_idx; ++i) {
+        free(bfs_file_dir_pool[i]);
+    }
+    free(bfs_file_dir_pool);
 }
 #endif
 
@@ -778,7 +770,6 @@ void __attribute__((constructor)) init()
     char progname[NAME_MAX] = {0};
     ssize_t progname_len;
     try_init_myheap();
-    init_basepaths();
     setup_filesystems();
 #ifdef FILEDIR_POOL
     /* Pre-create files and dirs from pools AFTER fs setup */
