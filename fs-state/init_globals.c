@@ -18,8 +18,8 @@ static size_t devsize_kb_to_copy[MAX_FS];
 static char *global_args = NULL;
 static int opt_ret = -1;
 
-static int filepool_idx = 0;
-static int dirpool_idx = 0;
+static int fpool_idx = 0;
+static int dpool_idx = 0;
 
 /* Temp file and dir pools are freed in precreate_pools */
 static char **tmp_fpool = NULL;
@@ -52,10 +52,10 @@ static void pool_dfs(int path_depth, char** current, int size) {
             snprintf(newpool[newnames_len], 1 + len, "%s/d-%0*d", 
                 current[i], append, j);
 
-            tmp_dpool[dirpool_idx] = calloc(1, 1 + len);
-            snprintf(tmp_dpool[dirpool_idx], 1 + len, "%s/d-%0*d", 
+            tmp_dpool[dpool_idx] = calloc(1, 1 + len);
+            snprintf(tmp_dpool[dpool_idx], 1 + len, "%s/d-%0*d", 
                 current[i], append, j);
-            dirpool_idx++;
+            dpool_idx++;
             newnames_len++;
         }
     }
@@ -70,10 +70,10 @@ static void pool_dfs(int path_depth, char** current, int size) {
             size_t len = snprintf(NULL, 0, "%s/f-%0*d", 
                 current[i], append, j);
 
-            tmp_fpool[filepool_idx] = calloc(1, 1+len);
-            snprintf(tmp_fpool[filepool_idx], 1+len, "%s/f-%0*d", 
+            tmp_fpool[fpool_idx] = calloc(1, 1+len);
+            snprintf(tmp_fpool[fpool_idx], 1+len, "%s/f-%0*d", 
                 current[i], append, j);
-            filepool_idx++;
+            fpool_idx++;
         }
         free(current[i]);
     }
