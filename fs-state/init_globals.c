@@ -440,34 +440,37 @@ static void init_multi_files_params()
                     get_basepaths()[i], tmp_dpool[j]);       
         }
     }
+}
 
-    /* 
-     * BFS the file and directory pools to pre-create some files & dirs to 
-     * reduce ENOENT, need to revisit if this function is really needed
-     * bfs_fd_pool free'd at precreate_pools() function
-     */
-    bfs_fd_pool = calloc(fpool_sz + dpool_sz, sizeof(char*));
+/* 
+ * BFS the file and directory pools to pre-create some files & dirs to 
+ * reduce ENOENT, need to revisit if this function is really needed
+ * bfs_fd_pool free'd at precreate_pools() function
+ */
+void build_bfs_fdcombo_pool() 
+{
+    bfs_fd_pool = calloc(get_fpoolsize() + get_dpoolsize(), sizeof(char*));
     int file_cur_idx = 0;
     int dir_cur_idx = 0;
     combo_pool_idx = 0;
     bool root_files = true;
-    while (file_cur_idx < fpool_sz && dir_cur_idx < dpool_sz) {
+    while (file_cur_idx < get_fpoolsize() && dir_cur_idx < get_dpoolsize()) {
         if (root_files) {
-            while (file_cur_idx < fpool_sz && tmp_fpool[file_cur_idx][1] == 'f') {
+            while (file_cur_idx < get_fpoolsize() && tmp_fpool[file_cur_idx][1] == 'f') {
                 bfs_fd_pool[combo_pool_idx] = tmp_fpool[file_cur_idx];
                 ++combo_pool_idx;
                 ++file_cur_idx;
             }
             root_files = false;
         }
-        if (file_cur_idx < fpool_sz && dir_cur_idx < dpool_sz && 
+        if (file_cur_idx < get_fpoolsize() && dir_cur_idx < get_dpoolsize() && 
                 is_prefix(tmp_dpool[dir_cur_idx], tmp_fpool[file_cur_idx])) {
             bfs_fd_pool[combo_pool_idx] = tmp_dpool[dir_cur_idx];
             ++combo_pool_idx;
             bfs_fd_pool[combo_pool_idx] = tmp_fpool[file_cur_idx];
             ++combo_pool_idx;
             ++file_cur_idx;
-            while(file_cur_idx < fpool_sz && 
+            while(file_cur_idx < get_fpoolsize() && 
                     is_prefix(tmp_dpool[dir_cur_idx], tmp_fpool[file_cur_idx])) {
                 bfs_fd_pool[combo_pool_idx] = tmp_fpool[file_cur_idx];
                 ++combo_pool_idx;
@@ -476,13 +479,12 @@ static void init_multi_files_params()
             ++dir_cur_idx;
         }
     }
-    while (dir_cur_idx < dpool_sz) {
+    while (dir_cur_idx < get_dpoolsize()) {
         bfs_fd_pool[combo_pool_idx] = tmp_dpool[dir_cur_idx];
         ++combo_pool_idx;
         ++dir_cur_idx;
     }
 }
-
 #endif
 
 /* TODO: Do we need to handle basepaths, testdirs, and testfiles? */
@@ -662,8 +664,8 @@ void __attribute__((constructor)) globals_init(int argc, char *argv[])
 #ifdef FILEDIR_POOL
     /* Initialize parameters related multi-file and multi-dir structure */
     init_multi_files_params();
-    /*  */
-
+    /* BFS the file and dir pools and get a combo pool */
+    build_bfs_fdcombo_pool();
     /* (default commented out) Dump file dir pools: dump_fd_pools_0.log */
     // dump_file_dir_pools();
 #endif
