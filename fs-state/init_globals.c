@@ -518,6 +518,27 @@ static void free_all_globals()
     if (globals_t_p->errs)
         free(globals_t_p->errs);
 
+#ifdef FILEDIR_POOL
+    /* Free file and dir pools */
+    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
+        for (int j = 0; j < globals_t_p->fpoolsize; ++j) {
+            if (globals_t_p->filepool[i][j])
+                free(globals_t_p->filepool[i][j]);
+        }
+        if (globals_t_p->filepool[i])
+            free(globals_t_p->filepool[i]);
+
+        for (j = 0; j < globals_t_p->dpoolsize; ++j) {
+            if (globals_t_p->directorypool[i][j])
+                free(globals_t_p->directorypool[i][j]);
+        }
+        if (globals_t_p->directorypool[i])
+            free(globals_t_p->directorypool[i]);
+    }
+    free(globals_t_p->filepool);
+    free(globals_t_p->directorypool);
+#endif
+
     /* Free global structure pointer */
     if (globals_t_p)
         free(globals_t_p);
@@ -663,34 +684,38 @@ static int cli_or_env_args(int argc, char *argv[])
     return 1;
 }
 
-/*
 #ifdef FILEDIR_POOL
 static void dump_file_dir_pools()
 {
     FILE * fp;
     char dump_fn[PATH_MAX];
-    sprintf(dump_fn, "dump_file_dir_pools_%u.log", globals_t_p->_swarm_id);
+    sprintf(dump_fn, "dump_fd_pools_%u.log", globals_t_p->_swarm_id);
     fp = fopen(dump_fn, "w");
     fprintf(fp, "swarm_id: %u\n", globals_t_p->_swarm_id);
     fprintf(fp, "n_fs: %u\n\n", globals_t_p->_n_fs);
     // dump the pool information
-    fprintf(fp, "filepool_idx: %d\n", filepool_idx);
-    fprintf(fp, "dirpool_idx: %d\n", dirpool_idx);
+    fprintf(fp, "File pool size: %d\n", globals_t_p->fpoolsize);
+    fprintf(fp, "Directory pool size: %d\n", globals_t_p->dpoolsize);
 
-    fprintf(fp, "FILE POOL:\n");
-    for (int i = 0; i < filepool_idx; ++i) {
-        fprintf(fp, "%s\n", get_filepool()[i]);
+    fprintf(fp, "--- FILE POOL ---\n");
+    for (int i = 0; i < get_n_fs(); ++i) {
+        fprintf(fp, "File system %d: \n", i + 1);
+        for (int j = 0; j < globals_t_p->fpoolsize; ++j) {
+            fprintf(fp, "%s\n", get_filepool()[i][j]);
+        }
     }
     fprintf(fp, "\n");
-    fprintf(fp, "DIRECTORY POOL:\n");
-    for (int i = 0; i < dirpool_idx; ++i) {
-        fprintf(fp, "%s\n", get_directorypool()[i]);
+    fprintf(fp, "--- DIRECTORY POOL ---\n");
+    for (int i = 0; i < get_n_fs(); ++i) {
+        fprintf(fp, "File system %d: \n", i + 1);
+        for (int j = 0; j < globals_t_p->dpoolsize; ++j) {
+            fprintf(fp, "%s\n", get_directorypool()[i][j]);
+        }
     }
     fprintf(fp, "\n");
     fclose(fp);
 }
 #endif
-*/
 
 void __attribute__((constructor)) globals_init(int argc, char *argv[])
 {
@@ -725,8 +750,8 @@ void __attribute__((constructor)) globals_init(int argc, char *argv[])
 #ifdef FILEDIR_POOL
     /* Initialize parameters related multi-file and multi-dir structure */
     init_multi_files_params();
-    /* Dump the file and dir pools (dump_file_dir_pools_0.log ) */
-    // dump_file_dir_pools();
+    /* Dump the file and dir pools (dump_fd_pools_0.log ) */
+    dump_file_dir_pools();
 #endif
     /* Initialize fs_frozen status flags*/
     fs_frozen = calloc(get_n_fs(), sizeof(bool));
