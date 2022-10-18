@@ -528,7 +528,7 @@ static void free_all_globals()
         if (globals_t_p->filepool[i])
             free(globals_t_p->filepool[i]);
 
-        for (j = 0; j < globals_t_p->dpoolsize; ++j) {
+        for (int j = 0; j < globals_t_p->dpoolsize; ++j) {
             if (globals_t_p->directorypool[i][j])
                 free(globals_t_p->directorypool[i][j]);
         }
