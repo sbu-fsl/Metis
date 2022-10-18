@@ -32,7 +32,7 @@ dev_nums_t dev_nums = {.all_rams = 0, .all_mtdblocks = 0};
  * size is current's size.
  */
 #ifdef FILEDIR_POOL
-static void pool_dfs(int directorycount, int filecount, int path_depth, int max_name_len, char** current, int size) {
+static void pool_dfs(int path_depth, char** current, int size) {
     int newnames_len = 0;
     /* newpool: directories at the current depth. */
     char *newpool[MAX_DIR_NUM];
@@ -43,9 +43,9 @@ static void pool_dfs(int directorycount, int filecount, int path_depth, int max_
      * also add this to the newpool
      */
     for (int i = 0; i < size; i++) {
-        for (int j = 0; j < directorycount; j++) {
+        for (int j = 0; j < DIR_COUNT; j++) {
             /* -2 is for length of "d-" */
-            append = max_name_len - 2;
+            append = MCFS_NAME_LEN - 2;
             size_t len = snprintf(NULL, 0, "%s/d-%0*d", current[i], append, j);
             newpool[newnames_len] = calloc(1, 1 + len);
             snprintf(newpool[newnames_len], 1 + len, "%s/d-%0*d", current[i], append, j);
@@ -56,15 +56,14 @@ static void pool_dfs(int directorycount, int filecount, int path_depth, int max_
             newnames_len++;
         }
     }
-
     /* 
      * Iterate through directories in the previous depth(stored in current)
      * append "f-j" to current[i] and add to filepool
      */
     for (int i = 0; i < size; i++) {
-        for (int j = 0; j < filecount; j++) {
+        for (int j = 0; j < FILE_COUNT; j++) {
             /* -2 is for "f-" */
-            append = max_name_len - 2;
+            append = MCFS_NAME_LEN - 2;
             size_t len = snprintf(NULL, 0, "%s/f-%0*d", current[i], append, j);
 
             tmp_fpool[filepool_idx] = calloc(1, 1+len);
@@ -73,11 +72,11 @@ static void pool_dfs(int directorycount, int filecount, int path_depth, int max_
         }
         free(current[i]);
     }
-    if(path_depth == 1){
+    if (path_depth == 1) {
         return;
     }
 
-    pool_dfs(directorycount, filecount, path_depth-1, max_name_len, newpool, newnames_len);
+    pool_dfs(path_depth - 1, newpool, newnames_len);
 }
 
 static int getpowsum(int directorycount, int path_depth) {
@@ -351,12 +350,6 @@ static void init_basepaths()
 #ifdef FILEDIR_POOL
 static void init_multi_files_params()
 {
-    /* path_depth */
-    globals_t_p->path_depth = PATH_DEPTH;
-
-    /* max_name_len */
-    globals_t_p->max_name_len = MCFS_NAME_LEN;
-
     char *current[PATH_MAX];
     int directorypool_size = 0;
     int filepool_size = 0;
@@ -371,7 +364,7 @@ static void init_multi_files_params()
          * = filecount * ( 1 + (no. of directories at depth 0) + (no. of directories at depth 1) + ....) 
          * = filecount * (directorypool_size / directorycount);
          */
-        directorypool_size = getpowsum(DIR_COUNT, globals_t_p->path_depth);
+        directorypool_size = getpowsum(DIR_COUNT, PATH_DEPTH);
         filepool_size = FILE_COUNT * (directorypool_size / DIR_COUNT);
     }
     else {
@@ -415,9 +408,8 @@ static void init_multi_files_params()
     size_t len = 0;
     current[0] = calloc(1, len + 1);
 
-    if (get_pool_depth() > 0) {
-        pool_dfs(DIR_COUNT, FILE_COUNT, 
-            globals_t_p->path_depth, globals_t_p->max_name_len, current, 1);
+    if (PATH_DEPTH > 0) {
+        pool_dfs(PATH_DEPTH, current, 1);
     }
 
     /* Populate the file/dir pool in globals */
@@ -481,8 +473,7 @@ static void init_multi_files_params()
 
 #endif
 
-/* TODO 1: Do we need to handle basepaths, testdirs, and testfiles? */
-/* TODO 2: Free memory for file pool and directory pool. */
+/* TODO: Do we need to handle basepaths, testdirs, and testfiles? */
 static void free_all_globals() 
 {
     /* Free all fickle members */

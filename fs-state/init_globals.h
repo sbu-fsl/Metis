@@ -77,8 +77,6 @@ typedef struct all_global_params {
     /* Fields related to new operations and dir structure */
     int fpoolsize;
     int dpoolsize;
-    int path_depth;
-    int max_name_len;
     char ***filepool; // number of file systems -> size of file pool -> each file pathname
     char ***directorypool;
 #endif
@@ -146,14 +144,6 @@ static inline int get_fpoolsize() {
 
 static inline int get_dpoolsize() {
     return globals_t_p->dpoolsize;
-}
-
-static inline int get_pool_depth() {
-    return globals_t_p->path_depth;
-}
-
-static inline int get_max_name_len() {
-    return globals_t_p->max_name_len;
 }
 
 static inline char ***get_filepool() {
