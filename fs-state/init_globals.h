@@ -154,7 +154,7 @@ static inline char ***get_directorypool() {
     return globals_t_p->directorypool;
 }
 
-extern char **bfs_file_dir_pool;
+extern char **bfs_fd_pool;
 extern int combo_pool_idx;
 #endif
 

@@ -3,7 +3,7 @@
 globals_t *globals_t_p;
 bool *fs_frozen;
 #ifdef FILEDIR_POOL
-char **bfs_file_dir_pool;
+char **bfs_fd_pool;
 int combo_pool_idx;
 #endif
 
@@ -444,9 +444,9 @@ static void init_multi_files_params()
     /* 
      * BFS the file and directory pools to pre-create some files & dirs to 
      * reduce ENOENT, need to revisit if this function is really needed
-     * bfs_file_dir_pool free'd at precreate_pools() function
+     * bfs_fd_pool free'd at precreate_pools() function
      */
-    bfs_file_dir_pool = calloc(fpool_sz + dpool_sz, sizeof(char*));
+    bfs_fd_pool = calloc(fpool_sz + dpool_sz, sizeof(char*));
     int file_cur_idx = 0;
     int dir_cur_idx = 0;
     combo_pool_idx = 0;
@@ -454,7 +454,7 @@ static void init_multi_files_params()
     while (file_cur_idx < fpool_sz && dir_cur_idx < dpool_sz) {
         if (root_files) {
             while (file_cur_idx < fpool_sz && tmp_fpool[file_cur_idx][1] == 'f') {
-                bfs_file_dir_pool[combo_pool_idx] = tmp_fpool[file_cur_idx];
+                bfs_fd_pool[combo_pool_idx] = tmp_fpool[file_cur_idx];
                 ++combo_pool_idx;
                 ++file_cur_idx;
             }
@@ -462,14 +462,14 @@ static void init_multi_files_params()
         }
         if (file_cur_idx < fpool_sz && dir_cur_idx < dpool_sz && 
                 is_prefix(tmp_dpool[dir_cur_idx], tmp_fpool[file_cur_idx])) {
-            bfs_file_dir_pool[combo_pool_idx] = tmp_dpool[dir_cur_idx];
+            bfs_fd_pool[combo_pool_idx] = tmp_dpool[dir_cur_idx];
             ++combo_pool_idx;
-            bfs_file_dir_pool[combo_pool_idx] = tmp_fpool[file_cur_idx];
+            bfs_fd_pool[combo_pool_idx] = tmp_fpool[file_cur_idx];
             ++combo_pool_idx;
             ++file_cur_idx;
             while(file_cur_idx < fpool_sz && 
                     is_prefix(tmp_dpool[dir_cur_idx], tmp_fpool[file_cur_idx])) {
-                bfs_file_dir_pool[combo_pool_idx] = tmp_fpool[file_cur_idx];
+                bfs_fd_pool[combo_pool_idx] = tmp_fpool[file_cur_idx];
                 ++combo_pool_idx;
                 ++file_cur_idx;
             }
@@ -477,7 +477,7 @@ static void init_multi_files_params()
         }
     }
     while (dir_cur_idx < dpool_sz) {
-        bfs_file_dir_pool[combo_pool_idx] = tmp_dpool[dir_cur_idx];
+        bfs_fd_pool[combo_pool_idx] = tmp_dpool[dir_cur_idx];
         ++combo_pool_idx;
         ++dir_cur_idx;
     }

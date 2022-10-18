@@ -517,9 +517,9 @@ static void precreate_pools()
     for (int i = 0; i < combo_pool_idx; ++i) {
         if (need_pre_create(fs_exist_prob)) {
             for (int j = 0; j < get_n_fs(); ++j) {
-                path_len = snprintf(NULL, 0, "%s%s", get_basepaths()[j], bfs_file_dir_pool[i]);
+                path_len = snprintf(NULL, 0, "%s%s", get_basepaths()[j], bfs_fd_pool[i]);
                 path_name = calloc(1, path_len + 1);
-                snprintf(path_name, path_len + 1, "%s%s", get_basepaths()[j], bfs_file_dir_pool[i]);
+                snprintf(path_name, path_len + 1, "%s%s", get_basepaths()[j], bfs_fd_pool[i]);
                 int ret = -1;
                 ret = mkdir_p(path_name, 0755, 0644);
                 if (ret < 0) {
@@ -533,9 +533,9 @@ static void precreate_pools()
     unmount_all_strict();
     /* Free the temp file/dir pool to save memory */
     for (int i = 0; i < combo_pool_idx; ++i) {
-        free(bfs_file_dir_pool[i]);
+        free(bfs_fd_pool[i]);
     }
-    free(bfs_file_dir_pool);
+    free(bfs_fd_pool);
 }
 #endif
 
