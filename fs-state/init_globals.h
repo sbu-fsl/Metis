@@ -87,29 +87,85 @@ typedef struct all_global_params {
 extern globals_t *globals_t_p;
 extern bool *fs_frozen;
 
-unsigned int get_n_fs();
-char **get_fslist();
-char **get_fssuffix();
-char **get_devlist();
-size_t *get_devsize_kb();
-char **get_basepaths();
-char **get_testdirs();
-char **get_testfiles();
-void **get_fsimgs();
-int *get_fsfds();
-absfs_state_t *get_absfs();
-int *get_rets();
-int *get_errs();
+static inline unsigned int get_n_fs() {
+    return globals_t_p->_n_fs;
+}
+
+static inline char **get_fslist() {
+    return globals_t_p->fslist;
+}
+
+static inline char **get_fssuffix() {
+    return globals_t_p->fssuffix;
+}
+
+static inline char **get_devlist() {
+    return globals_t_p->devlist;
+}
+
+static inline size_t *get_devsize_kb() {
+    return globals_t_p->devsize_kb;
+}
+
+static inline char **get_basepaths() {
+    return globals_t_p->basepaths;
+}
+
+static inline char **get_testdirs() {
+    return globals_t_p->testdirs;
+}
+
+static inline char **get_testfiles() {
+    return globals_t_p->testfiles;
+}
+
+static inline void **get_fsimgs() {
+    return globals_t_p->fsimgs;
+}
+
+static inline int *get_fsfds() {
+    return globals_t_p->fsfds;
+}
+
+static inline absfs_state_t *get_absfs() {
+    return globals_t_p->absfs;
+}
+
+static inline int *get_rets() {
+    return globals_t_p->rets;
+}
+
+static inline int *get_errs() {
+    return globals_t_p->errs;
+}
 
 #ifdef FILEDIR_POOL
+static inline int get_fpoolsize() {
+    return globals_t_p->fpoolsize;
+}
+
+static inline int get_dpoolsize() {
+    return globals_t_p->dpoolsize;
+}
+
+static inline int get_pool_depth() {
+    return globals_t_p->path_depth;
+}
+
+static inline int get_max_name_len() {
+    return globals_t_p->max_name_len;
+}
+
+static inline char ***get_filepool() {
+    return globals_t_p->filepool;
+}
+
+static inline char ***get_directorypool() {
+    return globals_t_p->directorypool;
+}
+
 extern char **bfs_file_dir_pool;
 extern int combo_pool_idx;
-int get_fpoolsize();
-int get_dpoolsize();
-int get_pool_depth();
-int get_max_name_len();
-char ***get_filepool();
-char ***get_directorypool();
 #endif
 
 #ifdef __cplusplus
