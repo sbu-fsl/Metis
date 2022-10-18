@@ -394,6 +394,10 @@ static void init_multi_files_params()
     globals_t_p->fpoolsize = filepool_size;
     globals_t_p->dpoolsize = directorypool_size;
 
+    /* Allocate temp file and dir pools */
+    tmp_fpool = calloc(filepool_size, sizeof(char*));
+    tmp_dpool = calloc(directorypool_size, sizeof(char*));
+
     /* Initialize filepool */
     globals_t_p->filepool = calloc(globals_t_p->_n_fs, sizeof(char*));
 
@@ -684,6 +688,7 @@ static int cli_or_env_args(int argc, char *argv[])
     return 1;
 }
 
+/*
 #ifdef FILEDIR_POOL
 static void dump_file_dir_pools()
 {
@@ -716,6 +721,7 @@ static void dump_file_dir_pools()
     fclose(fp);
 }
 #endif
+*/
 
 void __attribute__((constructor)) globals_init(int argc, char *argv[])
 {
@@ -751,7 +757,7 @@ void __attribute__((constructor)) globals_init(int argc, char *argv[])
     /* Initialize parameters related multi-file and multi-dir structure */
     init_multi_files_params();
     /* Dump the file and dir pools (dump_fd_pools_0.log ) */
-    dump_file_dir_pools();
+    // dump_file_dir_pools();
 #endif
     /* Initialize fs_frozen status flags*/
     fs_frozen = calloc(get_n_fs(), sizeof(bool));
