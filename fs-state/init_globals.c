@@ -18,12 +18,14 @@ static size_t devsize_kb_to_copy[MAX_FS];
 static char *global_args = NULL;
 static int opt_ret = -1;
 
+#ifdef FILEDIR_POOL
 static int fpool_idx = 0;
 static int dpool_idx = 0;
 
 /* Temp file and dir pools are freed in precreate_pools */
 static char **tmp_fpool = NULL;
 static char **tmp_dpool = NULL;
+#endif
 
 dev_nums_t dev_nums = {.all_rams = 0, .all_mtdblocks = 0};
 
