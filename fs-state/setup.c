@@ -158,7 +158,7 @@ static void populate_mountpoints()
             execute_cmd(unmount_cmdbuf);
         }
 
-        snprintf(check_mp_exist_cmdbuf, PATH_MAX, "test -f %s", get_basepaths()[i]);
+        snprintf(check_mp_exist_cmdbuf, PATH_MAX, "test -d %s", get_basepaths()[i]);
         /* If the mountpoint exists, then remove it */
         if (execute_cmd_status(check_mp_exist_cmdbuf) == 0) {
             snprintf(rm_mp_cmdbuf, PATH_MAX, "rm -r %s", get_basepaths()[i]);
