@@ -599,7 +599,6 @@ static int cli_or_env_args(int argc, char *argv[])
     return 1;
 }
 
-/*
 static void dump_all_globals()
 {
     FILE * fp;
@@ -616,9 +615,7 @@ static void dump_all_globals()
     }
     fclose(fp);
 }
-*/
 
-/*
 #ifdef FILEDIR_POOL
 static void dump_file_dir_pools()
 {
@@ -651,7 +648,6 @@ static void dump_file_dir_pools()
     fclose(fp);
 }
 #endif
-*/
 
 void __attribute__((constructor)) globals_init(int argc, char *argv[])
 {
@@ -689,13 +685,13 @@ void __attribute__((constructor)) globals_init(int argc, char *argv[])
     /* BFS the file and dir pools and get a combo pool */
     build_bfs_fdcombo_pool();
     /* (default commented out) Dump file dir pools: dump_fd_pools_0.log */
-    // dump_file_dir_pools();
+    dump_file_dir_pools();
 #endif
     /* Initialize fs_frozen status flags*/
     fs_frozen = calloc(get_n_fs(), sizeof(bool));
     if (!fs_frozen)
         mem_alloc_err();
-    // dump_all_globals();
+    dump_all_globals();
 }
 
 /*
