@@ -236,7 +236,7 @@ static int setup_xfs(const char *devname, const size_t size_kb)
              devname, size_kb);
     execute_cmd(cmdbuf);
     // format the device with the specified file system
-    snprintf(cmdbuf, PATH_MAX, "mkfs.btrfs -f %s", devname);
+    snprintf(cmdbuf, PATH_MAX, "mkfs.xfs -f %s", devname);
     execute_cmd(cmdbuf);
 
     return 0;
@@ -272,15 +272,15 @@ void setup_filesystems()
         }
         else if (strcmp(get_fslist()[i], "f2fs") == 0)
         {
-            ret = setup_f2fs(get_devlist()[i], get_devsize_kb()[i] / 1024);
+            ret = setup_f2fs(get_devlist()[i], get_devsize_kb()[i]);
         }
         else if (strcmp(get_fslist()[i], "btrfs") == 0)
         {
-            ret = setup_btrfs(get_devlist()[i], get_devsize_kb()[i] / 1024);
+            ret = setup_btrfs(get_devlist()[i], get_devsize_kb()[i]);
         }
         else if (strcmp(get_fslist()[i], "xfs") == 0)
         {
-            ret = setup_xfs(get_devlist()[i], get_devsize_kb()[i] / 1024);
+            ret = setup_xfs(get_devlist()[i], get_devsize_kb()[i]);
         }
         // TODO: we need to consider VeriFS1 and VeriFS2 separately here
         else if (is_verifs(get_fslist()[i]))
