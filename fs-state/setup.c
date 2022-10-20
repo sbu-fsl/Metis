@@ -157,13 +157,18 @@ static void populate_mountpoints()
             snprintf(unmount_cmdbuf, PATH_MAX, "umount -f %s", get_basepaths()[i]);
             execute_cmd(unmount_cmdbuf);
         }
-
-        snprintf(check_mp_exist_cmdbuf, PATH_MAX, "test -d %s", get_basepaths()[i]);
-        /* If the mountpoint exists, then remove it */
-        if (execute_cmd_status(check_mp_exist_cmdbuf) == 0) {
-            snprintf(rm_mp_cmdbuf, PATH_MAX, "rm -r %s", get_basepaths()[i]);
-            execute_cmd(rm_mp_cmdbuf);         
-        }
+        /* 
+         * Caveat: if we use file/dir pools and test in-memory file systems
+         * like VeriFS, we should not remove the mount point here because
+         * we need to pre-create files/dirs in the pool. Removing mountpoints
+         * simply erase the precreated files/dirs.
+         *
+         * Also, we cannot mount VeriFS and other in-memory file systems on
+         * a non-empty mount point.
+         * 
+         * The correct way would be removing and recreating mount point of 
+         * VeriFS in the setup shell scripts before running pan.
+         */
 
         snprintf(mk_mp_cmdbuf, PATH_MAX, "mkdir -p %s", get_basepaths()[i]);
         execute_cmd(mk_mp_cmdbuf);
