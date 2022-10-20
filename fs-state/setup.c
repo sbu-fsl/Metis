@@ -174,7 +174,8 @@ static int setup_f2fs(const char *devname, const size_t size_kb)
 {
     int ret;
     char cmdbuf[PATH_MAX];
-    ret = check_device(devname, 40 * 1024 * 1024);
+    // Expected >= 40 MiB
+    ret = check_device(devname, 40 * 1024);
     if (ret != 0)
     {
         fprintf(stderr, "Cannot %s because %s is bad or not ready.\n",
@@ -197,7 +198,8 @@ static int setup_btrfs(const char *devname, const size_t size_kb)
 {
     int ret;
     char cmdbuf[PATH_MAX];
-    ret = check_device(devname, 114294784);
+    // Expected >= 110 MiB
+    ret = check_device(devname, 110 * 1024);
     if (ret != 0)
     {
         fprintf(stderr, "Cannot %s because %s is bad or not ready.\n",
@@ -220,7 +222,8 @@ static int setup_xfs(const char *devname, const size_t size_kb)
 {
     int ret;
     char cmdbuf[PATH_MAX];
-    ret = check_device(devname, 16 * 1024 * 1024);
+    // Expected >= 16 MiB
+    ret = check_device(devname, 16 * 1024);
     if (ret != 0)
     {
         fprintf(stderr, "Cannot %s because %s is bad or not ready.\n",
