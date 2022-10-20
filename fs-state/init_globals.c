@@ -603,7 +603,7 @@ static void dump_all_globals()
 {
     FILE * fp;
     char dump_fn[MAX_FS + 10];
-    sprintf(dump_fn, "dump_globals%u.log", globals_t_p->_swarm_id);
+    sprintf(dump_fn, "dump_globals_%u.log", globals_t_p->_swarm_id);
     fp = fopen (dump_fn, "w");
     fprintf(fp, "swarm_id: %u\n", globals_t_p->_swarm_id);
     fprintf(fp, "n_fs: %u\n", globals_t_p->_n_fs);
