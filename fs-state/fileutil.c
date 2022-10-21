@@ -593,8 +593,6 @@ static long checkpoint_before_hook(unsigned char *ptr)
     }
 #endif
 
-    state_depth++;
-
     for (int i = 0; i < get_n_fs(); ++i) {
         if (!is_verifs(get_fslist()[i]))
             continue;
@@ -604,6 +602,7 @@ static long checkpoint_before_hook(unsigned char *ptr)
                    get_fslist()[i]);
         }
     }
+    state_depth++;
 
     return 0;
 }
