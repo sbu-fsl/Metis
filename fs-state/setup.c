@@ -179,8 +179,8 @@ static int setup_f2fs(const char *devname, const size_t size_kb)
 {
     int ret;
     char cmdbuf[PATH_MAX];
-    // Expected >= 40 MiB
-    ret = check_device(devname, 40 * 1024);
+    // Expected >= 38 MiB
+    ret = check_device(devname, 38 * 1024);
     if (ret != 0)
     {
         fprintf(stderr, "Cannot %s because %s is bad or not ready.\n",

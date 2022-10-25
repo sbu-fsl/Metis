@@ -3,7 +3,7 @@
 # This script should be placed in fs-state/mcfs_scripts folder
 
 EXT4_SZKB=256
-F2FS_SZKB=40960 # 40 MiB
+F2FS_SZKB=38912 # 38 MiB
 
 cd ..
 sudo ./stop.sh

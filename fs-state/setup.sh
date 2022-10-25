@@ -299,7 +299,7 @@ unset_jffs2() {
 setup_f2fs() {
     DEVFILE=$1;
 
-    devsize=$(runcmd verify_device $DEVFILE f2fs $(expr 40 \* 1024 \* 1024))
+    devsize=$(runcmd verify_device $DEVFILE f2fs $(expr 38 \* 1024 \* 1024))
     runcmd dd if=/dev/zero of=$DEVFILE bs=1k count=$(expr $devsize / 1024)
     runcmd mkfs.f2fs -f $DEVFILE >&2;
 }
