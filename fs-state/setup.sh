@@ -33,7 +33,7 @@ exclude_files=()
 declare -A FS_DEV_MAP
 FS_DEV_MAP+=( ["btrfs"]="ram" ["ext2"]="ram" ["ext4"]="ram" ["f2fs"]="ram" )
 FS_DEV_MAP+=( ["jffs2"]="mtdblock" ["ramfs"]="" ["tmpfs"]="" )
-FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" )
+FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" ["nilfs2"]="ram" )
 
 mount_all() {
     SWARM_ID=$1;
@@ -317,6 +317,18 @@ setup_btrfs() {
 }
 
 unset_btrfs() {
+    :
+}
+
+setup_nilfs2() {
+    DEVFILE=$1;
+    # 1052672 Bytes == 1028 KiB
+    devsize=$(runcmd verify_device $DEVFILE nilfs2 1052672);
+    runcmd dd if=/dev/zero of=$DEVFILE bs=$devsize count=1
+    runcmd mkfs.nilfs2 -B 16 -f $DEVFILE >&2;
+}
+
+unset_nilfs2() {
     :
 }
 

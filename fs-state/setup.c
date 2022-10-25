@@ -247,6 +247,30 @@ static int setup_xfs(const char *devname, const size_t size_kb)
     return 0;
 }
 
+static int setup_nilfs2(const char *devname, const size_t size_kb)
+{
+    int ret;
+    char cmdbuf[PATH_MAX];
+    // Expected >= 1028 KiB
+    ret = check_device(devname, 1028);
+    if (ret != 0)
+    {
+        fprintf(stderr, "Cannot %s because %s is bad or not ready.\n",
+                __FUNCTION__, devname);
+        return ret;
+    }
+    // fill the device with zeros
+    snprintf(cmdbuf, PATH_MAX,
+             "dd if=/dev/zero of=%s bs=%zu count=1",
+             devname, size_kb * 1024);
+    execute_cmd(cmdbuf);
+    // format the device with the specified file system
+    snprintf(cmdbuf, PATH_MAX, "mkfs.nilfs2 -B 16 -f %s", devname);
+    execute_cmd(cmdbuf);
+
+    return 0;
+}
+
 static int setup_verifs1(int i)
 {
     char cmdbuf[PATH_MAX];
@@ -286,6 +310,10 @@ void setup_filesystems()
         else if (strcmp(get_fslist()[i], "xfs") == 0)
         {
             ret = setup_xfs(get_devlist()[i], get_devsize_kb()[i]);
+        }
+        else if (strcmp(get_fslist()[i], "nilfs2") == 0)
+        {
+            ret = setup_nilfs2(get_devlist()[i], get_devsize_kb()[i]);
         }
         // TODO: we need to consider VeriFS1 and VeriFS2 separately here
         else if (is_verifs(get_fslist()[i]))
