@@ -203,8 +203,8 @@ static int setup_btrfs(const char *devname, const size_t size_kb)
 {
     int ret;
     char cmdbuf[PATH_MAX];
-    // Expected >= 110 MiB
-    ret = check_device(devname, 110 * 1024);
+    // Expected >= 16 MiB (must mkfs.btrfs with -M option)
+    ret = check_device(devname, 16 * 1024);
     if (ret != 0)
     {
         fprintf(stderr, "Cannot %s because %s is bad or not ready.\n",
@@ -217,7 +217,7 @@ static int setup_btrfs(const char *devname, const size_t size_kb)
              devname, size_kb);
     execute_cmd(cmdbuf);
     // format the device with the specified file system
-    snprintf(cmdbuf, PATH_MAX, "mkfs.btrfs -f %s", devname);
+    snprintf(cmdbuf, PATH_MAX, "mkfs.btrfs -M -f %s", devname);
     execute_cmd(cmdbuf);
 
     return 0;

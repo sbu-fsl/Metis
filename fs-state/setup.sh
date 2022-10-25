@@ -310,10 +310,10 @@ unset_f2fs() {
 
 setup_btrfs() {
     DEVFILE=$1;
-
-    devsize=$(runcmd verify_device $DEVFILE btrfs 114294784);
+    # 16777216 Bytes == 16 MiB
+    devsize=$(runcmd verify_device $DEVFILE btrfs 16777216);
     runcmd dd if=/dev/zero of=$DEVFILE bs=1k count=$(expr $devsize / 1024)
-    runcmd mkfs.btrfs -f $DEVFILE >&2;
+    runcmd mkfs.btrfs -M -f $DEVFILE >&2;
 }
 
 unset_btrfs() {
