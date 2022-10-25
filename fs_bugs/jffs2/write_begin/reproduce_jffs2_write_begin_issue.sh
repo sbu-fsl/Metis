@@ -54,6 +54,3 @@ echo 3 > /proc/sys/vm/drop_caches
 echo "the correct file should be 8 x 1s, then 12 x 0s, then 4 x 2s"
 echo "the INcorrect file has 16 x 1s, then 4 x 0s, then 4 x 2s"
 hexdump -C -v $JFFS2_TEST_FILE
-
-echo "Read the file from offset 0 and dump the file content"
-./read_file $JFFS2_TEST_FILE 0 24 
