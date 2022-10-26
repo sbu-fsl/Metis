@@ -73,13 +73,30 @@ static int setup_generic(const char *fsname, const char *devname, const size_t s
              devname, size_kb);
     execute_cmd(cmdbuf);
     // format the device with the specified file system
-    if (is_betrfs(get_fslist()[i])
-        snprintf(cmdbuf, PATH_MAX, "mkfs.%s %s", fsname, BETRFS_WORKDEV);
-    else
-        snprintf(cmdbuf, PATH_MAX, "mkfs.%s %s", fsname, devname);
+    snprintf(cmdbuf, PATH_MAX, "mkfs.%s %s", fsname, devname);
     execute_cmd(cmdbuf);
 
     return 0;
+}
+
+static int setup_betrfs(const char *fsname, const char *devname, const size_t size_kb)
+{
+    int ret;
+    char cmdbuf[PATH_MAX];
+    ret = check_device(devname, size_kb);
+    if (ret != 0) {
+        fprintf(stderr, "Cannot setup %s because %s is bad or not ready.\n",
+                fsname, devname);
+        return ret;
+    }
+    // fill the device with zeros
+    snprintf(cmdbuf, PATH_MAX,
+            "dd if=/dev/zero of=%s bs=1k count=%zu status=none",
+             devname, size_kb);
+    execute_cmd(cmdbuf);
+    
+    snprintf(cmdbuf, PATH_MAX, "mkfs.%s %s", fsname, BETRFS_WORKDEV);
+    execute_cmd(cmdbuf);
 }
 
 static int setup_jffs2(const char *devname, const size_t size_kb)
@@ -159,6 +176,9 @@ void setup_filesystems()
         // TODO: we need to consider VeriFS1 and VeriFS2 separately here
         else if (is_verifs(get_fslist()[i])) {
             continue;
+        }
+        else if (is_betrfs(get_fslist()[i])) {
+            ret = setup_betrfs(get_fslist()[i], get_devlist()[i], get_devsize_kb()[i]);
         }
         else {
             ret = setup_generic(get_fslist()[i], get_devlist()[i], get_devsize_kb()[i]);

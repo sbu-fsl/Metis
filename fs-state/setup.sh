@@ -346,13 +346,7 @@ unset_xfs() {
 }
 
 setup_ftfs() {
-    DEVICE=$1
-    DEVSIZEKB=$2
-    BLOCKSIZE=1k
-    runcmd dd if=/dev/zero of=$DEVICE bs=$BLOCKSIZE count=$DEVSIZE_KB status=none;
-
-    runcmd ./mkfs.ftfs $FTFS_PARTITION
-    runcmd insmod $FTFS_KMOD sb_dev=$FTFS_PARTITION sb_fstype=ext4
+    :
 }
 
 unset_ftfs() {

@@ -33,10 +33,16 @@
 #define _SETUP_H_
 
 #define VERIFS_PREFIX       "veri"
+#define BTRFS_NAME          "btrfs"
+#define XFS_NAME            "xfs"
+#define VERIFS1_NAME        "verifs1"
+#define NILFS2_NAME         "nilfs2"
 #define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
 #define FTFS_NAME "ftfs"
 #define BETRFS_NAME "betrfs"
 #define BETRFS_WORKDEV "/dev/sdc"
+#define BETRFS_KERN_MODULE "/home/yifei/betrfs/filesystem/ftfs.ko"
+#define BETRFS_SB_FSTYPE "ext4"
 
 static inline bool is_verifs(const char *fsname)
 {

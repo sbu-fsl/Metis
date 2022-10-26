@@ -563,6 +563,23 @@ extern long (*c_update_after)(unsigned char *);
 extern long (*c_revert_before)(unsigned char *);
 extern long (*c_revert_after)(unsigned char *);
 
+static bool check_equal_eligible(void)
+{
+    /*
+     * Do not need to equalize the file system free spaces if we test one
+     * of the following file systems: BtrFS, XFS, VeriFS1
+     */
+    for (int i = 0; i < get_n_fs(); ++i) {
+        if (strcmp(get_fslist()[i], BTRFS_NAME) == 0     || 
+                strcmp(get_fslist()[i], XFS_NAME) == 0   || 
+                strcmp(get_fslist()[i], VERIFS1_NAME) == 0 || 
+                strcmp(get_fslist()[i], NILFS2_NAME) == 0 ) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static void equalize_free_spaces(void)
 {
     size_t free_spaces[MAX_FS] = {0};
@@ -671,7 +688,8 @@ void __attribute__((constructor)) init()
     /* Fill dummy data so that all file systems have the same amount of free
      * space (Only for non-VeriFS experiments, because currently VeriFS1 doesn't
      * have support for statvfs() yet) */
-    equalize_free_spaces();
+    if (check_equal_eligible())
+        equalize_free_spaces();
 }
 
 /*

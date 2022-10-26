@@ -4,6 +4,23 @@
 #include "log.h"
 
 // static bool fs_frozen[N_FS] = {0};
+static void execute_cmd(const char *cmd)
+{
+    int retval = system(cmd);
+    int status, signal = 0;
+    if ((status = WEXITSTATUS(retval)) != 0) {
+        fprintf(stderr, "Command `%s` failed with %d.\n", cmd, status);
+    }
+    if (WIFSIGNALED(retval)) {
+        signal = WTERMSIG(retval);
+        fprintf(stderr, "Command `%s` terminated with signal %d.\n", cmd,
+                signal);
+    }
+    if (status || signal) {
+        exit(1);
+    }
+}
+
 static int execute_cmd_status(const char *cmd)
 {
     int retval = system(cmd);
@@ -69,6 +86,13 @@ void mountall()
         if (is_verifs(get_fslist()[i]))
             continue;
         
+        if (is_betrfs(get_fslist()[i])) {
+            snprintf(cmdbuf, PATH_MAX,
+                    "insmod %s sb_dev=%s sb_fstype=%s",
+                    BETRFS_KERN_MODULE, BETRFS_WORKDEV, BETRFS_SB_FSTYPE);
+            execute_cmd(cmdbuf);
+        }
+
         /* mount(source, target, fstype, mountflags, option_str) */
         int ret = mount(get_devlist()[i], get_basepaths()[i], get_fslist()[i], MS_NOATIME, "");
         if (ret != 0) {
@@ -141,6 +165,12 @@ try_unmount:
                     get_fslist()[i], get_basepaths()[i], errnoname(errno));
             has_failure = true;
         }
+
+        if (is_betrfs(get_fslist()[i])) {
+            char cmdbuf[PATH_MAX];
+            snprintf(cmdbuf, PATH_MAX, "rmmod ftfs");
+            execute_cmd(cmdbuf);
+        }        
     }
     if (has_failure && strict)
         exit(1);
