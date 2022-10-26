@@ -346,12 +346,15 @@ unset_xfs() {
 }
 
 setup_ftfs() {
-    :
+    if lsmod | grep "ftfs" &> /dev/null ; then
+        rmmod ftfs
+    fi
 }
 
 unset_ftfs() {
-    rmmod ftfs
-    losetup -D
+    if lsmod | grep "ftfs" &> /dev/null ; then
+        rmmod ftfs
+    fi
 }
 
 # Setup mount points and each file system
