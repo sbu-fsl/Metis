@@ -384,13 +384,15 @@ for i in $(seq 0 $(($n_fs-1))); do
     fi
 done
 
-C_TRACK_STMT=""
-for i in $(seq 0 $(($C_TRACK_CNT-1))); do
-    C_TRACK_STMT="${C_TRACK_STMT}${CTRACKLIST[$i]}\\n"
-done
+if [ "$C_TRACK_CNT" -gt "0" ]; then
+    C_TRACK_STMT=""
+    for i in $(seq 0 $(($C_TRACK_CNT-1))); do
+        C_TRACK_STMT="${C_TRACK_STMT}${CTRACKLIST[$i]}\\n"
+    done
 
-sed "/$PML_START_PATN/,/$PML_END_PATN/{//!d}" $PML_SRC > $PML_TEMP
-sed "/$PML_START_PATN/a$C_TRACK_STMT" $PML_TEMP > $PML_SRC
+    sed "/$PML_START_PATN/,/$PML_END_PATN/{//!d}" $PML_SRC > $PML_TEMP
+    sed "/$PML_START_PATN/a$C_TRACK_STMT" $PML_TEMP > $PML_SRC
+fi
 
 # Run test program
 if [ "$SETUP_ONLY" != "1" ]; then
