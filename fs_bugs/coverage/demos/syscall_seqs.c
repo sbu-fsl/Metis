@@ -1,7 +1,7 @@
 #include "mounts.h"
 #include "fstestutil.h"
 
-#define LOOP_MAX 100000
+#define LOOP_MAX 10
 
 void print_error(char *name) { 
     fprintf(stderr, "%s syscall failed: %s\n", name, strerror(errno)); 
