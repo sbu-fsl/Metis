@@ -39,14 +39,17 @@ header = ['function_name', 'file_name', 'xfstests_invocations_count', 'mcfs_invo
 xfst_invoke_f = open('xfstests_invoke_func.csv', 'w')
 mcfs_invoke_f = open('mcfs_invoke_func.csv', 'w')
 xfst_omit_f = open('xfstests_omit_func.csv', 'w')
+mcfs_omit_f = open('mcfs_omit_func.csv', 'w')
 
 xfst_csvwriter = csv.writer(xfst_invoke_f) 
 mcfs_csvwriter = csv.writer(mcfs_invoke_f) 
 xfst_omit_csvwriter = csv.writer(xfst_omit_f) 
+mcfs_omit_csvwriter = csv.writer(mcfs_omit_f) 
 
 xfst_csvwriter.writerow(header)
 mcfs_csvwriter.writerow(header)
 xfst_omit_csvwriter.writerow(header)
+mcfs_omit_csvwriter.writerow(header)
 
 for file_name in xfstests_mcfs_res[0]:
     xfstests_kv = xfstests_mcfs_res[0][file_name]
@@ -55,11 +58,14 @@ for file_name in xfstests_mcfs_res[0]:
         row = [func_name, file_name, xfstests_kv[func_name], mcfs_kv[func_name]]
         if xfstests_kv[func_name] == 0:
             xfst_omit_csvwriter.writerow(row)
+        if mcfs_kv[func_name] == 0:
+            mcfs_omit_csvwriter.writerow(row)
         if xfstests_kv[func_name] > 0 and mcfs_kv[func_name] == 0:
             xfst_csvwriter.writerow(row)
         elif xfstests_kv[func_name] == 0 and mcfs_kv[func_name] > 0:
             mcfs_csvwriter.writerow(row)
 
+mcfs_omit_f.close()
 xfst_omit_f.close()
 mcfs_invoke_f.close()
 xfst_invoke_f.close()
