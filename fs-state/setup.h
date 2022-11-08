@@ -38,6 +38,7 @@
 #define BTRFS_NAME          "btrfs"
 #define XFS_NAME            "xfs"
 #define VERIFS1_NAME        "verifs1"
+#define NILFS2_NAME         "nilfs2"
 #define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
 
 static inline bool is_verifs(const char *fsname)

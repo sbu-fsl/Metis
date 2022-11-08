@@ -292,6 +292,7 @@ runcmd install_pkg nfs-common
 runcmd install_pkg libboost-all-dev
 runcmd install_pkg liburcu-dev
 runcmd install_pkg libxxhash-dev
+runcmd install_pkg nilfs-tools
 
 required_repos=(swarm spin verifs2 zlib xxHash nfs_ganesha)
 

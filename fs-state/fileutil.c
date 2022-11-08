@@ -706,7 +706,8 @@ static bool check_equal_eligible(void)
     for (int i = 0; i < get_n_fs(); ++i) {
         if (strcmp(get_fslist()[i], BTRFS_NAME) == 0     || 
                 strcmp(get_fslist()[i], XFS_NAME) == 0   || 
-                strcmp(get_fslist()[i], VERIFS1_NAME) == 0) {
+                strcmp(get_fslist()[i], VERIFS1_NAME) == 0 || 
+                strcmp(get_fslist()[i], NILFS2_NAME) == 0 ) {
             return false;
         }
     }

@@ -33,7 +33,7 @@ exclude_files=()
 declare -A FS_DEV_MAP
 FS_DEV_MAP+=( ["btrfs"]="ram" ["ext2"]="ram" ["ext4"]="ram" ["f2fs"]="ram" )
 FS_DEV_MAP+=( ["jffs2"]="mtdblock" ["ramfs"]="" ["tmpfs"]="" )
-FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" )
+FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" ["nilfs2"]="ram" )
 
 mount_all() {
     SWARM_ID=$1;
@@ -299,7 +299,7 @@ unset_jffs2() {
 setup_f2fs() {
     DEVFILE=$1;
 
-    devsize=$(runcmd verify_device $DEVFILE f2fs $(expr 40 \* 1024 \* 1024))
+    devsize=$(runcmd verify_device $DEVFILE f2fs $(expr 38 \* 1024 \* 1024))
     runcmd dd if=/dev/zero of=$DEVFILE bs=1k count=$(expr $devsize / 1024)
     runcmd mkfs.f2fs -f $DEVFILE >&2;
 }
@@ -317,6 +317,18 @@ setup_btrfs() {
 }
 
 unset_btrfs() {
+    :
+}
+
+setup_nilfs2() {
+    DEVFILE=$1;
+    # 1052672 Bytes == 1028 KiB
+    devsize=$(runcmd verify_device $DEVFILE nilfs2 1052672);
+    runcmd dd if=/dev/zero of=$DEVFILE bs=$devsize count=1
+    runcmd mkfs.nilfs2 -B 16 -f $DEVFILE >&2;
+}
+
+unset_nilfs2() {
     :
 }
 
@@ -372,13 +384,15 @@ for i in $(seq 0 $(($n_fs-1))); do
     fi
 done
 
-C_TRACK_STMT=""
-for i in $(seq 0 $(($C_TRACK_CNT-1))); do
-    C_TRACK_STMT="${C_TRACK_STMT}${CTRACKLIST[$i]}\\n"
-done
+if [ "$C_TRACK_CNT" -gt "0" ]; then
+    C_TRACK_STMT=""
+    for i in $(seq 0 $(($C_TRACK_CNT-1))); do
+        C_TRACK_STMT="${C_TRACK_STMT}${CTRACKLIST[$i]}\\n"
+    done
 
-sed "/$PML_START_PATN/,/$PML_END_PATN/{//!d}" $PML_SRC > $PML_TEMP
-sed "/$PML_START_PATN/a$C_TRACK_STMT" $PML_TEMP > $PML_SRC
+    sed "/$PML_START_PATN/,/$PML_END_PATN/{//!d}" $PML_SRC > $PML_TEMP
+    sed "/$PML_START_PATN/a$C_TRACK_STMT" $PML_TEMP > $PML_SRC
+fi
 
 # Run test program
 if [ "$SETUP_ONLY" != "1" ]; then
