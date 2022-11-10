@@ -16,9 +16,10 @@ c_track "get_absfs()" "sizeof(get_absfs())";
 proctype worker()
 {
     /* Non-deterministic test loop */
-    int offset, writelen, writebyte, filelen;
+    int create_flag, write_flag, offset, writelen, writebyte, filelen;
     do 
-    :: atomic {
+    :: pick_create_open_flag(create_flag);
+       atomic {
         c_code {
             /* creat, check: errno, existence */
             makelog("BEGIN: create_file\n");
@@ -26,14 +27,14 @@ proctype worker()
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o", 
-                        create_file, get_filepool()[i][src_idx], 0644);
+                    makecall(get_rets()[i], get_errs()[i], "%s, %d, 0%o", 
+                        create_file, get_filepool()[i][src_idx], Pworker->create_flag, 0644);
                 }
             }
             else {
                 for (i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o", 
-                        create_file, get_testfiles()[i], 0644);
+                    makecall(get_rets()[i], get_errs()[i], "%s, %d, 0%o", 
+                        create_file, get_testfiles()[i], Pworker->create_flag, 0644);
                 }
             }
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -42,7 +43,8 @@ proctype worker()
             makelog("END: create_file\n");
         };
     };
-    :: pick_write_offset(offset);
+    :: pick_write_open_flag(write_flag);
+       pick_write_offset(offset);
        pick_write_size(writelen);
        pick_write_special_byte(writebyte);
        /* pick_write_byte(writebyte); */
@@ -59,16 +61,16 @@ proctype worker()
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s, %p, %ld, %zu", 
-                            write_file, get_filepool()[i][src_idx], data,
+                    makecall(get_rets()[i], get_errs()[i], "%s, %d, %p, %ld, %zu", 
+                            write_file, get_filepool()[i][src_idx], Pworker->write_flag, data,
                             (off_t)Pworker->offset, (size_t)Pworker->writelen);
                 }
                 free(data);
             }
             else {
                 for (i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s, %p, %ld, %zu", 
-                            write_file, get_testfiles()[i], data,
+                    makecall(get_rets()[i], get_errs()[i], "%s, %d, %p, %ld, %zu", 
+                            write_file, get_testfiles()[i], Pworker->write_flag, data,
                             (off_t)Pworker->offset, (size_t)Pworker->writelen);
                 }
 

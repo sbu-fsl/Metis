@@ -6,27 +6,18 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
-int create_file(const char *path, int mode)
+int create_file(const char *path, int flags, int mode)
 {
-    int fd = creat(path, mode);
+    int fd = open(path, flags, mode);
     if (fd >= 0) {
         close(fd);
     }
     return (fd >= 0) ? 0 : -1;
 }
 
-int create_file_excl(const char *path, int mode)
+ssize_t write_file(const char *path, int flags, void *data, off_t offset, size_t length)
 {
-    int fd = open(path, O_WRONLY|O_CREAT|O_EXCL, mode);
-    if (fd >= 0) {
-        close(fd);
-    }
-    return (fd >= 0) ? 0 : -1;
-}
-
-ssize_t write_file(const char *path, void *data, off_t offset, size_t length)
-{
-    int fd = open(path, O_RDWR);
+    int fd = open(path, flags, O_RDWR);
     int err;
     if (fd < 0) {
         return -1;

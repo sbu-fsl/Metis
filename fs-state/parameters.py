@@ -4,6 +4,23 @@
 from parameter_util import SpecialParameters, RangeParameters, make_params_pml
 import sys
 
+"""
+O_CREAT|O_WRONLY: 65
+O_CREAT|O_WRONLY|O_EXCL: 193
+O_CREAT|O_WRONLY|O_TRUNC: 577 (creat)
+O_CREAT|O_WRONLY|O_DIRECT: 16449
+"""
+create_open_flag = make_params_pml('create_open_flag',
+        SpecialParameters(65, 193, 577, 16449))
+
+"""
+O_RDWR: 2 (write_file)
+O_RDWR|O_APPEND: 1026
+O_RDWR|O_SYNC: 1052674
+"""
+write_open_flag = make_params_pml('write_open_flag',
+        SpecialParameters(2, 1026, 1052674))
+
 write_offset = make_params_pml('write_offset',
         SpecialParameters(1, 123, 511, 1025, 4101, 16399, 65501),
         RangeParameters(0, 65536, 4096),
