@@ -14,13 +14,13 @@ create_open_flag = make_params_pml('create_open_flag',
         SpecialParameters(65, 193, 577, 16449))
 
 """
-600: only the owner of the file has full read and write access to it.
-644: owner can read/write, group/others can read only.
-755: owner can read/write/execute, group/others can read/execute.
-777: all can read/write/execute (full access).
+600 (dec. 384): only the owner of the file has full read and write access to it.
+644 (dec. 420): owner can read/write, group/others can read only.
+755 (dec. 493): owner can read/write/execute, group/others can read/execute.
+777 (dec. 511): all can read/write/execute (full access).
 """
 create_open_mode = make_params_pml('create_open_mode',
-        SpecialParameters(600, 644, 755, 777))
+        SpecialParameters(384, 420, 493, 511))
 
 """
 O_RDWR: 2 (write_file)
