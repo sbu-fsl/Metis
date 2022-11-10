@@ -16,7 +16,7 @@ c_track "get_absfs()" "sizeof(get_absfs())";
 proctype worker()
 {
     /* Non-deterministic test loop */
-    int create_flag, create_mode, write_flag, offset, writelen, writebyte, filelen;
+    int create_flag, create_mode, write_flag, offset, writelen, writebyte, filelen, fallocate_offset, fallocate_len;
     do 
     :: pick_create_open_flag(create_flag);
        pick_create_open_mode(create_mode);
@@ -187,6 +187,60 @@ proctype worker()
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
             makelog("END: rmdir\n");
+        }
+    };
+    :: atomic {
+        /* mknod, check: retval, errno, absfs */
+        c_code {
+            makelog("BEGIN: mknod\n");
+            mountall();
+            if (enable_fdpool) {
+                int src_idx = pick_random(0, get_fpoolsize() - 1);
+                for (i = 0; i < get_n_fs(); ++i) {
+                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o, %d", mknod, 
+                        get_filepool()[i][src_idx], S_IFIFO | 0600, 0);
+                }
+            }
+            else {
+                for (i = 0; i < get_n_fs(); ++i) {
+                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o, %d", mknod, 
+                        get_testdirs()[i], S_IFIFO | 0600, 0);
+                }
+            }
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
+            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
+            unmount_all_strict();
+            makelog("END: mknod\n");
+        }
+    };
+    :: pick_fallocate_offset(fallocate_offset);
+       pick_fallocate_len(fallocate_len);
+       atomic {
+        /* fallocate, check: retval, errno, absfs */
+        c_code {
+            makelog("BEGIN: fallocate\n");
+            mountall();
+            if (enable_fdpool) {
+                int src_idx = pick_random(0, get_fpoolsize() - 1);
+                for (i = 0; i < get_n_fs(); ++i) {
+                    makecall(get_rets()[i], get_errs()[i], "%s, %ld, %ld", fallocate_file, 
+                        get_filepool()[i][src_idx], (off_t)Pworker->fallocate_offset, 
+                        (off_t)Pworker->fallocate_len);
+                }
+            }
+            else {
+                for (i = 0; i < get_n_fs(); ++i) {
+                    makecall(get_rets()[i], get_errs()[i], "%s, %ld, %ld", fallocate_file, 
+                        get_testdirs()[i], (off_t)Pworker->fallocate_offset, 
+                        (off_t)Pworker->fallocate_len);
+                }
+            }
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
+            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
+            unmount_all_strict();
+            makelog("END: fallocate\n");
         }
     };
     :: atomic {

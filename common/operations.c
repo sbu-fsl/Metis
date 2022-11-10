@@ -44,3 +44,26 @@ exit_err:
     errno = err;
     return -1;
 }
+
+int fallocate_file(const char *path, off_t offset, off_t len)
+{
+    int fd = open(path, O_RDWR);
+    int err;
+    int ret = -1;
+    if (fd < 0) {
+        err = errno;
+        return -1;
+    }
+    ret = fallocate(fd, 0, offset, len);
+    if (ret < 0) {
+        err = errno;
+        goto exit_err;
+    }
+    close(fd);
+    return ret;
+
+exit_err:
+    close(fd);
+    errno = err;
+    return -1;
+}

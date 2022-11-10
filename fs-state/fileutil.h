@@ -3,6 +3,8 @@
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
 
+#define GCOV_ABORT_MINS 30
+
 extern globals_t *globals_t_p;
 extern struct fs_stat *fsinfos;
 extern int cur_pid;
