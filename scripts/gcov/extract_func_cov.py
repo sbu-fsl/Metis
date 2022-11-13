@@ -5,8 +5,11 @@ import csv
 from bs4 import BeautifulSoup
 
 xfstests_mcfs_res = []
+
+# PLEASE EDIT THE TEST NAMES BEFORE RUNNING THIS SCRIPT
 test_names = ['xfstests', 'MCFS (more ops 1 hour)']
 
+# PLEASE EDIT THIS ARRAY BEFORE RUNNING THIS SCRIPT
 # Folder that contains all the gcov/lcov html files
 html_folders = ['/Users/yifeiliu/Downloads/MCFS-cov-comparison-1029/sgdp05_xfstests_cov_out/fs/ext4',
                 '/Users/yifeiliu/Downloads/MCFS-cov-comparison-1029/moreops_cov_out_1hour/fs/ext4']
