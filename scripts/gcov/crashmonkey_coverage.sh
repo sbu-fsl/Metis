@@ -19,23 +19,22 @@ if [ -f "main_coverage.info" ]; then
     sudo rm main_coverage.info
 fi
 
-echo "Resetting Coverage Kernel counters"
+echo "Resetting Coverage Kernel counters and running CrashMonkey Ext4 Test"
+
 #reset_cc_data =
 sudo lcov --zerocounters
-
-echo "Running CrashMonkey Ext4 Test"
 
 #time source 
 start=`date +%s`
 python3 xfsMonkey.py -f /dev/sda -d /dev/cow_ram0 -t $1 -e 102400 -u /build/tests/seq1/ > outfile
 end=`date +%s`
-
 runtime=$((end-start))
-
-echo "Total CrashMonkey Tests Runtime: " $runtime
 
 #lcov_collect = 
 sudo lcov --capture --output-file kernel_latest.info --gcov-tool /usr/bin/gcov-7 
+
+echo "Total CrashMonkey Tests Runtime: " $runtime
+
 #echo $lcov_collect
 #generate_coverage_info = 
 sudo genhtml kernel_latest.info --output-directory ext4_op
