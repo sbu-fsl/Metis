@@ -119,6 +119,69 @@ bool compare_equality_values(char **fses, int n_fs, int *nums)
     return res;
 }
 
+bool compare_equality_file_xattr(char **fses, int n_fs, char **xfpaths)
+{
+    bool res = true;
+    int ret = -1;
+    char base[XATTR_BUF_SIZE];
+    char others[XATTR_BUF_SIZE];
+    memset(base, 0, XATTR_BUF_SIZE);
+    int base_errno = 0, others_errno = 0;
+    // listxattr first to get xattr names
+    ret = listxattr(xfpaths[0], base, sizeof(base));
+    // listxattr does not fail if there is no xattr name for the file 
+    if (ret == -1) {
+        base_errno = errno;
+    }
+    for (int i = 1; i < n_fs; ++i) {
+        memset(others, 0, XATTR_BUF_SIZE);
+        ret = listxattr(xfpaths[i], others, sizeof(others));
+        // listxattr does not fail if there is no xattr name for the file 
+        if (ret == -1) {
+            others_errno = errno;
+            if (base_errno == others_errno) {
+                continue;
+            }
+            else {
+                return false;
+            }
+        }
+        if (strlen(base) != strlen(others)) {
+            logwarn("[seqid=%zu] discrepancy in length of xattr names found:", count);
+        }
+        char *base_p = base;
+        char *others_p = others;
+        while (*base_p) {
+            if (strcmp(base_p, others_p) != 0) {
+                logwarn("[seqid=%zu] discrepancy in xattr names found:", count);
+                return false;
+            }
+            // getxattr compares xattr values
+            char base_val[XATTR_BUF_SIZE];
+            char others_val[XATTR_BUF_SIZE];
+            memset(base_val, 0, XATTR_BUF_SIZE);
+            memset(others_val, 0, XATTR_BUF_SIZE);
+            ssize_t base_size = getxattr(xfpaths[0], base_p, &base_val, XATTR_BUF_SIZE);
+            ssize_t others_size = getxattr(xfpaths[i], others_p, &others_val, XATTR_BUF_SIZE);
+            if (base_size != others_size) {
+                logwarn("[seqid=%zu] discrepancy in getxattr size found:", count);
+                return false;
+            }
+            if (strcmp(base_val, others_val) != 0) {
+                logwarn("[seqid=%zu] discrepancy in getxattr value found:", count);
+                return false;
+            }
+            base_p = strchr(base_p, '\0');
+            others_p = strchr(others_p, '\0');
+            base_p++;
+            others_p++;
+        }
+
+    }
+    // Based on the names, check the xattr value by getxattr
+    return res;
+}
+
 void dump_absfs(const char *basepath)
 {
     absfs_t absfs;

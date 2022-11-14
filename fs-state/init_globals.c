@@ -347,6 +347,14 @@ static void init_all_steady_globals()
     globals_t_p->errs = calloc(globals_t_p->_n_fs, sizeof(int));
     if (!globals_t_p->errs) 
         mem_alloc_err();
+
+    /* get_xfpaths */
+    globals_t_p->xfpaths = calloc(globals_t_p->_n_fs, sizeof(char*));
+    if (!globals_t_p->xfpaths) 
+        mem_alloc_err();
+    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
+        globals_t_p->xfpaths[i] = NULL;
+    }
 }
 
 static void init_basepaths()
