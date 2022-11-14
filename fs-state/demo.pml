@@ -16,13 +16,13 @@ c_track "get_absfs()" "sizeof(get_absfs())";
 proctype worker()
 {
     /* Non-deterministic test loop */
-    int create_flag, create_mode, write_flag, offset, writelen, writebyte, filelen, fallocate_offset, fallocate_len;
+    int create_flag, create_mode, write_flag, offset, writelen, writebyte, filelen, chmod_mode, fallocate_offset, fallocate_len;
     do 
     :: pick_create_open_flag(create_flag);
        pick_create_open_mode(create_mode);
        atomic {
         c_code {
-            /* creat, check: errno, existence */
+            /* creat, check: return, errno, existence */
             makelog("BEGIN: create_file\n");
             mountall();
             if (enable_fdpool) {
@@ -38,6 +38,7 @@ proctype worker()
                         create_file, get_testfiles()[i], Pworker->create_flag, Pworker->create_mode);
                 }
             }
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
@@ -188,6 +189,32 @@ proctype worker()
             unmount_all_strict();
             makelog("END: rmdir\n");
         }
+    };
+    :: pick_chmod_mode(chmod_mode);
+       atomic {
+        c_code {
+            /* chmod, check: return, errno, absfs */
+            makelog("BEGIN: chmod\n");
+            mountall();
+            if (enable_fdpool) {
+                int src_idx = pick_random(0, get_fpoolsize() - 1);
+                for (i = 0; i < get_n_fs(); ++i) {
+                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o", 
+                        chmod, get_filepool()[i][src_idx], Pworker->chmod_mode);
+                }
+            }
+            else {
+                for (i = 0; i < get_n_fs(); ++i) {
+                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o", 
+                        chmod, get_testfiles()[i], Pworker->chmod_mode);
+                }
+            }
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
+            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
+            unmount_all_strict();
+            makelog("END: chmod\n");
+        };
     };
     :: atomic {
         /* setxattr, check: retval, errno, xttar names and values */
