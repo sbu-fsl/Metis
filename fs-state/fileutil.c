@@ -185,9 +185,13 @@ bool compare_equality_file_xattr(char **fses, int n_fs, char **xfpaths)
 void dump_absfs(const char *basepath)
 {
     absfs_t absfs;
+    int ret = -1;
     absfs.hash_option = absfs_hash_method;
     init_abstract_fs(&absfs);
-    scan_abstract_fs(&absfs, basepath, true, submit_error);
+    ret = scan_abstract_fs(&absfs, basepath, true, submit_error);
+    if (ret < 0) {
+        logerr("[seqid=%zu] error occurred when scanning abstract fs.", count);
+    }
     destroy_abstract_fs(&absfs);
 }
 

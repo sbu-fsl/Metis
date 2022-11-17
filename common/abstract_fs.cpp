@@ -82,6 +82,11 @@ static int hash_file_content(AbstractFile *file, absfs_t *absfs) {
                                                     (uInt) readsize));
                 break;
             }
+            default: {
+                file->printer("Hash option not supported\n");
+                exit(1);
+                break;
+            }
         }
 
 
@@ -361,6 +366,9 @@ void init_abstract_fs(absfs_t *absfs) {
             memset((void *) &absfs->md5_state, 0, sizeof(absfs->md5_state));
             break;
         }
+        default: {
+            break;
+        }
     }
     memset(absfs->state, 0, sizeof(absfs->state));
 }
@@ -407,6 +415,10 @@ int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
         }
         case crc32_t: {
             memcpy(&absfs->state, &absfs->crc32_state, sizeof(absfs->crc32_state));
+            break;
+        }
+        default: {
+            ret = -1;
             break;
         }
     }
