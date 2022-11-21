@@ -5,7 +5,8 @@ FSCHECKER=mcfs
 SUFFIX="journal60mins"
 
 KERNEL_EXT4_SRC="/sys/kernel/debug/gcov/mcfs/Linux_Kernel_Install/linux-6.0.6/fs/ext4"
-# 8192 - 8 MiB/16 MiB device for ext4 auto enables journaling
+# 8192 - 8 MiB device for ext4 AUTO enables journaling (doesn't work: 4/5/6/7 MiB)
+# sudo dumpe2fs /dev/ram0 | grep has_journal: check if ext4 journaling enabled
 EXT4_SZKB=8192
 CURDIR=$PWD
 OUTPUT_INFO="$CURDIR/gcov_results/${SERVER}_${FSCHECKER}_ext4_coverage_${SUFFIX}.info"
