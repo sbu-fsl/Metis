@@ -73,6 +73,16 @@ truncate_len = make_params_pml('truncate_len',
 chmod_mode = make_params_pml('chmod_mode',
         SpecialParameters(384, 416, 420, 493, 511))
 
+"""
+uid=0(root) gid=0(root)
+uid=1000(ubuntu) gid=1000(ubuntu)
+"""
+chown_owner = make_params_pml('chown_owner',
+        SpecialParameters(0, 1000))
+
+chown_group = make_params_pml('chown_group',
+        SpecialParameters(0, 1000))
+
 fallocate_offset = make_params_pml('fallocate_offset',
         SpecialParameters(1, 123, 511, 1025, 4101, 16399, 65501),
         RangeParameters(0, 65536, 4096),

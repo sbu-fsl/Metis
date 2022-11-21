@@ -16,7 +16,7 @@ c_track "get_absfs()" "sizeof(get_absfs())";
 proctype worker()
 {
     /* Non-deterministic test loop */
-    int create_flag, create_mode, write_flag, offset, writelen, writebyte, filelen, chmod_mode, fallocate_offset, fallocate_len;
+    int create_flag, create_mode, write_flag, offset, writelen, writebyte, filelen, chmod_mode, chown_owner, chown_group, fallocate_offset, fallocate_len;
     do 
     :: pick_create_open_flag(create_flag);
        pick_create_open_mode(create_mode);
@@ -214,6 +214,58 @@ proctype worker()
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
             makelog("END: chmod\n");
+        };
+    };
+    :: pick_chown_owner(chown_owner);
+       atomic {
+        c_code {
+            /* chown_file, check: return, errno, absfs */
+            makelog("BEGIN: chown_file\n");
+            mountall();
+            if (enable_fdpool) {
+                int src_idx = pick_random(0, get_fpoolsize() - 1);
+                for (i = 0; i < get_n_fs(); ++i) {
+                    makecall(get_rets()[i], get_errs()[i], "%s, %d", 
+                        chown_file, get_filepool()[i][src_idx], (int) Pworker->chown_owner);
+                }
+            }
+            else {
+                for (i = 0; i < get_n_fs(); ++i) {
+                    makecall(get_rets()[i], get_errs()[i], "%s, %d", 
+                        chown_file, get_testfiles()[i], (int) Pworker->chown_owner);
+                }
+            }
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
+            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
+            unmount_all_strict();
+            makelog("END: chown_file\n");
+        };
+    };
+    :: pick_chown_group(chown_group);
+       atomic {
+        c_code {
+            /* chgrp_file, check: return, errno, absfs */
+            makelog("BEGIN: chgrp_file\n");
+            mountall();
+            if (enable_fdpool) {
+                int src_idx = pick_random(0, get_fpoolsize() - 1);
+                for (i = 0; i < get_n_fs(); ++i) {
+                    makecall(get_rets()[i], get_errs()[i], "%s, %d", 
+                        chgrp_file, get_filepool()[i][src_idx], (int) Pworker->chown_group);
+                }
+            }
+            else {
+                for (i = 0; i < get_n_fs(); ++i) {
+                    makecall(get_rets()[i], get_errs()[i], "%s, %d", 
+                        chgrp_file, get_testfiles()[i], (int) Pworker->chown_group);
+                }
+            }
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
+            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
+            unmount_all_strict();
+            makelog("END: chgrp_file\n");
         };
     };
     :: atomic {

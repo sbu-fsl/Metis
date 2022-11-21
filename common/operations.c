@@ -67,3 +67,13 @@ exit_err:
     errno = err;
     return -1;
 }
+
+int chown_file(const char *path, uid_t owner)
+{
+    return chown(path, owner, -1);
+}
+
+int chgrp_file(const char *path, gid_t group)
+{
+    return chown(path, -1, group);
+}
