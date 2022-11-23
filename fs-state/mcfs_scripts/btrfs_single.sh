@@ -2,7 +2,11 @@
 
 # This script should be placed in fs-state/mcfs_scripts folder
 
-EXT4_SZKB=256
+# If we run MCFS ext4 vs. btrfs with fallocate, we need to increase the
+# size of ext4 device from 256 KiB to 2 MiB; otherwise, we will get ENOSPC
+# for ext4 on fallocate operation.
+
+EXT4_SZKB=2048 # 2 MiB
 BTRFS_SZKB=16384 # 16 MiB
 
 cd ..
