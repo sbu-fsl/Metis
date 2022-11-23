@@ -34,7 +34,7 @@ int main(int argc, char **argv)
         snprintf(test_file, PATH_MAX, "%s/test-%d.txt", mp, loop_id);
         snprintf(test_dir, PATH_MAX, "%s/testdir-%d", mp, loop_id); 
         // create_file
-        ret = create_file(test_file, 0644);
+        ret = create_file(test_file, O_CREAT|O_WRONLY|O_TRUNC, 0644);
         if (ret < 0) {
             print_error("create_file");
         }
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
         writebyte = loop_id;
         data = malloc(writelen);
         generate_data(data, writelen, writebyte);
-        ret = write_file(test_file, data, (off_t)offset, (size_t)writelen);
+        ret = write_file(test_file, O_RDWR, data, (off_t)offset, (size_t)writelen);
         if (ret < 0) {
             print_error("write_file");
         }
