@@ -209,6 +209,18 @@ for filename1, filename2 in itertools.zip_longest(filenames1, filenames2):
         data1 = pd.read_csv(filename1 + '.csv', sep=',', usecols=['LineNum', 'RunCount'])
         data2 = pd.read_csv(filename2 + '_xfstests' + '.csv', sep=',', usecols=['LineNum', 'RunCount'])
 
+        #Generate data for Lines covered by MCFS but not by XFS
+        mcfs_lines_cov = data1[~data1['LineNum'].isin(data2['LineNum'])]
+        print(filename1)
+        print(mcfs_lines_cov)
+        mcfs_lines_cov.to_csv(filename1 + '_mcfs_lines_cov.csv', encoding='utf-8')
+
+        #Generate data for Lines covered by XFS but not by MCFS
+        xfs_lines_cov = data2[~data2['LineNum'].isin(data1['LineNum'])]
+        print(filename1 +'_xfs')
+        print(xfs_lines_cov)
+        xfs_lines_cov.to_csv(filename1 + '_xfs_lines_cov.csv', encoding='utf-8')
+
         plt.rcParams["figure.figsize"] = (18, 12)
 
         plt.bar(data1['LineNum'], data1['RunCount'], alpha=0.5, label='MCFS', color ='green', align="center", log=True)
@@ -227,6 +239,18 @@ for filename1, filename2 in itertools.zip_longest(filenames1, filenames2):
 
         branches_test1 = pd.read_csv(filename1 + '_branch_compare.csv', sep=',')
         branches_test2 = pd.read_csv(filename2 + '_xfstests_branch_compare.csv', sep=',')
+
+        #Generate data for branches covered by MCFS but not by XFS
+        mcfs_branches_cov = branches_test1[~branches_test1['Branch Number'].isin(branches_test2['Branch Number'])]
+        print(mcfs_branches_cov)
+        mcfs_branches_cov.to_csv(filename1 + '_mcfs_branches_cov.csv', encoding='utf-8')
+
+        #Generate data for branches covered by XFS but not by MCFS
+        xfs_branches_cov = branches_test2[~branches_test2['Branch Number'].isin(branches_test1['Branch Number'])]
+        print(filename1 +'_xfs')
+        print(xfs_branches_cov)
+        xfs_branches_cov.to_csv(filename1 + '_xfs_branches_cov.csv', encoding='utf-8')
+
         plt.rcParams["figure.figsize"] = (18, 12)
 
         if(not(branches_test1.empty or branches_test2.empty)):
