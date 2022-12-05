@@ -67,7 +67,7 @@ but encountered some issues and therefore it is not yet completely supported.
 
 2. Make sure you have the latest `swarm-mcfs` and `fsl-spin` installed.
 
-3. Under this directory, run `swarm-mcfs -c4 -f demo.pml`. `-c4` means using 4
+3. Under this directory, run `swarm-mcfs -c4 -f mcfs-main.pml`. `-c4` means using 4
    CPU cores, and `-f model.pml` specifies the Promela model.  It is also
    recommended to run this under Screen or tmux.
 

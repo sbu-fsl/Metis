@@ -19,7 +19,7 @@ exclude_dirs=(
 JFFS2_IMAGE=/tmp/jffs2.img
 VERIFS_PREFIX="veri"
 VERI_PREFIX_LEN="${#VERIFS_PREFIX}"
-PML_SRC="./demo.pml"
+PML_SRC="./mcfs-main.pml"
 PML_TEMP="./.pml_tmp"
 PML_START_PATN="\/\* The persistent content of the file systems \*\/"
 PML_END_PATN="\/\* Abstract state signatures of the file systems \*\/"
@@ -452,11 +452,11 @@ if [ "$NUM_PAN" -lt "$MAX_PAN_NUM" ]; then
     sed -i "$(($NUM_PAN+$FIRST_OPT_LINE)),$LAST_OPT_LINE s/^/#/" $SWARM_CONF
 fi
 
-runcmd swarm $SWARM_CONF -K $MCFSLIST -f demo.pml
+runcmd swarm $SWARM_CONF -K $MCFSLIST -f mcfs-main.pml
 
 # Restore swarm.lib
 if [ "$NUM_PAN" -lt "$MAX_PAN_NUM" ]; then
     sed -i "$(($NUM_PAN+$FIRST_OPT_LINE)),$LAST_OPT_LINE s/^#//" $SWARM_CONF
 fi
 
-runcmd ./demo.pml.swarm
+runcmd ./mcfs-main.pml.swarm

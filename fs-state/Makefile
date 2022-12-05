@@ -5,8 +5,8 @@ override CFLAGS += -g -I../include -D PRINTF -fcommon -DCBUF_IMAGE -DFILEDIR_POO
 override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz
 PAN = pan
 
-all: demo.pml parameters common-libs init_globals.o absfs-set
-	spin -a demo.pml; \
+all: mcfs-main.pml parameters common-libs init_globals.o absfs-set
+	spin -a mcfs-main.pml; \
 	gcc -g -o $(PAN) pan.c init_globals.o set.o fileutil.c perf.c mount.c setup.c common-libs.a $(CFLAGS) $(LIBS); \
 
 run: all
@@ -17,7 +17,7 @@ init_globals.o: init_globals.c
 	gcc -Wall -Werror -o init_globals.o -c $< $(CFLAGS) $(LIBS)
 
 install: cleanlib absfs-set libsmcfs
-	spin -a demo.pml;
+	spin -a mcfs-main.pml;
 
 cleanlib:
 	rm -rf *.o
@@ -53,5 +53,5 @@ replayer_dump: replay_dump.c init_globals.o setup.c mount.c common-libs
 		-DNO_FS_STAT common-libs.a $(CFLAGS) $(LIBS)
 
 clean:
-	rm -rf test test.txt pan* *.log *.csv *.o *.a *.img absfs *.trail script* swarm_done* .pml_tmp demo.pml.swarm \
+	rm -rf test test.txt pan* *.log *.csv *.o *.a *.img absfs *.trail script* swarm_done* .pml_tmp mcfs-main.pml.swarm \
 	rm -rf /mnt/test-*/test*

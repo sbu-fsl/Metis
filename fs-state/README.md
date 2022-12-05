@@ -19,7 +19,7 @@
   * [Performance Metrics](#performance-metrics)
   * [Testing other file systems.](#testing-other-file-systems)
       - [1. Setup Script (`setup.sh`)](#1-setup-script-setupsh)
-      - [2. The model checker code (`demo.pml`)](#2-the-model-checker-code-demopml)
+      - [2. The model checker code (`mcfs-main.pml`)](#2-the-model-checker-code-demopml)
       - [3. Save your modification](#3-save-your-modification)
   * [Discussions](#discussions)
     + [Abstract file system states](#abstract-file-system-states)
@@ -287,7 +287,7 @@ tested. The resulting CSV file has the following fields:
 ## Testing other file systems.
 
 You will need to modify the setup script (`setup.sh`), configuration header
-(`config.h`) and the model checker code (`demo.pml`) in order to have the model
+(`config.h`) and the model checker code (`mcfs-main.pml`) in order to have the model
 checker test other file systems.  Here are the parts that need to be modified:
 
 #### 1. Setup Script (`setup.sh`)
@@ -365,7 +365,7 @@ and pointers to the file system images in arrays whose lengths are equal to the
 number of file systems listed in `fslist[]`, so there is no need to hardcode
 them anymore.
 
-#### 3. The model checker code (`demo.pml`)
+#### 3. The model checker code (`mcfs-main.pml`)
 
 Finally, you will let the model checker track the images of the file systems
 (or rather, the full content of the block devices which the file systems are
@@ -380,7 +380,7 @@ c_track "fsimgs[$i]" "$size" "UnMatched";
 of file systems listed in `fslist[]` in `config.h`. That array stores pointers
 to the file system images in the same order as what are listed in `fslist[]`.
 For instance, if your `fslist[]` is initialized as `{"ext4", "xfs", "btrfs"}`,
-you should put the following `c_track` statements in `demo.pml`:
+you should put the following `c_track` statements in `mcfs-main.pml`:
 
 ```promela
 c_track "fsimgs[0]" "$size_ext4" "UnMatched";

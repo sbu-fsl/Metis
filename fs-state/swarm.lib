@@ -23,7 +23,7 @@ time	60m		# max time for all runs; h=hours, m=min, s=sec, d=days
 hash	1.5		# hash-factor (estimate)
 vector	512		# nr of bytes per state (estimate)
 speed	250000		# nr states explored per second (estimate)
-file	demo.pml	# file with the spin model to be verified
+file	mcfs-main.pml	# file with the spin model to be verified
 
 # compilation options (each line defines one complete search mode)
 # each option currently must include -DBITSTATE and -DPUTPID
