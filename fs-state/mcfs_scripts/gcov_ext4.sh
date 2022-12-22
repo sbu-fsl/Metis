@@ -2,15 +2,15 @@
 
 SERVER=sgdp05
 FSCHECKER=mcfs
-SUFFIX="journal60mins"
+SUFFIX="Depth100Ext4Journal5mins"
 
 KERNEL_EXT4_SRC="/sys/kernel/debug/gcov/mcfs/Linux_Kernel_Install/linux-6.0.6/fs/ext4"
 # 8192 - 8 MiB device for ext4 AUTO enables journaling (doesn't work: 4/5/6/7 MiB)
 # sudo dumpe2fs /dev/ram0 | grep has_journal: check if ext4 journaling enabled
 EXT4_SZKB=8192
 CURDIR=$PWD
-OUTPUT_INFO="$CURDIR/gcov_results/${SERVER}_${FSCHECKER}_ext4_coverage_${SUFFIX}.info"
-OUTPUT_DIR="$CURDIR/gcov_results/${SERVER}_${FSCHECKER}_cov_out_${SUFFIX}"
+OUTPUT_INFO="./${SERVER}_${FSCHECKER}_cov_${SUFFIX}.info"
+OUTPUT_DIR="./${SERVER}_${FSCHECKER}_covout_${SUFFIX}"
 
 cd ..
 sudo ./stop.sh
@@ -25,7 +25,9 @@ start=`date +%s`
 end=`date +%s`
 runtime=$((end-start))
 
+cd -
+
 lcov --capture --directory $KERNEL_EXT4_SRC --rc lcov_branch_coverage=1 --output-file $OUTPUT_INFO
 genhtml $OUTPUT_INFO --rc genhtml_branch_coverage=1 --output-directory $OUTPUT_DIR
 
-echo "Total Ext4 MCFS Tests Runtime: " $runtime
+echo "Total $SUFFIX Tests Runtime: " $runtime
