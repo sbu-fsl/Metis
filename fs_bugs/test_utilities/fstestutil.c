@@ -6,7 +6,7 @@ int randSyscall(int ops_num, char *test_file, char *test_dir)
     int offset = 0, writelen = 0, writebyte = 0, filelen = 0;
     switch(ops_num) {
         case 0:
-            ret = create_file(test_file, 0644);
+            ret = create_file(test_file, O_CREAT|O_WRONLY|O_TRUNC, 0644);
             break;
         case 1:
             offset = getRandNum(0, 65536);
@@ -14,7 +14,7 @@ int randSyscall(int ops_num, char *test_file, char *test_dir)
             writebyte = getRandNum(1, 255);
             char *data = malloc(writelen);
             generate_data(data, writelen, writebyte);
-            ret = write_file(test_file, data, (off_t)offset, (size_t)writelen);
+            ret = write_file(test_file, O_RDWR, data, (off_t)offset, (size_t)writelen);
             free(data);
             break;
         case 2:
@@ -44,7 +44,7 @@ int randSyscallChanger(int ops_num, char *test_file, char *test_dir, bool *chang
     *changed = false;
     switch(ops_num) {
         case 0:
-            ret = create_file_excl(test_file, 0644);
+            ret = create_file(test_file, O_CREAT|O_WRONLY|O_EXCL, 0644);
             if (ret == 0)
                 *changed = true;
             break;
@@ -54,7 +54,7 @@ int randSyscallChanger(int ops_num, char *test_file, char *test_dir, bool *chang
             writebyte = getRandNum(1, 255);
             char *data = malloc(writelen);
             generate_data(data, writelen, writebyte);
-            ret = write_file(test_file, data, (off_t)offset, (size_t)writelen);
+            ret = write_file(test_file, O_RDWR, data, (off_t)offset, (size_t)writelen);
             free(data);
             if (ret > 0)
                 *changed = true;

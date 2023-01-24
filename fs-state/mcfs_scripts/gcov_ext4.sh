@@ -2,9 +2,9 @@
 
 SERVER=sgdp05
 FSCHECKER=mcfs
-SUFFIX="journal60mins_VFS"
+SUFFIX="Depth100Ext4Journal5mins"
 
-KERNEL_EXT4_SRC="/sys/kernel/debug/gcov/mcfs/Linux_Kernel_Install/linux-6.0.6/fs"
+KERNEL_EXT4_SRC="/sys/kernel/debug/gcov/mcfs/Linux_Kernel_Install/linux-6.0.6/fs/ext4"
 # 8192 - 8 MiB device for ext4 AUTO enables journaling (doesn't work: 4/5/6/7 MiB)
 # sudo dumpe2fs /dev/ram0 | grep has_journal: check if ext4 journaling enabled
 EXT4_SZKB=8192

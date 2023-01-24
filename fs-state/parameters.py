@@ -4,6 +4,33 @@
 from parameter_util import SpecialParameters, RangeParameters, make_params_pml
 import sys
 
+"""
+O_CREAT|O_WRONLY: 65
+O_CREAT|O_WRONLY|O_EXCL: 193
+O_CREAT|O_WRONLY|O_TRUNC: 577 (creat)
+O_CREAT|O_WRONLY|O_DIRECT: 16449
+"""
+create_open_flag = make_params_pml('create_open_flag',
+        SpecialParameters(65, 193, 577, 16449))
+
+"""
+600 (dec. 384): only the owner of the file has full read and write access to it.
+640 (dec. 416): owner can read/write, group can read, others cannot read
+644 (dec. 420): owner can read/write, group/others can read only.
+755 (dec. 493): owner can read/write/execute, group/others can read/execute.
+777 (dec. 511): all can read/write/execute (full access).
+"""
+create_open_mode = make_params_pml('create_open_mode',
+        SpecialParameters(384, 416, 420, 493, 511))
+
+"""
+O_RDWR: 2 (write_file)
+O_RDWR|O_APPEND: 1026
+O_RDWR|O_SYNC: 1052674
+"""
+write_open_flag = make_params_pml('write_open_flag',
+        SpecialParameters(2, 1026, 1052674))
+
 write_offset = make_params_pml('write_offset',
         SpecialParameters(1, 123, 511, 1025, 4101, 16399, 65501),
         RangeParameters(0, 65536, 4096),
@@ -32,6 +59,36 @@ write_special_byte = make_params_pml('write_special_byte',
         SpecialParameters(0, 255, 85, 170, 240, 15, 1, 128))
 
 truncate_len = make_params_pml('truncate_len',
+        SpecialParameters(47, 995, 4111, 131001, 151111),
+        RangeParameters(0, 262144, 32768),
+        RangeParameters(0, 260000, 29876))
+
+"""
+600 (dec. 384): only the owner of the file has full read and write access to it.
+640 (dec. 416): owner can read/write, group can read, others cannot read
+644 (dec. 420): owner can read/write, group/others can read only.
+755 (dec. 493): owner can read/write/execute, group/others can read/execute.
+777 (dec. 511): all can read/write/execute (full access).
+"""
+chmod_mode = make_params_pml('chmod_mode',
+        SpecialParameters(384, 416, 420, 493, 511))
+
+"""
+uid=0(root) gid=0(root)
+uid=1000(ubuntu) gid=1000(ubuntu)
+"""
+chown_owner = make_params_pml('chown_owner',
+        SpecialParameters(0, 1000))
+
+chown_group = make_params_pml('chown_group',
+        SpecialParameters(0, 1000))
+
+fallocate_offset = make_params_pml('fallocate_offset',
+        SpecialParameters(1, 123, 511, 1025, 4101, 16399, 65501),
+        RangeParameters(0, 65536, 4096),
+        RangeParameters(11, 11111, 3333))
+
+fallocate_len = make_params_pml('fallocate_len',
         SpecialParameters(47, 995, 4111, 131001, 151111),
         RangeParameters(0, 262144, 32768),
         RangeParameters(0, 260000, 29876))

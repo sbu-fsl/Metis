@@ -83,6 +83,8 @@ typedef struct all_global_params {
     int dpoolsize;
     char ***filepool; // number of file systems -> size of file pool -> each file pathname
     char ***directorypool;
+    /* Fields on xattr */
+    char **xfpaths;
 } globals_t;
 
 extern globals_t *globals_t_p;
@@ -154,6 +156,10 @@ static inline char ***get_filepool() {
 
 static inline char ***get_directorypool() {
     return globals_t_p->directorypool;
+}
+
+static inline char **get_xfpaths() {
+    return globals_t_p->xfpaths;
 }
 
 #ifdef FILEDIR_POOL

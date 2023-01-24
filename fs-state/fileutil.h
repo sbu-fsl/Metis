@@ -3,6 +3,12 @@
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
 
+#define GCOV_ABORT_MINS 30
+
+#define XATTR_BUF_SIZE 256
+static const char *xattr_names[] = {"user.mcfsone", "user.mcfstwo"};
+static const char *xattr_vals[] = {"MCFSValueOne", "MCFSValueTwo"};
+
 extern globals_t *globals_t_p;
 extern struct fs_stat *fsinfos;
 extern int cur_pid;
@@ -238,6 +244,7 @@ bool compare_equality_values(char **fses, int n_fs, int *nums);
 bool compare_equality_fexists(char **fses, int n_fs, char **fpaths);
 bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths);
 bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs);
+bool compare_equality_file_xattr(char **fses, int n_fs, char **xfpaths);
 int compare_file_content(const char *path1, const char *path2);
 
 void show_open_flags(uint64_t flags);

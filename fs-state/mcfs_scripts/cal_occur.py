@@ -1,6 +1,11 @@
 import csv
 import re
 
+file_names = ['/mcfs/gcov_test_2022_1029/yf-filesystem-utility/gcov-coverage-for-other-fs-checkers-2022-1109/nfs4mc/fs-state/sequence-pan-20221114-140531-1201260.log',
+            '/mcfs/gcov_test_2022_1029/yf-filesystem-utility/gcov-coverage-for-other-fs-checkers-2022-1109/nfs4mc/fs-state/sequence-pan-20221114-145748-1302543.log']
+
+time_lengths = ['30mins', '60mins']
+
 fsops = ['create_file',
          'write_file',
          'truncate',
