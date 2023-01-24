@@ -852,7 +852,7 @@ void __attribute__((constructor)) init()
     char seq_log_name[NAME_MAX] = {0};
     char progname[NAME_MAX] = {0};
     ssize_t progname_len;
-    try_init_myheap();
+    // try_init_myheap();
     setup_filesystems();
 #ifdef FILEDIR_POOL
     /* Pre-create files and dirs from pools AFTER fs setup */
