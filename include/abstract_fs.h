@@ -7,7 +7,12 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <unistd.h>
+#include <openssl/opensslv.h>
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#include <openssl/evp.h>
+#else
 #include <openssl/md5.h>
+#endif
 #include <string.h>
 #include <dirent.h>
 
@@ -47,7 +52,11 @@ extern "C" {
         unsigned int hash_option;
         union{
             XXH3_state_t *xxh_state;
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+            EVP_MD_CTX *md5_state;
+#else
             MD5_CTX md5_state;
+#endif
             uLong crc32_state;
         };
         absfs_state_t state;

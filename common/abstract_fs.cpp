@@ -73,7 +73,11 @@ static int hash_file_content(AbstractFile *file, absfs_t *absfs) {
                 break;
             }
             case md5_t: {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+                ret = EVP_DigestUpdate(absfs->md5_state, buffer, readsize);
+#else
                 ret = MD5_Update(&absfs->md5_state, buffer, readsize);
+#endif
                 break;
             }
             case crc32_t: {
@@ -232,8 +236,13 @@ void AbstractFile::FeedHasher(absfs_t *absfs) {
             break;
         }
         case md5_t: {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+            EVP_DigestUpdate(absfs->md5_state, abspath, pathlen);
+            EVP_DigestUpdate(absfs->md5_state, &attrs, sizeof(attrs));
+#else
             MD5_Update(&absfs->md5_state, abspath, pathlen);
             MD5_Update(&absfs->md5_state, &attrs, sizeof(attrs));
+#endif
             break;
         }
         case crc32_t: {
@@ -359,7 +368,12 @@ void init_abstract_fs(absfs_t *absfs) {
             break;
         }
         case md5_t: {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+            absfs->md5_state = EVP_MD_CTX_new();
+            EVP_DigestInit_ex(absfs->md5_state, EVP_md5(), NULL);
+#else
             MD5_Init(&absfs->md5_state);
+#endif
             break;
         }
         case crc32_t: {
@@ -410,7 +424,13 @@ int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
             break;
         }
         case md5_t: {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+            unsigned int md5_digest_len = EVP_MD_size(EVP_md5());
+            EVP_DigestFinal_ex(absfs->md5_state, absfs->state, &md5_digest_len);
+            EVP_MD_CTX_free(absfs->md5_state);
+#else 
             MD5_Final(absfs->state, &absfs->md5_state);
+#endif
             break;
         }
         case crc32_t: {

@@ -113,7 +113,7 @@ void try_init_myheap(void)
         return;
     }
 
-    __morecore = my_morecore;
+    // __morecore = my_morecore;
 }
 
 void unset_myheap(void)
