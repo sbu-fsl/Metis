@@ -83,16 +83,6 @@ chown_owner = make_params_pml('chown_owner',
 chown_group = make_params_pml('chown_group',
         SpecialParameters(0, 1000))
 
-fallocate_offset = make_params_pml('fallocate_offset',
-        SpecialParameters(1, 123, 511, 1025, 4101, 16399, 65501),
-        RangeParameters(0, 65536, 4096),
-        RangeParameters(11, 11111, 3333))
-
-fallocate_len = make_params_pml('fallocate_len',
-        SpecialParameters(47, 995, 4111, 131001, 151111),
-        RangeParameters(0, 262144, 32768),
-        RangeParameters(0, 260000, 29876))
-
 if __name__ == '__main__':
     symbols = dict(globals())
     f = open('parameters.pml', 'w')

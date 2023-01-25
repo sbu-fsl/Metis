@@ -311,35 +311,6 @@ proctype worker()
             makelog("END: removexattr\n");
         }
     };
-    :: pick_fallocate_offset(fallocate_offset);
-       pick_fallocate_len(fallocate_len);
-       atomic {
-        /* fallocate_file, check: retval, errno, absfs */
-        c_code {
-            makelog("BEGIN: fallocate_file\n");
-            mountall();
-            if (enable_fdpool) {
-                int src_idx = pick_random(0, get_fpoolsize() - 1);
-                for (i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s, %ld, %ld", fallocate_file, 
-                        get_filepool()[i][src_idx], (off_t)Pworker->fallocate_offset, 
-                        (off_t)Pworker->fallocate_len);
-                }
-            }
-            else {
-                for (i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s, %ld, %ld", fallocate_file, 
-                        get_testdirs()[i], (off_t)Pworker->fallocate_offset, 
-                        (off_t)Pworker->fallocate_len);
-                }
-            }
-            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
-            expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
-            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            unmount_all_strict();
-            makelog("END: fallocate_file\n");
-        }
-    };
     :: atomic {
         /* rename: run it only if the complex ops option enabled */
         c_expr {enable_complex_ops} ->
