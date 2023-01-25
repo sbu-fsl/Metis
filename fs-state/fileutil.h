@@ -3,7 +3,7 @@
 #ifndef _FILEUTIL_H_
 #define _FILEUTIL_H_
 
-#define GCOV_ABORT_MINS 30
+// #define GCOV_ABORT_MINS 30
 
 #define XATTR_BUF_SIZE 256
 static const char *xattr_names[] = {"user.mcfsone", "user.mcfstwo"};
