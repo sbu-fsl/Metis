@@ -16,7 +16,7 @@ c_track "get_absfs()" "sizeof(get_absfs())";
 proctype worker()
 {
     /* Non-deterministic test loop */
-    int create_flag, create_mode, write_flag, offset, writelen, writebyte, filelen, chmod_mode, chown_owner, chown_group, fallocate_offset, fallocate_len;
+    int create_flag, create_mode, write_flag, offset, writelen, writebyte, filelen, chmod_mode, chown_owner, chown_group;
     do 
     :: pick_create_open_flag(create_flag);
        pick_create_open_mode(create_mode);
