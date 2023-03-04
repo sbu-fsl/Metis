@@ -8,7 +8,7 @@
 
 FS=ext4
 DEVSZ=256 # in KiB
-TIMELIMIT=1h
+TIMELIMIT=10m
 
 MCFS_FOLDER="/mcfs2/LTTng-xfstests-2022-1211/nfs4mc/fs-state"
 
