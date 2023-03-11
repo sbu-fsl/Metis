@@ -8,6 +8,7 @@ c_decl {
 
 /* DO NOT TOUCH THE COMMENT LINE BELOW */
 /* The persistent content of the file systems */
+c_track "get_fsimgs()[0]" "262144" "UnMatched";
 
 /* Abstract state signatures of the file systems */
 /* DO NOT TOUCH THE COMMENT LINE ABOVE */
@@ -16,7 +17,7 @@ c_track "get_absfs()" "sizeof(get_absfs())";
 proctype worker()
 {
     /* Non-deterministic test loop */
-    int create_flag, create_mode, write_flag, offset, writelen, writebyte, filelen, chmod_mode, chown_owner, chown_group;
+    int create_flag, create_mode, write_flag, offset, writelen, writebyte, filelen, chmod_mode;
     do 
     :: pick_create_open_flag(create_flag);
        pick_create_open_mode(create_mode);
@@ -215,6 +216,49 @@ proctype worker()
             unmount_all_strict();
             makelog("END: chmod\n");
         };
+    };
+    :: atomic {
+        /* setxattr, check: retval, errno, xttar names and values */
+        c_code {
+            makelog("BEGIN: setxattr\n");
+            mountall();
+            int name_idx = random() % 2;
+            int src_idx = pick_random(0, get_fpoolsize() - 1);
+            for (i = 0; i < get_n_fs(); ++i) {
+                get_xfpaths()[i] = get_filepool()[i][src_idx];
+                makecall(get_rets()[i], get_errs()[i], "%s, %s, %s, %zu, %d", setxattr, 
+                    get_filepool()[i][src_idx], xattr_names[name_idx], 
+                    xattr_vals[name_idx], sizeof(xattr_names[name_idx]), XATTR_CREATE);
+            }
+
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
+            expect(compare_equality_file_xattr(get_fslist(), get_n_fs(), get_xfpaths()));
+            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
+            unmount_all_strict();
+            makelog("END: setxattr\n");
+        }
+    };
+    :: atomic {
+        /* removexattr, check: retval, errno, xttar names and values */
+        c_code {
+            makelog("BEGIN: removexattr\n");
+            mountall();
+            int name_idx = random() % 2;
+            int src_idx = pick_random(0, get_fpoolsize() - 1);
+            for (i = 0; i < get_n_fs(); ++i) {
+                get_xfpaths()[i] = get_filepool()[i][src_idx];
+                makecall(get_rets()[i], get_errs()[i], "%s, %s", removexattr, 
+                    get_filepool()[i][src_idx], xattr_names[name_idx]);
+            }
+
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
+            expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
+            expect(compare_equality_file_xattr(get_fslist(), get_n_fs(), get_xfpaths()));
+            expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
+            unmount_all_strict();
+            makelog("END: removexattr\n");
+        }
     };
     od
 };

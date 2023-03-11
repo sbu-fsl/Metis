@@ -844,6 +844,7 @@ static void main_hook(int argc, char **argv)
 
 void __attribute__((constructor)) init()
 {
+    // sleep(IOCOV_SLEEP_SECONDS);
     fsinfos = calloc(get_n_fs(), sizeof(struct fs_stat));
     if (!fsinfos)
         mem_alloc_err();

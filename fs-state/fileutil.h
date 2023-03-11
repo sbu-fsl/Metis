@@ -5,6 +5,10 @@
 
 // #define GCOV_ABORT_MINS 30
 
+// IOCov: sleep a short time (in seconds) to get pid so that LTTng
+//        only tracks syscalls from the pid
+// #define IOCOV_SLEEP_SECONDS 60
+
 #define XATTR_BUF_SIZE 256
 static const char *xattr_names[] = {"user.mcfsone", "user.mcfstwo"};
 static const char *xattr_vals[] = {"MCFSValueOne", "MCFSValueTwo"};
