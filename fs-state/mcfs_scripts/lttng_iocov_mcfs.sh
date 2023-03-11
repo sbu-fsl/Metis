@@ -58,5 +58,5 @@ cd -
 end=`date +%s`
 runtime=$((end-start))
 
-# babeltrace2 /tmp/my-kernel-trace-mcfs-ext4-256/kernel > mcfs-lttng-mcfs-ext4-256-chdir-fchdir.log
-babeltrace2 /tmp/my-kernel-trace-mcfs-ext4-256/kernel > mcfs-lttng-mcfs-ext4-256-chdir-fchdir-${TIMELIMIT}-${runtime}.log
+# babeltrace2 /tmp/my-kernel-trace-mcfs-ext4-256/kernel > mcfs-lttng-mcfs-ext4-256-xattrs.log
+babeltrace2 /tmp/my-kernel-trace-mcfs-ext4-256/kernel > mcfs-lttng-mcfs-ext4-256-xattrs-${TIMELIMIT}-${runtime}.log
