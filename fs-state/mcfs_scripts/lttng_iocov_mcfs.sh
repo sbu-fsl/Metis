@@ -27,7 +27,7 @@ SCPARAM="${SCPARAM::-1}"
 
 # mcfs-ext4-256
 # echo "SUFFIX: $SUFFIX"
-# open,openat,creat,read,pread64,write,pwrite64,lseek,llseek,truncate,ftruncate,mkdir,mkdirat,chmod,fchmod,fchmodat,close,close_range,chdir,fchdir
+# open,openat,creat,read,pread64,write,pwrite64,lseek,llseek,truncate,ftruncate,mkdir,mkdirat,chmod,fchmod,fchmodat,close,close_range,chdir,fchdir,setxattr,lsetxattr,fsetxattr,getxattr,lgetxattr,fgetxattr
 # echo "SCPARAM: $SCPARAM"
 
 cd $MCFS_FOLDER
@@ -36,7 +36,7 @@ cd $MCFS_FOLDER
 # lttng create my-kernel-session-mcfs-ext4-256 --output=/tmp/my-kernel-trace-mcfs-ext4-256
 lttng create my-kernel-session-${SUFFIX} --output=/tmp/my-kernel-trace-${SUFFIX}
 
-# lttng enable-event --kernel --syscall open,openat,creat,read,pread64,write,pwrite64,lseek,llseek,truncate,ftruncate,mkdir,mkdirat,chmod,fchmod,fchmodat,close,close_range,chdir,fchdir
+# lttng enable-event --kernel --syscall open,openat,creat,read,pread64,write,pwrite64,lseek,llseek,truncate,ftruncate,mkdir,mkdirat,chmod,fchmod,fchmodat,close,close_range,chdir,fchdir,setxattr,lsetxattr,fsetxattr,getxattr,lgetxattr,fgetxattr
 lttng enable-event --kernel --syscall $SCPARAM
 
 start=`date +%s`
