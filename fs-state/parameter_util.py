@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import math
 
 class SpecialParameters():
 
@@ -38,6 +39,68 @@ class RangeParameters():
 
     def __str__(self):
         return str(self.gen())
+
+
+# start > 0
+# end is closed range
+class BitshiftParameters():
+
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+
+    def gen(self):
+        if not hasattr(self, 'params'):
+            self.params = [2**i for i in range(int(math.log2(self.start)), int(math.log2(self.end))+1)]
+        return self.params
+
+    def __len__(self):
+        return len(self.gen())
+
+    def __call__(self):
+        return self.gen()
+
+    def __str__(self):
+        return str(self.gen())
+
+
+# Close to boundary parameters (powers of 2 numbers)
+# +1 -1 for all the boundaries
+class NearboundaryParameters():
+
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+
+    def gen(self):
+        if not hasattr(self, 'params'):
+            self.bdry = [2**i for i in range(int(math.log2(self.start)), int(math.log2(self.end))+1)]
+            self.params = list(set([num + 1 for num in self.bdry] + [num - 1 for num in self.bdry]))
+        return self.params
+
+    def __len__(self):
+        return len(self.gen())
+
+    def __call__(self):
+        return self.gen()
+
+    def __str__(self):
+        return str(self.gen())
+
+
+# +1 -1 for all the specified values
+class NearvalueParameters():
+    def __init__(self, *args):
+        self.params = list(set([num + 1 for num in args] + [num - 1 for num in args]))
+
+    def __len__(self):
+        return len(self.params)
+
+    def __call__(self):
+        return self.params
+
+    def __str__(self):
+        return str(self.params)    
 
 
 def generate_params_pml(obj):

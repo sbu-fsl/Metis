@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from parameter_util import SpecialParameters, RangeParameters, make_params_pml
+from parameter_util import SpecialParameters, RangeParameters, BitshiftParameters, NearboundaryParameters, NearvalueParameters, make_params_pml
 import sys
 
 """
@@ -36,13 +36,21 @@ write_offset = make_params_pml('write_offset',
         RangeParameters(0, 65536, 4096),
         RangeParameters(11, 11111, 3333))
 
-write_size = make_params_pml('write_size',
-        SpecialParameters(3, 555, 1021, 4001, 16355, 64409),
-        RangeParameters(0, 32768, 6144),
-        RangeParameters(13, 33333, 7777))
+# write_size = make_params_pml('write_size',
+#         SpecialParameters(3, 555, 1021, 4001, 16355, 64409),
+#         RangeParameters(0, 32768, 6144),
+#         RangeParameters(13, 33333, 7777))
 
-write_byte = make_params_pml('write_byte',
-        RangeParameters(0, 255, 1))
+# 4294967296: 2^32
+# 17592186044416: 2^44 16 TiB (ext4 max file size)
+write_size = make_params_pml('write_size',
+        SpecialParameters(4294967296, 17592186044416),
+        NearvalueParameters(4294967296, 17592186044416),
+        BitshiftParameters(1, 262144),
+        NearboundaryParameters(1, 262144))
+
+# write_byte = make_params_pml('write_byte',
+#         RangeParameters(0, 255, 1))
 
 """
 Pick Special Write Bytes:
@@ -55,8 +63,8 @@ Pick Special Write Bytes:
 0x01 == 1 (LSB)
 0x80 == 128 (MSB)
 """
-write_special_byte = make_params_pml('write_special_byte',
-        SpecialParameters(0, 255, 85, 170, 240, 15, 1, 128))
+write_byte = make_params_pml('write_byte',
+        SpecialParameters(0, 255, 85))
 
 truncate_len = make_params_pml('truncate_len',
         SpecialParameters(47, 995, 4111, 131001, 151111),

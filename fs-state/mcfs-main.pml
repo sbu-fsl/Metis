@@ -48,8 +48,7 @@ proctype worker()
     :: pick_write_open_flag(write_flag);
        pick_write_offset(offset);
        pick_write_size(writelen);
-       pick_write_special_byte(writebyte);
-       /* pick_write_byte(writebyte); */
+       pick_write_byte(writebyte);
        atomic {
         /* write, check: retval, errno, content */
         c_code {
