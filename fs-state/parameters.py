@@ -44,10 +44,8 @@ write_offset = make_params_pml('write_offset',
 # 4294967296: 2^32
 # 17592186044416: 2^44 16 TiB (ext4 max file size)
 write_size = make_params_pml('write_size',
-        SpecialParameters(4294967296, 17592186044416),
-        NearvalueParameters(4294967296, 17592186044416),
-        BitshiftParameters(1, 262144),
-        NearboundaryParameters(1, 262144))
+        BitshiftParameters(1, 65536),
+        NearboundaryParameters(1, 65536))
 
 # write_byte = make_params_pml('write_byte',
 #         RangeParameters(0, 255, 1))
