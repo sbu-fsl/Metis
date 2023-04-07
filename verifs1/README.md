@@ -2,7 +2,7 @@
 
 ## Known VeriFS1 Bugs:
 
-### VeriFS1 cannot create a file
+### VeriFS1 cannot create a file [Fixed 2023-04-06]
 
 This bug appeared while enabled `-DFILEDIR_POOL` and `-DCOMPLEX_FSOPS`. The
 `create_file` operation for VeriFS1 succeeded with return 0 and no error 
