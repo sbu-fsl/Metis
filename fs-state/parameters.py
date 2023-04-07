@@ -31,10 +31,14 @@ O_RDWR|O_SYNC: 1052674
 write_open_flag = make_params_pml('write_open_flag',
         SpecialParameters(2, 1026, 1052674))
 
+# write_offset = make_params_pml('write_offset',
+#         SpecialParameters(1, 123, 511, 1025, 4101, 16399, 65501),
+#         RangeParameters(0, 65536, 4096),
+#         RangeParameters(11, 11111, 3333))
+
 write_offset = make_params_pml('write_offset',
-        SpecialParameters(1, 123, 511, 1025, 4101, 16399, 65501),
-        RangeParameters(0, 65536, 4096),
-        RangeParameters(11, 11111, 3333))
+        BitshiftParameters(1, 65536),
+        NearboundaryParameters(1, 65536))
 
 # write_size = make_params_pml('write_size',
 #         SpecialParameters(3, 555, 1021, 4001, 16355, 64409),
@@ -64,10 +68,15 @@ Pick Special Write Bytes:
 write_byte = make_params_pml('write_byte',
         SpecialParameters(0, 255, 85))
 
+# truncate_len = make_params_pml('truncate_len',
+#         SpecialParameters(47, 995, 4111, 131001, 151111),
+#         RangeParameters(0, 262144, 32768),
+#         RangeParameters(0, 260000, 29876))
+
 truncate_len = make_params_pml('truncate_len',
-        SpecialParameters(47, 995, 4111, 131001, 151111),
-        RangeParameters(0, 262144, 32768),
-        RangeParameters(0, 260000, 29876))
+        BitshiftParameters(1, 65536),
+        NearboundaryParameters(1, 65536))
+        
 
 """
 600 (dec. 384): only the owner of the file has full read and write access to it.
