@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 #include <sys/ioctl.h>
+#include <stddef.h>
 
 struct verifs_str {
   size_t len;

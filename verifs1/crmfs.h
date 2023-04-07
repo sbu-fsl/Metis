@@ -53,7 +53,7 @@ struct crmfs_dirtable {
 #define CRM_FILE_ATTR(filep, key)  (filep)->entry_param.attr.st_##key
 #define CRM_FILE_MODE(filep)  (filep)->entry_param.attr.st_mode
 #define CRM_FILE_SIZE(filep)  (filep)->entry_param.attr.st_size
-#define CRM_DEFAULT_ICAP      10
+#define CRM_DEFAULT_ICAP      50
 #define CRM_INIT_DIR_CAP      8
 
 struct crmfs_state {
