@@ -33,7 +33,7 @@ exclude_files=()
 declare -A FS_DEV_MAP
 FS_DEV_MAP+=( ["btrfs"]="ram" ["ext2"]="ram" ["ext4"]="ram" ["f2fs"]="ram" )
 FS_DEV_MAP+=( ["jffs2"]="mtdblock" ["ramfs"]="" ["tmpfs"]="" )
-FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" ["nilfs2"]="ram" )
+FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" ["nilfs2"]="ram" ["jfs"]="ram")
 
 mount_all() {
     SWARM_ID=$1;
@@ -347,6 +347,18 @@ setup_xfs() {
 }
 
 unset_xfs() {
+    :
+}
+
+setup_jfs() {
+    DEVFILE="$1";
+
+    devsize=$(runcmd verify_device $DEVFILE jfs $(expr 16 \* 1024 \* 1024))
+    runcmd dd if=/dev/zero of=$DEVFILE bs=1k count=$(expr $devsize / 1024)
+    runcmd mkfs.jfs -f $DEVFILE >&2;
+}
+
+unset_jfs() {
     :
 }
 

@@ -6,6 +6,7 @@ BtrFS: 16 MiB, must use mkfs.btrfs -M option
 F2FS: 38 MiB
 XFS: 16 MiB
 NILFS2: 1028 KiB, with minimum segments with -B option: 16
+JFS: 16 MiB
 
 ## Run single-VT MCFS for each file systems
 First of all, we need to make sure the devices with desired size are available.
@@ -38,4 +39,9 @@ Ext4 vs. BtrFS:
 Ext4 vs. F2FS:
 ```bash
 ./setup.sh -f ext4:256:f2fs:38912
+```
+
+Ext4 vs. JFS:
+```bash
+./setup.sh -f ext4:256:jfs:16384
 ```

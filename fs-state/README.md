@@ -302,7 +302,7 @@ device for other file systems.
 
 Each file system should have the corresponding setup and unset functions in the
 script called `setup_$fs()` and `unset_$fs()` respectively. If you would like to
-test ext2(256K), ext4(256K), jffs2(256K), xfs(16M) or f2fs(40M) file systems,
+test ext2(256K), ext4(256K), jffs2(256K), xfs(16M), jfs(16M) or f2fs(40M) file systems,
 that's all
 you need to do with the setup script because their setup and unset functions are
 already provided. If you want different sizes then you'll need to modify these

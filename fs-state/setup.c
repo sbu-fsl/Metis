@@ -247,6 +247,30 @@ static int setup_xfs(const char *devname, const size_t size_kb)
     return 0;
 }
 
+static int setup_jfs(const char *devname, const size_t size_kb)
+{
+    int ret;
+    char cmdbuf[PATH_MAX];
+    // Expected >= 16 MiB
+    ret = check_device(devname, 16 * 1024);
+    if (ret != 0)
+    {
+        fprintf(stderr, "Cannot %s because %s is bad or not ready.\n",
+                __FUNCTION__, devname);
+        return ret;
+    }
+    // fill the device with zeros
+    snprintf(cmdbuf, PATH_MAX,
+             "dd if=/dev/zero of=%s bs=1k count=%zu",
+             devname, size_kb);
+    execute_cmd(cmdbuf);
+    // format the device with the specified file system
+    snprintf(cmdbuf, PATH_MAX, "mkfs.jfs -f %s", devname);
+    execute_cmd(cmdbuf);
+
+    return 0;
+}
+
 static int setup_nilfs2(const char *devname, const size_t size_kb)
 {
     int ret;
@@ -310,6 +334,10 @@ void setup_filesystems()
         else if (strcmp(get_fslist()[i], "xfs") == 0)
         {
             ret = setup_xfs(get_devlist()[i], get_devsize_kb()[i]);
+        }
+        else if (strcmp(get_fslist()[i], "jfs") == 0)
+        {
+            ret = setup_jfs(get_devlist()[i], get_devsize_kb()[i]);
         }
         else if (strcmp(get_fslist()[i], "nilfs2") == 0)
         {
