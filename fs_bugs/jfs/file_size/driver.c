@@ -4,10 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-const char *ext4_fs_root = "/mnt/test-ext4";
-const char *jfs_fs_root = "/mnt/test-jfs";
-const char *ext4_problem_file = "/mnt/test-ext4/d-00/f-01";
-const char *jfs_problem_file = "/mnt/test-jfs/d-00/f-01";
+const char *ext4_fs_root = "/mnt/test-ext4-i0-s0";
+const char *jfs_fs_root = "/mnt/test-jfs-i1-s0";
+const char *ext4_problem_file = "/mnt/test-ext4-i0-s0/d-00/f-01";
+const char *jfs_problem_file = "/mnt/test-jfs-i1-s0/d-00/f-01";
 
 int callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
