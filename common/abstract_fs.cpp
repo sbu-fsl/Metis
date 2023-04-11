@@ -24,6 +24,13 @@ struct md5sum {
     uint64_t b;
 };
 
+/* 
+ * Ext4 has a special folder /lost+found which makes nlink for 
+ * mount point root dir "/" nlink incremented by 1
+ */
+const char *nlink_fs = "ext4";
+const char *root_dir = "/";
+
 std::unordered_set<std::string> exclusion_list = {
         {"/lost+found"},
         {"/.nilfs"},
@@ -143,7 +150,17 @@ static int nftw_handler(const char *fpath, const struct stat *finfo,
     memset(&file.attrs, 0, sizeof(file.attrs));
     file.attrs.mode = finfo->st_mode;
     file.attrs.size = finfo->st_size;
-    file.attrs.nlink = finfo->st_nlink;
+    /* If abspath is "/" (means mountpoint root dir)
+     * check if need to specially handle the nlink
+     * because ext4 has a special folder lost+found
+     */
+    // Ext4 file system and root dir "/"
+    if (strstr(fpath, nlink_fs) != NULL && strcmp(abspath, root_dir) == 0) {
+        file.attrs.nlink = finfo->st_nlink - 1;
+    } 
+    else {
+        file.attrs.nlink = finfo->st_nlink;
+    }
     file.attrs.uid = finfo->st_uid;
     file.attrs.gid = finfo->st_gid;
     file._attrs.blksize = finfo->st_blksize;
@@ -219,9 +236,12 @@ void AbstractFile::FeedHasher(absfs_t *absfs) {
      * is normal but will cause false discrepancy.
      */
     size_t fsize = attrs.size;
+    /* Don't add `attrs.nlink = 0;` to the condition below 
+     * because we handled the nlink for root dir specially
+     * for ext4.
+     */
     if (!S_ISREG(attrs.mode)) {
         attrs.size = 0;
-        attrs.nlink = 0;
     }
 
     switch (absfs->hash_option) {
