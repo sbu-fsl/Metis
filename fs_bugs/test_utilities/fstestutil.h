@@ -29,7 +29,7 @@
 #define BUF_SIZE 4096
 typedef unsigned char crc32_state_t[4];
 
-static inline void generate_data(char *buffer, size_t len, int value)
+static inline void generate_test_data(char *buffer, size_t len, int value)
 {
     if (value > 0) {
         memset(buffer, value, len);

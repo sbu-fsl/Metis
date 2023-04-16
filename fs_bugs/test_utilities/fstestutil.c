@@ -13,7 +13,7 @@ int randSyscall(int ops_num, char *test_file, char *test_dir)
             writelen = getRandNum(0, 64409);
             writebyte = getRandNum(1, 255);
             char *data = malloc(writelen);
-            generate_data(data, writelen, writebyte);
+            generate_test_data(data, writelen, writebyte);
             ret = write_file(test_file, O_RDWR, data, (off_t)offset, (size_t)writelen);
             free(data);
             break;
@@ -53,7 +53,7 @@ int randSyscallChanger(int ops_num, char *test_file, char *test_dir, bool *chang
             writelen = getRandNum(0, 64409);
             writebyte = getRandNum(1, 255);
             char *data = malloc(writelen);
-            generate_data(data, writelen, writebyte);
+            generate_test_data(data, writelen, writebyte);
             ret = write_file(test_file, O_RDWR, data, (off_t)offset, (size_t)writelen);
             free(data);
             if (ret > 0)
