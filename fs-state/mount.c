@@ -110,9 +110,11 @@ void unmount_all(bool strict)
         int retry_limit = 20;
         /* We have to unfreeze the frozen file system before unmounting it.
          * Otherwise the system will hang! */
+        /*
         if (fs_frozen[i]) {
             fsthaw(get_fslist()[i], get_devlist()[i], get_basepaths()[i]);
         }
+        */
 try_unmount:
         ret = umount2(get_basepaths()[i], 0);
         if (ret != 0) {
