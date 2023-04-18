@@ -1,18 +1,11 @@
 #!/bin/bash
 
-#DRIVER_LOOP_MAX=100000
-
 # NOVA parameters
-#JFFS2_SIZE=262144
 NOVA_MNT_DIR="/mnt/ramdisk"
 MTDBLK_DEVICE="/dev/pmem0"
 
 # Set up NOVA
 setup_nova() {
-    #modprobe mtd
-    #modprobe mtdram total_size=$(expr $JFFS2_SIZE / 1024) erase_size=16
-    #modprobe mtdblock
-       
 
     #Check if NOVA is mounted already, if yes unmount it
     if test -n "$(mount | grep $NOVA_MNT_DIR)" ; then
@@ -35,4 +28,3 @@ setup_nova
 
 # Usage: ./driver mountpoint
 ./driver $NOVA_MNT_DIR 
-
