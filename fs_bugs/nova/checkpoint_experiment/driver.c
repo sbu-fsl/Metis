@@ -9,8 +9,6 @@ void do_checkpoint(const char *devpath, char **bufptr)
 	assert(devfd >= 0);
 	size_t fs_size = fsize(devfd);
 	char *buffer, *ptr;
-	// size_t remaining = fs_size;
-	// const size_t bs = 4096;
 
 	ptr = mmap(NULL, fs_size, PROT_READ | PROT_WRITE, MAP_SHARED, devfd, 0);
 	assert(ptr != MAP_FAILED);
@@ -62,7 +60,6 @@ int main(int argc, char *argv[])
 
     bool is_changed = false;
     int ret = -1;
-    crc32_state_t curr_hash, prev_hash;
     int ops_num = -1;
 
     snprintf(lscmdbuf, PATH_MAX, "ls -lrt %s", mp);
