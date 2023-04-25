@@ -51,21 +51,25 @@ void destroy_fields(vector_t *fields_vec)
 int do_create_file(vector_t *argvec)
 {
 	char *filepath = *vector_get(argvec, char *, 1);
-	char *modestr = *vector_get(argvec, char *, 2);
+	char *flagstr = *vector_get(argvec, char *, 2);
+	char *modestr = *vector_get(argvec, char *, 3);
 	char *endptr;
+	int flags = (int)strtol(flagstr, &endptr, 8);
 	int mode = (int)strtol(modestr, &endptr, 8);
-	int res = create_file(filepath, mode);
-	printf("create_file(%s, 0%o) -> ret=%d, errno=%s\n",
-	       filepath, mode, res, errnoname(errno));
+	int res = create_file(filepath, flags, mode);
+	printf("create_file(%s, 0%o, 0%o) -> ret=%d, errno=%s\n",
+	       filepath, flags, mode, res, errnoname(errno));
 	return res;
 }
 
 int do_write_file(vector_t *argvec)
 {
 	char *filepath = *vector_get(argvec, char *, 1);
-	char *offset_str = *vector_get(argvec, char *, 3);
-	char *len_str = *vector_get(argvec, char *, 4);
+	char *flagstr = *vector_get(argvec, char *, 2);
+	char *offset_str = *vector_get(argvec, char *, 4);
+	char *len_str = *vector_get(argvec, char *, 5);
 	char *endp;
+	int flags = (int)strtol(flagstr, &endp, 8);
 	off_t offset = strtol(offset_str, &endp, 10);
 	size_t writelen = strtoul(len_str, &endp, 10);
 	assert(offset != LONG_MAX);
@@ -77,10 +81,10 @@ int do_write_file(vector_t *argvec)
 	 * group of operations is the same */
 	int integer_to_write = seq / get_n_fs();
 	generate_data(buffer, writelen, offset, BYTE_REPEAT, integer_to_write);
-	int ret = write_file(filepath, buffer, offset, writelen);
+	int ret = write_file(filepath, flags, buffer, offset, writelen);
 	int err = errno;
-	printf("write_file(%s, %ld, %lu) -> ret=%d, errno=%s\n",
-	       filepath, offset, writelen, ret, errnoname(err));
+	printf("write_file(%s, %o, %ld, %lu) -> ret=%d, errno=%s\n",
+	       filepath, flags, offset, writelen, ret, errnoname(err));
 	free(buffer);
 	return ret;
 }
