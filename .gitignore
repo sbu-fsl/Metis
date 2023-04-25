@@ -30,3 +30,6 @@ crmfs
 *.img
 gcov_results/
 *.info
+absfs_test
+driver
+reproducer
