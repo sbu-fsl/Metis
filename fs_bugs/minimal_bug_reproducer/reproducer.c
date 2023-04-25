@@ -42,25 +42,35 @@ int main(int argc, char **argv)
     // Read the file line by line in reverse order
     while (current_pos) {
         // Move file pointer to the beginning of the last line
-        fseek(fp, --current_pos, SEEK_SET);
+        offset = ftell(fp);
+        fseek(fp, offset - 2, SEEK_SET);
 
         // Read the last line
-        if (fgets(line, MAX_LINE_LENGTH, fp) == NULL) {
-            fprintf(stderr, "Failed to read line\n");
-            exit(1);
-        }
+        fgets(line, MAX_LINE_LENGTH, fp);
 
         printf("line: %s\n", line);
-        // Check if the line contains the checkpoint
+
+        // Check if the line contains the "checkpoint" string
         if (strstr(line, "checkpoint")) {
+            printf("Found checkpoint.\n");
             found_checkpoint = 1;
-            printf("line: %s\n", line);
             break;
         }
 
         // Move file pointer to the beginning of the previous line
         current_pos -= strlen(line);
-        fseek(fp, current_pos, SEEK_SET);        
+        fseek(fp, current_pos, SEEK_SET);
+    }
+
+    if (found_checkpoint) {
+        // Move file pointer to the next line after the checkpoint
+        fgets(line, MAX_LINE_LENGTH, fp);
+
+        // Read the file from the checkpoint onwards
+        while (fgets(line, MAX_LINE_LENGTH, fp) != NULL) {
+            // Process the line as needed
+            printf("%s", line);
+        }
     }
     
     // Close the file

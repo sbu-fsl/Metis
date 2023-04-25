@@ -33,3 +33,6 @@ gcov_results/
 absfs_test
 driver
 reproducer
+*.gcno
+*.gcda
+*.gcov
