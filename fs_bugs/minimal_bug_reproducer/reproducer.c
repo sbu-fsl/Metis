@@ -19,8 +19,10 @@ int main(int argc, char **argv)
     char *dev2 = argv[7];
 
     FILE *fp;
+    char reverse_line[MAX_LINE_LENGTH];
     char line[MAX_LINE_LENGTH];
-    long offset, current_pos;
+    int ch, count, i, j;
+    long offset;
     bool found_checkpoint = 0;
 
     // Read sequence file from bottom to top
@@ -33,46 +35,46 @@ int main(int argc, char **argv)
     // Move file pointer to the end of file
     fseek(fp, 0L, SEEK_END);
 
-    // Get the current position of the file pointer
-    current_pos = ftell(fp);
-
-    // current_pos: 479
-    printf("current_pos: %ld\n", current_pos);
-
-    // Read the file line by line in reverse order
-    while (current_pos) {
-        // Move file pointer to the beginning of the last line
+    // Read file backwards
+    while (ftell(fp) > 1) {
+        fseek(fp, -2, SEEK_CUR);
+        if (ftell(fp) <= 2)
+            break;
+        // Read one character
+        ch = fgetc(fp);
+        count = 0;
+        while(ch != '\n'){
+            reverse_line[count] = ch;
+            ++count;
+            if(ftell(fp) < 2)
+                break;
+            fseek(fp, -2, SEEK_CUR);
+            ch = fgetc(fp);
+        }
+        // Record current file offset
         offset = ftell(fp);
-        fseek(fp, offset - 2, SEEK_SET);
-
-        // Read the last line
-        fgets(line, MAX_LINE_LENGTH, fp);
-
-        printf("line: %s\n", line);
-
+        // Reverse the line 
+        j = 0;
+        for (i = count - 1; i >= 0 && count > 0; i--) {
+            line[j] = reverse_line[i];
+            j++;
+        }
+        line[j] = '\0';
         // Check if the line contains the "checkpoint" string
         if (strstr(line, "checkpoint")) {
-            printf("Found checkpoint.\n");
             found_checkpoint = 1;
             break;
         }
-
-        // Move file pointer to the beginning of the previous line
-        current_pos -= strlen(line);
-        fseek(fp, current_pos, SEEK_SET);
     }
 
-    if (found_checkpoint) {
-        // Move file pointer to the next line after the checkpoint
-        fgets(line, MAX_LINE_LENGTH, fp);
-
-        // Read the file from the checkpoint onwards
-        while (fgets(line, MAX_LINE_LENGTH, fp) != NULL) {
-            // Process the line as needed
-            printf("%s", line);
-        }
+    if (!found_checkpoint) {
+        fprintf(stderr, "No checkpoint found in sequence file\n");
+        fclose(fp);
+        exit(1);
     }
-    
+
+    printf("Got offset: %ld\n", offset);
+
     // Close the file
     fclose(fp);
 
