@@ -27,6 +27,9 @@
 
 #include <linux/uaccess.h>
 
+/* Max number of different sizes */
+#define MAX_RD_SIZES_CNT	32
+
 /*
  * Each block ramdisk device has a radix_tree brd_pages of pages that stores
  * the pages containing the block device's contents. A brd page's ->index is
@@ -252,7 +255,7 @@ static void copy_from_brd(void *dst, struct brd_device *brd,
  * Process a single bvec of a bio.
  */
 static int brd_do_bvec(struct brd_device *brd, struct page *page,
-			unsigned int len, unsigned int off, blk_opf_t opf,
+			unsigned int len, unsigned int off, unsigned int opf,
 			sector_t sector)
 {
 	void *mem;
@@ -328,8 +331,11 @@ module_param(rd_nr, int, 0444);
 MODULE_PARM_DESC(rd_nr, "Maximum number of brd devices");
 
 unsigned long rd_size = CONFIG_BLK_DEV_RAM_SIZE;
-module_param(rd_size, ulong, 0444);
-MODULE_PARM_DESC(rd_size, "Size of each RAM disk in kbytes.");
+static unsigned long rd_sizes[MAX_RD_SIZES_CNT];
+static int n_rd_sizes;
+module_param_array(rd_sizes, ulong, &n_rd_sizes, 0444);
+MODULE_PARM_DESC(rd_sizes, "Individual size of each RAM disk in kbytes, "
+		 "separated by comma.");
 
 static int max_part = 1;
 module_param(max_part, int, 0444);
@@ -355,6 +361,15 @@ __setup("ramdisk_size=", ramdisk_size);
  */
 static LIST_HEAD(brd_devices);
 static struct dentry *brd_debugfs_dir;
+
+static unsigned long get_ith_ramdisk_size(int i)
+{
+	if (n_rd_sizes <= 0)
+		return rd_size;
+	if (i >= n_rd_sizes)
+		return rd_sizes[n_rd_sizes - 1];
+	return rd_sizes[i];
+}
 
 static int brd_alloc(int i)
 {
@@ -390,7 +405,7 @@ static int brd_alloc(int i)
 	disk->fops		= &brd_fops;
 	disk->private_data	= brd;
 	strscpy(disk->disk_name, buf, DISK_NAME_LEN);
-	set_capacity(disk, rd_size * 2);
+	set_capacity(disk, get_ith_ramdisk_size(i) * 2);
 	
 	/*
 	 * This is so fdisk will align partitions on 4k, because of
