@@ -1,26 +1,10 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <assert.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#define __USE_XOPEN_EXTENDED 1
-#include <ftw.h>
+#include "replay.h"
 
 #include "errnoname.h"
 #include "fileutil.h"
 #include "operations.h"
-#include "vector.h"
 
 int seq = 0;
-
-typedef struct concrete_state {
-	int seqid;
-	char **images;
-} fs_state_t;
 
 vector_t states;
 
