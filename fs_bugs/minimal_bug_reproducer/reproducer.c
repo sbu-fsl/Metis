@@ -3,7 +3,7 @@
 
 #define MAX_LINE_LENGTH 256
 
-static long find_last_checkpoint_offset(FILE *fp)
+static long find_last_checkpoint_offset(FILE *seqfp)
 {
     int ch, count, i, j;
     long offset = 0;
@@ -11,26 +11,26 @@ static long find_last_checkpoint_offset(FILE *fp)
     char line[MAX_LINE_LENGTH];
     char reverse_line[MAX_LINE_LENGTH];
     // Move file pointer to the end of file
-    fseek(fp, 0L, SEEK_END);
+    fseek(seqfp, 0L, SEEK_END);
 
     // Read file backwards
-    while (ftell(fp) > 1) {
-        fseek(fp, -2, SEEK_CUR);
-        if (ftell(fp) <= 2)
+    while (ftell(seqfp) > 1) {
+        fseek(seqfp, -2, SEEK_CUR);
+        if (ftell(seqfp) <= 2)
             break;
         // Read one character
-        ch = fgetc(fp);
+        ch = fgetc(seqfp);
         count = 0;
         while(ch != '\n'){
             reverse_line[count] = ch;
             ++count;
-            if(ftell(fp) < 2)
+            if(ftell(seqfp) < 2)
                 break;
-            fseek(fp, -2, SEEK_CUR);
-            ch = fgetc(fp);
+            fseek(seqfp, -2, SEEK_CUR);
+            ch = fgetc(seqfp);
         }
         // Record current file offset
-        offset = ftell(fp);
+        offset = ftell(seqfp);
         // Reverse the line 
         j = 0;
         for (i = count - 1; i >= 0 && count > 0; i--) {
@@ -47,7 +47,7 @@ static long find_last_checkpoint_offset(FILE *fp)
 
     if (!found_checkpoint) {
         fprintf(stderr, "No checkpoint found in sequence file\n");
-        fclose(fp);
+        fclose(seqfp);
         exit(1);
     }
 
@@ -69,36 +69,38 @@ int main(int argc, char **argv)
     char *dev1 = argv[6];
     char *dev2 = argv[7];
 
-    FILE *fp;
+    FILE *seqfp;
     long offset;
-    size_t len = 0;
-    ssize_t read;
-    char *rear_line = NULL;
+    size_t linecap = 0;
+    ssize_t len;
+    char *linebuf = NULL;
 
     // Read sequence file from bottom to top
-    fp = fopen(seqlog, "r");
-    if (fp == NULL) {
-        fprintf(stderr, "Failed to open sequence file\n");
+    seqfp = fopen(seqlog, "r");
+    if (seqfp == NULL) {
+        fprintf(stderr, "Cannot open sequence.log. Does it exist?\n");
         exit(1);
     }
 
-    offset = find_last_checkpoint_offset(fp);
+    offset = find_last_checkpoint_offset(seqfp);
     printf("Got offset: %ld\n", offset);
 
     // Seek to offset
-    fseek(fp, offset, SEEK_SET);
+    fseek(seqfp, offset, SEEK_SET);
 
     // Read the file from the offset
-    while ((read = getline(&rear_line, &len, fp)) != -1) {
-        // printf("Retrieved line of length %zu:\n", read);
-        printf("%s", rear_line);
+    while ((len = getline(&linebuf, &linecap, seqfp)) >= 0) {
+        
+
+        // printf("Retrieved line of length %zu:\n", len);
+        printf("%s", linebuf);
     }
 
     // Close the file
-    fclose(fp);
+    fclose(seqfp);
 
-    if (rear_line) {
-        free(rear_line);
+    if (linebuf) {
+        free(linebuf);
     }
 
     return 0;
