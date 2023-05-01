@@ -52,6 +52,9 @@ replayer_dump: replay_dump.c init_globals.o setup.c mount.c common-libs
 	gcc -o replay replay.c init_globals.o setup.c mount.c \
 		-DNO_FS_STAT common-libs.a $(CFLAGS) $(LIBS)
 
+min_repro: min_repro.c 
+	gcc -o min_repro min_repro.c $(CFLAGS) $(LIBS)
+
 clean:
 	rm -rf test test.txt pan* *.log *.csv *.o *.a *.img absfs *.trail script* swarm_done* .pml_tmp mcfs-main.pml.swarm \
 	rm -rf /mnt/test-*/test*

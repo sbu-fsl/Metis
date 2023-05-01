@@ -1,5 +1,7 @@
 #!/bin/bash
 
+make min_repro
+
 # SEQLOG="sequence-pan-20230407-183853-171036.log"
 SEQLOG="sequence.log"
 FSALL="ext4:jfs"
@@ -25,4 +27,4 @@ dd if=$DEV1 of=./$IMG1 bs=4k status=none
 dd if=$DEV2 of=./$IMG2 bs=4k status=none
 
 # Usage: ./reproducer seqlog fs1 fs2 mp1 mp2 dev1 dev2 
-./reproducer $SEQLOG $FS1 $FS2 $MP1 $MP2 $DEV1 $DEV2
+./min_repro $SEQLOG $FS1 $FS2 $MP1 $MP2 $DEV1 $DEV2

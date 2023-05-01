@@ -1,5 +1,7 @@
-#include "mounts.h"
-#include "fstestutil.h"
+/*
+ * MCFS minimal bug reproducer 
+ */
+#include "replay.h"
 
 #define MAX_LINE_LENGTH 256
 

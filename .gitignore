@@ -37,3 +37,4 @@ reproducer
 *.gcda
 *.gcov
 .brd.o.d 
+min_repro
