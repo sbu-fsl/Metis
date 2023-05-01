@@ -36,3 +36,4 @@ reproducer
 *.gcno
 *.gcda
 *.gcov
+.brd.o.d 

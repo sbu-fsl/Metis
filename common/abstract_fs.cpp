@@ -25,10 +25,10 @@ struct md5sum {
 };
 
 /* 
- * Ext4 has a special folder /lost+found which makes nlink for 
+ * Ext4 and Ext2 has a special folder /lost+found which makes nlink for 
  * mount point root dir "/" nlink incremented by 1
  */
-const char *nlink_fs = "ext4";
+const char *nlink_fs[] = {"ext4", "ext2"};
 const char *root_dir = "/";
 
 std::unordered_set<std::string> exclusion_list = {
@@ -138,6 +138,16 @@ static const char *get_abstract_path(const char *fullpath) {
     return res;
 }
 
+static bool fs_with_extra_nlink(const char *fpath)
+{
+    for (long unsigned int i = 0; i < sizeof(nlink_fs) / sizeof(nlink_fs[0]); i++) {
+        if (strstr(fpath, nlink_fs[i]) != NULL) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static int nftw_handler(const char *fpath, const struct stat *finfo,
                         int typeflag, struct FTW *ftwbuf) {
     const char *abspath = get_abstract_path(fpath);
@@ -155,7 +165,7 @@ static int nftw_handler(const char *fpath, const struct stat *finfo,
      * because ext4 has a special folder lost+found
      */
     // Ext4 file system and root dir "/"
-    if (strstr(fpath, nlink_fs) != NULL && strcmp(abspath, root_dir) == 0) {
+    if (fs_with_extra_nlink(fpath) && strcmp(abspath, root_dir) == 0) {
         file.attrs.nlink = finfo->st_nlink - 1;
     } 
     else {
