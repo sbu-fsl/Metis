@@ -3,6 +3,10 @@
  */
 #include "replay.h"
 
+#include "errnoname.h"
+#include "fileutil.h"
+#include "operations.h"
+
 #define MAX_LINE_LENGTH 256
 
 static long find_last_checkpoint_offset(FILE *seqfp)
@@ -10,7 +14,7 @@ static long find_last_checkpoint_offset(FILE *seqfp)
     int ch, count, i, j;
     long offset = 0;
     bool found_checkpoint = 0;
-    char line[MAX_LINE_LENGTH];
+    char forward_line[MAX_LINE_LENGTH];
     char reverse_line[MAX_LINE_LENGTH];
     // Move file pointer to the end of file
     fseek(seqfp, 0L, SEEK_END);
@@ -36,12 +40,12 @@ static long find_last_checkpoint_offset(FILE *seqfp)
         // Reverse the line 
         j = 0;
         for (i = count - 1; i >= 0 && count > 0; i--) {
-            line[j] = reverse_line[i];
+            forward_line[j] = reverse_line[i];
             j++;
         }
-        line[j] = '\0';
+        forward_line[j] = '\0';
         // Check if the line contains the "checkpoint" string
-        if (strstr(line, "checkpoint")) {
+        if (strstr(forward_line, "checkpoint")) {
             found_checkpoint = 1;
             break;
         }
@@ -58,19 +62,11 @@ static long find_last_checkpoint_offset(FILE *seqfp)
 
 int main(int argc, char **argv)
 {
-    if (argc < 8) {
-        fprintf(stderr, "Usage %s seqlog fs1 fs2 mp1 mp2 dev1 dev2\n", argv[0]);
+    if (argc < 4) {
+        fprintf(stderr, "Usage: %s -K fs1:size1:fs2:size2 seqlog \n", argv[0]);
         exit(1);
     }
-
-    char *seqlog = argv[1];
-    char *fs1 = argv[2];
-    char *fs2 = argv[3];
-    char *mp1 = argv[4];
-    char *mp2 = argv[5];
-    char *dev1 = argv[6];
-    char *dev2 = argv[7];
-
+    char *seqlog = argv[3];
     FILE *seqfp;
     long offset;
     size_t linecap = 0;
@@ -87,20 +83,54 @@ int main(int argc, char **argv)
     offset = find_last_checkpoint_offset(seqfp);
     printf("Got offset: %ld\n", offset);
 
-    // Seek to offset
+    // Seek to offset of last checkpoint
     fseek(seqfp, offset, SEEK_SET);
 
     // Read the file from the offset
     while ((len = getline(&linebuf, &linecap, seqfp)) >= 0) {
-        
-
-        // printf("Retrieved line of length %zu:\n", len);
-        printf("%s", linebuf);
+        // Copy the line
+        char *line = malloc(len + 1);
+        line[len] = '\0';
+        strncpy(line, linebuf, len);
+		/* remove the newline character */
+		if (line[len - 1] == '\n')
+			line[len - 1] = '\0';
+        /* parse the line */
+        vector_t argvec;
+        extract_fields(&argvec, line, ", ");
+        char *funcname = *vector_get(&argvec, char *, 0);
+        // Mount the file systems
+        mountall();
+		if (strncmp(funcname, "create_file", len) == 0) {
+			do_create_file(&argvec);
+		} else if (strncmp(funcname, "write_file", len) == 0) {
+			do_write_file(&argvec);
+		} else if (strncmp(funcname, "truncate", len) == 0) {
+			do_truncate(&argvec);
+		} else if (strncmp(funcname, "unlink", len) == 0) {
+			do_unlink(&argvec);
+		} else if (strncmp(funcname, "mkdir", len) == 0) {
+			do_mkdir(&argvec);
+		} else if (strncmp(funcname, "rmdir", len) == 0) {
+			do_rmdir(&argvec);
+		} else if (strncmp(funcname, "rename", len) == 0) {
+			do_rename(&argvec);
+		} else if (strncmp(funcname, "symlink", len) == 0) {
+			do_symlink(&argvec);
+		} else if (strncmp(funcname, "link", len) == 0) {
+			do_link(&argvec);
+		} else if (strncmp(funcname, "checkpoint", len) != 0 && 
+                   strncmp(funcname, "restore", len) != 0) {
+			printf("Unrecognized op: %s\n", funcname);
+            exit(1);
+		}
+        // Unmount the file systems
+        unmount_all_strict();
+		free(line);
+		destroy_fields(&argvec);
     }
-
     // Close the file
     fclose(seqfp);
-
     if (linebuf) {
         free(linebuf);
     }

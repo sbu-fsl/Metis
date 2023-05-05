@@ -37,4 +37,6 @@ reproducer
 *.gcda
 *.gcov
 .brd.o.d 
+replay
+replay_dump
 min_repro
