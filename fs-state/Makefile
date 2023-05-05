@@ -55,8 +55,8 @@ replayer_dump: replay_dump.c replayutil.o init_globals.o setup.c mount.c common-
 replayutil.o: replayutil.c 
 	gcc -o replayutil.o -fPIC -c replayutil.c $(CFLAGS) $(LIBS)
 
-min_repro: min_repro.c init_globals.o replay.o setup.c mount.c common-libs
-	gcc -o min_repro min_repro.c init_globals.o replay.o setup.c mount.c \
+min_repro: min_repro.c replayutil.o init_globals.o setup.c mount.c common-libs
+	gcc -o min_repro min_repro.c replayutil.o init_globals.o setup.c mount.c \
 		-DNO_FS_STAT common-libs.a $(CFLAGS) $(LIBS)
 
 clean:

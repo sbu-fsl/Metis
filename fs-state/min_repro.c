@@ -1,13 +1,11 @@
 /*
  * MCFS minimal bug reproducer 
  */
-#include "replay.h"
-
-#include "errnoname.h"
-#include "fileutil.h"
-#include "operations.h"
+#include "replayutil.h"
 
 #define MAX_LINE_LENGTH 256
+
+int seq = 0;
 
 static long find_last_checkpoint_offset(FILE *seqfp)
 {
@@ -73,6 +71,8 @@ int main(int argc, char **argv)
     ssize_t len;
     char *linebuf = NULL;
 
+    srand(time(0));
+
     // Read sequence file from bottom to top
     seqfp = fopen(seqlog, "r");
     if (seqfp == NULL) {
@@ -104,7 +104,8 @@ int main(int argc, char **argv)
 		if (strncmp(funcname, "create_file", len) == 0) {
 			do_create_file(&argvec);
 		} else if (strncmp(funcname, "write_file", len) == 0) {
-			do_write_file(&argvec);
+            seq = rand() % 256;
+			do_write_file(&argvec, seq);
 		} else if (strncmp(funcname, "truncate", len) == 0) {
 			do_truncate(&argvec);
 		} else if (strncmp(funcname, "unlink", len) == 0) {
