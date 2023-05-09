@@ -18,7 +18,7 @@ static void execute_cmd(const char *cmd)
     }
 }
 
-static int execute_cmd_status(const char *cmd)
+int execute_cmd_status(const char *cmd)
 {
     int retval = system(cmd);
     int status = WEXITSTATUS(retval);

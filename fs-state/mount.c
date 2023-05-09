@@ -3,13 +3,6 @@
 #include "fileutil.h"
 
 //static bool fs_frozen[N_FS] = {0};
-//TODO: REMOVE AND IMPORT THIS FUNCTION 
-static int execute_cmd_status(const char *cmd)
-{
-    int retval = system(cmd);
-    int status = WEXITSTATUS(retval);
-    return status;
-}
 
 static char *receive_output(FILE *cmdfp, size_t *length)
 {

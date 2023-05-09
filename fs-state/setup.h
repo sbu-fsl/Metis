@@ -55,4 +55,6 @@ static inline bool is_nova(const char *fsname)
 
 void setup_filesystems();
 
+int execute_cmd_status(const char *cmd);
+
 #endif // _SETUP_H_
