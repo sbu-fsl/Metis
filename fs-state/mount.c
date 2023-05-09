@@ -1,8 +1,9 @@
 #define _XOPEN_SOURCE 500
 #define _POSIX_C_SOURCE 2
 #include "fileutil.h"
+#include "setup.h"
 
-// static bool fs_frozen[N_FS] = {0};
+//static bool fs_frozen[N_FS] = {0};
 //TODO: REMOVE AND IMPORT THIS FUNCTION 
 static int execute_cmd_status(const char *cmd)
 {

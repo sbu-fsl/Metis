@@ -437,9 +437,9 @@ if [ "$SETUP_ONLY" != "1" ]; then
     # Set environment variable MCFS_FSLIST for MCFS C Sources
     if [ "$USE_ENV_VAR" = "1" ]; then
         export MCFS_FSLIST$SWARM_ID="$MCFSLIST"
-        ./pan -m1000 -K $SWARM_ID 2>error.log > output.log
+        ./pan -K $SWARM_ID 2>error.log > output.log
     else
-        ./pan -m1000 -K $SWARM_ID:$MCFSLIST 2>error.log > output.log
+        ./pan -K $SWARM_ID:$MCFSLIST 2>error.log > output.log
     fi
 
     # By default we don't want to clean up the file system for 
