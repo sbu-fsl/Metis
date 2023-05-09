@@ -144,11 +144,8 @@ int do_link(vector_t *argvec)
 	return ret;
 }
 
-
-/* Now I would expect the setup script to setup file systems instead. */
-void replayer_init(vector_t states)
+void populate_replay_basepaths()
 {
-	srand(time(0));
 	for (int i = 0; i < get_n_fs(); ++i) {
 		size_t len = snprintf(NULL, 0, "/mnt/test-%s%s", 
 								get_fslist()[i], get_fssuffix()[i]);
@@ -156,6 +153,13 @@ void replayer_init(vector_t states)
 		snprintf(get_basepaths()[i], len + 1, "/mnt/test-%s%s", 
 								get_fslist()[i], get_fssuffix()[i]);
 	}
+}
+
+/* Now I would expect the setup script to setup file systems instead. */
+void replayer_init(vector_t states)
+{
+	srand(time(0));
+	populate_replay_basepaths();
 	vector_init(&states, fs_state_t);
 }
 
@@ -221,4 +225,44 @@ void restore(vector_t states)
 		free(state->images);
 	vector_pop_back(&states);
 	printf("restore (to the state just before seqid = %d)\n", state->seqid);
+}
+
+char *get_replayed_absfs(const char *basepath,
+    unsigned int hash_method, char *abs_state_str)
+{
+    int ret;
+    absfs_t absfs;
+    absfs.hash_option = hash_method;
+    init_abstract_fs(&absfs);
+    ret = scan_abstract_fs(&absfs, basepath, false, printf);
+
+    if (ret) {
+        printf("Error occurred when computing absfs...\n");
+        return NULL;
+    }
+
+    char *strp = abs_state_str;
+    for (int i = 0; i < 16; ++i) {
+        size_t res = snprintf(strp, 3, "%02x", absfs.state[i]);
+        strp += res;
+    }
+    destroy_abstract_fs(&absfs);
+    return abs_state_str;
+}
+
+void execute_cmd(const char *cmd)
+{
+    int retval = system(cmd);
+    int status, signal = 0;
+    if ((status = WEXITSTATUS(retval)) != 0) {
+        fprintf(stderr, "Command `%s` failed with %d.\n", cmd, status);
+    }
+    if (WIFSIGNALED(retval)) {
+        signal = WTERMSIG(retval);
+        fprintf(stderr, "Command `%s` terminated with signal %d.\n", cmd,
+                signal);
+    }
+    if (status || signal) {
+        exit(1);
+    }
 }

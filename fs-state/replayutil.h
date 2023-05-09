@@ -18,8 +18,10 @@
 #include "vector.h"
 
 #include "errnoname.h"
-#include "fileutil.h"
+#include "fileutil.h" // includes "abstract_fs.h"
 #include "operations.h"
+
+#define ABSFS_STR_LEN 33
 
 typedef struct concrete_state {
 	int seqid;
@@ -37,8 +39,11 @@ int do_rmdir(vector_t *argvec);
 int do_rename(vector_t *argvec);
 int do_symlink(vector_t *argvec);
 int do_link(vector_t *argvec);
+void populate_replay_basepaths();
 void replayer_init(vector_t states);
 void checkpoint(int seq, vector_t states);
 void restore(vector_t states);
+char *get_replayed_absfs(const char *basepath, unsigned int hash_method, char *abs_state_str);
+void execute_cmd(const char *cmd);
 
 #endif
