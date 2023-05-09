@@ -774,7 +774,8 @@ static bool check_equal_eligible(void)
         if (strcmp(get_fslist()[i], BTRFS_NAME) == 0     || 
                 strcmp(get_fslist()[i], XFS_NAME) == 0   || 
                 strcmp(get_fslist()[i], VERIFS1_NAME) == 0 || 
-                strcmp(get_fslist()[i], NILFS2_NAME) == 0 ) {
+                strcmp(get_fslist()[i], NILFS2_NAME) == 0 ||
+                strcmp(get_fslist()[i], NOVA_NAME) == 0 ) {
             return false;
         }
     }

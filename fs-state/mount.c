@@ -3,6 +3,13 @@
 #include "fileutil.h"
 
 // static bool fs_frozen[N_FS] = {0};
+//TODO: REMOVE AND IMPORT THIS FUNCTION 
+static int execute_cmd_status(const char *cmd)
+{
+    int retval = system(cmd);
+    int status = WEXITSTATUS(retval);
+    return status;
+}
 
 static char *receive_output(FILE *cmdfp, size_t *length)
 {
@@ -57,11 +64,18 @@ void mountall()
 {
     int failpos, err;
     for (int i = 0; i < get_n_fs(); ++i) {
+        int ret = -1;
         /* Skip verifs */
         if (is_verifs(get_fslist()[i]))
             continue;
         /* mount(source, target, fstype, mountflags, option_str) */
-        int ret = mount(get_devlist()[i], get_basepaths()[i], get_fslist()[i], MS_NOATIME, "");
+        else if(is_nova(get_fslist()[i])) {
+            char cmdbuf[PATH_MAX];
+            snprintf(cmdbuf, PATH_MAX, "mount -t NOVA -o noatime %s %s", get_devlist()[i], get_basepaths()[i]);
+            ret = execute_cmd_status(cmdbuf);                       
+        } else {
+            ret = mount(get_devlist()[i], get_basepaths()[i], get_fslist()[i], MS_NOATIME, "");
+        }        
         if (ret != 0) {
             failpos = i;
             err = errno;

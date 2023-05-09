@@ -36,6 +36,7 @@
 #define _SETUP_H_
 
 #define VERIFS_PREFIX       "veri"
+#define NOVA_NAME           "nova"
 #define BTRFS_NAME          "btrfs"
 #define XFS_NAME            "xfs"
 #define VERIFS1_NAME        "verifs1"
@@ -45,6 +46,11 @@
 static inline bool is_verifs(const char *fsname)
 {
     return strncmp(fsname, VERIFS_PREFIX, VERIFS_PREFIX_LEN) == 0;
+}
+
+static inline bool is_nova(const char *fsname)
+{
+    return strcmp(fsname, NOVA_NAME) == 0;
 }
 
 void setup_filesystems();
