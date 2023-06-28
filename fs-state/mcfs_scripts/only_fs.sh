@@ -16,6 +16,7 @@ JFS_SZKB=16384 # 16 MiB
 FSNAME=$1
 FSSZKB=0
 
+# Usage: ./only_fs.sh <file system name>
 if [ -z "$1" ]; then
     echo "Error: File system name is missing."
     exit 1
