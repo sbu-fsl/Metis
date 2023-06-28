@@ -7,16 +7,21 @@
 # 
 # This script should be placed in fs-state/mcfs_scripts folder
 
+CURDIR=$(pwd)
+
 # Supported File Systems: ext4, verifs2, btrfs, jfs
 EXT4_SZKB=256 # 256 KiB
+# Ensure VeriFS2 is installed
 VERIFS2_SZKB=0
+# Ensure VeriFS1 is installed
+VERIFS1_SZKB=0
 BTRFS_SZKB=16384 # 16 MiB
 JFS_SZKB=16384 # 16 MiB
 
 FSNAME=$1
 FSSZKB=0
 
-# Usage: ./only_fs.sh <file system name>
+# Usage: ./only_fs.sh <file system name> (e.g., ./only_fs.sh ext4 1h)
 if [ -z "$1" ]; then
     echo "Error: File system name is missing."
     exit 1
@@ -27,6 +32,8 @@ if [ "$FSNAME" == "ext4" ]; then
     FSSZKB=$EXT4_SZKB
 elif [ "$FSNAME" == "verifs2" ]; then
     FSSZKB=$VERIFS2_SZKB
+elif [ "$FSNAME" == "verifs1" ]; then
+    FSSZKB=$VERIFS1_SZKB
 elif [ "$FSNAME" == "btrfs" ]; then
     FSSZKB=$BTRFS_SZKB
 elif [ "$FSNAME" == "jfs" ]; then
@@ -46,5 +53,18 @@ if [ "$FSSZKB" != 0 ]; then
     modprobe brd rd_nr=1 rd_size=$FSSZKB
 fi
 
-# Run MCFS
-sudo ./setup.sh -f $FSNAME:$FSSZKB
+# If the second argument is not empty
+# Run MCFS script for a specific time period
+if [ -n "$2" ]; then
+    timeout $2 ./setup.sh -f $FSNAME:$FSSZKB
+fi
+
+# Move all the experimental logs to the new folder
+NEWESTCSV=$(ls -t *.csv | head -n1)
+# Time stamp of csv file
+TSCSV="${NEWESTCSV:9: -4}"
+
+NEWDIR="$CURDIR/$1$2-$TSCSV"
+mkdir -p $NEWDIR
+
+mv *$TSCSV.log *$TSCSV.csv *$TSCSV.log.gz *.txt *.img script* $NEWDIR
