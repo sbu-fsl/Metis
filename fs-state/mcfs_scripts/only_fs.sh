@@ -17,6 +17,7 @@ VERIFS2_SZKB=0
 VERIFS1_SZKB=0
 EXT2_SZKB=256
 BTRFS_SZKB=16384 # 16 MiB
+XFS_SZKB=16384 # 16 MiB
 JFS_SZKB=16384 # 16 MiB
 
 FSNAME=$1
@@ -37,6 +38,8 @@ elif [ "$FSNAME" == "verifs1" ]; then
     FSSZKB=$VERIFS1_SZKB
 elif [ "$FSNAME" == "ext2" ]; then
     FSSZKB=$EXT2_SZKB
+elif [ "$FSNAME" == "xfs" ]; then
+    FSSZKB=$XFS_SZKB
 elif [ "$FSNAME" == "btrfs" ]; then
     FSSZKB=$BTRFS_SZKB
 elif [ "$FSNAME" == "jfs" ]; then
