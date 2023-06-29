@@ -15,6 +15,7 @@ EXT4_SZKB=256 # 256 KiB
 VERIFS2_SZKB=0
 # Ensure VeriFS1 is installed
 VERIFS1_SZKB=0
+EXT2_SZKB=256
 BTRFS_SZKB=16384 # 16 MiB
 JFS_SZKB=16384 # 16 MiB
 
@@ -34,6 +35,8 @@ elif [ "$FSNAME" == "verifs2" ]; then
     FSSZKB=$VERIFS2_SZKB
 elif [ "$FSNAME" == "verifs1" ]; then
     FSSZKB=$VERIFS1_SZKB
+elif [ "$FSNAME" == "ext2" ]; then
+    FSSZKB=$EXT2_SZKB
 elif [ "$FSNAME" == "btrfs" ]; then
     FSSZKB=$BTRFS_SZKB
 elif [ "$FSNAME" == "jfs" ]; then
@@ -64,7 +67,7 @@ NEWESTCSV=$(ls -t *.csv | head -n1)
 # Time stamp of csv file
 TSCSV="${NEWESTCSV:9: -4}"
 
-NEWDIR="$CURDIR/$1$2-$TSCSV"
+NEWDIR="$CURDIR/$1-$2-$FSSZKB-$TSCSV"
 mkdir -p $NEWDIR
 
 mv *$TSCSV.log *$TSCSV.csv *$TSCSV.log.gz *.txt *.img script* $NEWDIR
