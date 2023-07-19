@@ -40,3 +40,8 @@ reproducer
 replay
 replay_dump
 min_repro
+# Swarm verification
+script[0-9]*
+script[0-9]*.err
+script[0-9]*.out
+mcfs-main.pml.swarm
