@@ -45,3 +45,4 @@ script[0-9]*
 script[0-9]*.err
 script[0-9]*.out
 mcfs-main.pml.swarm
+swarm_done_s*

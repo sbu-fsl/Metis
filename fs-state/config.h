@@ -25,6 +25,4 @@
 #define MCFS_NAME_LEN 4
 #endif
 
-int i;
-
 #endif // _FSSTATE_CONFIG_H_

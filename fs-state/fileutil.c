@@ -113,8 +113,9 @@ bool compare_equality_values(char **fses, int n_fs, int *nums)
     }
     if (!res) {
         logwarn("[seqid=%zu] discrepancy in values found:", count);
-        for (int i = 0; i < n_fs; ++i)
+        for (int i = 0; i < n_fs; ++i) {
             logwarn("[%s]: %d", fses[i], nums[i]);
+        }
     }
     return res;
 }

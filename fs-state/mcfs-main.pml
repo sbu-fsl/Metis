@@ -27,13 +27,13 @@ proctype worker()
             mountall();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d, 0%o", 
                         create_file, get_filepool()[i][src_idx], Pworker->create_flag, Pworker->create_mode);
                 }
             }
             else {
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d, 0%o", 
                         create_file, get_testfiles()[i], Pworker->create_flag, Pworker->create_mode);
                 }
@@ -61,7 +61,7 @@ proctype worker()
             generate_data(data, Pworker->writelen, Pworker->offset, BYTE_REPEAT, Pworker->writebyte);
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d, %p, %ld, %zu", 
                             write_file, get_filepool()[i][src_idx], Pworker->write_flag, data,
                             (off_t)Pworker->offset, (size_t)Pworker->writelen);
@@ -69,7 +69,7 @@ proctype worker()
                 free(data);
             }
             else {
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d, %p, %ld, %zu", 
                             write_file, get_testfiles()[i], Pworker->write_flag, data,
                             (off_t)Pworker->offset, (size_t)Pworker->writelen);
@@ -95,13 +95,13 @@ proctype worker()
             // off_t flen = pick_value(0, 200000, 10000);
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %ld", truncate, 
                         get_filepool()[i][src_idx], (off_t)Pworker->filelen);
                 }
             }
             else {
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %ld", truncate, 
                         get_testfiles()[i], (off_t)Pworker->filelen);
                 }
@@ -120,13 +120,13 @@ proctype worker()
             mountall();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s", unlink, 
                         get_filepool()[i][src_idx]);
                 }
             }
             else {
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s", unlink, 
                         get_testfiles()[i]);
                 }
@@ -145,13 +145,13 @@ proctype worker()
             mountall();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_dpoolsize() - 1);
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, 0%o", mkdir, 
                         get_directorypool()[i][src_idx], 0755);
                 }
             }
             else {
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, 0%o", mkdir, 
                         get_testdirs()[i], 0755);
                 }
@@ -171,13 +171,13 @@ proctype worker()
             mountall();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_dpoolsize() - 1);
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s", rmdir, 
                         get_directorypool()[i][src_idx]);
                 }
             }
             else {
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s", rmdir, 
                         get_testdirs()[i]);
                 }
@@ -197,13 +197,13 @@ proctype worker()
             mountall();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, 0%o", 
                         chmod, get_filepool()[i][src_idx], Pworker->chmod_mode);
                 }
             }
             else {
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, 0%o", 
                         chmod, get_testfiles()[i], Pworker->chmod_mode);
                 }
@@ -223,13 +223,13 @@ proctype worker()
             mountall();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d", 
                         chown_file, get_filepool()[i][src_idx], (int) Pworker->chown_owner);
                 }
             }
             else {
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d", 
                         chown_file, get_testfiles()[i], (int) Pworker->chown_owner);
                 }
@@ -249,13 +249,13 @@ proctype worker()
             mountall();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d", 
                         chgrp_file, get_filepool()[i][src_idx], (int) Pworker->chown_group);
                 }
             }
             else {
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d", 
                         chgrp_file, get_testfiles()[i], (int) Pworker->chown_group);
                 }
@@ -274,7 +274,7 @@ proctype worker()
             mountall();
             int name_idx = random() % 2;
             int src_idx = pick_random(0, get_fpoolsize() - 1);
-            for (i = 0; i < get_n_fs(); ++i) {
+            for (int i = 0; i < get_n_fs(); ++i) {
                 get_xfpaths()[i] = get_filepool()[i][src_idx];
                 makecall(get_rets()[i], get_errs()[i], "%s, %s, %s, %zu, %d", setxattr, 
                     get_filepool()[i][src_idx], xattr_names[name_idx], 
@@ -296,7 +296,7 @@ proctype worker()
             mountall();
             int name_idx = random() % 2;
             int src_idx = pick_random(0, get_fpoolsize() - 1);
-            for (i = 0; i < get_n_fs(); ++i) {
+            for (int i = 0; i < get_n_fs(); ++i) {
                 get_xfpaths()[i] = get_filepool()[i][src_idx];
                 makecall(get_rets()[i], get_errs()[i], "%s, %s", removexattr, 
                     get_filepool()[i][src_idx], xattr_names[name_idx]);
@@ -322,7 +322,7 @@ proctype worker()
                     int src_idx = pick_random(0, get_fpoolsize() - 1);
                     int dst_idx = pick_random(0, get_fpoolsize() - 1);
 
-                    for (i = 0; i < get_n_fs(); ++i) {
+                    for (int i = 0; i < get_n_fs(); ++i) {
                         makecall(get_rets()[i], get_errs()[i], "%s, %s", rename, 
                             get_filepool()[i][src_idx], get_filepool()[i][dst_idx]);
                     }
@@ -332,7 +332,7 @@ proctype worker()
                     int src_idx = pick_random(0, get_dpoolsize() - 1);
                     int dst_idx = pick_random(0, get_dpoolsize() - 1);
 
-                    for (i = 0; i < get_n_fs(); ++i) {
+                    for (int i = 0; i < get_n_fs(); ++i) {
                         makecall(get_rets()[i], get_errs()[i], "%s, %s", rename, 
                             get_directorypool()[i][src_idx], get_directorypool()[i][dst_idx]);
                     }
@@ -356,7 +356,7 @@ proctype worker()
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 int dst_idx = pick_random(0, get_fpoolsize() - 1);
 
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %s", link, 
                        get_filepool()[i][src_idx], get_filepool()[i][dst_idx]);
                 }
@@ -378,7 +378,7 @@ proctype worker()
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 int dst_idx = pick_random(0, get_fpoolsize() - 1);
 
-                for (i = 0; i < get_n_fs(); ++i) {
+                for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %s", symlink, 
                         get_filepool()[i][src_idx], get_filepool()[i][dst_idx]);
                 }
