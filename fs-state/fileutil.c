@@ -582,8 +582,10 @@ static void precreate_pools()
     size_t path_len;
     char *path_name;
     mountall();
+    fprintf(stdout, "\nPrecreated files or dirs before checking: \n");
     for (int i = 0; i < combo_pool_idx; ++i) {
         if (need_pre_create(fs_exist_prob)) {
+            fprintf(stdout, "\tFile/Dir: %s\n", bfs_fd_pool[i]);
             for (int j = 0; j < get_n_fs(); ++j) {
                 path_len = snprintf(NULL, 0, "%s%s", get_basepaths()[j], bfs_fd_pool[i]);
                 path_name = calloc(1, path_len + 1);
@@ -598,6 +600,7 @@ static void precreate_pools()
             }
         }
     }
+    fprintf(stdout, "\n");
     unmount_all_strict();
     /* Free the temp file/dir pool to save memory */
     for (int i = 0; i < combo_pool_idx; ++i) {
