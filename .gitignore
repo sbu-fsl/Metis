@@ -40,6 +40,7 @@ reproducer
 replay
 replay_dump
 min_repro
+lsof-pan*.txt
 # Swarm verification
 script[0-9]*
 script[0-9]*.err
