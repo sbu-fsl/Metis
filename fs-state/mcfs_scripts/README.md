@@ -2,7 +2,7 @@
 
 ## Scripts to run MCFS experiments
 
-- **only_fs.sh:** run one file system only (without reference file system and swarm)
+- **only_one_fs.sh:** run one file system only (without reference file system and swarm)
 - **single_fs.sh:** test one file system with a reference file system (Ext4 by default) with single VT (without swarm)
 - **swarm_fs.sh:** test one file system with a reference file system (Ext4 by default) with swarm
 - **gcov_fs.sh:** test one file system and record Gcov code coverage with a reference file system (Ext4 by default) with single VT (without swarm)
