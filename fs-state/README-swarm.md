@@ -152,17 +152,17 @@ case `hostname` in
 		scp mcfs-main.pml.swarm yifeilatest5:../mcfs-swarm/mcfs-main.pml.swarm
 		if [ $XEC -eq 0 ]
 		then
-			ssh -p 130 yifeilatest5 "sh ../mcfs-swarm/mcfs-main.pml.swarm prep" &
+			ssh -p 130 yifeilatest5 "cd /mcfs-swarm/ && sh ./mcfs-main.pml.swarm prep" &
 		else
-			ssh -p 130 yifeilatest5 "sh ../mcfs-swarm/mcfs-main.pml.swarm" &
+			ssh -p 130 yifeilatest5 "cd /mcfs-swarm/ && sh ./mcfs-main.pml.swarm" &
 		fi
 		scp mcfs-main.pml yifeilatest4:../mcfs-swarm/mcfs-main.pml
 		scp mcfs-main.pml.swarm yifeilatest4:../mcfs-swarm/mcfs-main.pml.swarm
 		if [ $XEC -eq 0 ]
 		then
-			ssh -p 130 yifeilatest4 "sh ../mcfs-swarm/mcfs-main.pml.swarm prep" &
+			ssh -p 130 yifeilatest4 "cd /mcfs-swarm/ && sh ./mcfs-main.pml.swarm prep" &
 		else
-			ssh -p 130 yifeilatest4 "sh ../mcfs-swarm/mcfs-main.pml.swarm" &
+			ssh -p 130 yifeilatest4 "cd /mcfs-swarm/ && sh ./mcfs-main.pml.swarm" &
 		fi
 		;;
 esac
