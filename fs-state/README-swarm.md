@@ -73,7 +73,112 @@ but encountered some issues and therefore it is not yet completely supported.
 
 4. It should start to run and you can see the logs.
 
-### Distributed settings (Not perfect yet)
+### Distributed settings on multiple machines (Updated on 07/21/2023 by Yifei)
+
+***Swarm/MCFS master and client setup:***
+
+Before running Swarm verification on multiple machines, we need to specify 
+a machine as the "master" of all Swarm nodes.  Master machine is the one to 
+send the scripts and all the files required to compile pan verifiers 
+to all other clients machines via ssh/scp.
+
+For the case of 6 VTs for one master machine and two client machines, 18 VTs in total,
+the master machine will compile 6 pan verififers (pan1-pan6) and create 18 "scripts" (script0-script17).
+After sending files to client machines, all these clients will run `mcfs-main.pml.swarm` file and 
+compile the 6 pan verifiers again and run scripts to start VTs.
+Every script uses only one dedicate pan verifier --- script0/6/12 uses pan1, script5/11/17 uses pan6, etc.
+Every pan execution command (`./pan*`) uses different random seed (`-RS`).
+
+***Prerequisites:***
+
+1. On the master machine, we need to edit the `cpus` field of the `swarm.lib` 
+   file.  Specify the hostname **(as shown in `vim ~/.ssh/config` in the master machine and the `hostname` in the client machines)** 
+   and number of VTs for each machine.  
+   For example, `cpus	6	yifeilatest4:6       yifeilatest5:6 # nr available cpus (exact)`
+
+2. Double-check if the `hostname` on the client machines are correct.  If not,
+   run command `sudo hostname new-server-name-here` and edit `/etc/hostname`.
+   We can change the `hostname` without restarting the machine.  We may need to 
+   edit `/etc/hosts` as well.
+
+3. Make sure the master machine can connect to all the other client machines
+   via ssh without password.  If not yet, use `ssh-copy-id` to copy ssh keys
+   to other clients.
+
+3. Make sure the client machines have `nfs4mc` repo in the root directory
+
+4. Make sure all the machines have installed MCFS libraries --- go to `nfs4mc`
+   directory, and do `make` and `make install`.
+
+5. Make sure all the machines have the devices ready for mounting the file
+   systems under testing with correct sizes.  If we want to test VeriFS,
+   we need to install the VeriFS on the machines first.
+
+Examples of editting directories for remote machines as follows
+
+Example of `setup_swarm.sh`:
+```bash
+REMOTEDIR="/mcfs-swarm/"
+# Use ssh and scp to set up swarm for remotes
+count=0
+for i in $(grep -Po '\t.*:\d+( |\t)' ${SWARM_CONF}); do
+	if [ $count -ge 1 ]; then
+		remote=$(echo $i | awk -F ':' '{print $1}');
+		scp libsmcfs.a "$remote":${REMOTEDIR}libsmcfs.a;
+		scp parameters.pml "$remote":${REMOTEDIR}parameters.pml;
+		scp Makefile "$remote":${REMOTEDIR}Makefile;
+		scp 'stop.sh' "$remote":${REMOTEDIR}'stop.sh'
+		# ssh "$remote" "sh ./nfs-validator/fs-state/loadmods.sh" &
+		if [ "$USE_ENV_VAR" = "1" ]; then
+			for (( j=1; j<=$NUM_PAN; j++ )); do
+				ssh "$remote" "MCFS_FSLIST$j=$MCFSLIST"
+			done
+		fi
+	fi
+	count=$((count+1));
+done
+```
+
+Example of `mcfs-main.pml.swarm`:
+```bash
+# start up the remote executions:
+case `hostname` in
+	yifeilatest5)
+		;;
+	yifeilatest4)
+		;;
+	*)
+		scp mcfs-main.pml yifeilatest5:../mcfs-swarm/mcfs-main.pml
+		scp mcfs-main.pml.swarm yifeilatest5:../mcfs-swarm/mcfs-main.pml.swarm
+		if [ $XEC -eq 0 ]
+		then
+			ssh -p 130 yifeilatest5 "sh ../mcfs-swarm/mcfs-main.pml.swarm prep" &
+		else
+			ssh -p 130 yifeilatest5 "sh ../mcfs-swarm/mcfs-main.pml.swarm" &
+		fi
+		scp mcfs-main.pml yifeilatest4:../mcfs-swarm/mcfs-main.pml
+		scp mcfs-main.pml.swarm yifeilatest4:../mcfs-swarm/mcfs-main.pml.swarm
+		if [ $XEC -eq 0 ]
+		then
+			ssh -p 130 yifeilatest4 "sh ../mcfs-swarm/mcfs-main.pml.swarm prep" &
+		else
+			ssh -p 130 yifeilatest4 "sh ../mcfs-swarm/mcfs-main.pml.swarm" &
+		fi
+		;;
+esac
+```
+
+
+***Steps of running Swarm verification on multiple machines:*** 
+
+## Troubleshooting
+
+### swarm: no pan.c; cannot proceed
+Use `ssh -p 130 yifeilatest5 "cd /mcfs-swarm/ && sh ./mcfs-main.pml.swarm" &` instead 
+of `ssh -p 130 yifeilatest5 "sh /mcfs-swarm/mcfs-main.pml.swarm" &` because the default 
+directory to run shell script on remote machines is root (`~/`) and we need to change
+directory to the one has those files (`cd /mcfs-swarm/`) first.
+
 
 ## How to evaluate?
 
