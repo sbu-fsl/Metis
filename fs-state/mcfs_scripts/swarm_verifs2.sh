@@ -9,6 +9,7 @@
 
 # For long experiment: we can do "rm -r test-ext4-i* && rm -r test-verifs2-i*" first
 
+# This is the number of VTs 
 NUMVT=6
 
 # EXT4_SZKB=256

@@ -111,7 +111,8 @@ Every pan execution command (`./pan*`) uses different random seed (`-RS`).
    directory, and do `make` and `make install`.
 
 5. Make sure all the machines have the devices ready for mounting the file
-   systems under testing with correct sizes.  If we want to test VeriFS,
+   systems under testing with correct sizes (we no longer run the load device scripts
+   remotely by `setup_swarm.sh`).  If we want to test VeriFS,
    we need to install the VeriFS on the machines first.
 
 Examples of editting directories for remote machines as follows
@@ -168,8 +169,23 @@ case `hostname` in
 esac
 ```
 
-
 ***Steps of running Swarm verification on multiple machines:*** 
+
+Before running swarm, make sure the environment is clean.  May need to do `make clean`.
+
+1. Modify `REMOTEDIR` variable in `setup_swarm.sh`.
+
+2. Run corresonding swarm in `/mcfs_scripts`, e.g., running `./swarm_verifs2.sh` for 
+   running swarm with Ext4 vs. VeriFS2.  Make sure setting the number of VTs and device sizes, 
+   and using the correct load device script.  The `./swarm_verifs2.sh` scripts calls 
+   `setup_swarm.sh` script where `./mcfs-main.pml.swarm` will not be executed by default.
+
+3. After running `./swarm_verifs2.sh`, edit the generated `mcfs-main.pml.swarm` file for 
+   using the correct ssh/scp commands and remote directories.
+   (we can copy from `README-swarm.md` -- Example of `mcfs-main.pml.swarm`)
+
+4. Run `mcfs-main.pml.swarm` by `./mcfs-main.pml.swarm` on the master machine.  Swarm should 
+   be running on the master and all the other client machines.
 
 ## Troubleshooting
 
