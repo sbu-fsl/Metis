@@ -4,8 +4,8 @@
 # trap read debug
 
 MNTPNT="/mnt/test-nilfs2"
-BRD_DIR="/home/ubuntu/nfs4mc/kernel/brd-for-6.2.12"
-IMGFILE_DIR="/home/ubuntu/testing/reproduce_oops"
+BRD_DIR="/mcfs/jfs-mcfs-2023-0427/nfs4mc/kernel/brd-for-6.3.0"
+IMGFILE_DIR="/mcfs/jfs-mcfs-2023-0427/nfs4mc/reproduce_oops"
 DEVFILE="/dev/ram0"
 
 for file in "$IMGFILE_DIR"/*; do
