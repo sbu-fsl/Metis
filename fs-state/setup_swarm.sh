@@ -436,16 +436,22 @@ fi
 
 # Compile MCFS library: libsmcfs.a
 runcmd make install
+
+# IMPORTANT: directory on remote machines to copy files to
+# If REMOTEDIR is empty, meaning the root directory "~/"
+REMOTEDIR="/mcfs-swarm/"
 # Use ssh and scp to set up swarm for remotes
 count=0
 for i in $(grep -Po '\t.*:\d+( |\t)' ${SWARM_CONF}); do
 	if [ $count -ge 1 ]; then
-		remote=$(echo $i | awk -F ':' '{print $1}');
-		scp libsmcfs.a "$remote":libsmcfs.a;
-		scp parameters.pml "$remote":parameters.pml;
-		scp Makefile "$remote":Makefile;
-		scp 'stop.sh' "$remote":'stop.sh'
-		ssh "$remote" "sh ./nfs-validator/fs-state/loadmods.sh" &
+		remote=$(echo $i | awk -F ':' '{print $1}')
+		scp libsmcfs.a "$remote":${REMOTEDIR}libsmcfs.a
+		scp parameters.pml "$remote":${REMOTEDIR}parameters.pml
+        scp pan.c "$remote":${REMOTEDIR}pan.c
+		scp Makefile "$remote":${REMOTEDIR}Makefile
+		scp 'stop.sh' "$remote":${REMOTEDIR}'stop.sh'
+        # We do not run loadmods.sh on remote machines any more
+		# ssh "$remote" "sh ./nfs-validator/fs-state/loadmods.sh" &
 		if [ "$USE_ENV_VAR" = "1" ]; then
 			for (( j=1; j<=$NUM_PAN; j++ )); do
 				ssh "$remote" "MCFS_FSLIST$j=$MCFSLIST"
@@ -471,4 +477,17 @@ if [ "$NUM_PAN" -lt "$MAX_PAN_NUM" ]; then
     sed -i "$(($NUM_PAN+$FIRST_OPT_LINE)),$LAST_OPT_LINE s/^#//" $SWARM_CONF
 fi
 
-runcmd ./mcfs-main.pml.swarm
+# IMPORTANT: the following line to run swarm (./mcfs-main.pml.swarm) can 
+# be commented out if you want to set the client swarm paths manually.
+# To do so, find all the "scp" and "ssh" in mcfs-main.pml.swarm and add 
+# the exact absoluate path as the prefix of the files to send.  
+
+# Example: change "scp mcfs-main.pml yifeilatest5:mcfs-main.pml"
+# to "scp mcfs-main.pml yifeilatest5:/mcfs-swarm/mcfs-main.pml"
+# with "/mcfs-swarm/" added
+
+# We can also decide which script to load devices manually (e.g., "loadmods.sh" or "loadlargebrds.sh").
+
+# Finally, we can run swarm with "./mcfs-main.pml.swarm"
+
+# runcmd ./mcfs-main.pml.swarm

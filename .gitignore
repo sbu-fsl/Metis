@@ -36,3 +36,14 @@ reproducer
 *.gcno
 *.gcda
 *.gcov
+.brd.o.d 
+replay
+replay_dump
+min_repro
+lsof-pan*.txt
+# Swarm verification
+script[0-9]*
+script[0-9]*.err
+script[0-9]*.out
+mcfs-main.pml.swarm
+swarm_done_s*

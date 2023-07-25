@@ -1,5 +1,14 @@
 # Usage of MCFS to Test Various File Systems
 
+## Scripts to run MCFS experiments
+
+- **only_one_fs.sh:** run one file system only (without reference file system and swarm)
+- **single_fs.sh:** test one file system with a reference file system (Ext4 by default) with single VT (without swarm)
+- **swarm_fs.sh:** test one file system with a reference file system (Ext4 by default) with swarm
+- **gcov_fs.sh:** test one file system and record Gcov code coverage with a reference file system (Ext4 by default) with single VT (without swarm)
+- **gcov_fs_swarm.sh:** test one file system and record Gcov code coverage with a reference file system (Ext4 by default) with swarm
+- **lttng_iocov_mcfs.sh:** run one file system only (Ext4 by default) and use lttng to trace system calls
+
 ## Minimum device size for different file systems
 
 BtrFS: 16 MiB, must use mkfs.btrfs -M option

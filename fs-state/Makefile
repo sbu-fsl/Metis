@@ -44,12 +44,19 @@ abstractfs-test: $(COMMON_DIR)/abstract_fs.cpp common-libs
 	g++ -std=c++11 -g -Wall -Werror -o absfs $< common-libs.a -DABSFS_TEST \
 		-I../include -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lprofiler -lxxhash -lz
 
-replayer: replay.c init_globals.o setup.c mount.c common-libs
-	gcc -o replay replay.c init_globals.o setup.c mount.c \
+replayer: replay.c replayutil.o init_globals.o setup.c mount.c common-libs
+	gcc -o replay replay.c replayutil.o init_globals.o setup.c mount.c \
 		-DNO_FS_STAT common-libs.a $(CFLAGS) $(LIBS)
 
-replayer_dump: replay_dump.c init_globals.o setup.c mount.c common-libs
-	gcc -o replay replay.c init_globals.o setup.c mount.c \
+replayer_dump: replay_dump.c replayutil.o init_globals.o setup.c mount.c common-libs
+	gcc -o replay_dump replay_dump.c replayutil.o init_globals.o setup.c mount.c \
+		-DNO_FS_STAT common-libs.a $(CFLAGS) $(LIBS)
+
+replayutil.o: replayutil.c 
+	gcc -o replayutil.o -fPIC -c replayutil.c $(CFLAGS) $(LIBS)
+
+min_repro: min_repro.c replayutil.o init_globals.o setup.c mount.c common-libs
+	gcc -o min_repro min_repro.c replayutil.o init_globals.o setup.c mount.c \
 		-DNO_FS_STAT common-libs.a $(CFLAGS) $(LIBS)
 
 clean:
