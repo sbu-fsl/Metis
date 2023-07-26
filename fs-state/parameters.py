@@ -5,28 +5,28 @@ from parameter_util import SpecialParameters, RangeParameters, BitshiftParameter
 import sys
 
 """
-O_CREAT|O_WRONLY: 65
-O_CREAT|O_WRONLY|O_EXCL: 193
-O_CREAT|O_WRONLY|O_TRUNC: 577 (creat)
-O_CREAT|O_WRONLY|O_DIRECT: 16449
+octal 101 (dec. 65): O_CREAT|O_WRONLY
+octal 301 (dec. 193): O_CREAT|O_WRONLY|O_EXCL
+octal 1101 (dec. 577) (creat syscall & create_file): O_CREAT|O_WRONLY|O_TRUNC
+octal 40101 (dec. 16449): O_CREAT|O_WRONLY|O_DIRECT
 """
 create_open_flag = make_params_pml('create_open_flag',
         SpecialParameters(65, 193, 577, 16449))
 
 """
-600 (dec. 384): only the owner of the file has full read and write access to it.
-640 (dec. 416): owner can read/write, group can read, others cannot read
-644 (dec. 420): owner can read/write, group/others can read only.
-755 (dec. 493): owner can read/write/execute, group/others can read/execute.
-777 (dec. 511): all can read/write/execute (full access).
+octal 600 (dec. 384): only the owner of the file has full read and write access to it.
+octal 640 (dec. 416): owner can read/write, group can read, others cannot read
+octal 644 (dec. 420): owner can read/write, group/others can read only.
+octal 755 (dec. 493): owner can read/write/execute, group/others can read/execute.
+octal 777 (dec. 511): all can read/write/execute (full access).
 """
 create_open_mode = make_params_pml('create_open_mode',
         SpecialParameters(384, 416, 420, 493, 511))
 
 """
-O_RDWR: 2 (write_file)
-O_RDWR|O_APPEND: 1026
-O_RDWR|O_SYNC: 1052674
+octal 2 (dec. 2): O_RDWR (write_file)
+octal 2002 (dec. 1026): O_RDWR|O_APPEND
+octal 4010002 (dec. 1052674): O_RDWR|O_SYNC
 """
 write_open_flag = make_params_pml('write_open_flag',
         SpecialParameters(2, 1026, 1052674))
