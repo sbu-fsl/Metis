@@ -31,25 +31,15 @@ octal 4010002 (dec. 1052674): O_RDWR|O_SYNC
 write_open_flag = make_params_pml('write_open_flag',
         SpecialParameters(0o2, 0o2002, 0o4010002))
 
-# write_offset = make_params_pml('write_offset',
-#         SpecialParameters(1, 123, 511, 1025, 4101, 16399, 65501),
-#         RangeParameters(0, 65536, 4096),
-#         RangeParameters(11, 11111, 3333))
-
 write_offset = make_params_pml('write_offset',
-        BitshiftParameters(1, 65536),
-        NearboundaryParameters(1, 65536))
-
-# write_size = make_params_pml('write_size',
-#         SpecialParameters(3, 555, 1021, 4001, 16355, 64409),
-#         RangeParameters(0, 32768, 6144),
-#         RangeParameters(13, 33333, 7777))
+        BitshiftParameters(1, 17592186044416),
+        NearboundaryParameters(1, 17592186044416))
 
 # 4294967296: 2^32
 # 17592186044416: 2^44 16 TiB (ext4 max file size)
 write_size = make_params_pml('write_size',
-        BitshiftParameters(1, 65536),
-        NearboundaryParameters(1, 65536))
+        BitshiftParameters(1, 17592186044416),
+        NearboundaryParameters(1, 17592186044416))
 
 # write_byte = make_params_pml('write_byte',
 #         RangeParameters(0, 255, 1))
@@ -74,8 +64,8 @@ write_byte = make_params_pml('write_byte',
 #         RangeParameters(0, 260000, 29876))
 
 truncate_len = make_params_pml('truncate_len',
-        BitshiftParameters(1, 65536),
-        NearboundaryParameters(1, 65536))
+        BitshiftParameters(1, 17592186044416),
+        NearboundaryParameters(1, 17592186044416))
         
 
 """
