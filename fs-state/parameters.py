@@ -11,7 +11,7 @@ octal 1101 (dec. 577) (creat syscall & create_file): O_CREAT|O_WRONLY|O_TRUNC
 octal 40101 (dec. 16449): O_CREAT|O_WRONLY|O_DIRECT
 """
 create_open_flag = make_params_pml('create_open_flag',
-        SpecialParameters(65, 193, 577, 16449))
+        SpecialParameters(0o101, 0o301, 0o1101, 0o40101))
 
 """
 octal 600 (dec. 384): only the owner of the file has full read and write access to it.
@@ -21,7 +21,7 @@ octal 755 (dec. 493): owner can read/write/execute, group/others can read/execut
 octal 777 (dec. 511): all can read/write/execute (full access).
 """
 create_open_mode = make_params_pml('create_open_mode',
-        SpecialParameters(384, 416, 420, 493, 511))
+        SpecialParameters(0o600, 0o640, 0o644, 0o755, 0o777))
 
 """
 octal 2 (dec. 2): O_RDWR (write_file)
@@ -29,7 +29,7 @@ octal 2002 (dec. 1026): O_RDWR|O_APPEND
 octal 4010002 (dec. 1052674): O_RDWR|O_SYNC
 """
 write_open_flag = make_params_pml('write_open_flag',
-        SpecialParameters(2, 1026, 1052674))
+        SpecialParameters(0o2, 0o2002, 0o4010002))
 
 # write_offset = make_params_pml('write_offset',
 #         SpecialParameters(1, 123, 511, 1025, 4101, 16399, 65501),
