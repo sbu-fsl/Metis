@@ -7,6 +7,36 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
+inputs_t *inputs_t_p = NULL;
+
+double inverseFlagPercent[MAX_FLAG_BITS] = {0};
+
+const double flagBitPercent[MAX_FLAG_BITS] = {
+    10.12, //	O_WRONLY	0
+    9.02, //	O_RDWR	1
+    0.00, //	N/A	2
+    0.00, //	N/A	3
+    0.00, //	N/A	4
+    0.00, //	N/A	5
+    13.87, //	O_CREAT	6
+    7.49, //	O_EXCL	7
+    0.69, //	O_NOCTTY	8
+    9.43, //	O_TRUNC	9
+    4.58, //	O_APPEND	10
+    9.15, //	O_NONBLOCK	11
+    2.77, //	O_DSYNC	12
+    2.36, //	FASYNC	13
+    10.68, //	O_DIRECT	14
+    5.41, //	O_LARGEFILE	15
+    2.50, //	O_DIRECTORY	16
+    1.39, //	O_NOFOLLOW	17
+    2.22, //	O_NOATIME	18
+    4.16, //	O_CLOEXEC	19
+    0.97, //	__O_SYNC	20
+    2.77, //	O_PATH	21
+    0.42 //	__O_TMPFILE	22
+};
+
 int create_file(const char *path, int flags, int mode)
 {
     int fd = open(path, flags, mode);
@@ -79,12 +109,39 @@ int chgrp_file(const char *path, gid_t group)
     return chown(path, -1, group);
 }
 
-static int pick_driver_open_flags()
+/* MCFS DRIVER FUNCTIONS FOR INPUT COVERAGE */
+
+void syscall_inputs_init()
 {
-    int flags = 0;
-    // TODO: maybe call this srand only once at the beginning
     srand(time(0));
-    if (IS_UNIFORM_FLAG) {
+    inputs_t_p = (inputs_t *)malloc(sizeof(inputs_t));
+    if (inputs_t_p == NULL) {
+        fprintf(stderr, "Error: malloc failed for syscall_inputs_init\n");
+        exit(1);
+    }
+    inputs_t_p->open_flag = 0;
+    // Populate inverseFlagPercent array based on flagBitPercent
+    double total = 0;
+    // Subtract from 100% and calculate total
+    for (int i = 0; i < MAX_FLAG_BITS; i++) {
+        inverseFlagPercent[i] = 100 - flagBitPercent[i];
+        total += inverseFlagPercent[i];
+    }
+    // Normalize to 100%
+    for (int i = 0; i < MAX_FLAG_BITS; i++) {
+        inverseFlagPercent[i] = inverseFlagPercent[i] / total * 100;
+    }
+}
+
+/*
+ * Pattern: 0 - uniform, 1 - probability, 2 - inversed probability
+ */
+static void pick_open_flags(int pattern)
+{
+    // srand(time(0)) already called at syscall_inputs_init()
+    int flags = 0;
+    // Uniform 
+    if (pattern == 0) {
         for (int i = 0; i < MAX_FLAG_BITS; i++) {
             // [0, 1) (i.e., up to but not including 1)
             if ((double)rand() / (RAND_MAX) < UNIFORM_FLAG_RATE) {
@@ -92,19 +149,34 @@ static int pick_driver_open_flags()
             }
         }
     }
-    else {
+    // Probability
+    else if (pattern == 1) {
         for (int i = 0; i < sizeof(flagBitPercent)/sizeof(flagBitPercent[0]); i++) {
             if ((double)rand() / (RAND_MAX) * 100 < flagBitPercent[i] * PROB_FACTOR) {
                 flags |= 1 << i;
             }
         }
     }
-    return flags;
+    // Inversed probability
+    else if (pattern == 2) {
+        for (int i = 0; i < sizeof(inverseFlagPercent)/sizeof(inverseFlagPercent[0]); i++) {
+            if ((double)rand() / (RAND_MAX) * 100 < inverseFlagPercent[i] * PROB_FACTOR) {
+                flags |= 1 << i;
+            }
+        }        
+    }
+    else {
+        fprintf(stderr, "Error: invalid open flags pattern\n");
+        exit(1);
+    }
+    inputs_t_p->open_flag = flags;
 }
 
-int driver_create_file(const char *path, int flags, int mode, bool is_uniform_flag)
+int driver_create_file(const char *path, int mode)
 {
-
+    int flags = 0;
+    pick_open_flags(OPEN_FLAG_PATTERN);
+    flags = inputs_t_p->open_flag;
     int fd = open(path, flags, mode);
     if (fd >= 0) {
         close(fd);
@@ -112,7 +184,7 @@ int driver_create_file(const char *path, int flags, int mode, bool is_uniform_fl
     return (fd >= 0) ? 0 : -1;
 }
 
-ssize_t driver_write_file(const char *path, int flags, void *data, off_t offset, size_t length, bool is_uniform_flag)
+ssize_t driver_write_file(const char *path, int flags, void *data, off_t offset, size_t length)
 {
     int fd = open(path, flags, O_RDWR);
     int err;

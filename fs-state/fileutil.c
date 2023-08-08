@@ -893,6 +893,9 @@ void __attribute__((constructor)) init()
     /* Initialize absfs-set used for counting unique states */
     absfs_set_init(&absfs_set);
 
+    /* Initialize inputs of syscall operations */
+    syscall_inputs_init();
+
     /* Fill dummy data so that all file systems have the same amount of free
      * space (Only for non-VeriFS experiments, because currently VeriFS1 doesn't
      * have support for statvfs() yet) */

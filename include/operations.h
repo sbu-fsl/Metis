@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <stddef.h>
 #include <sys/types.h>
 
 #ifndef _OPERATIONS_H
@@ -18,33 +19,32 @@
 // 0 < PROB_FACTOR < 1 means decrease the probabilities
 #define PROB_FACTOR 1
 
+// 0 - uniform, 1 - probability, 2 - inversed probability
+#define OPEN_FLAG_PATTERN 0 
+
+/* 
+ * Currently we don't add "size_t write_size;" to the struct
+ * because we can use if...fi to select write size
+ */
+typedef struct all_inputs {
+    int open_flag;
+} inputs_t;
+
+extern inputs_t *inputs_t_p;
+
+void syscall_inputs_init();
+
 // Probable weight for each open flags
-// Does not need to be real percentage value, can represent weights for each flag
-const double flagBitPercent = {
-    10.12, //	O_WRONLY	0
-    9.02, //	O_RDWR	1
-    0.00, //	N/A	2
-    0.00, //	N/A	3
-    0.00, //	N/A	4
-    0.00, //	N/A	5
-    13.87, //	O_CREAT	6
-    7.49, //	O_EXCL	7
-    0.69, //	O_NOCTTY	8
-    9.43, //	O_TRUNC	9
-    4.58, //	O_APPEND	10
-    9.15, //	O_NONBLOCK	11
-    2.77, //	O_DSYNC	12
-    2.36, //	FASYNC	13
-    10.68, //	O_DIRECT	14
-    5.41, //	O_LARGEFILE	15
-    2.50, //	O_DIRECTORY	16
-    1.39, //	O_NOFOLLOW	17
-    2.22, //	O_NOATIME	18
-    4.16, //	O_CLOEXEC	19
-    0.97, //	__O_SYNC	20
-    2.77, //	O_PATH	21
-    0.42 //	__O_TMPFILE	22
-};
+// Does not need to be real percentage value, as long as it can represent weights for each flag
+/*
+ * TODO: more flexible Probabilities Three different variants: uniform, prob, inverse-prob
+ * 1. Probabilities in the kernel
+ * 2. Inverse variant probs: more occurrence in the kernel, less prob to be chosen (think about it)
+ * Find out the inverse probality of each flag bit
+ */
+extern const double flagBitPercent[MAX_FLAG_BITS];
+
+extern double inverseFlagPercent[MAX_FLAG_BITS];
 
 int create_file(const char *path, int flags, int mode);
 ssize_t write_file(const char *path, int flags, void *data, off_t offset, size_t length);
