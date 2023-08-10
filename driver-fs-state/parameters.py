@@ -37,9 +37,18 @@ write_offset = make_params_pml('write_offset',
 
 # 4294967296: 2^32
 # 17592186044416: 2^44 16 TiB (ext4 max file size)
+
+# TODO: probablity-based write size selection
+
+# Test larger boundary values to 17592186044416: 2^44
+# write_size = make_params_pml('write_size',
+#         BitshiftParameters(1, 17592186044416),
+#         NearboundaryParameters(1, 17592186044416))
+
+# Orignal MCFS driver write_size selection
 write_size = make_params_pml('write_size',
-        BitshiftParameters(1, 17592186044416),
-        NearboundaryParameters(1, 17592186044416))
+        BitshiftParameters(1, 65536),
+        NearboundaryParameters(1, 65536))
 
 # write_byte = make_params_pml('write_byte',
 #         RangeParameters(0, 255, 1))

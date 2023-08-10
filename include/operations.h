@@ -7,27 +7,39 @@
 #ifndef _OPERATIONS_H
 #define _OPERATIONS_H
 
-// Probability of choosing each open flag bit (e.g., 0.5: 50% each bit is set to 1)
-#define UNIFORM_FLAG_RATE 0.5
-// If it's 1 use uniform open flags for driver, otherwise use pre-defined probabilistic open flags
-#define IS_UNIFORM_FLAG 1
 // Maximum open flags: otcal 037777777 (11111111111111111111111) = 23 bits
 #define MAX_FLAG_BITS 23
-// Scale the probabilities in flagBitPercent by multiplying this PROB_FACTOR
-// PROB_FACTOR == 1 means do not scale the probabilities
-// PROB_FACTOR > 1 means increase the probabilities
-// 0 < PROB_FACTOR < 1 means decrease the probabilities
-#define PROB_FACTOR 1
+
+/* 
+ * CONFIGURABLE MACROS
+ */
 
 // 0 - uniform, 1 - probability, 2 - inversed probability
 #define OPEN_FLAG_PATTERN 0 
+
+// Probability of choosing each open flag bit (e.g., 0.5: 50% each bit is set to 1)
+// CONFIGURE PROB_FACTOR if OPEN_FLAG_PATTERN == 0
+#define UNIFORM_FLAG_RATE 0.5
+/* Scale the probabilities in flagBitPercent by multiplying this PROB_FACTOR
+ * PROB_FACTOR == 1 means do not scale the probabilities
+ * PROB_FACTOR > 1 means increase the probabilities
+ * 0 < PROB_FACTOR < 1 means decrease the probabilities
+ */
+// CONFIGURE PROB_FACTOR if OPEN_FLAG_PATTERN == 1 or 2
+// #define PROB_FACTOR 1
+#define PROB_FACTOR 5
+
+// Marcos to distinguish open flags for different operations
+#define USE_CREATE_FLAG 0
+#define USE_WRITE_FLAG 1
 
 /* 
  * Currently we don't add "size_t write_size;" to the struct
  * because we can use if...fi to select write size
  */
 typedef struct all_inputs {
-    int open_flag;
+    int create_open_flag;
+    int write_open_flag;
 } inputs_t;
 
 extern inputs_t *inputs_t_p;
@@ -51,5 +63,8 @@ ssize_t write_file(const char *path, int flags, void *data, off_t offset, size_t
 int fallocate_file(const char *path, off_t offset, off_t len);
 int chown_file(const char *path, uid_t owner);
 int chgrp_file(const char *path, gid_t group);
+
+// Driver functions
+int pick_open_flags(int pattern, int ops);
 
 #endif // _OPERATIONS_H

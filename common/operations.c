@@ -119,7 +119,8 @@ void syscall_inputs_init()
         fprintf(stderr, "Error: malloc failed for syscall_inputs_init\n");
         exit(1);
     }
-    inputs_t_p->open_flag = 0;
+    inputs_t_p->create_open_flag = 0;
+    inputs_t_p->write_open_flag = 0;
     // Populate inverseFlagPercent array based on flagBitPercent
     double total = 0;
     // Subtract from 100% and calculate total
@@ -135,8 +136,9 @@ void syscall_inputs_init()
 
 /*
  * Pattern: 0 - uniform, 1 - probability, 2 - inversed probability
+ * Ops: 0 - create, 1 - write
  */
-static void pick_open_flags(int pattern)
+int pick_open_flags(int pattern, int ops)
 {
     // srand(time(0)) already called at syscall_inputs_init()
     int flags = 0;
@@ -169,47 +171,15 @@ static void pick_open_flags(int pattern)
         fprintf(stderr, "Error: invalid open flags pattern\n");
         exit(1);
     }
-    inputs_t_p->open_flag = flags;
-}
-
-int driver_create_file(const char *path, int mode)
-{
-    int flags = 0;
-    pick_open_flags(OPEN_FLAG_PATTERN);
-    flags = inputs_t_p->open_flag;
-    int fd = open(path, flags, mode);
-    if (fd >= 0) {
-        close(fd);
+    if (ops == USE_CREATE_FLAG) {
+        inputs_t_p->create_open_flag = flags;
     }
-    return (fd >= 0) ? 0 : -1;
-}
-
-ssize_t driver_write_file(const char *path, int flags, void *data, off_t offset, size_t length)
-{
-    int fd = open(path, flags, O_RDWR);
-    int err;
-    if (fd < 0) {
-        return -1;
+    else if (ops == USE_WRITE_FLAG) {
+        inputs_t_p->write_open_flag = flags;
     }
-    off_t res = lseek(fd, offset, SEEK_SET);
-    if (res == (off_t) -1) {
-        err = errno;
-        goto exit_err;
+    else {
+        fprintf(stderr, "Error: invalid open flags ops\n");
+        exit(1);
     }
-    ssize_t writesz = write(fd, data, length);
-    if (writesz < 0) {
-        err = errno;
-        goto exit_err;
-    }
-    if (writesz < length) {
-        fprintf(stderr, "Note: less data written than expected (%ld < %zu)\n",
-                writesz, length);
-    }
-    close(fd);
-    return writesz;
-
-exit_err:
-    close(fd);
-    errno = err;
-    return -1;
+    return flags;
 }

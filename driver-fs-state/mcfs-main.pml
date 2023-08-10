@@ -12,30 +12,33 @@ c_decl {
 /* Abstract state signatures of the file systems */
 /* DO NOT TOUCH THE COMMENT LINE ABOVE */
 c_track "get_absfs()" "sizeof(get_absfs())";
+c_track "inputs_t_p" "sizeof(inputs_t)";
 
 proctype worker()
 {
     /* Non-deterministic test loop */
-    int create_flag, create_mode, write_flag, offset, writelen, writebyte, filelen, chmod_mode, chown_owner, chown_group;
+    /* int create_flag, write_flag; */
+    int create_mode, offset, writelen, writebyte, filelen, chmod_mode, chown_owner, chown_group;
     do 
-    :: pick_create_open_flag(create_flag);
-       pick_create_open_mode(create_mode);
+    :: pick_create_open_mode(create_mode);
        atomic {
         c_code {
             /* creat, check: return, errno, existence */
             makelog("BEGIN: create_file\n");
             mountall();
+            int create_open_flag = pick_open_flags(OPEN_FLAG_PATTERN, USE_CREATE_FLAG);
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
+                /* Pick open flags by the C function */
                 for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d, 0%o", 
-                        create_file, get_filepool()[i][src_idx], Pworker->create_flag, Pworker->create_mode);
+                        create_file, get_filepool()[i][src_idx], create_open_flag, Pworker->create_mode);
                 }
             }
             else {
                 for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d, 0%o", 
-                        create_file, get_testfiles()[i], Pworker->create_flag, Pworker->create_mode);
+                        create_file, get_testfiles()[i], create_open_flag, Pworker->create_mode);
                 }
             }
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
@@ -45,8 +48,7 @@ proctype worker()
             makelog("END: create_file\n");
         };
     };
-    :: pick_write_open_flag(write_flag);
-       pick_write_offset(offset);
+    :: pick_write_offset(offset);
        pick_write_size(writelen);
        pick_write_byte(writebyte);
        atomic {
@@ -56,6 +58,7 @@ proctype worker()
             mountall();
             // off_t offset = pick_value(0, 32768, 1024);
             // size_t writelen = pick_value(0, 32768, 2048);
+            int write_open_flag = pick_open_flags(OPEN_FLAG_PATTERN, USE_WRITE_FLAG);
             char *data = malloc(Pworker->writelen);
             // Change Write Pattern Here
             generate_data(data, Pworker->writelen, Pworker->offset, BYTE_REPEAT, Pworker->writebyte);
@@ -63,7 +66,7 @@ proctype worker()
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d, %p, %ld, %zu", 
-                            write_file, get_filepool()[i][src_idx], Pworker->write_flag, data,
+                            write_file, get_filepool()[i][src_idx], write_open_flag, data,
                             (off_t)Pworker->offset, (size_t)Pworker->writelen);
                 }
                 free(data);
@@ -71,7 +74,7 @@ proctype worker()
             else {
                 for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d, %p, %ld, %zu", 
-                            write_file, get_testfiles()[i], Pworker->write_flag, data,
+                            write_file, get_testfiles()[i], write_open_flag, data,
                             (off_t)Pworker->offset, (size_t)Pworker->writelen);
                 }
 
