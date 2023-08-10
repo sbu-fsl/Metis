@@ -205,6 +205,8 @@ void record_performance()
     }
     fprintf(perflog_fp, "\n");
     fflush(perflog_fp);
+    if (epoch.tv_sec >= DRIVER_ABORT_MINS * 60)
+        exit(0);
     /*
     if (epoch.tv_sec >= GCOV_ABORT_MINS * 60)
         exit(0);
