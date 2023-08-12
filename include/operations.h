@@ -29,9 +29,16 @@
 // #define PROB_FACTOR 1
 #define PROB_FACTOR 5
 
+// Write size configurable macros
+// 0 - uniform distribution, 1 - normal distribution
+#define WRITE_SIZE_PATTERN 0
+
 // Marcos to distinguish open flags for different operations
 #define USE_CREATE_FLAG 0
 #define USE_WRITE_FLAG 1
+
+// Write size fixed macros
+#define WRITE_SIZE_PARTS 34
 
 /* 
  * Currently we don't add "size_t write_size;" to the struct
@@ -43,6 +50,23 @@ typedef struct all_inputs {
 } inputs_t;
 
 extern inputs_t *inputs_t_p;
+
+/* Write size partition data structure */
+typedef struct write_size_partition {
+    size_t minsz;
+    size_t maxsz;
+} writesz_partition_t;
+
+// We investigate 34 write size partitions: equal to 0, 0, 1, ... 31, 32
+writesz_partition_t writesz_parts[WRITE_SIZE_PARTS];
+
+// Random integer generator [min, max] included
+static inline size_t rand_size(size_t min, size_t max)
+{
+   return min + rand() % (max + 1 - min);
+}
+
+void populate_writesz_parts();
 
 void syscall_inputs_init();
 
@@ -66,5 +90,6 @@ int chgrp_file(const char *path, gid_t group);
 
 // Driver functions
 int pick_open_flags(int pattern, int ops);
+size_t pick_write_sizes(int pattern);
 
 #endif // _OPERATIONS_H

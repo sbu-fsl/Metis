@@ -17,8 +17,11 @@ c_track "inputs_t_p" "sizeof(inputs_t)";
 proctype worker()
 {
     /* Non-deterministic test loop */
+    /* Open flags */
     /* int create_flag, write_flag; */
-    int create_mode, offset, writelen, writebyte, filelen, chmod_mode, chown_owner, chown_group;
+    /* Write sizes */
+    /* int writelen; */
+    int create_mode, offset, writebyte, filelen, chmod_mode, chown_owner, chown_group;
     do 
     :: pick_create_open_mode(create_mode);
        atomic {
@@ -49,7 +52,6 @@ proctype worker()
         };
     };
     :: pick_write_offset(offset);
-       pick_write_size(writelen);
        pick_write_byte(writebyte);
        atomic {
         /* write, check: retval, errno, content */
@@ -58,16 +60,17 @@ proctype worker()
             mountall();
             // off_t offset = pick_value(0, 32768, 1024);
             // size_t writelen = pick_value(0, 32768, 2048);
+            size_t writelen = pick_write_sizes(WRITE_SIZE_PARTS);
             int write_open_flag = pick_open_flags(OPEN_FLAG_PATTERN, USE_WRITE_FLAG);
-            char *data = malloc(Pworker->writelen);
+            char *data = malloc(writelen);
             // Change Write Pattern Here
-            generate_data(data, Pworker->writelen, Pworker->offset, BYTE_REPEAT, Pworker->writebyte);
+            generate_data(data, writelen, Pworker->offset, BYTE_REPEAT, Pworker->writebyte);
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d, %p, %ld, %zu", 
                             write_file, get_filepool()[i][src_idx], write_open_flag, data,
-                            (off_t)Pworker->offset, (size_t)Pworker->writelen);
+                            (off_t)Pworker->offset, (size_t)writelen);
                 }
                 free(data);
             }
@@ -75,7 +78,7 @@ proctype worker()
                 for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d, %p, %ld, %zu", 
                             write_file, get_testfiles()[i], write_open_flag, data,
-                            (off_t)Pworker->offset, (size_t)Pworker->writelen);
+                            (off_t)Pworker->offset, (size_t)writelen);
                 }
 
                 free(data);

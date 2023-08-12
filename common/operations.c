@@ -132,6 +132,8 @@ void syscall_inputs_init()
     for (int i = 0; i < MAX_FLAG_BITS; i++) {
         inverseFlagPercent[i] = inverseFlagPercent[i] / total * 100;
     }
+    // Init write size partition array
+    populate_writesz_parts();
 }
 
 /*
@@ -182,4 +184,35 @@ int pick_open_flags(int pattern, int ops)
         exit(1);
     }
     return flags;
+}
+
+void populate_writesz_parts()
+{
+    writesz_parts[0].minsz = 0;
+    writesz_parts[0].maxsz = 0;
+
+    for (int i = 1; i < WRITE_SIZE_PARTS; ++i) {
+        writesz_parts[i].minsz = 1 << (i - 1);
+        writesz_parts[i].maxsz = (1 << i) - 1;
+    }
+    /*
+    // Dump write size partitions
+    for (int i = 0; i < WRITE_SIZE_PARTS; ++i) {
+        fprintf(stdout, "writesz_parts[%d]: minsz = %zu, maxsz = %zu\n", 
+            i, writesz_parts[i].minsz, writesz_parts[i].maxsz);
+    }
+    */
+}
+
+size_t pick_write_sizes(int pattern)
+{
+    size_t writesz = 0;
+    // Uniform
+    if (pattern == 0) {
+        // Pick a partition with an uniform probability
+        int uni_idx = (int)(rand() / ((double)RAND_MAX + 1) * WRITE_SIZE_PARTS);
+        // Randomly pick a write size in a partition [minsz, maxsz]
+        writesz = rand_size(writesz_parts[uni_idx].minsz, writesz_parts[uni_idx].maxsz);
+    }
+    return writesz;
 }
