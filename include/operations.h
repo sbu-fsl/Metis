@@ -3,6 +3,8 @@
 #include <time.h>
 #include <stddef.h>
 #include <sys/types.h>
+#include <stdint.h>
+#include <math.h>
 
 #ifndef _OPERATIONS_H
 #define _OPERATIONS_H

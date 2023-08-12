@@ -111,6 +111,34 @@ int chgrp_file(const char *path, gid_t group)
 
 /* MCFS DRIVER FUNCTIONS FOR INPUT COVERAGE */
 
+void populate_writesz_parts()
+{
+    writesz_parts[0].minsz = 0;
+    writesz_parts[0].maxsz = 0;
+
+    uint64_t minval = 0;
+    uint64_t maxval = 0;
+
+    for (int i = 1; i < WRITE_SIZE_PARTS; ++i) {
+        minval = pow(2, i - 1);
+        maxval = pow(2, i) - 1;
+
+        writesz_parts[i].minsz = minval;
+        writesz_parts[i].maxsz = maxval;
+    }
+    /*
+    // Dump write size partitions
+    fprintf(stdout, "DRIVER write size partitions:\n");
+    fprintf(stdout, "The maximum value of size_t is: %zu\n", SIZE_MAX);
+    for (int i = 0; i < WRITE_SIZE_PARTS; ++i) {
+        fprintf(stdout, "writesz_parts[%d]: minsz = %zu, maxsz = %zu\n", 
+            i, writesz_parts[i].minsz, writesz_parts[i].maxsz);
+    }
+    // flush stdout, otherwise write size cannot be dumped
+    fflush(stdout);
+    */
+}
+
 void syscall_inputs_init()
 {
     srand(time(0));
@@ -184,24 +212,6 @@ int pick_open_flags(int pattern, int ops)
         exit(1);
     }
     return flags;
-}
-
-void populate_writesz_parts()
-{
-    writesz_parts[0].minsz = 0;
-    writesz_parts[0].maxsz = 0;
-
-    for (int i = 1; i < WRITE_SIZE_PARTS; ++i) {
-        writesz_parts[i].minsz = 1 << (i - 1);
-        writesz_parts[i].maxsz = (1 << i) - 1;
-    }
-    /*
-    // Dump write size partitions
-    for (int i = 0; i < WRITE_SIZE_PARTS; ++i) {
-        fprintf(stdout, "writesz_parts[%d]: minsz = %zu, maxsz = %zu\n", 
-            i, writesz_parts[i].minsz, writesz_parts[i].maxsz);
-    }
-    */
 }
 
 size_t pick_write_sizes(int pattern)
