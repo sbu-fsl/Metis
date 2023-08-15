@@ -31,9 +31,13 @@ octal 4010002 (dec. 1052674): O_RDWR|O_SYNC
 write_open_flag = make_params_pml('write_open_flag',
         SpecialParameters(0o2, 0o2002, 0o4010002))
 
+# write_offset = make_params_pml('write_offset',
+#         BitshiftParameters(1, 17592186044416),
+#         NearboundaryParameters(1, 17592186044416))
+
 write_offset = make_params_pml('write_offset',
-        BitshiftParameters(1, 17592186044416),
-        NearboundaryParameters(1, 17592186044416))
+        BitshiftParameters(1, 65536),
+        NearboundaryParameters(1, 65536))
 
 # 4294967296: 2^32
 # 17592186044416: 2^44 16 TiB (ext4 max file size)

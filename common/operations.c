@@ -224,5 +224,6 @@ size_t pick_write_sizes(int pattern)
         // Randomly pick a write size in a partition [minsz, maxsz]
         writesz = rand_size(writesz_parts[uni_idx].minsz, writesz_parts[uni_idx].maxsz);
     }
+    inputs_t_p->write_size = writesz;
     return writesz;
 }

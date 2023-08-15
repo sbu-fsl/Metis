@@ -42,13 +42,10 @@
 // Write size fixed macros
 #define WRITE_SIZE_PARTS 34
 
-/* 
- * Currently we don't add "size_t write_size;" to the struct
- * because we can use if...fi to select write size
- */
 typedef struct all_inputs {
     int create_open_flag;
     int write_open_flag;
+    size_t write_size;
 } inputs_t;
 
 extern inputs_t *inputs_t_p;

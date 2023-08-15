@@ -18,7 +18,7 @@ proctype worker()
 {
     /* Non-deterministic test loop */
     /* Open flags */
-    int create_flag, write_flag;
+    /* int create_flag, write_flag; */
     /* Write sizes */
     /* int writelen; */
     int create_mode, offset, writebyte, filelen, chmod_mode, chown_owner, chown_group;
@@ -28,8 +28,7 @@ proctype worker()
      * pick_write_size(writelen); 
      */
     do 
-    :: pick_create_open_flag(create_flag);
-       pick_create_open_mode(create_mode);
+    :: pick_create_open_mode(create_mode);
        atomic {
         c_code {
             /* creat, check: return, errno, existence */
@@ -57,8 +56,7 @@ proctype worker()
             makelog("END: create_file\n");
         };
     };
-    :: pick_write_open_flag(write_flag);
-       pick_write_offset(offset);
+    :: pick_write_offset(offset);
        pick_write_byte(writebyte);
        atomic {
         /* write, check: retval, errno, content */
