@@ -34,19 +34,19 @@ proctype worker()
             /* creat, check: return, errno, existence */
             makelog("BEGIN: create_file\n");
             mountall();
-            /* int create_flag = pick_open_flags(OPEN_FLAG_PATTERN, USE_CREATE_FLAG); */
+            int create_flag = pick_open_flags(OPEN_FLAG_PATTERN, USE_CREATE_FLAG);
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 /* Pick open flags by the C function */
                 for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d, 0%o", 
-                        create_file, get_filepool()[i][src_idx], Pworker->create_flag, Pworker->create_mode);
+                        create_file, get_filepool()[i][src_idx], create_flag, Pworker->create_mode);
                 }
             }
             else {
                 for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d, 0%o", 
-                        create_file, get_testfiles()[i], Pworker->create_flag, Pworker->create_mode);
+                        create_file, get_testfiles()[i], create_flag, Pworker->create_mode);
                 }
             }
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
@@ -66,7 +66,7 @@ proctype worker()
             // off_t offset = pick_value(0, 32768, 1024);
             // size_t writelen = pick_value(0, 32768, 2048);
             size_t writelen = pick_write_sizes(WRITE_SIZE_PATTERN);
-            /* int write_flag = pick_open_flags(OPEN_FLAG_PATTERN, USE_WRITE_FLAG); */
+            int write_flag = pick_open_flags(OPEN_FLAG_PATTERN, USE_WRITE_FLAG);
             char *data = malloc(writelen);
             // Change Write Pattern Here
             generate_data(data, writelen, Pworker->offset, BYTE_REPEAT, Pworker->writebyte);
@@ -74,7 +74,7 @@ proctype worker()
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d, %p, %ld, %zu", 
-                            write_file, get_filepool()[i][src_idx], Pworker->write_flag, data,
+                            write_file, get_filepool()[i][src_idx], write_flag, data,
                             (off_t)Pworker->offset, (size_t)writelen);
                 }
                 free(data);
@@ -82,7 +82,7 @@ proctype worker()
             else {
                 for (int i = 0; i < get_n_fs(); ++i) {
                     makecall(get_rets()[i], get_errs()[i], "%s, %d, %p, %ld, %zu", 
-                            write_file, get_testfiles()[i], Pworker->write_flag, data,
+                            write_file, get_testfiles()[i], write_flag, data,
                             (off_t)Pworker->offset, (size_t)writelen);
                 }
 

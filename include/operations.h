@@ -27,7 +27,7 @@
  * PROB_FACTOR > 1 means increase the probabilities
  * 0 < PROB_FACTOR < 1 means decrease the probabilities
  */
-// CONFIGURE PROB_FACTOR if OPEN_FLAG_PATTERN == 1 or 2
+// CONFIGURE PROB_FACTOR if OPEN_FLAG_PATTERN == 1 or 2 or 3
 // #define PROB_FACTOR 1
 #define PROB_FACTOR 5
 
@@ -79,7 +79,8 @@ void syscall_inputs_init();
  */
 extern const double flagBitPercent[MAX_FLAG_BITS];
 
-extern double inverseFlagPercent[MAX_FLAG_BITS];
+extern double whmFlagPercent[MAX_FLAG_BITS];
+extern double subFlagPercent[MAX_FLAG_BITS];
 
 int create_file(const char *path, int flags, int mode);
 ssize_t write_file(const char *path, int flags, void *data, off_t offset, size_t length);

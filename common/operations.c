@@ -9,7 +9,8 @@
 
 inputs_t *inputs_t_p = NULL;
 
-double inverseFlagPercent[MAX_FLAG_BITS] = {0};
+double whmFlagPercent[MAX_FLAG_BITS] = {0};
+double subFlagPercent[MAX_FLAG_BITS] = {0};
 
 const double flagBitPercent[MAX_FLAG_BITS] = {
     10.12, //	O_WRONLY	0
@@ -149,16 +150,34 @@ void syscall_inputs_init()
     }
     inputs_t_p->create_open_flag = 0;
     inputs_t_p->write_open_flag = 0;
-    // Populate inverseFlagPercent array based on flagBitPercent
+    /* 
+     * Inverse option 1: populate whmFlagPercent array based on flagBitPercent
+     * Reciprocal then normalize to 100%
+     */
     double total = 0;
-    // Subtract from 100% and calculate total
+    // Reciprocal
     for (int i = 0; i < MAX_FLAG_BITS; i++) {
-        inverseFlagPercent[i] = 100 - flagBitPercent[i];
-        total += inverseFlagPercent[i];
+        whmFlagPercent[i] = 1 / flagBitPercent[i];
+        total += whmFlagPercent[i];
     }
     // Normalize to 100%
     for (int i = 0; i < MAX_FLAG_BITS; i++) {
-        inverseFlagPercent[i] = inverseFlagPercent[i] / total * 100;
+        whmFlagPercent[i] = whmFlagPercent[i] / total * 100;
+    }
+    /* 
+     * Inverse option 2: populate subFlagPercent array based on flagBitPercent
+     * Subtract from 100% then normalize to 100%
+     */
+
+    total = 0;
+    // Subtract from 100% and calculate total
+    for (int i = 0; i < MAX_FLAG_BITS; i++) {
+        subFlagPercent[i] = 100 - flagBitPercent[i];
+        total += subFlagPercent[i];
+    }
+    // Normalize to 100%
+    for (int i = 0; i < MAX_FLAG_BITS; i++) {
+        subFlagPercent[i] = subFlagPercent[i] / total * 100;
     }
     // Init write size partition array
     populate_writesz_parts();
@@ -189,10 +208,18 @@ int pick_open_flags(int pattern, int ops)
             }
         }
     }
-    // Inversed probability
+    // Inversed probability by weighted harmonic mean (reciprocal then normalize to 100%)
     else if (pattern == 2) {
-        for (int i = 0; i < sizeof(inverseFlagPercent)/sizeof(inverseFlagPercent[0]); i++) {
-            if ((double)rand() / (RAND_MAX) * 100 < inverseFlagPercent[i] * PROB_FACTOR) {
+        for (int i = 0; i < sizeof(whmFlagPercent)/sizeof(whmFlagPercent[0]); i++) {
+            if ((double)rand() / (RAND_MAX) * 100 < whmFlagPercent[i] * PROB_FACTOR) {
+                flags |= 1 << i;
+            }
+        }
+    }
+    // Inversed probability by substraction from 100% then normalize to 100%
+    else if (pattern == 3) {
+        for (int i = 0; i < sizeof(subFlagPercent)/sizeof(subFlagPercent[0]); i++) {
+            if ((double)rand() / (RAND_MAX) * 100 < subFlagPercent[i] * PROB_FACTOR) {
                 flags |= 1 << i;
             }
         }        
