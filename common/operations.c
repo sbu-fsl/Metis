@@ -143,7 +143,7 @@ void populate_writesz_parts()
         writesz_parts[i].minsz = minval;
         writesz_parts[i].maxsz = maxval;
     }
-
+    /*
     // Dump rank-size distribution open flags
     for (int i = 0; i < MAX_FLAG_BITS; ++i) {
         fprintf(stdout, "rzdFlagPercent[%d] = %f\n", i, rzdFlagPercent[i]);
@@ -153,7 +153,7 @@ void populate_writesz_parts()
         fprintf(stdout, "inv_rzdFlagPercent[%d] = %f\n", i, inv_rzdFlagPercent[i]);
     }
     fflush(stdout);
-
+    */
     /*
     // Dump inverse write probability arrays
     for (int i = 0; i < MAX_FLAG_BITS; ++i) {
