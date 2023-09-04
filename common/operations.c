@@ -11,6 +11,8 @@ inputs_t *inputs_t_p = NULL;
 
 double whmFlagPercent[MAX_FLAG_BITS] = {0};
 double subFlagPercent[MAX_FLAG_BITS] = {0};
+double rzdFlagPercent[MAX_FLAG_BITS] = {0};
+double inv_rzdFlagPercent[MAX_FLAG_BITS] = {0};
 
 // Based on the kernel ocurrence probability 
 const double flagBitPercent[MAX_FLAG_BITS] = {
@@ -38,6 +40,19 @@ const double flagBitPercent[MAX_FLAG_BITS] = {
     2.77, //	O_PATH	21
     0.42 //	__O_TMPFILE	22
 };
+
+// Rank: 0 invalid bits
+// Rank: 1 most occurred bits Rank: 19 least occurred bits
+const double flagKernOcurRank[MAX_FLAG_BITS] = {
+    3, 6, 0, 0, 0, 0, 1, 7, 18, 4, 9, 5, 11, 14, 2, 8, 13, 16, 15, 10, 17, 11, 19
+};
+
+// Rank: 0 invalid bits
+// Rank: 1 least occurred bits Rank: 19 most occurred bits
+const double inv_flagKernOcurRank[MAX_FLAG_BITS] = {
+    17, 14, 0, 0, 0, 0, 19, 13, 2, 16, 11, 15, 8, 6, 18, 12, 7, 4, 5, 10, 3, 8, 1
+};
+
 
 int create_file(const char *path, int flags, int mode)
 {
@@ -129,6 +144,16 @@ void populate_writesz_parts()
         writesz_parts[i].maxsz = maxval;
     }
 
+    // Dump rank-size distribution open flags
+    for (int i = 0; i < MAX_FLAG_BITS; ++i) {
+        fprintf(stdout, "rzdFlagPercent[%d] = %f\n", i, rzdFlagPercent[i]);
+    }
+    fprintf(stdout, "=====================\n");
+    for (int i = 0; i < MAX_FLAG_BITS; ++i) {
+        fprintf(stdout, "inv_rzdFlagPercent[%d] = %f\n", i, inv_rzdFlagPercent[i]);
+    }
+    fflush(stdout);
+
     /*
     // Dump inverse write probability arrays
     for (int i = 0; i < MAX_FLAG_BITS; ++i) {
@@ -198,6 +223,28 @@ void syscall_inputs_init()
     for (int i = 0; i < MAX_FLAG_BITS; i++) {
         subFlagPercent[i] = subFlagPercent[i] / total * 100;
     }
+    /*
+     * Rank-size distribution or sampling
+     */
+    for (int i = 0; i < MAX_FLAG_BITS; i++) {
+        if (flagKernOcurRank[i] == 0) {
+            rzdFlagPercent[i] = 0;
+        }
+        else {
+            rzdFlagPercent[i] = pow(RZD_RATIO, flagKernOcurRank[i]);
+        }
+    }
+    /*
+     * Inverse rank-size distribution or sampling
+     */
+    for (int i = 0; i < MAX_FLAG_BITS; i++) {
+        if (inv_flagKernOcurRank[i] == 0) {
+            inv_rzdFlagPercent[i] = 0;
+        }
+        else {
+            inv_rzdFlagPercent[i] = pow(RZD_RATIO, inv_flagKernOcurRank[i]);
+        }
+    }
     // Init write size partition array
     populate_writesz_parts();
 }
@@ -243,6 +290,23 @@ int pick_open_flags(int pattern, int ops)
             }
         }        
     }
+    // RZD: Rank-size distribution or sampling
+    else if (pattern == 4) {
+        for (int i = 0; i < sizeof(rzdFlagPercent)/sizeof(rzdFlagPercent[0]); i++) {
+            if ((double)rand() / (RAND_MAX) < rzdFlagPercent[i]) {
+                flags |= 1 << i;
+            }
+        }
+    }
+    // Inverse Rank-size distribution or sampling
+    else if (pattern == 5) {
+        for (int i = 0; i < sizeof(inv_rzdFlagPercent)/sizeof(inv_rzdFlagPercent[0]); i++) {
+            if ((double)rand() / (RAND_MAX) < inv_rzdFlagPercent[i]) {
+                flags |= 1 << i;
+            }
+        }
+    }
+    // Not recognized
     else {
         fprintf(stderr, "Error: invalid open flags pattern\n");
         exit(1);

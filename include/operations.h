@@ -16,8 +16,12 @@
  * CONFIGURABLE MACROS
  */
 
-// 0 - uniform, 1 - probability, 2 - inverse by harmonic mean weighting, 3 - inverse by subtraction from 100%
-#define OPEN_FLAG_PATTERN 2
+// Ration in rank-size distribution or sampling
+#define RZD_RATIO 0.9
+
+// 0 - uniform, 1 - probability, 2 - Inverse by harmonic mean weighting, 3 - Inverse by subtraction from 100%
+// 4 - rank-size distribution (based on RZD_RATIO), 5 - Inverse rank-size distribution (based on RZD_RATIO) 
+#define OPEN_FLAG_PATTERN 4
 
 // Probability of choosing each open flag bit (e.g., 0.5: 50% each bit is set to 1)
 // CONFIGURE PROB_FACTOR if OPEN_FLAG_PATTERN == 0
@@ -81,6 +85,8 @@ extern const double flagBitPercent[MAX_FLAG_BITS];
 
 extern double whmFlagPercent[MAX_FLAG_BITS];
 extern double subFlagPercent[MAX_FLAG_BITS];
+extern double rzdFlagPercent[MAX_FLAG_BITS];
+extern double inv_rzdFlagPercent[MAX_FLAG_BITS];
 
 int create_file(const char *path, int flags, int mode);
 ssize_t write_file(const char *path, int flags, void *data, off_t offset, size_t length);
