@@ -12,6 +12,7 @@ inputs_t *inputs_t_p = NULL;
 double whmFlagPercent[MAX_FLAG_BITS] = {0};
 double subFlagPercent[MAX_FLAG_BITS] = {0};
 
+// Based on the kernel ocurrence probability 
 const double flagBitPercent[MAX_FLAG_BITS] = {
     10.12, //	O_WRONLY	0
     9.02, //	O_RDWR	1
@@ -127,6 +128,19 @@ void populate_writesz_parts()
         writesz_parts[i].minsz = minval;
         writesz_parts[i].maxsz = maxval;
     }
+
+    /*
+    // Dump inverse write probability arrays
+    for (int i = 0; i < MAX_FLAG_BITS; ++i) {
+        fprintf(stdout, "whmFlagPercent[%d] = %f\n", i, whmFlagPercent[i]);
+    }
+    fprintf(stdout, "=====================\n");
+    for (int i = 0; i < MAX_FLAG_BITS; ++i) {
+        fprintf(stdout, "subFlagPercent[%d] = %f\n", i, subFlagPercent[i]);
+    }
+    fflush(stdout);
+    */
+
     /*
     // Dump write size partitions
     fprintf(stdout, "DRIVER write size partitions:\n");
@@ -154,22 +168,27 @@ void syscall_inputs_init()
      * Inverse option 1: populate whmFlagPercent array based on flagBitPercent
      * Reciprocal then normalize to 100%
      */
-    double total = 0;
+    double total = 0.0;
     // Reciprocal
     for (int i = 0; i < MAX_FLAG_BITS; i++) {
-        whmFlagPercent[i] = 1 / flagBitPercent[i];
+        if (flagBitPercent[i] == 0) {
+            whmFlagPercent[i] = 0;
+        }
+        else {
+            whmFlagPercent[i] = 1 / flagBitPercent[i];
+        }
         total += whmFlagPercent[i];
     }
     // Normalize to 100%
     for (int i = 0; i < MAX_FLAG_BITS; i++) {
-        whmFlagPercent[i] = whmFlagPercent[i] / total * 100;
+        whmFlagPercent[i] = (whmFlagPercent[i] / total) * 100;
     }
     /* 
      * Inverse option 2: populate subFlagPercent array based on flagBitPercent
      * Subtract from 100% then normalize to 100%
      */
 
-    total = 0;
+    total = 0.0;
     // Subtract from 100% and calculate total
     for (int i = 0; i < MAX_FLAG_BITS; i++) {
         subFlagPercent[i] = 100 - flagBitPercent[i];

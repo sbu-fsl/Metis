@@ -16,8 +16,8 @@
  * CONFIGURABLE MACROS
  */
 
-// 0 - uniform, 1 - probability, 2 - inversed probability
-#define OPEN_FLAG_PATTERN 0 
+// 0 - uniform, 1 - probability, 2 - inverse by harmonic mean weighting, 3 - inverse by subtraction from 100%
+#define OPEN_FLAG_PATTERN 2
 
 // Probability of choosing each open flag bit (e.g., 0.5: 50% each bit is set to 1)
 // CONFIGURE PROB_FACTOR if OPEN_FLAG_PATTERN == 0
