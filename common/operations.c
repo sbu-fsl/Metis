@@ -13,6 +13,8 @@ double whmFlagPercent[MAX_FLAG_BITS] = {0};
 double subFlagPercent[MAX_FLAG_BITS] = {0};
 double rzdFlagPercent[MAX_FLAG_BITS] = {0};
 double inv_rzdFlagPercent[MAX_FLAG_BITS] = {0};
+double rzdWriteSizePrecent[WRITE_SIZE_PARTS] = {0};
+double inv_rzdWriteSizePrecent[WRITE_SIZE_PARTS] = {0};
 
 // Based on the kernel ocurrence probability 
 const double flagBitPercent[MAX_FLAG_BITS] = {
@@ -143,6 +145,7 @@ void populate_writesz_parts()
         writesz_parts[i].minsz = minval;
         writesz_parts[i].maxsz = maxval;
     }
+    
     /*
     // Dump rank-size distribution open flags
     for (int i = 0; i < MAX_FLAG_BITS; ++i) {
@@ -154,6 +157,17 @@ void populate_writesz_parts()
     }
     fflush(stdout);
     */
+
+    // Dump RZDN and Inverse RZDN write size probablities array
+    for (int i = 0; i < WRITE_SIZE_PARTS; ++i) {
+        fprintf(stdout, "rzdWriteSizePrecent[%d] = %f\n", i, rzdWriteSizePrecent[i]);
+    }
+    fprintf(stdout, "=====================\n");
+    for (int i = 0; i < WRITE_SIZE_PARTS; ++i) {
+        fprintf(stdout, "inv_rzdWriteSizePrecent[%d] = %f\n", i, inv_rzdWriteSizePrecent[i]);
+    }
+    fflush(stdout);
+
     /*
     // Dump inverse write probability arrays
     for (int i = 0; i < MAX_FLAG_BITS; ++i) {
@@ -245,6 +259,30 @@ void syscall_inputs_init()
             inv_rzdFlagPercent[i] = pow(RZD_RATIO, inv_flagKernOcurRank[i]);
         }
     }
+    // Init write RZD normalization write size probablity array
+    for (int i = 0; i < WRITE_SIZE_PARTS; i++) {
+        rzdWriteSizePrecent[i] = pow(WRITE_SIZE_RZD_RATIO, i+1);
+    }
+    // Normalize rzdWriteSizePrecent to sum as 100%
+    total = 0.0;
+    for (int i = 0; i < WRITE_SIZE_PARTS; i++) {
+        total += rzdWriteSizePrecent[i];
+    }
+    for (int i = 0; i < WRITE_SIZE_PARTS; i++) {
+        rzdWriteSizePrecent[i] = rzdWriteSizePrecent[i] / total;
+    }
+    // Init write inverse RZD normalization write size probablity array
+    for (int i = 0; i < WRITE_SIZE_PARTS; i++) {
+        inv_rzdWriteSizePrecent[i] = pow(WRITE_SIZE_RZD_RATIO, WRITE_SIZE_PARTS - i);
+    }
+    // Normalize inv_rzdWriteSizePrecent to sum as 100%
+    total = 0.0;
+    for (int i = 0; i < WRITE_SIZE_PARTS; i++) {
+        total += inv_rzdWriteSizePrecent[i];
+    }
+    for (int i = 0; i < WRITE_SIZE_PARTS; i++) {
+        inv_rzdWriteSizePrecent[i] = inv_rzdWriteSizePrecent[i] / total;
+    }
     // Init write size partition array
     populate_writesz_parts();
 }
@@ -333,6 +371,35 @@ size_t pick_write_sizes(int pattern)
         int uni_idx = (int)(rand() / ((double)RAND_MAX + 1) * WRITE_SIZE_PARTS);
         // Randomly pick a write size in a partition [minsz, maxsz]
         writesz = rand_size(writesz_parts[uni_idx].minsz, writesz_parts[uni_idx].maxsz);
+    }
+    // Rank Size Distribution, then Normalize (RZDN)
+    else if (pattern == 1) {
+        double sum = 0;
+        // Pick a write size partition based on rzdWriteSizePrecent
+        double randNum = (float)rand() / RAND_MAX;
+        for (int i = 0; i < WRITE_SIZE_PARTS; i++) {
+            sum += rzdWriteSizePrecent[i];
+            if (randNum <= sum) {
+                // Randomly pick a write size in a partition [minsz, maxsz]
+                writesz = rand_size(writesz_parts[i].minsz, writesz_parts[i].maxsz);
+                break;
+            }
+        }
+
+    }
+    // Inverse Rank Size Distribution, then Normalize (IRZDN)
+    else if (pattern == 2) {
+        double sum = 0;
+        // Pick a write size partition based on inv_rzdWriteSizePrecent
+        double randNum = (float)rand() / RAND_MAX;
+        for (int i = 0; i < WRITE_SIZE_PARTS; i++) {
+            sum += inv_rzdWriteSizePrecent[i];
+            if (randNum <= sum) {
+                // Randomly pick a write size in a partition [minsz, maxsz]
+                writesz = rand_size(writesz_parts[i].minsz, writesz_parts[i].maxsz);
+                break;
+            }
+        }
     }
     inputs_t_p->write_size = writesz;
     return writesz;

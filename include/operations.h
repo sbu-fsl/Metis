@@ -21,7 +21,7 @@
 
 // 0 - uniform, 1 - probability, 2 - Inverse by harmonic mean weighting, 3 - Inverse by subtraction from 100%
 // 4 - rank-size distribution (based on RZD_RATIO), 5 - Inverse rank-size distribution (based on RZD_RATIO) 
-#define OPEN_FLAG_PATTERN 4
+#define OPEN_FLAG_PATTERN 0
 
 // Probability of choosing each open flag bit (e.g., 0.5: 50% each bit is set to 1)
 // CONFIGURE PROB_FACTOR if OPEN_FLAG_PATTERN == 0
@@ -36,8 +36,8 @@
 #define PROB_FACTOR 5
 
 // Write size configurable macros
-// 0 - uniform distribution, 1 - normal distribution
-#define WRITE_SIZE_PATTERN 0
+// 0 - uniform distribution, 1 - RZD normalization, 2 - Inverse RZD normalization
+#define WRITE_SIZE_PATTERN 1
 
 // Marcos to distinguish open flags for different operations
 #define USE_CREATE_FLAG 0
@@ -45,6 +45,9 @@
 
 // Write size fixed macros
 #define WRITE_SIZE_PARTS 34
+
+// Rank-size distribution for write size 
+#define WRITE_SIZE_RZD_RATIO 0.9
 
 typedef struct all_inputs {
     int create_open_flag;
