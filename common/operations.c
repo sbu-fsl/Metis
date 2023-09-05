@@ -158,6 +158,7 @@ void populate_writesz_parts()
     fflush(stdout);
     */
 
+    /*
     // Dump RZDN and Inverse RZDN write size probablities array
     for (int i = 0; i < WRITE_SIZE_PARTS; ++i) {
         fprintf(stdout, "rzdWriteSizePrecent[%d] = %f\n", i, rzdWriteSizePrecent[i]);
@@ -167,6 +168,7 @@ void populate_writesz_parts()
         fprintf(stdout, "inv_rzdWriteSizePrecent[%d] = %f\n", i, inv_rzdWriteSizePrecent[i]);
     }
     fflush(stdout);
+    */
 
     /*
     // Dump inverse write probability arrays
