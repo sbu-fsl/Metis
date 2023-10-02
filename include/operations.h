@@ -44,7 +44,7 @@
 #define USE_WRITE_FLAG 1
 
 // Write size fixed macros
-#define WRITE_SIZE_PARTS 34
+#define WRITE_SIZE_PARTS 33
 
 // Rank-size distribution for write size 
 #define WRITE_SIZE_RZD_RATIO 0.9
