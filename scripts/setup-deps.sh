@@ -238,6 +238,7 @@ install_spin() {
     popd;
 }
 
+# This should be run without sudo
 install_swarm() {
     pushd $BASEDIR;
     runcmd prepare_repo swarm-mcfs git@github.com:sbu-fsl/swarm-mcfs.git;
@@ -264,7 +265,8 @@ runcmd install_pkg libfuse-dev
 runcmd install_pkg google-perftools
 runcmd install_pkg libgoogle-perftools-dev
 # Dependencies for nfs-ganesha
-runcmd install_pkg libnfsidmap2
+# Omitted on Ubuntu 22.04
+# runcmd install_pkg libnfsidmap2
 runcmd install_pkg libnfsidmap-dev
 runcmd install_pkg libkrb5-3
 runcmd install_pkg libkrb5-dev
