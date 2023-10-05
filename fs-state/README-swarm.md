@@ -195,6 +195,21 @@ of `ssh -p 130 yifeilatest5 "sh /mcfs-swarm/mcfs-main.pml.swarm" &` because the 
 directory to run shell script on remote machines is root (`~/`) and we need to change
 directory to the one has those files (`cd /mcfs-swarm/`) first.
 
+### node has several backend /usr/lib/gcc/x86_64-linux-gnu/11/cc1 compilation processes that cannot be killed
+Kill the `mcfs-main.pml.swarm` script process via 
+```
+pkill -f "mcfs-main.pml.swarm"
+```
+
+Running `pkill -f "/usr/lib/gcc/x86_64-linux-gnu/11/cc1"` is not enough.
+
+### pan1-6 binary executables not found on client nodes
+
+Check if all the Prerequisites are completed, especially correct hostnames
+
+### Ext4 vs. Ext2 detected discrepancy: Note: less data written than expected (57328 < 65535) Note: less data written than expected (53232 < 65535)
+
+Ext4 and Ext2 have different threshold for byte size allow to be written.  In this case, use larger block devices via `loadlargebrds.sh` (512KiB ramdisks) instead of `loadmods.sh` (256KiB ramdisks).
 
 ## How to evaluate?
 

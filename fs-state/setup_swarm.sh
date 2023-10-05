@@ -143,7 +143,7 @@ while [[ $# -gt 0 ]]; do
             USE_ENV_VAR=1
             shift
             ;;
-        -n|--numpan)
+        -n|--numpan) # Number of VTs on the current master node
             NUM_PAN="$2"
             shift
             shift
