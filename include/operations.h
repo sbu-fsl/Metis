@@ -64,7 +64,7 @@ typedef struct write_size_partition {
 } writesz_partition_t;
 
 // We investigate 34 write size partitions: equal to 0, 0, 1, ... 31, 32
-writesz_partition_t writesz_parts[WRITE_SIZE_PARTS];
+extern writesz_partition_t writesz_parts[WRITE_SIZE_PARTS];
 
 // Random integer generator [min, max] included
 static inline size_t rand_size(size_t min, size_t max)

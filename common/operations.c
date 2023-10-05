@@ -9,6 +9,8 @@
 
 inputs_t *inputs_t_p = NULL;
 
+writesz_partition_t writesz_parts[WRITE_SIZE_PARTS];
+
 double whmFlagPercent[MAX_FLAG_BITS] = {0};
 double subFlagPercent[MAX_FLAG_BITS] = {0};
 double rzdFlagPercent[MAX_FLAG_BITS] = {0};
