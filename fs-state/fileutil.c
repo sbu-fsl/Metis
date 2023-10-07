@@ -581,7 +581,7 @@ static void precreate_pools()
     double fs_exist_prob = FILEDIR_EXIST_PROB;
     size_t path_len;
     char *path_name;
-    mountall();
+    mount_all_normal();
     fprintf(stdout, "\nPrecreated files or dirs before checking: \n");
     for (int i = 0; i < combo_pool_idx; ++i) {
         if (need_pre_create(fs_exist_prob)) {
@@ -790,7 +790,7 @@ static void equalize_free_spaces(void)
     size_t free_spaces[MAX_FS] = {0};
     size_t min_space = ULONG_MAX;
     const char *dummy_file = ".mcfs_dummy";
-    mountall();
+    mount_all_normal();
     /* Find free space of each file system being checked */
     for (int i = 0; i < get_n_fs(); ++i) {
         if (is_verifs(get_fslist()[i]))
@@ -904,6 +904,11 @@ void __attribute__((constructor)) init()
 #ifdef CBUF_IMAGE
     circular_buf_init(&fsimg_bufs, get_n_fs(), get_devsize_kb());
 #endif
+    /* 
+     * Updated 2023-1007: mount file systems again because we use remount 
+     * in the MCFS driver, which requires file systems being mounted.
+     */
+    mount_all_normal();
 }
 
 /*

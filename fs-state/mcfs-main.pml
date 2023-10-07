@@ -24,7 +24,7 @@ proctype worker()
         c_code {
             /* creat, check: return, errno, existence */
             makelog("BEGIN: create_file\n");
-            mountall();
+            remount_all_mutating();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
@@ -41,7 +41,7 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            unmount_all_strict();
+            remount_all_read_only();
             makelog("END: create_file\n");
         };
     };
@@ -53,7 +53,7 @@ proctype worker()
         /* write, check: retval, errno, content */
         c_code {
             makelog("BEGIN: write_file\n");
-            mountall();
+            remount_all_mutating();
             // off_t offset = pick_value(0, 32768, 1024);
             // size_t writelen = pick_value(0, 32768, 2048);
             char *data = malloc(Pworker->writelen);
@@ -80,7 +80,7 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            unmount_all_strict();
+            remount_all_read_only();
             makelog("END: write_file\n");
         };
     };
@@ -91,7 +91,7 @@ proctype worker()
            intended to avoid long term ENOSPC of write() */
         c_code {
             makelog("BEGIN: truncate\n");
-            mountall();
+            remount_all_mutating();
             // off_t flen = pick_value(0, 200000, 10000);
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
@@ -109,7 +109,7 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            unmount_all_strict();
+            remount_all_read_only();
             makelog("END: truncate\n");
         };
     };
@@ -117,7 +117,7 @@ proctype worker()
         /* unlink, check: retval, errno, existence */
         c_code {
             makelog("BEGIN: unlink\n");
-            mountall();
+            remount_all_mutating();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
@@ -134,7 +134,7 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            unmount_all_strict();
+            remount_all_read_only();
             makelog("END: unlink\n");
         }
     };
@@ -142,7 +142,7 @@ proctype worker()
         /* mkdir, check: retval, errno, existence */
         c_code {
             makelog("BEGIN: mkdir\n");
-            mountall();
+            remount_all_mutating();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_dpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
@@ -159,7 +159,7 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            unmount_all_strict();
+            remount_all_read_only();
             makelog("END: mkdir\n");
         }
         // assert(! c_expr{ get_errs()[0] == EEXIST && get_errs()[1] == EEXIST && get_errs()[2] == 0 });
@@ -168,7 +168,7 @@ proctype worker()
         /* rmdir, check: retval, errno, existence */
         c_code {
             makelog("BEGIN: rmdir\n");
-            mountall();
+            remount_all_mutating();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_dpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
@@ -185,7 +185,7 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            unmount_all_strict();
+            remount_all_read_only();
             makelog("END: rmdir\n");
         }
     };
@@ -194,7 +194,7 @@ proctype worker()
         c_code {
             /* chmod, check: return, errno, absfs */
             makelog("BEGIN: chmod\n");
-            mountall();
+            remount_all_mutating();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
@@ -211,7 +211,7 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            unmount_all_strict();
+            remount_all_read_only();
             makelog("END: chmod\n");
         };
     };
@@ -220,7 +220,7 @@ proctype worker()
         c_code {
             /* chown_file, check: return, errno, absfs */
             makelog("BEGIN: chown_file\n");
-            mountall();
+            remount_all_mutating();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
@@ -237,7 +237,7 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            unmount_all_strict();
+            remount_all_read_only();
             makelog("END: chown_file\n");
         };
     };
@@ -246,7 +246,7 @@ proctype worker()
         c_code {
             /* chgrp_file, check: return, errno, absfs */
             makelog("BEGIN: chgrp_file\n");
-            mountall();
+            remount_all_mutating();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
@@ -263,7 +263,7 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            unmount_all_strict();
+            remount_all_read_only();
             makelog("END: chgrp_file\n");
         };
     };
@@ -271,7 +271,7 @@ proctype worker()
         /* setxattr, check: retval, errno, xttar names and values */
         c_code {
             makelog("BEGIN: setxattr\n");
-            mountall();
+            remount_all_mutating();
             int name_idx = random() % 2;
             int src_idx = pick_random(0, get_fpoolsize() - 1);
             for (int i = 0; i < get_n_fs(); ++i) {
@@ -285,7 +285,7 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_file_xattr(get_fslist(), get_n_fs(), get_xfpaths()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            unmount_all_strict();
+            remount_all_read_only();
             makelog("END: setxattr\n");
         }
     };
@@ -293,7 +293,7 @@ proctype worker()
         /* removexattr, check: retval, errno, xttar names and values */
         c_code {
             makelog("BEGIN: removexattr\n");
-            mountall();
+            remount_all_mutating();
             int name_idx = random() % 2;
             int src_idx = pick_random(0, get_fpoolsize() - 1);
             for (int i = 0; i < get_n_fs(); ++i) {
@@ -306,7 +306,7 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_file_xattr(get_fslist(), get_n_fs(), get_xfpaths()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            unmount_all_strict();
+            remount_all_read_only();
             makelog("END: removexattr\n");
         }
     };
@@ -315,7 +315,7 @@ proctype worker()
         c_expr {enable_complex_ops} ->
             c_code { 
                 makelog("BEGIN: rename\n");
-                mountall();
+                remount_all_mutating();
                 int dir_or_file = random() % 2;
                 /* Case of file */
                 if (dir_or_file == 0) {
@@ -341,7 +341,7 @@ proctype worker()
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
                 expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
 
-                unmount_all_strict();
+                remount_all_read_only();
                 makelog("END: rename\n");                
             }
     };
@@ -351,7 +351,7 @@ proctype worker()
         c_expr {enable_complex_ops} ->
             c_code {
                 makelog("BEGIN: link\n");
-                mountall();
+                remount_all_mutating();
 
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 int dst_idx = pick_random(0, get_fpoolsize() - 1);
@@ -364,7 +364,7 @@ proctype worker()
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
                 expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
 
-                unmount_all_strict();
+                remount_all_read_only();
                 makelog("END: link\n");
             }
     };
@@ -373,7 +373,7 @@ proctype worker()
         c_expr {enable_complex_ops} ->
             c_code {
                 makelog("BEGIN: symlink\n");
-                mountall();
+                remount_all_mutating();
 
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 int dst_idx = pick_random(0, get_fpoolsize() - 1);
@@ -386,7 +386,7 @@ proctype worker()
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
                 expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
 
-                unmount_all_strict();
+                remount_all_read_only();
                 makelog("END: symlink\n");
             }
     };

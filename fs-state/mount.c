@@ -53,7 +53,7 @@ bool do_fsck()
     return isgood;
 }
 
-void mountall()
+static void mountall(unsigned long mnt_flags)
 {
     int failpos, err;
     for (int i = 0; i < get_n_fs(); ++i) {
@@ -61,7 +61,7 @@ void mountall()
         if (is_verifs(get_fslist()[i]))
             continue;
         /* mount(source, target, fstype, mountflags, option_str) */
-        int ret = mount(get_devlist()[i], get_basepaths()[i], get_fslist()[i], MS_NOATIME, "");
+        int ret = mount(get_devlist()[i], get_basepaths()[i], get_fslist()[i], mnt_flags, "");
         if (ret != 0) {
             failpos = i;
             err = errno;
@@ -76,10 +76,28 @@ err:
             continue;
         umount2(get_basepaths()[i], MNT_FORCE);
     }
-    fprintf(stderr, "Could not mount file system %s in %s at %s (%s)\n",
+    fprintf(stderr, "Could not mount file system %s in %s at %s (%s) with mountflags: %lu\n",
             get_fslist()[failpos], get_devlist()[failpos], get_basepaths()[failpos],
-            errnoname(err));
+            errnoname(err), mnt_flags);
     exit(1);
+}
+
+void remount_all_mutating()
+{
+    unsigned long mnt_flags = MS_REMOUNT | MS_NOATIME;
+    mountall(mnt_flags);
+}
+
+void remount_all_read_only()
+{
+    unsigned long mnt_flags = MS_REMOUNT | MS_NOATIME | MS_RDONLY;  
+    mountall(mnt_flags);
+}
+
+void mount_all_normal()
+{
+    unsigned long mnt_flags = MS_NOATIME;
+    mountall(mnt_flags);
 }
 
 static void save_lsof()
