@@ -38,10 +38,10 @@ proctype worker()
                         create_file, get_testfiles()[i], Pworker->create_flag, Pworker->create_mode);
                 }
             }
+            remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            remount_all_read_only();
             makelog("END: create_file\n");
         };
     };
@@ -77,10 +77,10 @@ proctype worker()
 
                 free(data);
             }
+            remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            remount_all_read_only();
             makelog("END: write_file\n");
         };
     };
@@ -106,10 +106,10 @@ proctype worker()
                         get_testfiles()[i], (off_t)Pworker->filelen);
                 }
             }
+            remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            remount_all_read_only();
             makelog("END: truncate\n");
         };
     };
@@ -131,10 +131,10 @@ proctype worker()
                         get_testfiles()[i]);
                 }
             }
+            remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            remount_all_read_only();
             makelog("END: unlink\n");
         }
     };
@@ -156,10 +156,10 @@ proctype worker()
                         get_testdirs()[i], 0755);
                 }
             }
+            remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            remount_all_read_only();
             makelog("END: mkdir\n");
         }
         // assert(! c_expr{ get_errs()[0] == EEXIST && get_errs()[1] == EEXIST && get_errs()[2] == 0 });
@@ -182,10 +182,10 @@ proctype worker()
                         get_testdirs()[i]);
                 }
             }
+            remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            remount_all_read_only();
             makelog("END: rmdir\n");
         }
     };
@@ -208,10 +208,10 @@ proctype worker()
                         chmod, get_testfiles()[i], Pworker->chmod_mode);
                 }
             }
+            remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            remount_all_read_only();
             makelog("END: chmod\n");
         };
     };
@@ -234,10 +234,10 @@ proctype worker()
                         chown_file, get_testfiles()[i], (int) Pworker->chown_owner);
                 }
             }
+            remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            remount_all_read_only();
             makelog("END: chown_file\n");
         };
     };
@@ -260,10 +260,10 @@ proctype worker()
                         chgrp_file, get_testfiles()[i], (int) Pworker->chown_group);
                 }
             }
+            remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            remount_all_read_only();
             makelog("END: chgrp_file\n");
         };
     };
@@ -280,12 +280,11 @@ proctype worker()
                     get_filepool()[i][src_idx], xattr_names[name_idx], 
                     xattr_vals[name_idx], sizeof(xattr_names[name_idx]), XATTR_CREATE);
             }
-
+            remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_file_xattr(get_fslist(), get_n_fs(), get_xfpaths()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            remount_all_read_only();
             makelog("END: setxattr\n");
         }
     };
@@ -301,12 +300,11 @@ proctype worker()
                 makecall(get_rets()[i], get_errs()[i], "%s, %s", removexattr, 
                     get_filepool()[i][src_idx], xattr_names[name_idx]);
             }
-
+            remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_file_xattr(get_fslist(), get_n_fs(), get_xfpaths()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
-            remount_all_read_only();
             makelog("END: removexattr\n");
         }
     };
@@ -337,11 +335,11 @@ proctype worker()
                             get_directorypool()[i][src_idx], get_directorypool()[i][dst_idx]);
                     }
                 }
+                remount_all_read_only();
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
                 expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
 
-                remount_all_read_only();
                 makelog("END: rename\n");                
             }
     };
@@ -360,11 +358,11 @@ proctype worker()
                     makecall(get_rets()[i], get_errs()[i], "%s, %s", link, 
                        get_filepool()[i][src_idx], get_filepool()[i][dst_idx]);
                 }
+                remount_all_read_only();
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
                 expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
 
-                remount_all_read_only();
                 makelog("END: link\n");
             }
     };
@@ -382,11 +380,11 @@ proctype worker()
                     makecall(get_rets()[i], get_errs()[i], "%s, %s", symlink, 
                         get_filepool()[i][src_idx], get_filepool()[i][dst_idx]);
                 }
+                remount_all_read_only();
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
                 expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
 
-                remount_all_read_only();
                 makelog("END: symlink\n");
             }
     };
