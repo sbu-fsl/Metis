@@ -43,10 +43,10 @@ for gzfile in "$MASTER_DIR"/output-pan*.log.gz; do
     fi
 done
 
-# ## For client machines, decompress at remote mcfs-swarm directory
-# for CLIENT in "${CLIENTS[@]}"; do
-#     decompress_on_node $CLIENT &
-# done
+## For client machines, decompress at remote mcfs-swarm directory
+for CLIENT in "${CLIENTS[@]}"; do
+    decompress_on_node $CLIENT &
+done
 
 # Wait for all background decompression jobs to finish
 wait
@@ -72,4 +72,5 @@ wait
 echo "All abstract states extraction jobs finished."
 
 # ################ Part 3: Copy extracted abstract states from client machines to master machine
+
 
