@@ -8,10 +8,10 @@ CLIENTS=("yifeilatest4" "yifeilatest5")
 CLIENT_DIR="/mcfs-swarm"
 EACH_VT_CNT=6
 MASTER_DIR="/mcfs-swarm/nfs4mc/fs-state"
-CLIENT_SWARM_DIR="/mcfs-swarm/nfs4mc/scripts/multi_machines_analysis"
+SWARM_SCRIPT_DIR="/mcfs-swarm/nfs4mc/scripts/multi_machines_analysis"
 
 
-# Part 1: For each machine, go to logs directory, and decompress output-pan*.log.gz
+################ Part 1: For each machine, go to logs directory, and decompress output-pan*.log.gz
 
 # Function to decompress .gz files that are not yet decompressed on a given node
 decompress_on_node() {
@@ -56,18 +56,21 @@ wait
 
 echo "All decompression jobs finished."
 
-# # Part 2: Extract abstract states from raw output log files
+################ Part 2: Extract abstract states from raw output log files
 
-# ## Master machine (local)
-# cd /mcfs-swarm/nfs4mc/scripts/multi_machines_analysis    
+## Master machine (local)
+cd $SWARM_SCRIPT_DIR
 
-# python3 multi_extract_absfs.py $EACH_VT_CNT ../../fs-state/output-pan\*.log &
+python3 multi_extract_absfs.py $EACH_VT_CNT ../../fs-state/output-pan\*.log &
 
-# ## Client machines (remote via ssh)
-# ## For client machines, extract abstract states from logs remotely
-# for CLIENT in "${CLIENTS[@]}"; do
-#     ssh $CLIENT "cd $CLIENT_SWARM_DIR && python3 multi_extract_absfs.py $EACH_VT_CNT ../../fs-state/output-pan\*.log" &
-# done
+## Client machines (remote via ssh)
+## For client machines, extract abstract states from logs remotely
+for CLIENT in "${CLIENTS[@]}"; do
+    ssh $CLIENT "cd $SWARM_SCRIPT_DIR && python3 multi_extract_absfs.py $EACH_VT_CNT ../../fs-state/output-pan\*.log" &
+done
 
-# # Wait for all background absfs extraction jobs to finish
-# wait
+# Wait for all background absfs extraction jobs to finish
+wait
+
+################ Part 3: Copy extracted abstract states from client machines to master machine
+
