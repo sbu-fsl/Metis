@@ -73,4 +73,11 @@ echo "All abstract states extraction jobs finished."
 
 # ################ Part 3: Copy extracted abstract states from client machines to master machine
 
+## Copy time-absfs-{hostname}-VT{allVT}-pan(VTnum).csv from clients to the master
+for CLIENT in "${CLIENTS[@]}"; do
+    scp $CLIENT:"$SWARM_SCRIPT_DIR"/time-absfs-$CLIENT-*-pan*.csv . &
+done
 
+wait
+
+echo "All abstract states csv copying jobs finished."
