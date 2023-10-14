@@ -107,3 +107,6 @@ for CLIENT in "${CLIENTS[@]}"; do
     rename "s/$CLIENT/$MASTER/" time-absfs-$CLIENT-VT*-pan*.csv
 done 
 
+################ Part 5: Perform analysis 
+
+./multi_analyze_all.py -m 147 -n 18 > results-yifeilatest345-Overall-VT18-each6-147hours-2023-1012.csv
