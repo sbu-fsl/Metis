@@ -9,6 +9,7 @@ octal 101 (dec. 65): O_CREAT|O_WRONLY
 octal 301 (dec. 193): O_CREAT|O_WRONLY|O_EXCL
 octal 1101 (dec. 577) (creat syscall & create_file): O_CREAT|O_WRONLY|O_TRUNC
 octal 40101 (dec. 16449): O_CREAT|O_WRONLY|O_DIRECT
+Note: JFFS2 does not support O_DIRECT, delete 0o40101 while testing JFFS2.
 """
 create_open_flag = make_params_pml('create_open_flag',
         SpecialParameters(0o101, 0o301, 0o1101, 0o40101))

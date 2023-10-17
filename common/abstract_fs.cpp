@@ -28,7 +28,7 @@ struct md5sum {
  * Ext4 and Ext2 has a special folder /lost+found which makes nlink for 
  * mount point root dir "/" nlink incremented by 1
  */
-const char *nlink_fs[] = {"ext4", "ext2"};
+const char *nlink_fs[] = {"ext4", "ext2", "jffs2"};
 const char *root_dir = "/";
 
 std::unordered_set<std::string> exclusion_list = {
