@@ -26,8 +26,8 @@ char *get_abstract_state(const char *basepath,
 int main(int argc, char *argv[])
 {
     char *mp = NULL;
-    // By default it is 0 for xxh128_t 
-    unsigned int hash_option = 0;
+    // By default it is 2 for MD5 
+    unsigned int hash_option = 2;
     if (argc > 1) {
         mp = argv[1];
         if(argc > 2){

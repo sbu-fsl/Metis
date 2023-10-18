@@ -113,8 +113,9 @@ bool compare_equality_values(char **fses, int n_fs, int *nums)
     }
     if (!res) {
         logwarn("[seqid=%zu] discrepancy in values found:", count);
-        for (int i = 0; i < n_fs; ++i)
+        for (int i = 0; i < n_fs; ++i) {
             logwarn("[%s]: %d", fses[i], nums[i]);
+        }
     }
     return res;
 }
@@ -581,8 +582,10 @@ static void precreate_pools()
     size_t path_len;
     char *path_name;
     mountall();
+    fprintf(stdout, "\nPrecreated files or dirs before checking: \n");
     for (int i = 0; i < combo_pool_idx; ++i) {
         if (need_pre_create(fs_exist_prob)) {
+            fprintf(stdout, "\tFile/Dir: %s\n", bfs_fd_pool[i]);
             for (int j = 0; j < get_n_fs(); ++j) {
                 path_len = snprintf(NULL, 0, "%s%s", get_basepaths()[j], bfs_fd_pool[i]);
                 path_name = calloc(1, path_len + 1);
@@ -597,6 +600,7 @@ static void precreate_pools()
             }
         }
     }
+    fprintf(stdout, "\n");
     unmount_all_strict();
     /* Free the temp file/dir pool to save memory */
     for (int i = 0; i < combo_pool_idx; ++i) {
@@ -889,6 +893,9 @@ void __attribute__((constructor)) init()
 
     /* Initialize absfs-set used for counting unique states */
     absfs_set_init(&absfs_set);
+
+    /* Initialize inputs of syscall operations */
+    syscall_inputs_init();
 
     /* Fill dummy data so that all file systems have the same amount of free
      * space (Only for non-VeriFS experiments, because currently VeriFS1 doesn't
