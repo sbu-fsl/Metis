@@ -89,6 +89,7 @@ typedef struct all_global_params {
 
 extern globals_t *globals_t_p;
 extern bool *fs_frozen;
+extern bool need_mount;
 
 static inline unsigned int get_n_fs() {
     return globals_t_p->_n_fs;

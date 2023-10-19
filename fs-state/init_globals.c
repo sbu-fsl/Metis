@@ -18,6 +18,8 @@ static size_t devsize_kb_to_copy[MAX_FS];
 static char *global_args = NULL;
 static int opt_ret = -1;
 
+bool need_mount = false;
+
 #ifdef FILEDIR_POOL
 static int fpool_idx = 0;
 static int dpool_idx = 0;

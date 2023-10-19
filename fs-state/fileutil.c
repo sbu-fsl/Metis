@@ -695,6 +695,8 @@ static long checkpoint_after_hook(unsigned char *ptr)
 static long restore_before_hook(unsigned char *ptr)
 {
     state_depth--;
+    need_mount = true;
+    unmount_all_strict();
     
     submit_seq("restore\n");
     makelog("[seqid = %d] restore (%zu)\n", count, state_depth);

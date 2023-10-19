@@ -82,15 +82,24 @@ err:
     exit(1);
 }
 
+/* Remounting with read-write option.  It is possible that the file system is
+ * not mounted, in which an EINVAL error will be returned.  When we remount 
+ * with read-write, we need to check if we need to mount or remount it.
+ */
 void remount_all_mutating()
 {
-    unsigned long mnt_flags = MS_REMOUNT | MS_NOATIME;
-    mountall(mnt_flags);
+    unsigned long mnt_flags = MS_NOATIME;
+    unsigned long remnt_flags = MS_REMOUNT | MS_NOATIME;
+    if (need_mount)
+        mountall(mnt_flags);
+    else 
+        mountall(remnt_flags);
 }
 
 void remount_all_read_only()
 {
     unsigned long mnt_flags = MS_REMOUNT | MS_NOATIME | MS_RDONLY;  
+    need_mount =  false;
     mountall(mnt_flags);
 }
 
@@ -136,6 +145,14 @@ void unmount_all(bool strict)
 try_unmount:
         ret = umount2(get_basepaths()[i], 0);
         if (ret != 0) {
+            /* If the directory is not mounted, umount2() will fail with EINVAL.
+             * This is due to two consecutive restore, we can skip the second 
+             * unmount. */
+            if (errno == EINVAL) {
+                fprintf(stderr, "File system %s at %s is not mounted.\n",
+                        get_fslist()[i], get_basepaths()[i]);
+                continue;
+            }
             /* If unmounting failed due to device being busy, again up to
              * retry_limit times with 100 * 2^n ms (n = num_retries) */
             useconds_t waitms = (100 << (10 - retry_limit));
