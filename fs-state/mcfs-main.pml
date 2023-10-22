@@ -24,7 +24,7 @@ proctype worker()
         c_code {
             /* creat, check: return, errno, existence */
             makelog("BEGIN: create_file\n");
-            sync();
+            
             remount_all_mutating();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
@@ -39,7 +39,7 @@ proctype worker()
                         create_file, get_testfiles()[i], Pworker->create_flag, Pworker->create_mode);
                 }
             }
-            sync();
+            
             remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -55,7 +55,7 @@ proctype worker()
         /* write, check: retval, errno, content */
         c_code {
             makelog("BEGIN: write_file\n");
-            sync();
+            
             remount_all_mutating();
             // off_t offset = pick_value(0, 32768, 1024);
             // size_t writelen = pick_value(0, 32768, 2048);
@@ -80,7 +80,7 @@ proctype worker()
 
                 free(data);
             }
-            sync();
+            
             remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -95,7 +95,7 @@ proctype worker()
            intended to avoid long term ENOSPC of write() */
         c_code {
             makelog("BEGIN: truncate\n");
-            sync();
+            
             remount_all_mutating();
             // off_t flen = pick_value(0, 200000, 10000);
             if (enable_fdpool) {
@@ -111,7 +111,7 @@ proctype worker()
                         get_testfiles()[i], (off_t)Pworker->filelen);
                 }
             }
-            sync();
+            
             remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -123,7 +123,7 @@ proctype worker()
         /* unlink, check: retval, errno, existence */
         c_code {
             makelog("BEGIN: unlink\n");
-            sync();
+            
             remount_all_mutating();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
@@ -138,7 +138,7 @@ proctype worker()
                         get_testfiles()[i]);
                 }
             }
-            sync();
+            
             remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -150,7 +150,7 @@ proctype worker()
         /* mkdir, check: retval, errno, existence */
         c_code {
             makelog("BEGIN: mkdir\n");
-            sync();
+            
             remount_all_mutating();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_dpoolsize() - 1);
@@ -165,7 +165,7 @@ proctype worker()
                         get_testdirs()[i], 0755);
                 }
             }
-            sync();
+            
             remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -178,7 +178,7 @@ proctype worker()
         /* rmdir, check: retval, errno, existence */
         c_code {
             makelog("BEGIN: rmdir\n");
-            sync();
+            
             remount_all_mutating();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_dpoolsize() - 1);
@@ -193,7 +193,7 @@ proctype worker()
                         get_testdirs()[i]);
                 }
             }
-            sync();
+            
             remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -206,7 +206,7 @@ proctype worker()
         c_code {
             /* chmod, check: return, errno, absfs */
             makelog("BEGIN: chmod\n");
-            sync();
+            
             remount_all_mutating();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
@@ -221,7 +221,7 @@ proctype worker()
                         chmod, get_testfiles()[i], Pworker->chmod_mode);
                 }
             }
-            sync();
+            
             remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -234,7 +234,7 @@ proctype worker()
         c_code {
             /* chown_file, check: return, errno, absfs */
             makelog("BEGIN: chown_file\n");
-            sync();
+            
             remount_all_mutating();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
@@ -249,7 +249,7 @@ proctype worker()
                         chown_file, get_testfiles()[i], (int) Pworker->chown_owner);
                 }
             }
-            sync();
+            
             remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -262,7 +262,7 @@ proctype worker()
         c_code {
             /* chgrp_file, check: return, errno, absfs */
             makelog("BEGIN: chgrp_file\n");
-            sync();
+            
             remount_all_mutating();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
@@ -277,7 +277,7 @@ proctype worker()
                         chgrp_file, get_testfiles()[i], (int) Pworker->chown_group);
                 }
             }
-            sync();
+            
             remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -289,7 +289,7 @@ proctype worker()
         /* setxattr, check: retval, errno, xttar names and values */
         c_code {
             makelog("BEGIN: setxattr\n");
-            sync();
+            
             remount_all_mutating();
             int name_idx = random() % 2;
             int src_idx = pick_random(0, get_fpoolsize() - 1);
@@ -299,7 +299,7 @@ proctype worker()
                     get_filepool()[i][src_idx], xattr_names[name_idx], 
                     xattr_vals[name_idx], sizeof(xattr_names[name_idx]), XATTR_CREATE);
             }
-            sync();
+            
             remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -312,7 +312,7 @@ proctype worker()
         /* removexattr, check: retval, errno, xttar names and values */
         c_code {
             makelog("BEGIN: removexattr\n");
-            sync();
+            
             remount_all_mutating();
             int name_idx = random() % 2;
             int src_idx = pick_random(0, get_fpoolsize() - 1);
@@ -321,7 +321,7 @@ proctype worker()
                 makecall(get_rets()[i], get_errs()[i], "%s, %s", removexattr, 
                     get_filepool()[i][src_idx], xattr_names[name_idx]);
             }
-            sync();
+            
             remount_all_read_only();
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -335,7 +335,7 @@ proctype worker()
         c_expr {enable_complex_ops} ->
             c_code { 
                 makelog("BEGIN: rename\n");
-                sync();
+                
             remount_all_mutating();
                 int dir_or_file = random() % 2;
                 /* Case of file */
@@ -358,7 +358,7 @@ proctype worker()
                             get_directorypool()[i][src_idx], get_directorypool()[i][dst_idx]);
                     }
                 }
-                sync();
+                
             remount_all_read_only();
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -373,7 +373,7 @@ proctype worker()
         c_expr {enable_complex_ops} ->
             c_code {
                 makelog("BEGIN: link\n");
-                sync();
+                
             remount_all_mutating();
 
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
@@ -383,7 +383,7 @@ proctype worker()
                     makecall(get_rets()[i], get_errs()[i], "%s, %s", link, 
                        get_filepool()[i][src_idx], get_filepool()[i][dst_idx]);
                 }
-                sync();
+                
             remount_all_read_only();
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
@@ -397,7 +397,7 @@ proctype worker()
         c_expr {enable_complex_ops} ->
             c_code {
                 makelog("BEGIN: symlink\n");
-                sync();
+                
             remount_all_mutating();
 
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
@@ -407,7 +407,7 @@ proctype worker()
                     makecall(get_rets()[i], get_errs()[i], "%s, %s", symlink, 
                         get_filepool()[i][src_idx], get_filepool()[i][dst_idx]);
                 }
-                sync();
+                
             remount_all_read_only();
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
