@@ -3,11 +3,12 @@ UTILITY_DIR := ../../test_utilities
 UTILITY_SRC := $(wildcard $(UTILITY_DIR)/*.c)
 UTILITY_OBJ := $(patsubst $(UTILITY_DIR)/%,%.o,$(UTILITY_SRC))
 
-override CFLAGS += -g -I../../test_utilities
-override LIBS += -lssl -lcrypto -lrt -lpthread -lz -lm
+override CFLAGS += -g -I../../compute_absfs -I../../test_utilities -I../../../include
+override LIBS += -lssl -lcrypto -lrt -lpthread -lz -lm -lstdc++fs -lpthread -lprofiler -lxxhash -lstdc++
+#-lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz
 
 driver: driver.c utility-libs
-	$(CC) -o driver driver.c utility-libs.a $(CFLAGS) $(LIBS)
+	$(CC) -o driver driver.c utility-libs.a ../../../fs-state/common-libs.a $(CFLAGS) $(LIBS)
 
 test: driver
 	sudo bash -x run_driver.sh
