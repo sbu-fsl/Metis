@@ -1,0 +1,164 @@
+From db8a5f659b40244c050790745b722651fffcbd6b Mon Sep 17 00:00:00 2001
+From: Yifei Liu <yifeliu@cs.stonybrook.edu>
+Date: Sat, 28 Oct 2023 22:53:14 -0400
+Subject: [PATCH] Support for different-size brd ramdisks and new rd_sizes
+ parameter
+
+Signed-off-by: Yifei Liu <yifeliu@cs.stonybrook.edu>
+---
+ drivers/block/brd.c | 97 +++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 93 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/block/brd.c b/drivers/block/brd.c
+index 970bd6ff38c4..e775292a76e5 100644
+--- a/drivers/block/brd.c
++++ b/drivers/block/brd.c
+@@ -279,14 +279,47 @@ static const struct block_device_operations brd_fops = {
+ /*
+  * And now the modules code and kernel interface.
+  */
++static bool rd_size_set = false;
++static bool rd_sizes_str_set = false;
++
++static int set_rd_size(const char *val, const struct kernel_param *kp)
++{
++    rd_size_set = true;
++    return param_set_ulong(val, kp);
++}
++
++static int set_rd_sizes_str(const char *val, const struct kernel_param *kp)
++{
++    rd_sizes_str_set = true;
++    return param_set_charp(val, kp);
++}
++
++static const struct kernel_param_ops rd_size_ops = {
++    .set = set_rd_size,
++    .get = param_get_ulong,
++};
++
++static const struct kernel_param_ops rd_sizes_str_ops = {
++    .set = set_rd_sizes_str,
++    .get = param_get_charp,
++};
++
+ static int rd_nr = CONFIG_BLK_DEV_RAM_COUNT;
+ module_param(rd_nr, int, 0444);
+ MODULE_PARM_DESC(rd_nr, "Maximum number of brd devices");
+ 
+ unsigned long rd_size = CONFIG_BLK_DEV_RAM_SIZE;
+-module_param(rd_size, ulong, 0444);
++module_param_cb(rd_size, &rd_size_ops, &rd_size, 0444);
+ MODULE_PARM_DESC(rd_size, "Size of each RAM disk in kbytes.");
+ 
++static char *rd_sizes_str = "";
++module_param_cb(rd_sizes_str, &rd_sizes_str_ops, &rd_sizes_str, 0444);
++MODULE_PARM_DESC(rd_sizes_str, "Comma-delimited list of individual sizes"
++	"of each RAM disk in kbytes, separated by comma.");
++
++static unsigned long *rd_sizes = NULL;
++static int num_rd_sizes = 0;
++
+ static int max_part = 1;
+ module_param(max_part, int, 0444);
+ MODULE_PARM_DESC(max_part, "Num Minors to reserve between devices");
+@@ -312,6 +345,17 @@ __setup("ramdisk_size=", ramdisk_size);
+ static LIST_HEAD(brd_devices);
+ static struct dentry *brd_debugfs_dir;
+ 
++static unsigned long get_ith_ramdisk_size(int i)
++{
++	if (rd_sizes)
++		if (i >= num_rd_sizes)
++			return rd_sizes[num_rd_sizes - 1];
++		else
++			return rd_sizes[i];
++	else
++		return rd_size;
++}
++
+ static int brd_alloc(int i)
+ {
+ 	struct brd_device *brd;
+@@ -345,7 +389,7 @@ static int brd_alloc(int i)
+ 	disk->fops		= &brd_fops;
+ 	disk->private_data	= brd;
+ 	strscpy(disk->disk_name, buf, DISK_NAME_LEN);
+-	set_capacity(disk, rd_size * 2);
++	set_capacity(disk, get_ith_ramdisk_size(i) * 2);
+ 	
+ 	/*
+ 	 * This is so fdisk will align partitions on 4k, because of
+@@ -417,6 +461,45 @@ static int __init brd_init(void)
+ {
+ 	int err, i;
+ 
++	if (rd_size_set && rd_sizes_str_set) {
++		pr_err("brd: rd_size and rd_sizes_str cannot be set at the same time.\n");
++		return -EINVAL;
++	}
++
++	if (rd_sizes_str_set) {
++		char *p, *q;
++		int i;
++
++		num_rd_sizes = 1;
++		p = rd_sizes_str;
++		while (*p) {
++			if (*p == ',')
++				num_rd_sizes++;
++			p++;
++		}
++
++		rd_sizes = kcalloc(num_rd_sizes, sizeof(unsigned long), GFP_KERNEL);
++		if (!rd_sizes)
++			return -ENOMEM;
++
++		p = rd_sizes_str;
++		for (i = 0; i < num_rd_sizes; i++) {
++			rd_sizes[i] = simple_strtoul(p, &q, 0);
++			if (q == p)
++				goto out_free;
++			p = q + 1;
++		}
++	} else {
++		num_rd_sizes = 1;
++		rd_sizes = &rd_size;
++	}
++
++	if (rd_nr != num_rd_sizes) {
++		pr_err("brd: rd_nr(%d) is not equal to num_rd_sizes(%d).\n",
++			rd_nr, num_rd_sizes);
++		goto out_free;
++	}
++
+ 	brd_check_and_reset_par();
+ 
+ 	brd_debugfs_dir = debugfs_create_dir("ramdisk_pages", NULL);
+@@ -452,7 +535,10 @@ static int __init brd_init(void)
+ 
+ out_free:
+ 	brd_cleanup();
+-
++	kfree(rd_sizes);
++    if (rd_sizes_str && rd_sizes_str[0] != '\0') {
++        kfree(rd_sizes_str);
++    }
+ 	pr_info("brd: module NOT loaded !!!\n");
+ 	return err;
+ }
+@@ -462,7 +548,10 @@ static void __exit brd_exit(void)
+ 
+ 	unregister_blkdev(RAMDISK_MAJOR, "ramdisk");
+ 	brd_cleanup();
+-
++	kfree(rd_sizes);
++    if (rd_sizes_str && rd_sizes_str[0] != '\0') {
++        kfree(rd_sizes_str);
++    }
+ 	pr_info("brd: module unloaded\n");
+ }
+ 
+-- 
+2.34.1
+
