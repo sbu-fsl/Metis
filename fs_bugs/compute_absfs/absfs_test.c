@@ -23,29 +23,29 @@ char *get_abstract_state(const char *basepath,
     return abs_state_str;
 }
 
-int main(int argc, char *argv[])
-{
-    char *mp = NULL;
-    // By default it is 2 for MD5 
-    unsigned int hash_option = 2;
-    if (argc > 1) {
-        mp = argv[1];
-        if(argc > 2){
-            hash_option = argv[2][0] - '0';
-            if (hash_option > 3) {
-                fprintf(stderr, "Hash option not supported.\n");
-            }
-        }
-    }
-    else {
-        fprintf(stderr, "Usage: %s <mountpoint> [hash_option]\n", argv[0]);
-        exit(1);
-    }
+// int main(int argc, char *argv[])
+// {
+//     char *mp = NULL;
+//     // By default it is 2 for MD5 
+//     unsigned int hash_option = 2;
+//     if (argc > 1) {
+//         mp = argv[1];
+//         if(argc > 2){
+//             hash_option = argv[2][0] - '0';
+//             if (hash_option > 3) {
+//                 fprintf(stderr, "Hash option not supported.\n");
+//             }
+//         }
+//     }
+//     else {
+//         fprintf(stderr, "Usage: %s <mountpoint> [hash_option]\n", argv[0]);
+//         exit(1);
+//     }
 
-    char *abs_state_str = calloc(33, sizeof(char));
-    char *absfs_ret = get_abstract_state(mp, hash_option, abs_state_str);
-    printf("%s\n", absfs_ret);
-    free(abs_state_str);
+//     char *abs_state_str = calloc(33, sizeof(char));
+//     char *absfs_ret = get_abstract_state(mp, hash_option, abs_state_str);
+//     printf("%s\n", absfs_ret);
+//     free(abs_state_str);
 
-    return 0;
-}
+//     return 0;
+// }
