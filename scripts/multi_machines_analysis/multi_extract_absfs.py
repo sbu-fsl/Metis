@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
 
 import re
-import subprocess as sp
+import glob
 
 from sys import argv
 import os
 import socket
+import gzip
 
 absfs_pat = re.compile(r'\[\s*(\d+\.\d+)\] absfs = \{([0-9a-z]+)\}')
 
-
-def get_filelist(pattern='.'):
-    p = sp.Popen('ls -tr %s' % pattern, shell=True, stdout=sp.PIPE)
-    ret = p.wait()
-    if ret != 0:
-        raise Exception('Listing failed, return value is %d' % ret)
-    return p.stdout.read().decode('utf-8').splitlines()
-
+def is_gz_file(filename):
+    root, ext = os.path.splitext(filename)
+    return ext == '.gz'
 
 if __name__ == '__main__':
     # File name pattern for `ls` command
@@ -26,17 +22,26 @@ if __name__ == '__main__':
 
     vt_num = int(argv[1])
     fnpattern = argv[2]
-    flist = get_filelist(fnpattern)
+    flist = glob.glob(fnpattern, recursive=True) 
     host_name = socket.gethostname()
 
     for fpath in flist:
-        # host_name: sgdp02, sgdp03, etc.
+        # host_name: sgdp02, sgdp03, yifeilatest3, etc.
         # vt_number: 4, 8, 12, 16, etc. that represents the number of VTs
         # pan_name: pan1, pan2, pan3, etc.
+        if not os.path.exists(fpath):
+            raise FileNotFoundError(f"No file found at {fpath}")
         pan_name = fpath.split('/')[-1].split('-')[1]
         each_abs_path = 'time-absfs-%s-VT%d-%s.csv' % (host_name, vt_num, pan_name)
         out_fp = open(each_abs_path, 'a')
-        fp = open(fpath, 'r')
+        fp = None
+        # Check if the file is a gzip file
+        if is_gz_file(fpath):
+            fp = gzip.open(fpath, 'rt', encoding='utf-8') 
+        else:
+            fp = open(fpath, 'r')
+        if fp is None:
+            raise Exception(f"Failed to open file {fpath}")
         try:
             for line in fp:
                 result = absfs_pat.match(line)
@@ -48,3 +53,5 @@ if __name__ == '__main__':
         finally:
             fp.close()
             out_fp.close()
+
+    print('All extract-time-absfs for Swarm VTs completed!')
