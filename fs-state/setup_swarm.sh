@@ -450,6 +450,7 @@ for i in $(grep -Po '\t.*:\d+( |\t)' ${SWARM_CONF}); do
         scp pan.c "$remote":${REMOTEDIR}pan.c
 		scp Makefile "$remote":${REMOTEDIR}Makefile
 		scp 'stop.sh' "$remote":${REMOTEDIR}'stop.sh'
+        scp 'outlog_compare_status.sh' "$remote":${REMOTEDIR}'outlog_compare_status.sh'
         # We do not run loadmods.sh on remote machines any more
 		# ssh "$remote" "sh ./nfs-validator/fs-state/loadmods.sh" &
 		if [ "$USE_ENV_VAR" = "1" ]; then
