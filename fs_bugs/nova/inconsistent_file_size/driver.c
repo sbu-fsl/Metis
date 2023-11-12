@@ -3,8 +3,6 @@
 #include "fstestutil.h"
 #include <sys/wait.h>
 
-char *fs_type_nova = "nova";
-
 int execute_cmd_status(const char *cmd)
 {
     int retval = system(cmd);
