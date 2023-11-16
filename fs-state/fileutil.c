@@ -581,11 +581,19 @@ static void precreate_pools()
     double fs_exist_prob = FILEDIR_EXIST_PROB;
     size_t path_len;
     char *path_name;
+    FILE * fp;
+    char dump_fn[PATH_MAX];
+    sprintf(dump_fn, "dump_prepopulate_%u.log", globals_t_p->_swarm_id);
+    fp = fopen(dump_fn, "w");
+    if (fp == NULL) {
+        fprintf(stderr, "Cannot open file %s\n", dump_fn);
+        exit(EXIT_FAILURE);
+    }
+    // Mount all the file systems first
     mountall();
-    fprintf(stdout, "\nPrecreated files or dirs before checking: \n");
     for (int i = 0; i < combo_pool_idx; ++i) {
         if (need_pre_create(fs_exist_prob)) {
-            fprintf(stdout, "\tFile/Dir: %s\n", bfs_fd_pool[i]);
+            fprintf(fp, "%s\n", bfs_fd_pool[i]);
             for (int j = 0; j < get_n_fs(); ++j) {
                 path_len = snprintf(NULL, 0, "%s%s", get_basepaths()[j], bfs_fd_pool[i]);
                 path_name = calloc(1, path_len + 1);
@@ -600,9 +608,9 @@ static void precreate_pools()
             }
         }
     }
-    fprintf(stdout, "\n");
     unmount_all_strict();
     /* Free the temp file/dir pool to save memory */
+    fclose(fp);
     for (int i = 0; i < combo_pool_idx; ++i) {
         free(bfs_fd_pool[i]);
     }

@@ -615,6 +615,10 @@ static void dump_all_globals()
     char dump_fn[MAX_FS + 10];
     sprintf(dump_fn, "dump_globals_%u.log", globals_t_p->_swarm_id);
     fp = fopen (dump_fn, "w");
+    if (!fp) {
+        fprintf(stderr, "Error opening file %s\n", dump_fn);
+        exit(1);
+    }
     fprintf(fp, "swarm_id: %u\n", globals_t_p->_swarm_id);
     fprintf(fp, "n_fs: %u\n", globals_t_p->_n_fs);
     for(int i = 0; i < globals_t_p->_n_fs; ++i) {
@@ -631,8 +635,12 @@ static void dump_file_dir_pools()
 {
     FILE * fp;
     char dump_fn[PATH_MAX];
-    sprintf(dump_fn, "dump_fd_pools_%u.log", globals_t_p->_swarm_id);
+    sprintf(dump_fn, "dump_fdpools_%u.log", globals_t_p->_swarm_id);
     fp = fopen(dump_fn, "w");
+    if (!fp) {
+        fprintf(stderr, "Error opening file %s\n", dump_fn);
+        exit(1);
+    }
     fprintf(fp, "swarm_id: %u\n", globals_t_p->_swarm_id);
     fprintf(fp, "n_fs: %u\n\n", globals_t_p->_n_fs);
     // dump the pool information
