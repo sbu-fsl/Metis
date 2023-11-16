@@ -5,7 +5,25 @@ IMGFILE="./nilfs2-dev-88-unmount-hanging.img"
 FTRACE_DIR="/sys/kernel/debug/tracing"
 
 # Recompile NILFS2 kernel module
-./recompile_nilfs2_mod.sh
+# ./recompile_nilfs2_mod.sh
+
+# Set up Function Filters
+# All nilfs2 functions and down_write/up_write functions
+sudo bash -c 'echo nilfs_* > '$FTRACE_DIR'/set_ftrace_filter'
+sudo bash -c 'echo down_write >> '$FTRACE_DIR'/set_ftrace_filter'
+sudo bash -c 'echo up_write >> '$FTRACE_DIR'/set_ftrace_filter'
+
+# Enable function tracer
+sudo bash -c 'echo function > '$FTRACE_DIR'/current_tracer'
+
+# Tracing specific PID
+sudo bash -c 'echo $$ > set_ftrace_pid'
+
+# Targetted tracing (trace events related to a specific command)
+sudo bash -c 'echo 1 > '$FTRACE_DIR'/tracing_on'
+
+# Clear the trace
+sudo sh -c 'echo 0 > '$FTRACE_DIR'/trace'
 
 # Mount an existing image to create a NILFS2 filesystem
 ./mount_nilfs2_img.sh $MNTPNT $IMGFILE
@@ -17,31 +35,12 @@ cd -
 
 echo "Start Unmounting..."
 ##### Enable ftrace tracing
-cd $FTRACE_DIR
-
-# Set up Function Filters
-# All nilfs2 functions and down_write/up_write functions
-sudo bash -c 'echo nilfs_* > set_ftrace_filter'
-sudo bash -c 'echo down_write >> set_ftrace_filter'
-sudo bash -c 'echo up_write >> set_ftrace_filter'
-
-# Enable function tracer
-sudo bash -c 'echo function > current_tracer'
-
-# Tracing specific PID
-sudo bash -c 'echo $$ > set_ftrace_pid'
-
-# Targetted tracing (trace events related to a specific command)
-sudo bash -c 'echo 1 > tracing_on'
-
-# Clear the trace
-sudo sh -c 'echo 0 > trace'
 
 # Unmounting to reproduce hanging
 umount $MNTPNT
 
 # Disable ftrace tracing
-sudo bash -c 'echo 0 > tracing_on'
-sudo bash -c 'echo nop > current_tracer'
+sudo bash -c 'echo 0 > '$FTRACE_DIR'/tracing_on'
+sudo bash -c 'echo nop > '$FTRACE_DIR'/current_tracer'
 
 echo "Reproducer finished (not supposed to see this message due to hanging)."
