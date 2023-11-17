@@ -370,3 +370,59 @@ void setup_filesystems()
         }
     }
 }
+
+int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode)
+{
+    const size_t len = strlen(path);
+    char _path[PATH_MAX];
+    char *p; 
+
+    errno = 0;
+
+    /* Copy string so its mutable */
+    if (len > sizeof(_path)-1) {
+        errno = ENAMETOOLONG;
+        return -1; 
+    }   
+    strcpy(_path, path);
+
+    bool next_f = false;
+    bool next_d = false;
+    /* Iterate the string */
+    for (p = _path + 1; *p; p++) {
+        if (*p == '/') {
+            /* Temporarily truncate */
+            *p = '\0';
+            if (mkdir(_path, dir_mode) != 0) {
+                if (errno != EEXIST) {
+                    return -1; 
+                }
+            }
+            
+            *p = '/';
+
+            if (*(p + 1) == 'f')
+                next_f = true;
+            else if (*(p + 1) == 'd')
+                next_d = true;
+        }
+    }
+    if (next_f) {
+        int fd = creat(_path, file_mode);
+        if (fd >= 0) {
+            close(fd);
+        }
+        else if (errno != EEXIST) {
+            return -1;
+        }
+    }
+    if (next_d) {
+        if (mkdir(_path, dir_mode) != 0) {
+            if (errno != EEXIST) {
+                return -1; 
+            }
+        }
+    }
+
+    return 0;
+}

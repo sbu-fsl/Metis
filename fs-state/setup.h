@@ -48,5 +48,6 @@ static inline bool is_verifs(const char *fsname)
 }
 
 void setup_filesystems();
+int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode);
 
 #endif // _SETUP_H_

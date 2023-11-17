@@ -19,6 +19,7 @@ EXT2_SZKB=256
 BTRFS_SZKB=16384 # 16 MiB
 XFS_SZKB=16384 # 16 MiB
 JFS_SZKB=16384 # 16 MiB
+NILFS2_SZKB=1028 # 1028 KiB
 
 FSNAME=$1
 FSSZKB=0
@@ -44,6 +45,8 @@ elif [ "$FSNAME" == "btrfs" ]; then
     FSSZKB=$BTRFS_SZKB
 elif [ "$FSNAME" == "jfs" ]; then
     FSSZKB=$JFS_SZKB
+elif [ "$FSNAME" == "nilfs2" ]; then
+    FSSZKB=$NILFS2_SZKB
 else
     echo "Error: File system $1 is not supported."
     exit 1
@@ -62,7 +65,7 @@ fi
 # If the second argument is not empty
 # Run MCFS script for a specific time period
 if [ -n "$2" ]; then
-    timeout $2 ./setup.sh -f $FSNAME:$FSSZKB
+    timeout $2 ./setup.sh -f 0:$FSNAME:$FSSZKB
 fi
 
 # Move all the experimental logs to the new folder
