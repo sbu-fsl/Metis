@@ -2,19 +2,18 @@
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 <mount_point> <image_file>"
+    echo "Usage: $0 <mount_point> [optional: image_file]"
     exit 1
 }
 
 # Check for the number of arguments
-if [ "$#" -ne 2 ]; then
+if [ $# -gt 2 ] || [ $# -lt 1 ]; then
     echo "Error: Incorrect number of arguments."
     usage
 fi
 
 # Assign arguments to variables for better readability
 MNTPNT="$1"
-IMGFILE="$2"
 
 DEVFILE="/dev/ram0"
 RAMDISK_SIZE=1028
@@ -32,6 +31,12 @@ rmmod brd
 
 modprobe brd rd_nr=1 rd_size=$RAMDISK_SIZE
 
-dd if=$IMGFILE of=$DEVFILE bs=4k status=none
+if [ -n "$2" ]; then
+    IMGFILE="$2"
+    dd if=$IMGFILE of=$DEVFILE bs=4k status=none
+else 
+    dd if=/dev/zero of=$DEVFILE bs=$RAMDISK_SIZE count=1
+    mkfs.nilfs2 -B 16 -f $DEVFILE >&2
+fi
 
 mount $DEVFILE $MNTPNT
