@@ -1,0 +1,7 @@
+kprobe:down_write /comm == "nilfs2"/ {
+    printf("%s called down_write on %lx\n", comm, arg0);
+}
+
+kprobe:up_write /comm == "nilfs2"/ {
+    printf("%s called up_write on %lx\n", comm, arg0);
+}

@@ -1,0 +1,10 @@
+kprobe:nilfs_segctor_destroy
+{
+    printf("nilfs_segctor_destroy called\n");
+    // You can add code to print the arguments of the function if any
+}
+
+kretprobe:nilfs_segctor_destroy
+{
+    printf("nilfs_segctor_destroy returned\n");
+}

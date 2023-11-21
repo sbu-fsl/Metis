@@ -5,7 +5,12 @@ int seq = 0;
 
 vector_t states;
 
-/* Before running this program, make sure the devices are already set 
+/* 
+ * NOTE: NEED TO RECOMPILE REPLAYER "make replayer" every time we run it.
+ *
+ * Make sure the required devices are already set up with correct sizes. 
+ *
+ * Before running this program, make sure the devices are already set 
  * up with correct sizes.
  * We need to specify a sequence.log file (the sequence of operations 
  * to be replayed)
@@ -27,7 +32,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	/* Open sequence file */
-	FILE *seqfp = fopen("sequence-pan-20231117-045613-33541.log", "r");
+	FILE *seqfp = fopen("sequence-pan-20231120-031645-74747.log", "r");
 	if (!seqfp) {
 		printf("Cannot open sequence.log. Does it exist?\n");
 		exit(1);
