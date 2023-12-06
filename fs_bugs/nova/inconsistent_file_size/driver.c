@@ -12,8 +12,8 @@ int execute_cmd_status(const char *cmd)
 
 int main(int argc, char **argv)
 {
-    if (argc < 5) {
-        fprintf(stderr, "Usage: %s <nova-mountpoint> <nova-device> <nova-image> <ext4-mountpoint> <ext4-device> <ext4-image> <loop_max>\n", 
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <nova-mountpoint> <nova-device>\n", 
             argv[0]);
         exit(1);
     }
@@ -50,18 +50,26 @@ int main(int argc, char **argv)
 
     generate_test_data(data, writelen, writebyte);
 
+    // Mount and initialise NOVA
+    snprintf(cmdbuf, PATH_MAX, "mount -t NOVA -o init %s %s", nova_dev,nova_mp);
+    ret = execute_cmd_status(cmdbuf);
+    
+    if(ret != 0) {
+        fprintf(stderr, "Failed to init mount nova at device=%s mountpoint=%s err:%d", nova_dev, nova_mp, ret);
+        free(data);
+        exit(1);
+    }
+
+    ret = umount2(nova_mp, 0);
+    if( ret != 0) {
+    fprintf(stderr, "Failed to unmount NOVA at mp: %s err:%d", nova_mp, ret);
+    free(data);
+    exit(1);
+    }
+
     while (loop_id < loop_max) {
         fprintf(stdout, "loop_id: %ld\n", loop_id);
-        
-        // dd the device pmem0
-        snprintf(cmdbuf, PATH_MAX, "dd if=%s of=%s bs=4k status=none", nova_img, nova_dev);
-        ret = execute_cmd_status(cmdbuf);
-        if(ret != 0) {
-            fprintf(stderr, "Cannot dd if=%s of=%s err:%d", nova_img, nova_dev, ret);
-            free(data);
-            exit(1);
-        }
-        
+
         // Mount NOVA
         snprintf(cmdbuf, PATH_MAX, "mount -t NOVA %s %s", nova_dev,nova_mp);
         ret = execute_cmd_status(cmdbuf);
@@ -72,24 +80,14 @@ int main(int argc, char **argv)
             exit(1);
         }
 
-        // Write to another file
-        snprintf(test_file, PATH_MAX, "%s/d-00/f-02", nova_mp);
-        ret = write_file(test_file, O_RDWR, data, (off_t)offset, (size_t)writelen);
-
-        if(ret < 0) {
-            fprintf(stderr, "Cannot write to file(NOVA): %s err:%d", test_file, ret);
-            free(data);
-            exit(1);
-        }
-
+        //Unmount NOVA
         ret = umount2(nova_mp, 0);
         if( ret != 0) {
             fprintf(stderr, "Failed to unmount NOVA at mp: %s err:%d", nova_mp, ret);
             free(data);
             exit(1);
        }
-        //In discrepancy observed, size of /f-00 was 10, but in the checkpointed image it was 0
-        //If /f-00 size is observered to be non 0 the discrepancy has been reproduced
+
         ++loop_id;
     }
     free(data);
