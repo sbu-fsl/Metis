@@ -18,19 +18,11 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    char *nova_mp = NULL, *nova_dev = NULL, *nova_img = NULL,  *ext4_mp = NULL, *ext4_dev = NULL, *ext4_img=NULL;
+    char *nova_mp = NULL, *nova_dev = NULL;
     nova_mp = argv[1];
     nova_dev = argv[2];
-    nova_img = argv[3];
 
-    ext4_mp = argv[4];
-    ext4_dev = argv[5];
-    ext4_img = argv[6];
-    
     const long loop_max = atol(argv[7]);
-
-    char test_file[PATH_MAX] = {0};
-    snprintf(test_file, PATH_MAX, "%s/d-00/f-02", nova_mp);
 
     char cmdbuf[PATH_MAX];
     
