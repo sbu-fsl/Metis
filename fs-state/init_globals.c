@@ -279,7 +279,7 @@ static void prepare_dev_suffix()
             globals_t_p->devlist[i] = calloc(len + 1, sizeof(char));
             snprintf(globals_t_p->devlist[i], len + 1, "/dev/%s%d", 
                 pmem_name, pmem_id);
-            ++mtdblock_cnt;
+            ++pmem_cnt;
         }
         else { // No Disk required 
             globals_t_p->devlist[i] = NULL;
