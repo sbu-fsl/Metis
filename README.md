@@ -1,28 +1,73 @@
-# NFSv4 Model Checking Project
+# Metis: File System Model Checking via Versatile Input and State Exploration
 
-## Components:
+This is the artifact for the FAST '24 paper **"Metis: File System Model Checking 
+via Versatile Input and State Exploration"**.  Metis is a
+model-checking framework designed for versatile, thorough, yet
+configurable file system testing in the form of input and state
+exploration.
 
-### example
+Metis was formerly known as MCFS (Model Checking File System).
 
-A simple C program that demonstrates running a sequence of I/O test
-operations using multiple threads/processes.
+## Setup Metis and RefFS with model checking environment 
 
-Use `make; ./test` to run this test program.
+We tested Metis on Ubuntu 22.04 and Ubuntu 20.04 with Linux kernel versions 
+specified in `./kernel` (i.e., 4.4, 4.15, 5.4, 5.15.0, 5.19.7, 6.0.6, 6.2.12, 6.3.0, and 6.6.1).  We cannot guarantee the functionality and usability on other 
+Ubuntu or Linux kernel versions.  Metis is built on the top of the SPIN 
+model checker and Swarm Verification.  Metis relies on a reference file 
+system to check a file system under test, and we use RefFS or Ext4 as 
+the reference file system.  Other file systems can also serve as the 
+reference file systems.
 
-### promela-demo
+***Other repositories/artifacts along with Metis***
 
-A demo Promela model that runs a series of I/O ops on both TFS
-and RFS non-deterministically and compare the behavior of them. We
-actually don't care about whether the operations succeed or fail, but
-we check if the behavior (e.g. return value [except open()], error code,
-file (non)existence and file content) on the two file systems are equal.
-Ahe test model will abort if there is a discrepancy of behavior between
-TFS and RFS.
+RefFS: https://github.com/sbu-fsl/fuse-cpp-ramfs
+fsl-spin (modified version of SPIN): https://github.com/sbu-fsl/fsl-spin 
+swarm-mcfs (modified version of Swarm): https://github.com/sbu-fsl/swarm-mcfs
 
-Use `make run` to run the test model.
+Note that we must use `fsl-spin` for the SPIN model checker for Metis 
+and `swarm-mcfs` for the Swarm Verification tool, and the vanilla SPIN/Swarm
+cannot work with Metis.
 
-This folder also contains many other experiments and demos that play
-with promela and Spin.
+Please check out each repository for respective documentation.
+
+## Artifact Eval: Machines 
+
+We have provided VMs for each AEC member.  TODO
+
+## Artifact Eval: System Configuration and Test Run 
+
+We have configured the necessary environments on the machines provided 
+to AEC members, so you don't need to set up environment by yourself.  
+If you really want to set up Metis on your own machine,
+You can use our `setup-deps.sh` bootstrap script.
+
+```bash 
+cd scripts
+sudo ./setup-deps.sh
+```
+
+### Simple Metis run to check Ext2 with Ext4
+
+
+
+
+
+### Set up RefFS 
+
+
+## Artifact Eval: Reproduction of Experimental Results
+
+
+
+## Major Components:
+
+This repo consists of multiple folders.  Below are concise descriptions 
+of each folder.
+
+### driver-fs-state
+
+
+
 
 ### fs-state
 
@@ -33,87 +78,19 @@ behavior. If there's any discrepancy, the checker will log it.
 
 Please enter the folder to see detailed document and code.
 
-### mcl-demo
+### fs_bugs
 
-A file system model checker written totally in C++, based on the model
-checker that is used by eXplode project (Junfeng Yang, et al), called
-MCL/CMC.
-
-We are not currently developing it further because CMC is too old and not
-well maintained as a mature product.
-
-### python-demo
-
-A python program written by Haolin Yu that tries to detect non-deterministic
-`if-fi` statements in Promela code that could be translated from ambiguous
-NFS RFC specs.
 
 ### kernel
 
 Kernel modules that helps the file system model checker
 
-### common
+### scripts
 
-Common code that will be use all other projects in this repo.
+### other folders
 
-    * `errnoname.c`: Translate errno to its macro name
-    * `nanotiming.c`: Timing utility functions
+## Reference 
 
-### include
-
-    * `common_types.h`
-    * `errnoname.h`
-    * `nanotiming.h`
-    * `path_utils.h`
-
-## Common helper functions
-
-### Errno conversion
-
-```c
-// #include "errnoname.h"
-char const *errnoname(int errno_);
-```
-
-Convert the error code number into its macro name. For example, `2` will be
-converted to `"ENOENT"`.
-
-### Timing and benchmarking
-
-#### 1. Get current time in nanosecond precision
-
-```c
-// #include "nanotiming.h"
-void current_utc_time(struct timespec *ts);
-```
-
-`struct timespec` is in the following form:
-
-```c
-struct timespec {
-    time_t tv_sec;
-    long tv_nsec;
-};
-```
-
-### 2. Calculate the difference of two timespecs
-
-```c
-// #include "nanotiming.h"
-void timediff(struct timespec *res, struct timespec *end, struct timespec *start);
-```
-
-### 3. Benchmarking
-
-```c
-// #include "nanotiming.h"
-struct timespec benchmark(int (*func)(void *), void *arg);
-struct timespec benchmark_mt(int (*func)(void *), void *arg, unsigned int times);
-```
-
-`benchmark` will run `func(arg)` once and return the execution time.
-`benchmark_mt` will run `func(arg)` `times` times and return the average
-execution time.
-
-The nfs-validator Github repository should be consistent with FSL nfs4mc repository. 
-
+## Contact 
+For any question, please feel free to contact Yifei Liu ([yifeliu@cs.stonybrook.edu](mailto:yifeliu@cs.stonybrook.edu))
+and Erez Zadok ([ezk@cs.stonybrook.edu](mailto:ezk@cs.stonybrook.edu)).
