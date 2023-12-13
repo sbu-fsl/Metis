@@ -6,7 +6,7 @@ model-checking framework designed for versatile, thorough, yet
 configurable file system testing in the form of input and state
 exploration.
 
-Metis was formerly known as MCFS (Model Checking File System).
+Metis was formerly known as MCFS (Model Checking File Systems).
 
 ## Setup Metis and RefFS with model checking environment 
 
@@ -68,7 +68,8 @@ Ext4 vs. Ext2.  Note that this experiment will be continuously running
 until it encounters a discrepancy (i.e., potential bug) between two file 
 systems.  It will be unlikely to have a discrepancy between Ext4 and 
 Ext2, so this is only for demonstration purpose.  You can wait till the 
-model checker ends (which takes weeks of time!) or press Ctrl+C to abort 
+model checker ends (which takes weeks of time!) or press Ctrl+C or run
+`fs-state/stop.sh` to abort 
 the program half-way (which we highly recommend for this demo).
 
 Metis logs serve as the critical role to identify, analyze and replay bugs and 
@@ -89,8 +90,26 @@ you can run `make clean` under the `fs-state` folder.
 
 ### Set up RefFS 
 
+We also created a new RefFS as Metis's reference file system.
+Please refer to the [RefFS repository](https://github.com/sbu-fsl/fuse-cpp-ramfs) and its
+[README](https://github.com/sbu-fsl/fuse-cpp-ramfs/blob/master/README.md) regarding the 
+installation and mount of RefFS.  
+
+You can run RefFS vs. Ext4 by running the `single_verifs2.sh` script:
+
+```bash
+cd fs-state/mcfs_scripts/
+sudo ./single_verifs2.sh
+```
+
+Again, this experiment can take a very long time to complete (weeks or months), so 
+you can abort it half-way via Ctrl+C or running `fs-state/stop.sh`.  The experimental
+logs of RefFS vs. Ext4 should appear in the `fs-state` folder.  The log file names show 
+the timestamp and pid of the experiment. 
 
 ### Using Metis replayer
+
+After each experiment, 
 
 
 ### Swarm verification (single machine)
@@ -98,6 +117,17 @@ you can run `make clean` under the `fs-state` folder.
 
 ## Artifact Eval: Reproduction of Experimental Results
 
+### Test Input Coverage (Figure 3, 4, 5)
+
+
+### Metis Performance and Scalability (Figure 6)
+
+
+
+### RefFS Performance and Reliability (Figure 7)
+
+
+### Bug Finding
 
 
 ## Major Components:
