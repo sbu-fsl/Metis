@@ -1,4 +1,4 @@
-# fs-state - Spin-based file system model checker
+# fs-state - Spin-based file system model checker (obsolete)
 
 ## Table of Content
 
@@ -204,23 +204,6 @@ This script will create a JFFS2 file system on /dev/mtdblock0 and a ext4 file
 system on /dev/ram0. The model checker assumes that their sizes are 256KB.
 Later we will discuss how to modify the script and the
 model checker to test other file systems.
-
-As the model checker is running, the standard output is redirected to
-`output.log` and the standard error is redirect to `error.log`. `output.log`
-records the timestamps, operations that have been performed, as well as the
-parameters and results of each operation. `error.log` logs the discrepancies
-in behavior among the tested file systems that the model checker has
-encountered. The model checker will also log the current f/s operations per
-second every 10 seconds into `error.log`.
-
-There will also be a `sequence.log` that records the sequence of file system
-operations that have been performed by model checker in a easy-to-parse format.
-This is intended for the replayer to use.
-
-You can wait till the model checker ends or press Ctrl+C to abort the program
-half-way. When the model checker exits, the ownership of all resources
-(including logs, generated C code and compiled binaries) will be given back
-to the login user.
 
 ### Using Makefile
 

@@ -11,7 +11,9 @@ Metis was formerly known as MCFS (Model Checking File System).
 ## Setup Metis and RefFS with model checking environment 
 
 We tested Metis on Ubuntu 22.04 and Ubuntu 20.04 with Linux kernel versions 
-specified in `./kernel` (i.e., 4.4, 4.15, 5.4, 5.15.0, 5.19.7, 6.0.6, 6.2.12, 6.3.0, and 6.6.1).  We cannot guarantee the functionality and usability on other 
+specified in `./kernel` (i.e., 4.4, 4.15, 5.4, 5.15.0, 5.19.7, 6.0.6, 
+6.2.12, 6.3.0, and 6.6.1).  
+We cannot guarantee the functionality and usability on other 
 Ubuntu or Linux kernel versions.  Metis is built on the top of the SPIN 
 model checker and Swarm Verification.  Metis relies on a reference file 
 system to check a file system under test, and we use RefFS or Ext4 as 
@@ -48,11 +50,50 @@ sudo ./setup-deps.sh
 
 ### Simple Metis run to check Ext2 with Ext4
 
+You can run Metis with single verification task (VT) by the `setup.sh` script
+in `./fs-state`.  Before executing `setup.sh`, you need to ensure the 
+test devices for file systems are already created, and their device 
+types/sizes are matching with the arguments provided to `setup.sh`.  We 
+have provided the script to run a simple Ext4 vs. Ext2 experiment in Metis
+where Ext4 serves as the reference file system and Ext2 is the file system 
+under test.  To run this test
 
+```bash
+cd fs-state/mcfs_scripts/
+sudo ./single_ext2.sh
+```
 
+This script will clean up resources, create devices, and run Metis with 
+Ext4 vs. Ext2.  Note that this experiment will be continuously running 
+until it encounters a discrepancy (i.e., potential bug) between two file 
+systems.  It will be unlikely to have a discrepancy between Ext4 and 
+Ext2, so this is only for demonstration purpose.  You can wait till the 
+model checker ends (which takes weeks of time!) or press Ctrl+C to abort 
+the program half-way (which we highly recommend for this demo).
 
+Metis logs serve as the critical role to identify, analyze and replay bugs and 
+are saved under the `fs-state` folder.
+As the model checker is running or terminated, the standard output is redirected to
+`output-pan*.log` and the standard error is redirect to `error-pan*.log`. 
+`output-pan*.log` records the timestamps, operations that have been performed, 
+as well as the
+arguments and results of each operation, and output abstract state. 
+`error-pan*.log` logs the discrepancies
+in behavior among the tested file systems that the model checker has
+encountered.  There will also be a `sequence-pan-*.log` that records the 
+sequence of file system
+operations that have been performed by model checker in a easy-to-parse format.
+We have a log rotation mechanism to
+This is intended for the replayer to use.  If you want to delete all those logs,
+you can run `make clean` under the `fs-state` folder.
 
 ### Set up RefFS 
+
+
+### Using Metis replayer
+
+
+### Swarm verification (single machine)
 
 
 ## Artifact Eval: Reproduction of Experimental Results
