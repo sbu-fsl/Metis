@@ -156,12 +156,23 @@ The execution of file system operations will be printed on the console.
 
 ### Swarm verification (single machine)
 
+Above experiments use one Metis process only, but Metis can run multiple 
+processes (i.e., verification tasks or VTs) in parallel by virtue of Swarm 
+Verification.  
+
+
+
+
+A more detailed document of Metis with Swarm Verification can be found 
+at [here](fs-state/README-swarm.md).  Metis can also run VTs on multiple 
+machines where each machine runs multiple VTs.  This is part of our 
+evaluation results and can be found at [Metis Performance and Scalability](#secmetisperf).
 
 ## Artifact Eval: Reproduction of Experimental Results
 
 ### Test Input Coverage (Figure 3, 4, 5)
 
-
+<a id="secmetisperf"></a>
 ### Metis Performance and Scalability (Figure 6)
 
 
