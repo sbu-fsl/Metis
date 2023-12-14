@@ -109,8 +109,50 @@ the timestamp and pid of the experiment.
 
 ### Using Metis replayer
 
-After each experiment, 
+After each experiment, we can use replayer to replay the exact sequence 
+of operations to debug/reproduce the discrepancy/bug or obtain any intermediate 
+file system state during a Metis run.  The Metis replayer parses the `sequence-pan*.log`
+line by line, reads the operations/arguments, and perform the exact operations
+on single or both file systems (specified by the replayer argument list).  
+Let's use a previous Ext4 vs. Ext2 example to demonstrate Metis's replayer:
 
+```bash
+cd fs-state
+make clean # clear all logs and object files
+cd mcfs_scripts
+sudo ./single_ext2.sh 
+```
+
+Then we abort the Metis process by Ctrl-C or running script `sudo ./stop.sh`.
+We recommend to use `stop.sh` because we also need to unmount all the 
+file systems used by Metis.  Using Ctrl-C needs to manually unmount all 
+the test file systems (i.e., `umount /mnt/test-*` or `umount /dev/ram*`).
+After that, we can get a sequence log file and a dump_prepopulate log file
+in the `fs-state` folder. 
+We use `sequence-pan-20231214-014909-2031206.log` and `dump_prepopulate_0.log` as an example.  
+
+We need to ensure that test devices are created with the correct device
+types/sizes.  For Ext4 vs. Ext2, you can run `loadmods.sh` in the `fs-state`
+to create desired ramdisks.
+To use the replayer, we should first open the `fs-state/replay.c` file, 
+edit **line 29 and line 35** to reflect the log file names generated 
+from a previous experiment that we want to replay.  Therefore, the 
+replayer can use the correct log files to replay.  
+After editing the `replay.c` file, we can compile the replayer by:
+
+```bash 
+cd fs-state
+make replayer
+```
+
+We will get a `replay` binary executable.  We will run replayer with the 
+following command.  The argument list shows `VTid:FS1:SIZE1:FS2:SIZE2`.
+
+```bash 
+sudo ./replay -K 0:ext4:256:ext2:256
+```
+
+The execution of file system operations will be printed on the console.  
 
 ### Swarm verification (single machine)
 

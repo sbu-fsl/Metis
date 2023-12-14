@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	/* Open sequence file */
-	FILE *seqfp = fopen("sequence-pan-20231120-031645-74747.log", "r");
+	FILE *seqfp = fopen("sequence-pan-20231214-014909-2031206.log", "r");
 	if (!seqfp) {
 		printf("Cannot open sequence.log. Does it exist?\n");
 		exit(1);

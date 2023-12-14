@@ -1,4 +1,4 @@
-# fs-state - Spin-based file system model checker (obsolete)
+# fs-state - Spin-based file system model checker (DEPRECATED)
 
 ## Table of Content
 
