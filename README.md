@@ -158,11 +158,33 @@ The execution of file system operations will be printed on the console.
 
 Above experiments use one Metis process only, but Metis can run multiple 
 processes (i.e., verification tasks or VTs) in parallel by virtue of Swarm 
-Verification.  
+Verification.  To support Swarm, we provide a configuration file `fs-state/swarm.lib`.
+You can find the [detailed description](https://github.com/sbu-fsl/swarm-mcfs/blob/swarm-v2/README.md) 
+of the configuration file.
 
+To run a quick Metis experiment with Swarm for Ext4 vs. Ext2, please copy the 
+`swarm-single-node.lib` to override `swarm.lib`, set up devices, run the `fs-state/setup_swarm.sh`
+with proper arguments, and finally run the generated `mcfs-main.pml.swarm` script.
 
+```bash
+cd ./fs-state
+# Use proper swarm.lib configuration file
+yes | cp -f swarm-single-node.lib swarm.lib
+make clean
+# Unmount file systems if rmmod brd failed
+sudo rmmod brd
+sudo ./loadmods.sh
+# Test Ext4 vs. Ext2 with 6 VTs
+sudo ./setup_swarm.sh -f ext4:256:ext2:256 -n 6
+# Run the final swarm driver
+sudo ./mcfs-main.pml.swarm 
+```
 
-
+This will produce multiple VTs (pan), and each VT explores a different 
+portion of the state space by various diversification techniques.
+Make sure the number of VTs should be equal or fewer than the number of 
+total CPU cores.  Every VT is independent and will produce its own 
+logs.
 A more detailed document of Metis with Swarm Verification can be found 
 at [here](fs-state/README-swarm.md).  Metis can also run VTs on multiple 
 machines where each machine runs multiple VTs.  This is part of our 
@@ -172,15 +194,35 @@ evaluation results and can be found at [Metis Performance and Scalability](#secm
 
 ### Test Input Coverage (Figure 3, 4, 5)
 
+
 <a id="secmetisperf"></a>
 ### Metis Performance and Scalability (Figure 6)
-
 
 
 ### RefFS Performance and Reliability (Figure 7)
 
 
 ### Bug Finding
+
+
+## Troubleshooting
+
+**Error message: ramdisk device issue**
+
+```
+/dev/ram4 is not a block device.
+Cannot setup ext4 because /dev/ram4 is bad or not ready.
+Cannot setup file system ext4 (ret = -15)
+pan3: ../common/log.c:77: do_write_log: Assertion `my_queue.data' failed.
+Aborted (core dumped)
+```
+
+This error shows ramdisks are not setup correctly.  Please delete 
+`/dev/ram*` if these ramdisks are not block devices (i.e., regular files).  
+
+```
+find /dev -name 'ram*' ! -type b -exec rm -f {} \;
+```
 
 
 ## Major Components:
