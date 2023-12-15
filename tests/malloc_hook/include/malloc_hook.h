@@ -1,14 +1,21 @@
+/*
+ * Copyright (c) 2020-2023 Yifei Liu
+ * Copyright (c) 2020-2023 Wei Su
+ * Copyright (c) 2020-2023 Erez Zadok
+ * Copyright (c) 2020-2023 Stony Brook University
+ * Copyright (c) 2020-2023 The Research Foundation of SUNY
+ *
+ * You can redistribute it and/or modify it under the terms of the Apache
+ * License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
+ */
+
 #ifndef _MALLOC_HOOK_H_
 #define _MALLOC_HOOK_H_
 
 #include "my_malloc.h"
 
 /* Prototypes for our hooks.  */
-<<<<<<< HEAD
-void my_init (void);
-=======
 void my_init_hook (void);
->>>>>>> a61a9f0bf2787bdd30bb38e23f2f6a870a2b43fb
 void *my_malloc_hook (size_t, const void *);
 void my_free_hook (void*, const void *);
 

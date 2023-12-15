@@ -1,3 +1,14 @@
+/*
+ * Copyright (c) 2020-2023 Yifei Liu
+ * Copyright (c) 2020-2023 Wei Su
+ * Copyright (c) 2020-2023 Erez Zadok
+ * Copyright (c) 2020-2023 Stony Brook University
+ * Copyright (c) 2020-2023 The Research Foundation of SUNY
+ *
+ * You can redistribute it and/or modify it under the terms of the Apache
+ * License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
+ */
+
 #ifndef _MY_MALLOC_H_
 #define _MY_MALLOC_H_
 
@@ -5,35 +16,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-<<<<<<< HEAD
-#include <limits.h>
-
-#define ALIGNMENT 4
-//last three bits should be 0 for alignment
-#define ALIGN(size) (((size) + (ALIGNMENT-1)) & ~0x3)
-#define HEADER_SIZE (sizeof(block_t*)*2+sizeof(size_t)+sizeof(int))
-#define MAX_VAL(a, b)  ((a) > (b) ? (a) : (b))
-#define MINSIZE 4
-
-
-typedef struct mem_block{
-    size_t block_size;
-    //size_t free_size;
-    struct mem_block *next;
-    struct mem_block *prev;
-    //void *start_brk;
-    //void *curr_brk;
-    int isFree;
-    char data[0];  /*payload, the first byte of data segment*/
-} block_t;
-
-block_t *create_mem_block(block_t *last, size_t size);
-block_t* find_free_block(block_t **last, size_t size);
-
-void *my_malloc(size_t size);
-void print_block_list();
-void my_free(void* ptr);
-=======
 
 //#define ALIGNMENT 4
 //last three bits should be 0 for alignment
@@ -59,6 +41,5 @@ void* my_malloc_helper(size_t size, block_t** new_block);
 void *my_malloc(size_t size);
 void my_free(void* ptr);
 void print_new_block();
->>>>>>> a61a9f0bf2787bdd30bb38e23f2f6a870a2b43fb
 
 #endif

@@ -1,3 +1,14 @@
+/*
+ * Copyright (c) 2020-2023 Yifei Liu
+ * Copyright (c) 2020-2023 Wei Su
+ * Copyright (c) 2020-2023 Erez Zadok
+ * Copyright (c) 2020-2023 Stony Brook University
+ * Copyright (c) 2020-2023 The Research Foundation of SUNY
+ *
+ * You can redistribute it and/or modify it under the terms of the Apache
+ * License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
+ */
+
 /* Prototypes for __malloc_hook, __free_hook */
 #include <malloc.h>
 #include "malloc_hook.h"
@@ -13,17 +24,10 @@ static void *(*old_malloc_hook) (size_t, const void *);
 static void (*old_free_hook) (void*, const void *);
 
 /* Override initializing hook from the C library. */
-<<<<<<< HEAD
-void (*__malloc_initialize_hook) (void) = my_init;
-
-void
-my_init (void)
-=======
 void (*__malloc_initialize_hook) (void) = my_init_hook;
 
 void
 my_init_hook (void)
->>>>>>> a61a9f0bf2787bdd30bb38e23f2f6a870a2b43fb
 {
   old_malloc_hook = __malloc_hook;
   old_free_hook = __free_hook;
