@@ -184,7 +184,8 @@ This will produce multiple VTs (pan), and each VT explores a different
 portion of the state space by various diversification techniques.
 Make sure the number of VTs should be equal or fewer than the number of 
 total CPU cores.  Every VT is independent and will produce its own 
-logs.
+logs.  Like single-VT Metis run, this experiment can last a very long 
+time.  Please feel free to use `stop.sh` to stop all Metis Swarm VTs.
 A more detailed document of Metis with Swarm Verification can be found 
 at [here](fs-state/README-swarm.md).  Metis can also run VTs on multiple 
 machines where each machine runs multiple VTs.  This is part of our 
@@ -193,6 +194,8 @@ evaluation results and can be found at [Metis Performance and Scalability](#secm
 ## Artifact Eval: Reproduction of Experimental Results
 
 ### Test Input Coverage (Figure 3, 4, 5)
+
+
 
 
 <a id="secmetisperf"></a>
@@ -218,12 +221,14 @@ Aborted (core dumped)
 ```
 
 This error shows ramdisks are not setup correctly.  Please delete 
-`/dev/ram*` if these ramdisks are not block devices (i.e., regular files).  
+`/dev/ram*` if these ramdisks are not block devices (i.e., regular files).
 
 ```
 find /dev -name 'ram*' ! -type b -exec rm -f {} \;
 ```
 
+Then, you can call `sudo rmmod brd` to remove all the block-device ramdisks, and 
+load the devices using our script or shell commands.
 
 ## Major Components:
 
