@@ -1,7 +1,9 @@
+MY_OPEN_FLAG_PATTERN ?= 0
+MY_WRITE_SIZE_PATTERN ?= 0
 COMMON_DIR := ../common
 COMMON_SRC := $(wildcard $(COMMON_DIR)/*.c) $(wildcard $(COMMON_DIR)/*.cpp)
 COMMON_OBJ := $(patsubst $(COMMON_DIR)/%,%.o,$(COMMON_SRC))
-override CFLAGS += -g -I../include -D PRINTF -fcommon -DCBUF_IMAGE -DFILEDIR_POOL -DCOMPLEX_FSOPS # -D T_RAND -D P_RAND
+override CFLAGS += -g -I../include -D PRINTF -fcommon -DCBUF_IMAGE -DFILEDIR_POOL -DCOMPLEX_FSOPS -DOPEN_FLAG_PATTERN=$(MY_OPEN_FLAG_PATTERN) -DWRITE_SIZE_PATTERN=$(MY_WRITE_SIZE_PATTERN) # -D T_RAND -D P_RAND
 override LIBS += -lm -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz
 PAN = pan
 

@@ -8,6 +8,9 @@ cd ..
 sudo ./stop.sh
 
 sudo rmmod brd
+
+make clean
+
 modprobe brd rd_nr=1 rd_size=$EXT4_SZKB
 
 # Start MCFS
