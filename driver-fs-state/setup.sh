@@ -419,7 +419,7 @@ fi
 
 # Run test program
 if [ "$SETUP_ONLY" != "1" ]; then
-    runcmd make CFLAGS=$_CFLAGS;
+    # runcmd make CFLAGS=$_CFLAGS;
     echo 'Running file system checker...';
     echo 'Please check stdout in output.log, stderr in error.log';
     # Set environment variable MCFS_FSLIST for MCFS C Sources

@@ -6,18 +6,18 @@ IOCOV_MCFS_DIR="../../IOCov/MCFS"
 cd ../driver-fs-state
 
 ########### Metis-Uniform
+make clean
+
 make MY_OPEN_FLAG_PATTERN=0
 
 cd driver_scripts
-
 ./only_one_ext4.sh & 
-SCRIPT_PID=$!
 
 # Wait for 40 minutes
 sleep 1m
 
 # Check if the script is still running and kill it if necessary
-echo "Time limit reached. Terminating the Metis."
+echo "[Metis-Uniform open flags]: Time limit reached. Terminating the Metis."
 # kill $SCRIPT_PID
 # Back to driver_scripts folder
 cd ..
@@ -34,6 +34,8 @@ python3 parser-mcfs-log-input.py `ls sequence-pan-*.log`
 
 ########### Metis-RSD, current in driver_scripts
 # pwd: driver_scripts
+
+
 
 
 ########### Metis-IRSD
