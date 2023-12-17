@@ -16,9 +16,26 @@ Metis was formerly known as MCFS (Model Checking File Systems).
 2. [FAST24 Artifact Evaluation](#fast24-artifact-evaluation)
    1. [Machines](#machines)
    2. [Kick-the-Tires - System Configuration and Test Run](#kick-the-tires---system-configuration-and-test-run)
-       1. [Installation of Dependencies](#installation-of-dependencies)
-3. [Section Two](#section-two)
-4. [Conclusion](#conclusion)
+       1. [Installation of dependencies](#installation-of-dependencies)
+       2. [Simple Metis run to check Ext2 with Ext4](#simple-metis-run-to-check-ext2-with-ext4)
+       3. [Set up RefFS](#set-up-reffs)  
+       4. [Using Metis replayer](#using-metis-replayer)
+       5. [Swarm Verification with single machine](#swarm-verification-with-single-machine)
+   3. [Reproduction of Experimental Results](#reproduction-of-experimental-results)
+       1. [Test Input Coverage (Figure 3, 4, 5)](#test-input-coverage-figure-3-4-5) 
+       2. [Metis Performance and Scalability (Figure 6)](#metis-performance-and-scalability-figure-6)
+       3. [RefFS Performance and Reliability (Figure 7)](#reffs-performance-and-reliability-figure-7)
+       4. [Bug Finding](#bug-finding)
+   4. [Troubleshooting](#troubleshooting)
+3. [Major Components](#major-components)
+    1. [driver-fs-state](#driver-fs-state)
+    2. [fs-state](#fs-state)
+    3. [fs_bugs](#fs_bugs)
+    4. [kernel](#kernel)
+    5. [scripts](#scripts)
+    6. [other folders](#other-folders)
+4. [Reference](#reference)
+5. [Contact](#contact)
 
 ## Setup Metis and RefFS
 
@@ -57,7 +74,7 @@ We have provided VMs for each AEC member.  TODO
 
 ### Kick-the-Tires - System Configuration and Test Run 
 
-#### Installation of Dependencies
+#### Installation of dependencies
 
 We have configured the necessary environments on the machines provided 
 to AEC members, so you don't need to set up environment by yourself.  
@@ -76,8 +93,6 @@ cd scripts
 ```
 
 #### Simple Metis run to check Ext2 with Ext4
-
-***TLDR: ***
 
 You can run Metis with single verification task (VT) by the `setup.sh` script
 in `./fs-state`.  Before executing `setup.sh`, you need to ensure the 
@@ -117,7 +132,7 @@ We have a log rotation mechanism to
 This is intended for the replayer to use.  If you want to delete all those logs,
 you can run `make clean` under the `fs-state` folder.
 
-### Set up RefFS 
+#### Set up RefFS 
 
 We also created a new RefFS as Metis's reference file system.
 Please refer to the [RefFS repository](https://github.com/sbu-fsl/fuse-cpp-ramfs) and its
@@ -136,7 +151,7 @@ you can abort it half-way via Ctrl+C or running `fs-state/stop.sh`.  The experim
 logs of RefFS vs. Ext4 should appear in the `fs-state` folder.  The log file names show 
 the timestamp and pid of the experiment. 
 
-### Using Metis replayer
+#### Using Metis replayer
 
 After each experiment, we can use replayer to replay the exact sequence 
 of operations to debug/reproduce the discrepancy/bug or obtain any intermediate 
@@ -183,7 +198,7 @@ sudo ./replay -K 0:ext4:256:ext2:256
 
 The execution of file system operations will be printed on the console.  
 
-### Swarm verification (single machine)
+#### Swarm Verification with single machine
 
 Above experiments use one Metis process only, but Metis can run multiple 
 processes (i.e., verification tasks or VTs) in parallel by virtue of Swarm 
@@ -218,26 +233,25 @@ time.  Please feel free to use `stop.sh` to stop all Metis Swarm VTs.
 A more detailed document of Metis with Swarm Verification can be found 
 at [here](fs-state/README-swarm.md).  Metis can also run VTs on multiple 
 machines where each machine runs multiple VTs.  This is part of our 
-evaluation results and can be found at [Metis Performance and Scalability](#secmetisperf).
+evaluation results and can be found 
+at [Metis Performance and Scalability](#metis-performance-and-scalability-figure-6).
 
-## Artifact Eval: Reproduction of Experimental Results
+### Reproduction of Experimental Results
 
-### Test Input Coverage (Figure 3, 4, 5)
-
-
-
-
-<a id="secmetisperf"></a>
-### Metis Performance and Scalability (Figure 6)
+#### Test Input Coverage (Figure 3, 4, 5)
 
 
-### RefFS Performance and Reliability (Figure 7)
+
+#### Metis Performance and Scalability (Figure 6)
 
 
-### Bug Finding
+#### RefFS Performance and Reliability (Figure 7)
 
 
-## Troubleshooting
+#### Bug Finding
+
+
+### Troubleshooting
 
 **Error message: ramdisk device issue**
 
