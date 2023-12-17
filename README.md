@@ -8,47 +8,76 @@ exploration.
 
 Metis was formerly known as MCFS (Model Checking File Systems).
 
-## Setup Metis and RefFS with model checking environment 
+## Table of Content
+
+1. [Setup Metis and RefFS](#setup-metis-and-reffs)
+   1. [OS ane Kernel Verison](#os-and-kernel-version)
+   2. [Prerequisites and Required Artifacts ](#prerequisites-and-required-artifacts)
+2. [FAST24 Artifact Evaluation](#fast24-artifact-evaluation)
+   1. [Machines](#machines)
+   2. [Kick-the-Tires - System Configuration and Test Run](#kick-the-tires---system-configuration-and-test-run)
+       1. [Installation of Dependencies](#installation-of-dependencies)
+3. [Section Two](#section-two)
+4. [Conclusion](#conclusion)
+
+## Setup Metis and RefFS
+
+### OS ane Kernel Verison
 
 We tested Metis on Ubuntu 22.04 and Ubuntu 20.04 with Linux kernel versions 
 specified in `./kernel` (i.e., 4.4, 4.15, 5.4, 5.15.0, 5.19.7, 6.0.6, 
 6.2.12, 6.3.0, and 6.6.1).  
 We cannot guarantee the functionality and usability on other 
-Ubuntu or Linux kernel versions.  Metis is built on the top of the SPIN 
+Ubuntu or Linux kernel versions.  
+
+### Prerequisites and Required Artifacts 
+
+Metis is built on the top of the SPIN 
 model checker and Swarm Verification.  Metis relies on a reference file 
 system to check a file system under test, and we use RefFS or Ext4 as 
 the reference file system.  Other file systems can also serve as the 
-reference file systems.
+reference file systems.  Below shows the repositories/artifacts required by Metis:  
 
-***Other repositories/artifacts along with Metis***
-
-RefFS: https://github.com/sbu-fsl/fuse-cpp-ramfs
-fsl-spin (modified version of SPIN): https://github.com/sbu-fsl/fsl-spin 
-swarm-mcfs (modified version of Swarm): https://github.com/sbu-fsl/swarm-mcfs
+RefFS: https://github.com/sbu-fsl/fuse-cpp-ramfs  
+fsl-spin (modified version of SPIN): https://github.com/sbu-fsl/fsl-spin  
+swarm-mcfs (modified version of Swarm): https://github.com/sbu-fsl/swarm-mcfs  
 
 Note that we must use `fsl-spin` for the SPIN model checker for Metis 
 and `swarm-mcfs` for the Swarm Verification tool, and the vanilla SPIN/Swarm
-cannot work with Metis.
+cannot work with Metis.  Please check out each repository for respective 
+documentation.  A number of 
+general libraries and tools are also required.  
+Please see `script/setup-deps.sh` for details.
 
-Please check out each repository for respective documentation.
+## FAST24 Artifact Evaluation
 
-## Artifact Eval: Machines 
+### Machines 
 
 We have provided VMs for each AEC member.  TODO
 
-## Artifact Eval: System Configuration and Test Run 
+### Kick-the-Tires - System Configuration and Test Run 
+
+#### Installation of Dependencies
 
 We have configured the necessary environments on the machines provided 
 to AEC members, so you don't need to set up environment by yourself.  
-If you really want to set up Metis on your own machine,
-You can use our `setup-deps.sh` bootstrap script.
+If you want to set up Metis on your own machine,
+you can install Metis libraries (run `make && make install` on the root 
+directory of Metis) first and use our `setup-deps.sh` bootstrap 
+script (without sudo) to install all the dependencies including necessary 
+libraries/tools, RefFS, and the modified version of SPIN/Swarm.
 
 ```bash 
+cd Metis # your Metis root directory
+make 
+make install
 cd scripts
-sudo ./setup-deps.sh
+./setup-deps.sh
 ```
 
-### Simple Metis run to check Ext2 with Ext4
+#### Simple Metis run to check Ext2 with Ext4
+
+***TLDR: ***
 
 You can run Metis with single verification task (VT) by the `setup.sh` script
 in `./fs-state`.  Before executing `setup.sh`, you need to ensure the 
@@ -229,6 +258,23 @@ find /dev -name 'ram*' ! -type b -exec rm -f {} \;
 
 Then, you can call `sudo rmmod brd` to remove all the block-device ramdisks, and 
 load the devices using our script or shell commands.
+
+**Cannot compile RefFS and lack of mcfs header files**
+
+```
+/home/ubuntu/fuse-cpp-ramfs/src/pickle.cpp:3:10: fatal error: mcfs/errnoname.h: No such file or directory
+    3 | #include <mcfs/errnoname.h>
+      |          ^~~~~~~~~~~~~~~~~~
+compilation terminated.
+make[2]: *** [src/CMakeFiles/fuse-cpp-ramfs.dir/build.make:202: src/CMakeFiles/fuse-cpp-ramfs.dir/pickle.cpp.o] Error 1
+make[1]: *** [CMakeFiles/Makefile2:145: src/CMakeFiles/fuse-cpp-ramfs.dir/all] Error 2
+make: *** [Makefile:136: all] Error 2
+Command './setup-deps.sh' exited with error (2).
+```
+
+Please go to the root directory of the Metis directory and do `make && make clean` to 
+install Metis/MCFS libraries and header files.
+
 
 ## Major Components:
 
