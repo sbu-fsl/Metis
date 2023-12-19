@@ -8,6 +8,7 @@ c_decl {
 
 /* DO NOT TOUCH THE COMMENT LINE BELOW */
 /* The persistent content of the file systems */
+c_track "get_fsimgs()[0]" "262144" "UnMatched";
 
 /* Abstract state signatures of the file systems */
 /* DO NOT TOUCH THE COMMENT LINE ABOVE */
