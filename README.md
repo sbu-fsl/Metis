@@ -256,6 +256,8 @@ at [Metis Performance and Scalability](#metis-performance-and-scalability-figure
 
 #### Test Input Coverage (Figure 3, 4, 5)
 
+
+
 ##### Figure 3 Input Coverage open flags 40 minutes
 
 
@@ -320,12 +322,14 @@ of each folder.
 
 ### driver-fs-state
 
-
-
+The Metis model checker with input coverage driver that can achieve 
+versatile input coverage.  Note that most of code in this folder is 
+reused from the `fs-state` folder but with input coverage support 
+via multiple macros.
 
 ### fs-state
 
-The Spin-based file system model checker we are currently developing.
+The main folder of the Metis model checker.
 This checker will run a set of file system operations (system calls)
 non-deterministically on multiple file systems, and then compare their
 behavior. If there's any discrepancy, the checker will log it.
@@ -334,14 +338,23 @@ Please enter the folder to see detailed document and code.
 
 ### fs_bugs
 
+Reproducers we developed for the bugs we found by Metis.  Check out each 
+file system folder for details.
 
 ### kernel
 
-Kernel modules that helps the file system model checker
+Kernel modules (modified `brd` driver or `brd2`) that helps the file system model checker
+to create ramdisks with desired sizes.  Use the correct `brd2` version based on 
+your Linux kernel version.
 
 ### scripts
 
+Various scripts to set up Metis and RefFS, analyze Swarm Verification 
+results from Metis, code coverage investigation, etc.
+
 ### other folders
+
+For the explanation of other folders, please refer to this [README](./other-folders.md).
 
 ## Reference 
 

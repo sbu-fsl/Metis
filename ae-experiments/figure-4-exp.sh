@@ -7,11 +7,11 @@ IOCOV_MCFS_DIR="../../IOCov/MCFS"
 
 ########### Figure 4: Input coverage for write sizes (40 mins) ###########
 
-cd ../driver-fs-state
-
 ########### Metis-Uniform
 CURRENT_PATTERN="write-size-Metis-Uniform"
 ./cleanup-iocov.sh
+
+cd ../driver-fs-state
 make clean
 
 make MY_WRITE_SIZE_PATTERN=0
@@ -72,10 +72,12 @@ cp *.pdf $CURRENT_DIR
 cd $CURRENT_DIR
 
 ########### Metis-XD, current in driver_scripts
-# pwd: driver_scripts
+# pwd: ae-experiments
 
 CURRENT_PATTERN="write-size-Metis-XD"
 ./cleanup-iocov.sh
+
+cd ../driver-fs-state
 make clean
 
 make MY_WRITE_SIZE_PATTERN=1
@@ -136,10 +138,12 @@ cp *.pdf $CURRENT_DIR
 cd $CURRENT_DIR
 
 ########### Metis-IXD, current in driver_scripts
-# pwd: driver_scripts
+# pwd: ae-experiments
 
 CURRENT_PATTERN="write-size-Metis-IXD"
 ./cleanup-iocov.sh
+
+cd ../driver-fs-state
 make clean
 
 make MY_WRITE_SIZE_PATTERN=2
