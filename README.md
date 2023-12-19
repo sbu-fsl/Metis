@@ -27,6 +27,8 @@ Metis was formerly known as MCFS (Model Checking File Systems).
        3. [RefFS Performance and Reliability (Figure 7)](#reffs-performance-and-reliability-figure-7)
        4. [Bug Finding](#bug-finding)
    4. [Troubleshooting](#troubleshooting)
+         1. [Error message: ramdisk device issue](#error-message-ramdisk-device-issue)
+         2. [Cannot compile RefFS and lack of mcfs header files](#cannot-compile-reffs-and-lack-of-mcfs-header-files)
 3. [Major Components](#major-components)
     1. [driver-fs-state](#driver-fs-state)
     2. [fs-state](#fs-state)
@@ -58,6 +60,7 @@ reference file systems.  Below shows the repositories/artifacts required by Meti
 RefFS: https://github.com/sbu-fsl/fuse-cpp-ramfs  
 fsl-spin (modified version of SPIN): https://github.com/sbu-fsl/fsl-spin  
 swarm-mcfs (modified version of Swarm): https://github.com/sbu-fsl/swarm-mcfs  
+IOCov (tool to compute input coverage for file system testing): https://github.com/sbu-fsl/IOCov  
 
 Note that we must use `fsl-spin` for the SPIN model checker for Metis 
 and `swarm-mcfs` for the Swarm Verification tool, and the vanilla SPIN/Swarm
@@ -66,7 +69,20 @@ documentation.  A number of
 general libraries and tools are also required.  
 Please see `script/setup-deps.sh` for details.
 
+To run [IOCov](https://github.com/sbu-fsl/IOCov), a few Python packages are required.
+Please run the following command to install them (using Python 3 and pip3 as an example):
+
+```bash
+sudo apt-get install python3-pip
+pip3 install numpy scipy matplotlib
+```
+
 ## FAST24 Artifact Evaluation
+
+Thank you for evaluating our artifact.  We have provided a set of machines, 
+scripts, and instructions to help you set up Metis/RefFS and reproduce our experimental results.
+If you encounter any issues, please feel free to contact us via HotCRP messages.
+We will respond to your questions as soon as possible and definitely in 24 hours.
 
 ### Machines 
 
@@ -240,6 +256,13 @@ at [Metis Performance and Scalability](#metis-performance-and-scalability-figure
 
 #### Test Input Coverage (Figure 3, 4, 5)
 
+##### Figure 3 Input Coverage open flags 40 minutes
+
+
+
+##### Figure 4 Input Coverage write sizes 40 minutes
+
+##### Figure 5 Input Coverage write sizes 4 hours
 
 
 #### Metis Performance and Scalability (Figure 6)
@@ -253,7 +276,7 @@ at [Metis Performance and Scalability](#metis-performance-and-scalability-figure
 
 ### Troubleshooting
 
-**Error message: ramdisk device issue**
+#### Error message: ramdisk device issue
 
 ```
 /dev/ram4 is not a block device.
@@ -273,7 +296,7 @@ find /dev -name 'ram*' ! -type b -exec rm -f {} \;
 Then, you can call `sudo rmmod brd` to remove all the block-device ramdisks, and 
 load the devices using our script or shell commands.
 
-**Cannot compile RefFS and lack of mcfs header files**
+#### Cannot compile RefFS and lack of mcfs header files
 
 ```
 /home/ubuntu/fuse-cpp-ramfs/src/pickle.cpp:3:10: fatal error: mcfs/errnoname.h: No such file or directory
