@@ -76,9 +76,16 @@ fi
 # If the second argument is not empty
 # Run MCFS script for a specific time period
 # -f $FSNAME:$FSSZKB; NOT -f 0:$FSNAME:$FSSZKB
-if [ -n "$2" ]; then
-    timeout $2 ./setup.sh -f $FSNAME:$FSSZKB
-fi
+# if [ -n "$2" ]; then
+#     timeout $2 ./setup.sh -f $FSNAME:$FSSZKB
+# fi
+
+# Updated way to run Metis with timeout
+./setup.sh -f $FSNAME:$FSSZKB & 
+
+# Wait for 240 minutes (4 hours)
+sleep $2
+./stop.sh
 
 # # Move all the experimental logs to the new folder
 # NEWESTCSV=$(ls -t *.csv | head -n1)
