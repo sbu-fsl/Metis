@@ -21,12 +21,12 @@
 CURDIR=$(pwd)
 
 # Supported File Systems: ext4, verifs2, btrfs, jfs
-EXT4_SZKB=256 # 256 KiB
+EXT4_SZKB=2048 # 2 MiB minimum size
 # Ensure VeriFS2 is installed
 VERIFS2_SZKB=0
 # Ensure VeriFS1 is installed
 VERIFS1_SZKB=0
-EXT2_SZKB=256
+EXT2_SZKB=2048
 BTRFS_SZKB=16384 # 16 MiB
 XFS_SZKB=16384 # 16 MiB
 JFS_SZKB=16384 # 16 MiB
