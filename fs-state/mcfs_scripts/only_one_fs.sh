@@ -86,6 +86,8 @@ fi
 # Wait for 240 minutes (4 hours)
 sleep $2
 ./stop.sh
+sudo umount -f /dev/ram0 
+rmmod brd
 
 # # Move all the experimental logs to the new folder
 # NEWESTCSV=$(ls -t *.csv | head -n1)
