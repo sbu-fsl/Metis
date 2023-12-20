@@ -2,7 +2,7 @@
 
 FS_STATE_DIR="../fs-state"
 SCRIPT_DIR="../fs-state/mcfs_scripts"
-TIMERUN="2m"
+TIMERUN="30m"
 CURRENT_DIR=$(pwd)
 
 ########### Figure 7: Performance comparison between RefFS and other file systems with Metis ###########
