@@ -86,7 +86,12 @@ We will respond to your questions as soon as possible and definitely in 24 hours
 
 ### Machines 
 
-We have provided VMs for each AEC member.  TODO
+We have provided VMs for each AEC memeber.  TODO
+
+
+Note that some experiments can take a long time.  We recommend you to run 
+experiments under `tmux` or `screen` so that you can detach the terminal 
+while running long experiments.  
 
 ### Kick-the-Tires - System Configuration and Test Run 
 

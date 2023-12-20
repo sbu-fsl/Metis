@@ -49,3 +49,4 @@ mcfs-main.pml.swarm
 swarm_done_s*
 # FAST24 Artifact Evaluation
 *.pdf
+results_perf_*
