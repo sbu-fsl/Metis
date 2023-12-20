@@ -57,7 +57,7 @@ system to check a file system under test, and we use RefFS or Ext4 as
 the reference file system.  Other file systems can also serve as the 
 reference file systems.  Below shows the repositories/artifacts required by Metis:  
 
-RefFS: https://github.com/sbu-fsl/fuse-cpp-ramfs  
+RefFS: https://github.com/sbu-fsl/RefFS 
 fsl-spin (modified version of SPIN): https://github.com/sbu-fsl/fsl-spin  
 swarm-mcfs (modified version of Swarm): https://github.com/sbu-fsl/swarm-mcfs  
 IOCov (tool to compute input coverage for file system testing): https://github.com/sbu-fsl/IOCov  
@@ -156,8 +156,8 @@ you can run `make clean` under the `fs-state` folder.
 #### Set up RefFS 
 
 We also created a new RefFS as Metis's reference file system.
-Please refer to the [RefFS repository](https://github.com/sbu-fsl/fuse-cpp-ramfs) and its
-[README](https://github.com/sbu-fsl/fuse-cpp-ramfs/blob/master/README.md) regarding the 
+Please refer to the [RefFS repository](https://github.com/sbu-fsl/RefFS) and its
+[README](https://github.com/sbu-fsl/RefFS/blob/master/README.md) regarding the 
 installation and mount of RefFS.  
 
 You can run RefFS vs. Ext4 by running the `single_verifs2.sh` script:

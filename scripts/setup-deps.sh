@@ -220,10 +220,10 @@ install_zlib() {
 
 install_verifs2() {
     pushd $BASEDIR;
-    runcmd prepare_repo fuse-cpp-ramfs git@github.com:sbu-fsl/fuse-cpp-ramfs.git;
+    runcmd prepare_repo RefFS git@github.com:sbu-fsl/RefFS.git;
 
-    cd fuse-cpp-ramfs
-    if should_override fuse-cpp-ramfs; then
+    cd RefFS
+    if should_override RefFS; then
         rm -rf build;
     fi
     mkdir -p build;

@@ -184,3 +184,5 @@ cd $CURRENT_DIR
 
 ##### Check all results_perf_* files about file system performance with Metis
 cat results_perf_*
+
+exit 0
