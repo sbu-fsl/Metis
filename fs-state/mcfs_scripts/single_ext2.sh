@@ -22,7 +22,7 @@ sudo rmmod brd
 
 # If Ext4 has the same size as Ext2
 if [ "$EXT4_SZKB" -eq "$EXT2_SZKB" ]; then
-    ./loadmods.sh
+    sudo ./loadmods.sh
 else
     cd ../kernel/brd-for-$(uname -r)
     make -C /lib/modules/$(uname -r)/build M=$(pwd)

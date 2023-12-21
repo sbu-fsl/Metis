@@ -1,10 +1,11 @@
 # Metis: File System Model Checking via Versatile Input and State Exploration
 
 This is the artifact for the FAST '24 paper **"Metis: File System Model Checking 
-via Versatile Input and State Exploration"**.  Metis is a
+via Versatile Input and State Exploration"**.  Metis is a differential-testing based
 model-checking framework designed for versatile, thorough, yet
 configurable file system testing in the form of input and state
-exploration.
+exploration.  Metis can find bugs in file systems with support of fast 
+bug reproduction and debugging.  
 
 Metis was formerly known as MCFS (Model Checking File Systems).
 
@@ -45,8 +46,7 @@ Metis was formerly known as MCFS (Model Checking File Systems).
 
 We tested Metis on Ubuntu 22.04 and Ubuntu 20.04 with Linux kernel versions 
 specified in `./kernel` (i.e., 4.4, 4.15, 5.4, 5.15.0, 5.19.7, 6.0.6, 
-6.2.12, 6.3.0, and 6.6.1).  
-We cannot guarantee the functionality and usability on other 
+6.2.12, 6.3.0, and 6.6.1). We cannot guarantee the functionality and usability on other 
 Ubuntu or Linux kernel versions.  
 
 ### Prerequisites and Required Artifacts 
@@ -57,17 +57,16 @@ system to check a file system under test, and we use RefFS or Ext4 as
 the reference file system.  Other file systems can also serve as the 
 reference file systems.  Below shows the repositories/artifacts required by Metis:  
 
-RefFS: https://github.com/sbu-fsl/RefFS 
+RefFS: https://github.com/sbu-fsl/RefFS  
+IOCov (tool to compute input coverage for file system testing): https://github.com/sbu-fsl/IOCov  
 fsl-spin (modified version of SPIN): https://github.com/sbu-fsl/fsl-spin  
 swarm-mcfs (modified version of Swarm): https://github.com/sbu-fsl/swarm-mcfs  
-IOCov (tool to compute input coverage for file system testing): https://github.com/sbu-fsl/IOCov  
 
 Note that we must use `fsl-spin` for the SPIN model checker for Metis 
 and `swarm-mcfs` for the Swarm Verification tool, and the vanilla SPIN/Swarm
 cannot work with Metis.  Please check out each repository for respective 
 documentation.  A number of 
-general libraries and tools are also required.  
-Please see `script/setup-deps.sh` for details.
+general libraries and tools are also required. Please see `script/setup-deps.sh` for details.
 
 To run [IOCov](https://github.com/sbu-fsl/IOCov), a few Python packages are required.
 Please run the following command to install them (using Python 3 and pip3 as an example):
@@ -86,32 +85,60 @@ We will respond to your questions as soon as possible and definitely in 24 hours
 
 ### Machines 
 
-We have provided VMs for each AEC memeber.  TODO
+We have provided bare metal machines for AE reviewers. TODO
+
+
 
 
 Note that some experiments can take a long time.  We recommend you to run 
-experiments under `tmux` or `screen` so that you can detach the terminal 
-while running long experiments.  
+experiments under `tmux` or `screen` so that you can detach the terminal without
+interrupting any running long experiment.  I configured `tmux` using my 
+[own config file](https://github.com/Yifei-Liu/yf-config-files/blob/master/.tmux.conf).
+Feel free to choose another one as you like.  
 
 ### Kick-the-Tires - System Configuration and Test Run 
 
 #### Installation of dependencies
 
 We have configured the necessary environments on the machines provided 
-to AEC members, so you don't need to set up environment by yourself.  
-If you want to set up Metis on your own machine,
-you can install Metis libraries (run `make && make install` on the root 
-directory of Metis) first and use our `setup-deps.sh` bootstrap 
-script (without sudo) to install all the dependencies including necessary 
-libraries/tools, RefFS, and the modified version of SPIN/Swarm.
+to AEC members, so you **don't** need to set up environment by yourself.  
+If you really want to set up the Metis environment on by yourself (e.g., on your own machines), 
+after setting up ssh keys with Github, you can clone our repo:
 
-```bash 
-cd Metis # your Metis root directory
-make 
-make install
-cd scripts
+```bash
+git clone git@github.com:sbu-fsl/Metis.git
+```
+
+Next, you need to use our `setup-deps.sh` bootstrap 
+script (without sudo) to install all the dependencies including necessary 
+libraries/tools and the modified version of SPIN/Swarm:
+
+```bash
+cd ~/Metis/scripts
 ./setup-deps.sh
 ```
+
+Then, you need to install Metis libraries by running `make && make install` on the root 
+directory of Metis, which is required by RefFS:
+
+```bash
+cd ~/Metis # your Metis root directory
+make 
+make install
+```
+
+Finally, you can install RefFS by following commands:
+  
+```bash
+cd ~
+git clone git@github.com:sbu-fsl/RefFS.git
+cd RefFS
+./setup_verifs2.sh 
+```
+
+Using `mount | grep mnt`, you will see RefFS (aka. VeriFS2) is mounted on `/mnt/test-verifs2`.
+You can unmount it by `sudo umount /mnt/test-verifs2`.  We will use RefFS as the reference file system
+in some experiments.
 
 #### Simple Metis run to check Ext2 with Ext4
 
@@ -119,58 +146,78 @@ You can run Metis with single verification task (VT) by the `setup.sh` script
 in `./fs-state`.  Before executing `setup.sh`, you need to ensure the 
 test devices for file systems are already created, and their device 
 types/sizes are matching with the arguments provided to `setup.sh`.  We 
-have provided the script to run a simple Ext4 vs. Ext2 experiment in Metis
+have provided the script (`single_ext2.sh`) to run a simple Ext4 vs. Ext2 experiment in Metis
 where Ext4 serves as the reference file system and Ext2 is the file system 
-under test.  To run this test
+under test.  To perform this test, run the following commands:
 
 ```bash
-cd fs-state/mcfs_scripts/
+cd ~/Metis/fs-state/mcfs_scripts/
 sudo ./single_ext2.sh
 ```
 
-This script will clean up resources, create devices, and run Metis with 
+This script will clean up resources, create filesystem devices, and run Metis with 
 Ext4 vs. Ext2.  Note that this experiment will be continuously running 
 until it encounters a discrepancy (i.e., potential bug) between two file 
-systems.  It will be unlikely to have a discrepancy between Ext4 and 
-Ext2, so this is only for demonstration purpose.  You can wait till the 
-model checker ends (which takes weeks of time!) or press Ctrl+C or run
-`fs-state/stop.sh` to abort 
-the program half-way (which we highly recommend for this demo).
+systems.  This experiment is only for demonstration purpose.  It will be unlikely 
+to have a discrepancy between Ext4 and Ext2 in a short time, and waiting this experiment
+till Metis ends will take weeks!  You can run `fs-state/stop.sh` to abort
+the program half-way (which we highly recommend for this demo) or press Ctrl+C
+to stop Metis (less recommended, as some resources are still not freed, e.g., mounted
+file systems, devices).
 
-Metis logs serve as the critical role to identify, analyze and replay bugs and 
-are saved under the `fs-state` folder.
-As the model checker is running or terminated, the standard output is redirected to
+In another shell session, do:
+
+```bash 
+cd ~/Metis/fs-state/
+sudo ./stop.sh
+```
+
+After aborting Metis, you can see the logs saved under the `fs-state` folder to view 
+the model-checking results and performance metrics. 
+Metis logs serve as a critical role to identify, analyze and replay bugs.
+While the model checker is running or terminated, the standard output is redirected to
 `output-pan*.log` and the standard error is redirect to `error-pan*.log`. 
 `output-pan*.log` records the timestamps, operations that have been performed, 
 as well as the
 arguments and results of each operation, and output abstract state. 
 `error-pan*.log` logs the discrepancies
 in behavior among the tested file systems that the model checker has
-encountered.  There will also be a `sequence-pan-*.log` that records the 
+encountered. `error-pan*.log` is supposed to be empty if no discrepancy found.
+There will also be a `sequence-pan-*.log` that records the 
 sequence of file system
-operations that have been performed by model checker in a easy-to-parse format.
-We have a log rotation mechanism to
-This is intended for the replayer to use.  If you want to delete all those logs,
-you can run `make clean` under the `fs-state` folder.
+operations/arguments that have been performed by model checker in a easy-to-parse format.
+We have a log rotation mechanism to compress logs that are greater than 1GB and save 
+them as `.log.gz` files to conserve disk space.
+The sequence logs are intended for the replayer to replay operations and reproduce 
+any potential bug. Performance metrics are logged in `perf-pan*.csv` files. The first 
+column is the timestamp in seconds, and the second column is the number of file system operations 
+performed, and the third column is the number of unique abstract states visited by Metis.
+You can see format `number1-number2-number3` as the suffix of log filenames, where the number1 is 
+timestamp for year, month, days, number2 is timestamp for hours, minutes, seconds, and number3 is
+the pid of the Metis process (aka. `pan`).
+If you want to delete all those logs,
+you can run `sudo make clean` under the `fs-state` folder.
 
 #### Set up RefFS 
 
 We also created a new RefFS as Metis's reference file system.
 Please refer to the [RefFS repository](https://github.com/sbu-fsl/RefFS) and its
 [README](https://github.com/sbu-fsl/RefFS/blob/master/README.md) regarding the 
-installation and mount of RefFS.  
+installation and mount of RefFS.  Before using RefFS, make sure RefFS is 
+installed and can be mounted.
 
 You can run RefFS vs. Ext4 by running the `single_verifs2.sh` script:
 
 ```bash
-cd fs-state/mcfs_scripts/
+cd ~/Metis/fs-state/mcfs_scripts/
 sudo ./single_verifs2.sh
 ```
 
 Again, this experiment can take a very long time to complete (weeks or months), so 
-you can abort it half-way via Ctrl+C or running `fs-state/stop.sh`.  The experimental
-logs of RefFS vs. Ext4 should appear in the `fs-state` folder.  The log file names show 
-the timestamp and pid of the experiment. 
+you can abort it half-way via running `fs-state/stop.sh` or Ctrl+C.  The experimental
+logs of RefFS vs. Ext4 should appear in the `fs-state` folder.  Also, the log file names show 
+the timestamp and pid of the experiment, and you will see both file systems have the same abstract
+state (MD5 hash) and returns/error codes after each operation. 
 
 #### Using Metis replayer
 
