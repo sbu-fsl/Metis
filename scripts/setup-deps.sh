@@ -307,7 +307,7 @@ runcmd install_pkg liburcu-dev
 runcmd install_pkg libxxhash-dev
 runcmd install_pkg nilfs-tools
 
-required_repos=(swarm spin verifs2 zlib xxHash)
+required_repos=(swarm spin zlib xxHash)
 
 for repo in ${required_repos[@]}; do
     runcmd install_$repo;
