@@ -185,7 +185,8 @@ in behavior among the tested file systems that the model checker has
 encountered. `error-pan*.log` is supposed to be empty if no discrepancy found.
 There will also be a `sequence-pan-*.log` that records the 
 sequence of file system
-operations/arguments that have been performed by model checker in a easy-to-parse format.
+operations/arguments that have been performed by model checker in a easy-to-parse format.  
+
 We have a log rotation mechanism to compress logs that are greater than 1GB and save 
 them as `.log.gz` files to conserve disk space.
 The sequence logs are intended for the replayer to replay operations and reproduce 
@@ -224,37 +225,44 @@ state (MD5 hash) and returns/error codes after each operation.
 After each experiment, we can use replayer to replay the exact sequence 
 of operations to debug/reproduce the discrepancy/bug or obtain any intermediate 
 file system state during a Metis run.  The Metis replayer parses the `sequence-pan*.log`
-line by line, reads the operations/arguments, and perform the exact operations
+line by line, reads the operations/arguments, and performs the exact operations (including state save/restore)
 on single or both file systems (specified by the replayer argument list).  
 Let's use a previous Ext4 vs. Ext2 example to demonstrate Metis's replayer:
 
 ```bash
-cd fs-state
-make clean # clear all logs and object files
-cd mcfs_scripts
+cd ~/Metis/fs-state/
+sudo make clean # clear all previous logs and object files
+cd ~/Metis/fs-state/mcfs_scripts/
 sudo ./single_ext2.sh 
 ```
 
-Then we abort the Metis process by Ctrl-C or running script `sudo ./stop.sh`.
+Then we abort the Metis process by Ctrl-C or running script `sudo ./stop.sh` after some time (10 minutes).
 We recommend to use `stop.sh` because we also need to unmount all the 
 file systems used by Metis.  Using Ctrl-C needs to manually unmount all 
 the test file systems (i.e., `umount /mnt/test-*` or `umount /dev/ram*`).
 After that, we can get a sequence log file and a dump_prepopulate log file
 in the `fs-state` folder. 
-We use `sequence-pan-20231214-014909-2031206.log` and `dump_prepopulate_0.log` as an example.  
+We use `sequence-pan-20231214-014909-2031206.log` and `dump_prepopulate_0.log` as an example, 
+and please replace the log file names with your own log files.  
 
 We need to ensure that test devices are created with the correct device
 types/sizes.  For Ext4 vs. Ext2, you can run `loadmods.sh` in the `fs-state`
 to create desired ramdisks.
 To use the replayer, we should first open the `fs-state/replay.c` file, 
-edit **line 29 and line 35** to reflect the log file names generated 
-from a previous experiment that we want to replay.  Therefore, the 
+edit **line 40 and line 46** to reflect the log file names generated 
+from a previous experiment that we want to replay (esp. the sequence file name, `dump_prepopulate_0.log`
+should be the same for every experiment).  Therefore, the 
 replayer can use the correct log files to replay.  
 After editing the `replay.c` file, we can compile the replayer by:
 
 ```bash 
-cd fs-state
-make replayer
+cd ~/Metis/fs-state/
+# Open and edit replay.c first (e.g., sudo vim replay.c)
+# Make sure the log file names are correct and those files exist
+# Compile the replayer everytime we change the replay.c file
+sudo make replayer
+# Load ramdisk devices for replaying Ext4 vs. Ext2
+sudo ./loadmods.sh
 ```
 
 We will get a `replay` binary executable.  We will run replayer with the 
@@ -270,21 +278,26 @@ The execution of file system operations will be printed on the console.
 
 Above experiments use one Metis process only, but Metis can run multiple 
 processes (i.e., verification tasks or VTs) in parallel by virtue of Swarm 
-Verification.  To support Swarm, we provide a configuration file `fs-state/swarm.lib`.
-You can find the [detailed description](https://github.com/sbu-fsl/swarm-mcfs/blob/swarm-v2/README.md) 
-of the configuration file.
+Verification.  To support Swarm, we use a configuration file `fs-state/swarm.lib`
+to specify necessary parameters (e.g., number of VTs).
+You can find the detailed description
+of the configuration file via the [Swarm README](https://github.com/sbu-fsl/swarm-mcfs/blob/swarm-v2/README.md).
 
 To run a quick Metis experiment with Swarm for Ext4 vs. Ext2, please copy the 
 `swarm-single-node.lib` to override `swarm.lib`, set up devices, run the `fs-state/setup_swarm.sh`
 with proper arguments, and finally run the generated `mcfs-main.pml.swarm` script.
 
 ```bash
-cd ./fs-state
+cd ~/Metis/fs-state/
 # Use proper swarm.lib configuration file
-yes | cp -f swarm-single-node.lib swarm.lib
-make clean
+yes | sudo sh -c 'cp -f swarm-single-node.lib swarm.lib'
+# Clean up all previous logs and object files as running Metis with Swarm can produce many logs
+sudo make clean
 # Unmount file systems if rmmod brd failed
+sudo umount /dev/ram*
+# Remove all ramdisk devices
 sudo rmmod brd
+# Reload ramdisk devices for Ext4 vs. Ext2 with Swarm 
 sudo ./loadmods.sh
 # Test Ext4 vs. Ext2 with 6 VTs
 sudo ./setup_swarm.sh -f ext4:256:ext2:256 -n 6
