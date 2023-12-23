@@ -376,12 +376,12 @@ three cases of Metis's input coverage: Metis-Uniform, Metis-RSD, and Metis-IRSD.
 You can read our paper to understand the definitions of these three cases.
 For example, the oldest json file is for Metis-Uniform and the newest json file 
 is for Metis-IRSD.
-This is one of my outputs (sorted by timestamp or filename):
+This is an example of my previous outputs (sorted by timestamp or filename):
 
 ```
-input-cov-mcfs-20231223-031808-1471509.json --> Metis-Uniform
-input-cov-mcfs-20231223-035811-1497210.json --> Metis-RSD
-input-cov-mcfs-20231223-043814-1523714.json --> Metis-IRSD
+~/IOCov/MCFS/input-cov-mcfs-20231223-031808-1471509.json --> Metis-Uniform
+~/IOCov/MCFS/input-cov-mcfs-20231223-035811-1497210.json --> Metis-RSD
+~/IOCov/MCFS/input-cov-mcfs-20231223-043814-1523714.json --> Metis-IRSD
 ```
 
 You can view open json files and see the K-V pairs of `"open"` and `"flags"`.
@@ -408,7 +408,15 @@ don't want to have too many IOCov results.
 
 #### Bug Finding
 
+We listed the file system bugs found by Metis in the Table 2. In `Metis/fs_bugs`, we provided
+reproducers for some bugs. We use the reproducer for the #5 JFFS2 write_begin bug as an example.
+We have explained the bug in Section 5.4 of the paper. For more information, please refer to the
+[bug patch](https://github.com/torvalds/linux/commit/23892d383bee15b64f5463bd7195615734bb2415).
 
+
+```bash
+sudo apt-get install mtd-utils
+```
 
 ```bash
 cd ~/Metis/fs_bugs/jffs2/write_begin/
