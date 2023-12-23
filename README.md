@@ -319,11 +319,35 @@ at [Metis Performance and Scalability](#metis-performance-and-scalability-figure
 
 ### Reproduction of Experimental Results
 
+This section shows how to reproduce the experimental results in our paper.  We
+provided scripts (in `Metis/ae-experiments`) and instructions to run experiments and collect data.
+
 #### Test Input Coverage (Figure 3, 4, 5)
 
+Input coverage is a metric to measure the coverage of file system inputs (syscalls' arguments).
+The arguments from file system syscalls are categorized into different types including identifiers,
+bitmaps, numeric arguments, and categorical arguments.  We used different methods to partition
+different types of file system test inputs.  Please refer to our paper for details.  
 
+Metis can log its syscalls and arguments into `output` and `sequence` logs, but raw syscalls 
+and arguments are not enough to compute input coverage.  We need to parse the logs to partition 
+the inputs (syscalls and their arguments).  To achive this and support input coverage 
+computation for a wide range of file system testing, we developed a tool called IOCov (see 
+[our HotStorage '23 paper](https://www.fsl.cs.stonybrook.edu/docs/mcfs/iocov-hotstorage23.pdf) for details). 
+IOCov can read and parse Metis logs and obtain input coverage just like we presented 
+in this paper (Figure 3-5). To use IOCov and our scripts, **please put the `IOCov` folder and the `Metis` folder under the same directory.**  
+For example, you can do
+
+```bash
+cd ~
+# Metis should also be under the same directory
+git clone git@github.com:sbu-fsl/IOCov.git
+```
+
+Therefore, the relative paths in our scripts can work.
 
 ##### Figure 3 Input Coverage open flags 40 minutes
+
 
 
 
