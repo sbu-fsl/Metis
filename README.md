@@ -80,7 +80,7 @@ pip3 install numpy scipy matplotlib
 
 Thank you for evaluating our artifact.  We have provided a set of machines, 
 scripts, and instructions to help you set up Metis/RefFS and reproduce our experimental results.
-If you encounter any issues, please feel free to contact us via HotCRP messages.
+***If you encounter any issues, please feel free to contact us via HotCRP messages.***
 We will respond to your questions as soon as possible and definitely in 24 hours.
 
 ### Machines 
@@ -321,6 +321,7 @@ at [Metis Performance and Scalability](#metis-performance-and-scalability-figure
 
 This section shows how to reproduce the experimental results in our paper.  We
 provided scripts (in `Metis/ae-experiments`) and instructions to run experiments and collect data.
+**Please let us know if you encounter any issues. We will response to you ASAP.**
 
 #### Test Input Coverage (Figure 3, 4, 5)
 
@@ -336,7 +337,7 @@ computation for a wide range of file system testing, we developed a tool called 
 [our HotStorage '23 paper](https://www.fsl.cs.stonybrook.edu/docs/mcfs/iocov-hotstorage23.pdf) for details). 
 IOCov can read and parse Metis logs and obtain input coverage just like we presented 
 in this paper (Figure 3-5). To use IOCov and our scripts, **please put the `IOCov` folder and the `Metis` folder under the same directory.**  
-For example, you can do
+For example, you can run the following commands to clone IOCov:
 
 ```bash
 cd ~
@@ -344,14 +345,57 @@ cd ~
 git clone git@github.com:sbu-fsl/IOCov.git
 ```
 
-Therefore, the relative paths in our scripts can work.
+Therefore, the relative paths in our scripts can work.  Please install following Python packages
+for IOCov:
+
+```bash
+sudo apt-get install python3-pip
+pip3 install numpy scipy matplotlib
+```
 
 ##### Figure 3 Input Coverage open flags 40 minutes
 
+This experiment runs three different cases of Metis's input coverage for 
+open flags: Metis-Uniform, Metis-RSD, and Metis-IRSD, as we showed in 
+the Figure 3.  For each ease, we recompile Metis with different values 
+of the marco `MY_OPEN_FLAG_PATTERN`, run Metis to test Ext4 only, 
+abort Metis after 40 minutes, and call IOCov to compute input coverage of 
+the Metis run based on its sequence log.
+**Each case will take 40 minutes to complete, so this script will take about 2 hours to complete.**
 
+```bash
+cd ~/Metis/ae-experiments
+sudo ./figure-3-exp.sh
+```
 
+After the script finishes, you can view the input coverage results in `~/IOCov/MCFS/`.
+You should be able to see three `.pkl` files and three `.json` files.  Json files 
+reflect the same content as pkl files but in a human-readable format.  
+These three json files (sorted by timestamp or filename) are corresponding to the 
+three cases of Metis's input coverage: Metis-Uniform, Metis-RSD, and Metis-IRSD.
+You can read our paper to understand the definitions of these three cases.
+For example, the oldest json file is for Metis-Uniform and the newest json file 
+is for Metis-IRSD.
+This is one of my outputs (sorted by timestamp or filename):
+
+```
+input-cov-mcfs-20231223-031808-1471509.json --> Metis-Uniform
+input-cov-mcfs-20231223-035811-1497210.json --> Metis-RSD
+input-cov-mcfs-20231223-043814-1523714.json --> Metis-IRSD
+```
+
+You can view open json files and see the K-V pairs of `"open"` and `"flags"`.
+The values should be matching with the Figure 3 in our paper.
+Note that `O_ACCMODE` flag is not included in the figure, because this flag 
+is set by two bits (`O_WRONLY` and `O_RDWR`) in the `open` syscall.  Therefore, you can 
+ignore this flag in the json files.
+
+Feel free to run `sudo ./cleanup-iocov.sh` to clean up all the IOCov logs if you 
+don't want to have too many IOCov results.
 
 ##### Figure 4 Input Coverage write sizes 40 minutes
+
+
 
 ##### Figure 5 Input Coverage write sizes 4 hours
 
@@ -364,6 +408,12 @@ Therefore, the relative paths in our scripts can work.
 
 #### Bug Finding
 
+
+
+```bash
+cd ~/Metis/fs_bugs/jffs2/write_begin/
+sudo bash reproduce_jffs2_write_begin_issue.sh
+```
 
 ### Troubleshooting
 
