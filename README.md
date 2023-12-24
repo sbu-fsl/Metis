@@ -350,6 +350,7 @@ for IOCov:
 
 ```bash
 sudo apt-get install python3-pip
+# Don't forget the sudo before pip3 because all the scripts we run are under sudo
 sudo pip3 install numpy scipy matplotlib
 ```
 
@@ -402,8 +403,9 @@ Because there are too many values of write size can be used, we partition the in
 of write sizes by the powers of 2 numbers (e.g., 1, 2, 4, 8, 16, etc.).  Please refer to our paper 
 and our previous [HotStorage '23 paper](https://www.fsl.cs.stonybrook.edu/docs/mcfs/iocov-hotstorage23.pdf) for details.  
 
-Similarly, the figure 4 experiment runs Metis to test Ext4 only, for 40 minutes.
-**This script will take about 2 hours to complete.  Again, please make sure the required Python packages are properly installed.** 
+Similarly, the figure 4 experiment runs Metis to test Ext4 only, for 40 minutes. Each 
+case uses a different value of the marco `MY_WRITE_SIZE_PATTERN` to recompile Metis.
+**This script will take about 2 hours to complete.  Again, please make sure the required Python packages are properly installed, otherwise figures cannot be plotted.** 
 
 ```bash
 cd ~/Metis/ae-experiments
@@ -416,8 +418,8 @@ You should be able to see following figures in PDF:
 
 ```bash
 metis-write-size-Metis-Uniform-40m.pdf # Metis-Uniform
-metis-write-size-Metis-IXD-40m.pdf     # Metis-IXD
 metis-write-size-Metis-XD-40m.pdf      # Metis-XD
+metis-write-size-Metis-IXD-40m.pdf     # Metis-IXD
 ```
 
 You can compare these figures to the figure 4 in the paper. Metis-Uniform indicates every partition of write size has 
@@ -431,7 +433,24 @@ more accurate than the 40-minute experiment, so you can see the distributions mo
 
 ##### Figure 5 Input Coverage write sizes 4 hours
 
+Figure 5 shows the input coverage of write sizes, each for a 4-hour Metis run.  This experiment is similar to 
+the Figure 4 experiment, but with a different time length. **The script will last 12 hours to complete.**
+Likewise, you can run the following commands to reproduce the Figure 5 experiment:
 
+```bash
+cd ~/Metis/ae-experiments
+sudo ./figure-5-exp.sh
+```
+
+This script will produce three figures in PDF format:
+
+```bash
+metis-write-size-Metis-Uniform-240m.pdf # Metis-Uniform
+metis-write-size-Metis-XD-240m.pdf      # Metis-XD
+metis-write-size-Metis-IXD-240m.pdf     # Metis-IXD
+```
+
+You can compare these figures to the figure 5 in the paper.
 
 #### Metis Performance and Scalability (Figure 6)
 
