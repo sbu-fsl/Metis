@@ -4,8 +4,10 @@ FS_STATE_DIR="../fs-state"
 SCRIPT_DIR="../fs-state/mcfs_scripts"
 TIMERUN="30m"
 CURRENT_DIR=$(pwd)
+RESULTFILE="fig7_fs_perf_results"
 
 ########### Figure 7: Performance comparison between RefFS and other file systems with Metis ###########
+rm $RESULTFILE
 
 ##### RefFS performance with Metis
 CURRENT_FS="RefFS"
@@ -34,11 +36,11 @@ tail -n 1 $PERFCSV | awk -F, '{print $1, $2, $3}' | {
     ops_per_second=$(echo "$NOPS / $NSECONDS" | bc -l)
     states_per_second=$(echo "$NSTATES / $NSECONDS" | bc -l)
 
-    echo "Operations per second: $ops_per_second" >> results_perf_${CURRENT_FS}
-    echo "States per second: $states_per_second" >> results_perf_${CURRENT_FS}
+    echo "$CURRENT_FS Operations per second: $ops_per_second" >> $RESULTFILE
+    echo "$CURRENT_FS States per second: $states_per_second" >> $RESULTFILE
 }
 
-echo "$CURRENT_FS run finished, check results_perf_${CURRENT_FS} file."
+echo "$CURRENT_FS run finished, check $RESULTFILE file."
 
 cd $CURRENT_DIR
 
@@ -69,11 +71,11 @@ tail -n 1 $PERFCSV | awk -F, '{print $1, $2, $3}' | {
     ops_per_second=$(echo "$NOPS / $NSECONDS" | bc -l)
     states_per_second=$(echo "$NSTATES / $NSECONDS" | bc -l)
 
-    echo "Operations per second: $ops_per_second" >> results_perf_${CURRENT_FS}
-    echo "States per second: $states_per_second" >> results_perf_${CURRENT_FS}
+    echo "$CURRENT_FS Operations per second: $ops_per_second" >> $RESULTFILE
+    echo "$CURRENT_FS States per second: $states_per_second" >> $RESULTFILE
 }
 
-echo "$CURRENT_FS run finished, check results_perf_${CURRENT_FS} file."
+echo "$CURRENT_FS run finished, check $RESULTFILE file."
 
 cd $CURRENT_DIR
 
@@ -104,11 +106,11 @@ tail -n 1 $PERFCSV | awk -F, '{print $1, $2, $3}' | {
     ops_per_second=$(echo "$NOPS / $NSECONDS" | bc -l)
     states_per_second=$(echo "$NSTATES / $NSECONDS" | bc -l)
 
-    echo "Operations per second: $ops_per_second" >> results_perf_${CURRENT_FS}
-    echo "States per second: $states_per_second" >> results_perf_${CURRENT_FS}
+    echo "$CURRENT_FS Operations per second: $ops_per_second" >> $RESULTFILE
+    echo "$CURRENT_FS States per second: $states_per_second" >> $RESULTFILE
 }
 
-echo "$CURRENT_FS run finished, check results_perf_${CURRENT_FS} file."
+echo "$CURRENT_FS run finished, check $RESULTFILE file."
 
 cd $CURRENT_DIR
 
@@ -139,11 +141,11 @@ tail -n 1 $PERFCSV | awk -F, '{print $1, $2, $3}' | {
     ops_per_second=$(echo "$NOPS / $NSECONDS" | bc -l)
     states_per_second=$(echo "$NSTATES / $NSECONDS" | bc -l)
 
-    echo "Operations per second: $ops_per_second" >> results_perf_${CURRENT_FS}
-    echo "States per second: $states_per_second" >> results_perf_${CURRENT_FS}
+    echo "$CURRENT_FS Operations per second: $ops_per_second" >> $RESULTFILE
+    echo "$CURRENT_FS States per second: $states_per_second" >> $RESULTFILE
 }
 
-echo "$CURRENT_FS run finished, check results_perf_${CURRENT_FS} file."
+echo "$CURRENT_FS run finished, check $RESULTFILE file."
 
 cd $CURRENT_DIR
 
@@ -174,11 +176,11 @@ tail -n 1 $PERFCSV | awk -F, '{print $1, $2, $3}' | {
     ops_per_second=$(echo "$NOPS / $NSECONDS" | bc -l)
     states_per_second=$(echo "$NSTATES / $NSECONDS" | bc -l)
 
-    echo "Operations per second: $ops_per_second" >> results_perf_${CURRENT_FS}
-    echo "States per second: $states_per_second" >> results_perf_${CURRENT_FS}
+    echo "$CURRENT_FS Operations per second: $ops_per_second" >> $RESULTFILE
+    echo "$CURRENT_FS States per second: $states_per_second" >> $RESULTFILE
 }
 
-echo "$CURRENT_FS run finished, check results_perf_${CURRENT_FS} file."
+echo "$CURRENT_FS run finished, check $RESULTFILE file."
 
 cd $CURRENT_DIR
 

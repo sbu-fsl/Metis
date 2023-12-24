@@ -458,6 +458,7 @@ You can compare these figures to the figure 5 in the paper.
 #### RefFS Performance and Reliability (Figure 7)
 
 
+
 #### Bug Finding
 
 We listed the file system bugs found by Metis in the Table 2. In `Metis/fs_bugs`, we provided
@@ -465,6 +466,7 @@ reproducers for some bugs. We use the reproducer for the #5 JFFS2 write_begin bu
 We have explained the bug in Section 5.4 of the paper. For more information, please refer to the
 [bug patch](https://github.com/torvalds/linux/commit/23892d383bee15b64f5463bd7195615734bb2415).
 
+You need to use the Ubuntu 20 machine.
 
 ```bash
 sudo apt-get install mtd-utils
@@ -473,6 +475,9 @@ sudo apt-get install mtd-utils
 ```bash
 cd ~/Metis/fs_bugs/jffs2/write_begin/
 sudo bash reproduce_jffs2_write_begin_issue.sh
+```
+
+```bash
 ```
 
 ### Troubleshooting
