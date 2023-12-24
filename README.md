@@ -73,7 +73,7 @@ Please run the following command to install them (using Python 3 and pip3 as an 
 
 ```bash
 sudo apt-get install python3-pip
-pip3 install numpy scipy matplotlib
+sudo pip3 install numpy scipy matplotlib
 ```
 
 ## FAST24 Artifact Evaluation
@@ -350,7 +350,7 @@ for IOCov:
 
 ```bash
 sudo apt-get install python3-pip
-pip3 install numpy scipy matplotlib
+sudo pip3 install numpy scipy matplotlib
 ```
 
 ##### Figure 3 Input Coverage open flags 40 minutes
@@ -395,9 +395,42 @@ don't want to have too many IOCov results.
 
 ##### Figure 4 Input Coverage write sizes 40 minutes
 
+This experiment runs three different cases of Metis's input coverage for write sizes:
+Metis-Uniform, Metis-XD, and Metis-IXD. The `write` sizes are the sizes of data to be written
+from the buffer (i.e., the `count` argument in the [write](https://man7.org/linux/man-pages/man2/write.2.html) syscall).
+Because there are too many values of write size can be used, we partition the input space 
+of write sizes by the powers of 2 numbers (e.g., 1, 2, 4, 8, 16, etc.).  Please refer to our paper 
+and our previous [HotStorage '23 paper](https://www.fsl.cs.stonybrook.edu/docs/mcfs/iocov-hotstorage23.pdf) for details.  
 
+Similarly, the figure 4 experiment runs Metis to test Ext4 only, for 40 minutes.
+**This script will take about 2 hours to complete.  Again, please make sure the required Python packages are properly installed.** 
+
+```bash
+cd ~/Metis/ae-experiments
+sudo ./figure-4-exp.sh
+```
+
+Different from the Figure 3 experiment, this script not only produces json/pkl files but also creates figures
+to show the input coverage distribution of each case.  The figures are saved in both `~/Metis/ae-experiments` and `~/IOCov/MCFS`.
+You should be able to see following figures in PDF:
+
+```bash
+metis-write-size-Metis-Uniform-40m.pdf # Metis-Uniform
+metis-write-size-Metis-IXD-40m.pdf     # Metis-IXD
+metis-write-size-Metis-XD-40m.pdf      # Metis-XD
+```
+
+You can compare these figures to the figure 4 in the paper. Metis-Uniform indicates every partition of write size has 
+the same probability to be chosen.  Metis-XD prioritizes testing smaller sizes more often, and Metis-IXD emphasizes the 
+inverse: testing input partitions with larger write sizes.
+Note that the input coverage in Metis is probabilistic, so 
+you may not get the exact same figures as the paper (trend should be similar though). As the runtime of Metis increases,
+the input coverage will be more accurate.
+We show a 4-hour Metis experiment for write sizes of the same three cases in the next section, which should be 
+more accurate than the 40-minute experiment, so you can see the distributions more clearly.
 
 ##### Figure 5 Input Coverage write sizes 4 hours
+
 
 
 #### Metis Performance and Scalability (Figure 6)
