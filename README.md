@@ -457,7 +457,23 @@ You can compare these figures to the figure 5 in the paper.
 
 #### RefFS Performance and Reliability (Figure 7)
 
+This experiment illustrates the performance of RefFS while running with Metis and its
+comparison with other reference file systems including BtrFS, Ext2, Ext4, and XFS.
+We created a script `figure-7-exp.sh` to run these five file systems with Metis for 30 minutes each.
+**Therefore, this script will take about 2.5 hours to complete.** You can edit the `TIMERUN`variable
+in the `figure-7-exp.sh` script to change to a longer or shorter time length for each file system.
+The performance in the figure 7 is mesured by the number of file system operations and unique filesystem
+abstract states per second. After each file system's Metis run, the script will read the performance
+metrics from the `perf-pan*.csv` file and extract total number of operations and unique abstract states 
+as well as epoch time in seconds.  Then, the script will compute the performance metrics and save them in the
+`fig7_fs_perf_results` text file under the folder `~/Metis/fs-state/`.
 
+You can view the performance results via the following command:
+
+```bash
+cd ~/Metis/fs-state/
+cat fig7_fs_perf_results
+```
 
 #### Bug Finding
 

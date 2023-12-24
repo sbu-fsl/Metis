@@ -184,7 +184,7 @@ echo "$CURRENT_FS run finished, check $RESULTFILE file."
 
 cd $CURRENT_DIR
 
-##### Check all results_perf_* files about file system performance with Metis
-cat results_perf_*
+##### Check all fig7_fs_perf_results files about file system performance with Metis
+cat $RESULTFILE
 
 exit 0
