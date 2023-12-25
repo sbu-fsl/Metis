@@ -481,22 +481,38 @@ We listed the file system bugs found by Metis in the Table 2. In `Metis/fs_bugs`
 reproducers for some bugs. We use the reproducer for the #5 JFFS2 write_begin bug as an example.
 We have explained the bug in Section 5.4 of the paper. For more information, please refer to the
 [bug patch](https://github.com/torvalds/linux/commit/23892d383bee15b64f5463bd7195615734bb2415).
+You can use the Ubuntu 20 machine with a lower kernel version to reproduce this JFFS2 write begin 
+bug by either using our reproducer and Metis itself. 
 
-You need to use the Ubuntu 20 machine with a lower kernel version. 
-
-
+Before running any JFFS2 experiments, please make sure you installed JFFS2 and MTD utilities:
 
 ```bash
 sudo apt-get install mtd-utils
 ```
 
+To run JFFS2 write_begin bug reproducer, please run the following commands to compile the simple C 
+driver and run the shell script:
+
 ```bash
 cd ~/Metis/fs_bugs/jffs2/write_begin/
+make
 sudo bash reproduce_jffs2_write_begin_issue.sh
 ```
 
+You should be able to see the following output, which indicates the bug is reproduced:
+
 ```bash
+the correct file should be 8 x 1s, then 12 x 0s, then 4 x 2s
+the INcorrect file has 16 x 1s, then 4 x 0s, then 4 x 2s
+00000000  01 01 01 01 01 01 01 01  01 01 01 01 01 01 01 01  |................|
+00000010  00 00 00 00 02 02 02 02                           |........|
+00000018
 ```
+
+For the correct behavior, the file should have a hole that is zeroed out (i.e., 12 x 0s), but 
+the reproducer shows the JFFS2 file system has 1s in the hole instead. 
+
+
 
 ### Troubleshooting
 
