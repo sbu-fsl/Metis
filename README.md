@@ -512,6 +512,24 @@ the INcorrect file has 16 x 1s, then 4 x 0s, then 4 x 2s
 For the correct behavior, the file should have a hole that is zeroed out (i.e., 12 x 0s), but 
 the reproducer shows the JFFS2 file system has 1s in the hole instead. 
 
+To run Metis to find this bug, we first need to edit line 26 of the `fs-state/parameters.py` file
+to remove `0o40101` (O_DIRECT) because JFFS2 does not support this open flag. Otherwise, Metis will
+abort with a discrepancy that JFFS2 returns an `EINVAL` error code.
+
+Change this line (we already changed this line on the Ubuntu 20 machine):
+
+```python
+create_open_flag = make_params_pml('create_open_flag',
+        SpecialParameters(0o101, 0o301, 0o1101, 0o40101))
+```
+
+to 
+
+```python
+create_open_flag = make_params_pml('create_open_flag',
+        SpecialParameters(0o101, 0o301, 0o1101))
+```
+
 
 
 ### Troubleshooting
