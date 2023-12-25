@@ -2,7 +2,7 @@
 
 FS_STATE_DIR="../fs-state"
 SCRIPT_DIR="../fs-state/mcfs_scripts"
-TIMERUN="30m"
+TIMERUN="10m"
 CURRENT_DIR=$(pwd)
 RESULTFILE="fig7_fs_perf_results"
 
@@ -24,8 +24,6 @@ cd ..
 ### pwd: fs-state
 # Analyze perf-pan*.csv and get performance values
 PERFCSV=$(ls perf-pan*.csv)
-
-rm ${CURRENT_FS}_results
 
 tail -n 1 $PERFCSV | awk -F, '{print $1, $2, $3}' | {
     read NSECONDS NOPS NSTATES
@@ -60,8 +58,6 @@ cd ..
 # Analyze perf-pan*.csv and get performance values
 PERFCSV=$(ls perf-pan*.csv)
 
-rm ${CURRENT_FS}_results
-
 tail -n 1 $PERFCSV | awk -F, '{print $1, $2, $3}' | {
     read NSECONDS NOPS NSTATES
 
@@ -94,8 +90,6 @@ cd ..
 ### pwd: fs-state
 # Analyze perf-pan*.csv and get performance values
 PERFCSV=$(ls perf-pan*.csv)
-
-rm ${CURRENT_FS}_results
 
 tail -n 1 $PERFCSV | awk -F, '{print $1, $2, $3}' | {
     read NSECONDS NOPS NSTATES
@@ -130,8 +124,6 @@ cd ..
 # Analyze perf-pan*.csv and get performance values
 PERFCSV=$(ls perf-pan*.csv)
 
-rm ${CURRENT_FS}_results
-
 tail -n 1 $PERFCSV | awk -F, '{print $1, $2, $3}' | {
     read NSECONDS NOPS NSTATES
 
@@ -164,8 +156,6 @@ cd ..
 ### pwd: fs-state
 # Analyze perf-pan*.csv and get performance values
 PERFCSV=$(ls perf-pan*.csv)
-
-rm ${CURRENT_FS}_results
 
 tail -n 1 $PERFCSV | awk -F, '{print $1, $2, $3}' | {
     read NSECONDS NOPS NSTATES

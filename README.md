@@ -459,8 +459,8 @@ You can compare these figures to the figure 5 in the paper.
 
 This experiment illustrates the performance of RefFS while running with Metis and its
 comparison with other reference file systems including BtrFS, Ext2, Ext4, and XFS.
-We created a script `figure-7-exp.sh` to run these five file systems with Metis for 30 minutes each.
-**Therefore, this script will take about 2.5 hours to complete.** You can edit the `TIMERUN`variable
+We created a script `figure-7-exp.sh` to run these five file systems with Metis for 10 minutes each.
+**Therefore, this script will take about 1 hour to complete.** You can edit the `TIMERUN`variable
 in the `figure-7-exp.sh` script to change to a longer or shorter time length for each file system.
 The performance in the figure 7 is mesured by the number of file system operations and unique filesystem
 abstract states per second. After each file system's Metis run, the script will read the performance
@@ -482,7 +482,9 @@ reproducers for some bugs. We use the reproducer for the #5 JFFS2 write_begin bu
 We have explained the bug in Section 5.4 of the paper. For more information, please refer to the
 [bug patch](https://github.com/torvalds/linux/commit/23892d383bee15b64f5463bd7195615734bb2415).
 
-You need to use the Ubuntu 20 machine.
+You need to use the Ubuntu 20 machine with a lower kernel version. 
+
+
 
 ```bash
 sudo apt-get install mtd-utils
