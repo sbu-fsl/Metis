@@ -206,9 +206,10 @@ install_xxHash() {
 
 install_zlib() {
     pushd $BASEDIR;
-    runcmd prepare_repo zlib git@github.com:cloudflare/zlib.git;
+    runcmd prepare_repo zlib git@github.com:madler/zlib.git;
 
     cd zlib
+    runcmd git checkout master
     if should_override zlib; then
         make distclean;
     fi
