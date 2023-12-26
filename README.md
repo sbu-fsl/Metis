@@ -454,6 +454,7 @@ You can compare these figures to the figure 5 in the paper.
 
 #### Metis Performance and Scalability (Figure 6)
 
+TODO
 
 #### RefFS Performance and Reliability (Figure 7)
 
@@ -474,6 +475,17 @@ You can view the performance results via the following command:
 cd ~/Metis/fs-state/
 cat fig7_fs_perf_results
 ```
+
+Randomness in Metis can affect the performance metrics, so you may not get the exact same results 
+as the paper. We recommend you to run the `figure-7-exp.sh` script multiple times and take the average,
+which should be close to the results in the paper. The randomness of Metis comes from the prepopulation
+of files/dirs and the selection of file/dirs to perform operations. Also, as we explained in the paper,
+more file system operations do not necessarily lead to more unique abstract states.  For example, some 
+operations may just create an already-existing file or delete a non-existing file, which will not lead to
+new abstract states.  Therefore, the number of file system operations is a better metric to measure the
+performance of Metis, rather tan the number of unique abstract states. That said, running mutiple times
+should be able to get the similar trend of performance metrics both in terms of number of file system operations
+and unique abstract states.
 
 #### Bug Finding
 
