@@ -580,6 +580,41 @@ a potential bug is detected.
 
 ##### Reproduce bugs from other file systems by Metis
 
+Reproducing other bugs from other file systems is similar to the JFFS2 bug. 
+You can use either run Metis itself or use our reproducer to detect/reproduce the bug. 
+In `Metis/fs-states/mcfs_scripts`, we have provided a set of scripts to run Metis with different file systems (using Ext4 as the reference file system). You can edit the 
+scripts easily to use RefFS or other file systems as a reference by changing 
+the arguments provided to `./setup.sh -f` option. 
+Because we have to use different `brd2` modules for different Linux kernel versions,
+please make sure you use the correct version of brd2 module in `kernel` folder. For 
+my information, please refer to [our document for brd2](kernel/brd/README.md).
+
+In those scripts, by default we use:
+
+```bash
+cd ../kernel/brd-for-5.19.7
+```
+
+You need edit it accordingly based on your correct kernel version.  The default kernel 
+version for Ubuntu 22.04 is 5.15.0 and Ubuntu 20.04 is 5.4.0. You need to edit this 
+line to:
+
+```bash
+# For Ubuntu 22.04 default kernel version: 5.15.0
+cd ../kernel/brd-for-5.15.0
+
+# For Ubuntu 20.04 default kernel version: 5.4.0
+cd ../kernel/brd
+```
+
+For example, you can test F2FS by running the following command (already changed
+to 5.4.0 kernel version by using the brd2 module in the `Metis/kernel/brd` folder):
+
+```bash
+cd ~/Metis/fs-state/mcfs_scripts
+sudo ./single_f2fs.sh
+```
+
 
 
 ### Troubleshooting

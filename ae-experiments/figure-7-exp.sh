@@ -7,7 +7,6 @@ CURRENT_DIR=$(pwd)
 RESULTFILE="fig7_fs_perf_results"
 
 ########### Figure 7: Performance comparison between RefFS and other file systems with Metis ###########
-rm $RESULTFILE
 
 ##### RefFS performance with Metis
 CURRENT_FS="RefFS"

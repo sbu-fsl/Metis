@@ -19,7 +19,7 @@ XFS_SZKB=16384 # 16 MiB
 cd ..
 sudo ./stop.sh
 
-cd ../kernel/brd-for-5.19.7
+cd ../kernel/brd
 sudo rmmod brd
 make -C /lib/modules/$(uname -r)/build M=$(pwd)
 sudo insmod brd.ko rd_nr=2 rd_sizes=$EXT4_SZKB,$XFS_SZKB

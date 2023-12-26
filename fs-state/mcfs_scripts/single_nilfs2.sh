@@ -21,7 +21,7 @@ NILFS2_SZKB=1028
 cd ..
 sudo ./stop.sh
 
-cd ../kernel/brd-for-6.3.0
+cd ../kernel/brd
 sudo rmmod brd
 make -C /lib/modules/$(uname -r)/build M=$(pwd)
 sudo insmod brd.ko rd_nr=2 rd_sizes=$EXT4_SZKB,$NILFS2_SZKB
