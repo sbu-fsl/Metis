@@ -28,8 +28,8 @@ Metis was formerly known as MCFS (Model Checking File Systems).
        3. [RefFS Performance and Reliability (Figure 7)](#reffs-performance-and-reliability-figure-7)
        4. [Bug Finding](#bug-finding)
    4. [Troubleshooting](#troubleshooting)
-         1. [Error message: ramdisk device issue](#error-message-ramdisk-device-issue)
-         2. [Cannot compile RefFS and lack of mcfs header files](#cannot-compile-reffs-and-lack-of-mcfs-header-files)
+       1. [Error message: ramdisk device issue](#error-message-ramdisk-device-issue)
+       2. [Cannot compile RefFS and lack of mcfs header files](#cannot-compile-reffs-and-lack-of-mcfs-header-files)
 3. [Major Components](#major-components)
     1. [driver-fs-state](#driver-fs-state)
     2. [fs-state](#fs-state)
@@ -477,14 +477,17 @@ cat fig7_fs_perf_results
 
 #### Bug Finding
 
-We listed the file system bugs found by Metis in the Table 2. In `Metis/fs_bugs`, we provided
+We listed the file system bugs found by Metis in the Table 2 of our paper. In `Metis/fs_bugs`, we provided
 reproducers for some bugs. We use the reproducer for the #5 JFFS2 write_begin bug as an example.
 We have explained the bug in Section 5.4 of the paper. For more information, please refer to the
 [bug patch](https://github.com/torvalds/linux/commit/23892d383bee15b64f5463bd7195615734bb2415).
-You can use the Ubuntu 20 machine with a lower kernel version to reproduce this JFFS2 write begin 
-bug by either using our reproducer and Metis itself. 
+You can use the Ubuntu 20 machine (Metis-AE1-U20 instance) with a lower kernel version (i.e., Linux 5.4.0) to reproduce this JFFS2 write begin 
+bug by either using our reproducer and Metis itself.
 
-Before running any JFFS2 experiments, please make sure you installed JFFS2 and MTD utilities:
+##### Reproduce the JFFS2 write_begin bug by the reproducer
+
+Before running any JFFS2 experiments, please make sure you installed JFFS2 and MTD utilities by
+the command below. We already installed them on the Metis-AE1-U20 instance.
 
 ```bash
 sudo apt-get install mtd-utils
@@ -510,13 +513,17 @@ the INcorrect file has 16 x 1s, then 4 x 0s, then 4 x 2s
 ```
 
 For the correct behavior, the file should have a hole that is zeroed out (i.e., 12 x 0s), but 
-the reproducer shows the JFFS2 file system has 1s in the hole instead. 
+the reproducer shows the JFFS2 file system has 1s in the hole instead, indicating a
+data corruption bug. 
+
+##### Reproduce the JFFS2 write_begin bug by latest version of Metis
 
 To run Metis to find this bug, we first need to edit line 26 of the `fs-state/parameters.py` file
-to remove `0o40101` (O_DIRECT) because JFFS2 does not support this open flag. Otherwise, Metis will
+to remove `0o40101` (`O_DIRECT`) from possible `open` flags because JFFS2 does not support this open flag. Otherwise, Metis will
 abort with a discrepancy that JFFS2 returns an `EINVAL` error code.
 
-Change this line (we already changed this line on the Ubuntu 20 machine):
+We already changed this line on the Ubuntu 20.04 machine. If you use other machines, change this line in
+`fs-state/parameters.py` from:
 
 ```python
 create_open_flag = make_params_pml('create_open_flag',
@@ -530,7 +537,35 @@ create_open_flag = make_params_pml('create_open_flag',
         SpecialParameters(0o101, 0o301, 0o1101))
 ```
 
+Then, you can run Metis with Ext4 vs. JFFS2 where Ext4 serves as the reference file system and JFFS2 is the file system under test. We created a script `run-metis-jffs2.sh` to automate this process including cleaning up previous logs/devices, loading devices,
+and running Metis. Please note that the current version of Metis involves randomization
+in the file system operations (e.g., prepopulation of some files/dirs based on 
+probability, selection of file/dir, etc.), so it may take varying time to detect the bug or report another JFFS2 bug. **But, it takes within 12 hours to detect this bug** based on our experience.  You can run the following commands to reproduce this bug:
 
+```bash
+# You should use the Ubuntu 20.04 machine or kernel version lower than or equal to v6.2
+cd ~/Metis/ae-experiments/
+sudo ./run-metis-jffs2.sh
+```
+
+Once the bug is detected, Metis will abort (no `pan` process running) and you can see the bug (discrepancy) report at `error-pan*.log` log files. The operations that lead to
+the bug can be found at the bottom of the `output-pan*.log` log files. There will also 
+be 20 file system images (10 images for each file system) dumped to help post-bug analysis and reproduction. You can mount these images to get the file system state close
+to the bug. Filenames of these images show the state exploration depth and sequence ID
+to better identify the file system state and the relationship with the bug.
+
+##### Reproduce the JFFS2 write_begin bug more deterministically using older version Metis
+
+
+
+```bash
+cd ~/old-simpler-Metis/Metis/fs-state
+sudo ./loadmods.sh
+sudo ./setup.sh
+```
+
+
+##### Reproduce bugs from other file systems by Metis
 
 ### Troubleshooting
 
