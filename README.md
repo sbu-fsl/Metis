@@ -556,16 +556,31 @@ to better identify the file system state and the relationship with the bug.
 
 ##### Reproduce the JFFS2 write_begin bug more deterministically using older version Metis
 
-
+There is an optional way to reproduce this bug more deterministically using an older version of Metis. We have cloned the older version of Metis in the `old-simpler-Metis/Metis` folder. This older version has already configured to test JFFS2 using Ext4 as
+the reference, and **it can detect the JFFS2 bug in about 4 hours.** You can run the following commands to reproduce this bug:
 
 ```bash
 cd ~/old-simpler-Metis/Metis/fs-state
+# You may also want to clean up existing logs and devices
+# make clean
+# sudo rmmod mtdblock
+# sudo rmmod mtdram 
+# sudo rmmod mtd_blkdevs
+# sudo rmmod brd
+
 sudo ./loadmods.sh
 sudo ./setup.sh
 ```
 
+When Metis aborts, it indicates that the bug is detected. You can view 
+the `error` and `output` logs in the `fs-state` folder for the 
+information of the bug.
+Note that the older version of Metis does not support dumped images after 
+a potential bug is detected. 
 
 ##### Reproduce bugs from other file systems by Metis
+
+
 
 ### Troubleshooting
 
