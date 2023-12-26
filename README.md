@@ -611,11 +611,14 @@ For example, you can test F2FS by running the following command (already changed
 to 5.4.0 kernel version by using the brd2 module in the `Metis/kernel/brd` folder):
 
 ```bash
+sudo rmmod brd
+# Following command is optional, see Troubleshooting: Error message: ramdisk device issue
+sudo rm /dev/ram*
 cd ~/Metis/fs-state/mcfs_scripts
 sudo ./single_f2fs.sh
 ```
 
-
+As we discussed in the paper, some bugs are non-deteministic and may take a long time to detect (e.g., > 20 hours). Please feel free to use Swarm to accelerate the bug detection process.
 
 ### Troubleshooting
 
