@@ -85,16 +85,31 @@ We will respond to your questions as soon as possible and definitely in 24 hours
 
 ### Machines 
 
-We have provided bare metal machines for AE reviewers. TODO
+***IMPORTANT TO AE REVIEWERS: Please message use as soon as possible with your ssh public keys, so you can use the machines we prepared for you. Thanks.***
 
+We have provided bare metal Ubuntu machines from Chameleon Cloud for AE reviewers. 
+We assume there are 3 reviewers. Each reviewer has a decidated machine, and there
+are three other machines for shared use. 
 
+Those machines are listed below:
 
+- **Metis-inst-FAST24-AE1-U22**: Ubuntu 22.04 machine for AE reviewer 1 only.
+- **Metis-inst-FAST24-AE2-U22**: Ubuntu 22.04 machine for AE reviewer 2 only.
+- **Metis-inst-FAST24-AE3-U22**: Ubuntu 22.04 machine for AE reviewer 3 only.
+- **Metis-AE1-Swarm1**: shared Ubuntu 22.04 Swarm client machine 1 for all reviewers.
+- **Metis-AE1-Swarm2**: shared Ubuntu 22.04 Swarm client machine 2 for all reviewers.
+- **Metis-AE1-U20**: Ubuntu 20.04 machine for all reviewers to reproduce bugs.
+
+We recommend you reviwers to coordinate with each other to use the shared machines in a 
+time-share fashion. The experiments on shared machines (i.e., Metis with distributed Swarm and bug finding)
+should not be run with multiple Metis processes on the same machine. If you want to have your 
+decidated machine for all the experiments, please let us know and we will try to provide.
 
 Note that some experiments can take a long time.  We recommend you to run 
 experiments under `tmux` or `screen` so that you can detach the terminal without
 interrupting any running long experiment.  I configured `tmux` using my 
 [own config file](https://github.com/Yifei-Liu/yf-config-files/blob/master/.tmux.conf).
-Feel free to choose another one as you like.  
+Feel free to choose another one as you like. 
 
 ### Kick-the-Tires - System Configuration and Test Run 
 
