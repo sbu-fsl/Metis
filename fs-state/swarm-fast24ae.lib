@@ -17,7 +17,7 @@ k	1	12	# optional: to restrict min and max nr of hash functions
 
 # limits
 d	10000		# optional: to restrict the max search depth
-cpus	6	Metis-AE1-Swarm1:6       Metis-AE1-Swarm2:6 # nr available cpus (exact)
+cpus	6	metis-ae1-swarm1:6       metis-ae1-swarm2:6 # nr available cpus (exact)
 memory	512M		# max memory per run; M=megabytes, G=gigabytes
 time	60m		# max time for all runs; h=hours, m=min, s=sec, d=days
 hash	1.5		# hash-factor (estimate)
