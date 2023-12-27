@@ -472,7 +472,19 @@ You can compare these figures to the figure 5 in the paper.
 
 #### Metis Performance and Scalability (Figure 6)
 
-TODO
+This section shows the performance and scalability of Metis using Swarm Verification on multiple machines.
+Basically, we need to specify a "master" machine to run the Metis Swarm driver and generate 
+Swarm scripts for each "client" machine. The "master" machine must be able to connect with all the "client" machines 
+via ssh keys without password. We have already configured the Chameleon Cloud machines with proper connections between
+"master" and "client" machines. Among the machines we provided, your dedicated `Metis-inst-FAST24-AE*-U22` machine 
+should be the "master" which runs the Swarm driver. The other two `Metis-AE1-Swarm*` machines should be the "client" machines.
+You don't need to do anything on the client machines except ensuring that there is no other person using the 
+"clients" as all the execution on "clients" will be handled by the "master" remotely. 
+
+We replicate the Figure 6 experiment in our paper: Metis with Swarm on 3 machines (1 master and 2 clients), and each 
+machine runs 6 VTs to test Ext4 vs. Ext2. 
+
+
 
 #### RefFS Performance and Reliability (Figure 7)
 
@@ -608,6 +620,10 @@ information of the bug.
 Note that the older version of Metis does not support dumped images after 
 a potential bug is detected. 
 
+##### Verify the JFFS2 bug write_begin was fixed on the newer Linux kernel (v6.6.8)
+
+TODO
+
 ##### Reproduce bugs from other file systems by Metis
 
 Reproducing other bugs from other file systems is similar to the JFFS2 bug. 
@@ -622,7 +638,8 @@ my information, please refer to [our document for brd2](kernel/brd/README.md).
 In those scripts, by default we use:
 
 ```bash
-cd ../kernel/brd-for-5.19.7
+# For Linux kernel v5.4.0 by default
+cd ../kernel/brd
 ```
 
 You need edit it accordingly based on your correct kernel version.  The default kernel 
