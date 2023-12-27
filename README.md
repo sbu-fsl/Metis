@@ -482,8 +482,19 @@ You don't need to do anything on the client machines except ensuring that there 
 "clients" as all the execution on "clients" will be handled by the "master" remotely. 
 
 We replicate the Figure 6 experiment in our paper: Metis with Swarm on 3 machines (1 master and 2 clients), and each 
-machine runs 6 VTs to test Ext4 vs. Ext2. 
+machine runs 6 VTs to test Ext4 vs. Ext2. We provided a Swarm config file `fs-state/swarm-fast24ae.lib`,
+**please make sure the hostname of client machines is correctly specified in the line 20 of `swarm-fast24ae.lib`.**
+Before running Swarm experiment, you need to login to the "client" machines and run `cd ~/Metis/fs-state && sudo ./loadmods.sh` to load
+devices, and you may need to use `stop.sh` or `sudo rmmod brd` as needed. You should also clean up 
+all the previous logs via `sudo make clean`, because we want to use only the logs generated from the 
+Swarm experiment for analysis.
 
+You can run the following commands to reproduce the Figure 6 experiment on the three machines:
+
+```bash
+cd ~/Metis/ae-experiments
+sudo ./figure-6-exp.sh
+```
 
 
 #### RefFS Performance and Reliability (Figure 7)
