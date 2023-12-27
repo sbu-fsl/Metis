@@ -85,20 +85,23 @@ We will respond to your questions as soon as possible and definitely in 24 hours
 
 ### Machines 
 
-***IMPORTANT TO AE REVIEWERS: Please message use as soon as possible with your ssh public keys, so you can use the machines we prepared for you. Thanks.***
+***IMPORTANT TO AE REVIEWERS: Please message us as soon as possible with your ssh public keys, so you can use the machines from Chameleon Cloud we prepared for you. Thanks.***
 
 We have provided bare metal Ubuntu machines from Chameleon Cloud for AE reviewers. 
 We assume there are 3 reviewers. Each reviewer has a decidated machine, and there
 are three other machines for shared use. 
 
-Those machines are listed below:
+The default username for the machines is `cc`. Those machines are listed below:
 
-- **Metis-inst-FAST24-AE1-U22**: Ubuntu 22.04 machine for AE reviewer 1 only.
-- **Metis-inst-FAST24-AE2-U22**: Ubuntu 22.04 machine for AE reviewer 2 only.
-- **Metis-inst-FAST24-AE3-U22**: Ubuntu 22.04 machine for AE reviewer 3 only.
-- **Metis-AE1-Swarm1**: shared Ubuntu 22.04 Swarm client machine 1 for all reviewers.
-- **Metis-AE1-Swarm2**: shared Ubuntu 22.04 Swarm client machine 2 for all reviewers.
-- **Metis-AE1-U20**: Ubuntu 20.04 machine for all reviewers to reproduce bugs.
+| Hostname | Users | Public IP | Ubuntu/Kernel | Usage |
+|----------|----------|----------|----------|----------|
+| **Metis-inst-FAST24-AE1-U22** | Reviewer 1 | 129.114.108.41 | U22, v5.15.0 | Main Metis/RefFS server |
+| **Metis-inst-FAST24-AE2-U22** | Reviewer 2 | 129.114.109.76 | U22, v5.15.0 |  Main Metis/RefFS server |
+| **Metis-inst-FAST24-AE3-U22** | Reviewer 3 | 129.114.108.240 | U22, v5.15.0 |  Main Metis/RefFS server |
+| **Metis-AE1-Swarm1** | All reviewers | 129.114.109.54 | U22, v5.15.0 | Metis Swarm client 1 |
+| **Metis-AE1-Swarm2** | All reviewers | 129.114.109.57 | U22, v5.15.0 | Metis Swarm client 2 |
+| **Metis-AE1-U20** | All reviewers | 129.114.108.188 | U20, v5.4.0 | Older kernel for bug finding |
+| **Metis-AE1-newkernel-U22** | All reviewers | 129.114.109.191 | U22, v6.6.8 | Newer kernel for bug fix |
 
 We recommend you reviwers to coordinate with each other to use the shared machines in a 
 time-share fashion. The experiments on shared machines (i.e., Metis with distributed Swarm and bug finding)
@@ -769,5 +772,9 @@ For the explanation of other folders, please refer to this [README](./other-fold
 ```
 
 ## Contact 
+
+If you are FAST '24 AEC members, please leave your questions on the HotCRP. We will response to you ASAP
+and definitely in 24 hours.
+
 For any question, please feel free to contact Yifei Liu ([yifeliu@cs.stonybrook.edu](mailto:yifeliu@cs.stonybrook.edu))
 and Erez Zadok ([ezk@cs.stonybrook.edu](mailto:ezk@cs.stonybrook.edu)).
