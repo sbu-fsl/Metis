@@ -12,7 +12,7 @@ Metis was formerly known as MCFS (Model Checking File Systems).
 ## Table of Content
 
 1. [Setup Metis and RefFS](#setup-metis-and-reffs)
-   1. [OS ane Kernel Verison](#os-and-kernel-version)
+   1. [OS ane Kernel Version](#os-and-kernel-version)
    2. [Prerequisites and Required Artifacts ](#prerequisites-and-required-artifacts)
 2. [FAST24 Artifact Evaluation](#fast24-artifact-evaluation)
    1. [Machines](#machines)
@@ -29,7 +29,7 @@ Metis was formerly known as MCFS (Model Checking File Systems).
        4. [Bug Finding](#bug-finding)
    4. [Troubleshooting](#troubleshooting)
        1. [Error message: ramdisk device issue](#error-message-ramdisk-device-issue)
-       2. [Cannot compile RefFS and lack of mcfs header files](#cannot-compile-reffs-and-lack-of-mcfs-header-files)
+       2. [Cannot compile RefFS and lack of MCFS header files](#cannot-compile-reffs-and-lack-of-mcfs-header-files)
 3. [Major Components](#major-components)
     1. [driver-fs-state](#driver-fs-state)
     2. [fs-state](#fs-state)
@@ -88,7 +88,7 @@ We will respond to your questions as soon as possible and definitely in 24 hours
 ***IMPORTANT TO AE REVIEWERS: Please message us as soon as possible with your ssh public keys, so you can use the machines from Chameleon Cloud we prepared for you. Thanks.***
 
 We have provided bare metal Ubuntu machines from Chameleon Cloud for AE reviewers. 
-We assume there are 3 reviewers. Each reviewer has a decidated machine, and there
+We assume there are 3 reviewers. Each reviewer has a dedicated machine, and there
 are three other machines for shared use. 
 
 The default username for the machines is `cc`. Those machines are listed below:
@@ -103,10 +103,10 @@ The default username for the machines is `cc`. Those machines are listed below:
 | **Metis-AE1-U20** | All reviewers | 129.114.108.188 | U20, v5.4.0 | Older kernel for bug finding |
 | **Metis-AE1-newkernel-U22** | All reviewers | 129.114.109.191 | U22, v6.6.8 | Newer kernel for bug fix |
 
-We recommend you reviwers to coordinate with each other to use the shared machines in a 
+We recommend you reviewers to coordinate with each other to use the shared machines in a 
 time-share fashion. The experiments on shared machines (i.e., Metis with distributed Swarm and bug finding)
 should not be run with multiple Metis processes on the same machine. If you want to have your 
-decidated machine for all the experiments, please let us know and we will try to provide.
+dedicated machine for all the experiments, please let us know and we will try to provide.
 
 Note that some experiments can take a long time.  We recommend you to run 
 experiments under `tmux` or `screen` so that you can detach the terminal without
@@ -270,7 +270,7 @@ To use the replayer, we should first open the `fs-state/replay.c` file,
 edit **line 40 and line 46** to reflect the log file names generated 
 from a previous experiment that we want to replay (esp. the sequence file name, `dump_prepopulate_0.log`
 should be the same for every experiment).  Therefore, the 
-replayer can use the correct log files to replay.  
+replayer can use the correct log files to replay.
 After editing the `replay.c` file, we can compile the replayer by:
 
 ```bash 
@@ -350,7 +350,7 @@ different types of file system test inputs.  Please refer to our paper for detai
 
 Metis can log its syscalls and arguments into `output` and `sequence` logs, but raw syscalls 
 and arguments are not enough to compute input coverage.  We need to parse the logs to partition 
-the inputs (syscalls and their arguments).  To achive this and support input coverage 
+the inputs (syscalls and their arguments).  To achieve this and support input coverage 
 computation for a wide range of file system testing, we developed a tool called IOCov (see 
 [our HotStorage '23 paper](https://www.fsl.cs.stonybrook.edu/docs/mcfs/iocov-hotstorage23.pdf) for details). 
 IOCov can read and parse Metis logs and obtain input coverage just like we presented 
@@ -481,7 +481,7 @@ comparison with other reference file systems including BtrFS, Ext2, Ext4, and XF
 We created a script `figure-7-exp.sh` to run these five file systems with Metis for 10 minutes each.
 **Therefore, this script will take about 1 hour to complete.** You can edit the `TIMERUN`variable
 in the `figure-7-exp.sh` script to change to a longer or shorter time length for each file system.
-The performance in the figure 7 is mesured by the number of file system operations and unique filesystem
+The performance in the figure 7 is measured by the number of file system operations and unique filesystem
 abstract states per second. After each file system's Metis run, the script will read the performance
 metrics from the `perf-pan*.csv` file and extract total number of operations and unique abstract states 
 as well as epoch time in seconds.  Then, the script will compute the performance metrics and save them in the
@@ -501,7 +501,7 @@ of files/dirs and the selection of file/dirs to perform operations. Also, as we 
 more file system operations do not necessarily lead to more unique abstract states.  For example, some 
 operations may just create an already-existing file or delete a non-existing file, which will not lead to
 new abstract states.  Therefore, the number of file system operations is a better metric to measure the
-performance of Metis, rather tan the number of unique abstract states. That said, running mutiple times
+performance of Metis, rather tan the number of unique abstract states. That said, running multiple times
 should be able to get the similar trend of performance metrics both in terms of number of file system operations
 and unique abstract states.
 
@@ -648,7 +648,7 @@ cd ~/Metis/fs-state/mcfs_scripts
 sudo ./single_f2fs.sh
 ```
 
-As we discussed in the paper, some bugs are non-deteministic and may take a long time to detect (e.g., > 20 hours). Please feel free to use Swarm to accelerate the bug detection process.
+As we discussed in the paper, some bugs are non-deterministic and may take a long time to detect (e.g., > 20 hours). Please feel free to use Swarm to accelerate the bug detection process.
 
 ### Troubleshooting
 
@@ -773,7 +773,7 @@ For the explanation of other folders, please refer to this [README](./other-fold
 
 ## Contact 
 
-If you are FAST '24 AEC members, please leave your questions on the HotCRP. We will response to you ASAP
+If you are FAST '24 AEC members, please leave us a message on the HotCRP. We will response to you ASAP
 and definitely in 24 hours.
 
 For any question, please feel free to contact Yifei Liu ([yifeliu@cs.stonybrook.edu](mailto:yifeliu@cs.stonybrook.edu))
