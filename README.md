@@ -520,9 +520,42 @@ sudo apt update
 sudo apt install rename
 ```
 
+The `figure-6-analysis.sh` script includes five steps: 1) decompressing all output logs, 2) extracting 
+abstract states with timestamps as CSV from output logs, 3) copying extracted abstract states from 
+client machines to the master (saved in `~/Metis/scripts/multi_machines_analysis`), 4) renaming abstract states CSV files 
+for easier analysis, and 5) performing analysis to calculate number of operations/unique states per hour and 
+overlapping ratio of abstract states between VTs.
 
+Then, you can run `figure-6-analysis.sh` on your master machine:
 
+```bash
+# On the master machine, clear previous analysis CSV files
+cd ~/Metis/scripts/multi_machines_analysis
+rm *.csv
+# On the master machine, run the script to perform collective analysis for all machines 
+cd ~/Metis/ae-experiments
+./figure-6-analysis.sh
+```
 
+Once done, you can view the `results-VT18-13hours.csv` file for figure 6results in 
+the `~/Metis/scripts/multi_machines_analysis` folder:
+
+- Column 1 `time_secs`: accumulated timestamp in seconds, each line shows a new hour
+- Column 2 `total_all_states`: the number of file system operations (figure 6 (a))
+- Column 3 `total_unique_states`: the number of unique file system abstract state (figure 6 (b))
+- Column 4 `partial_overlap`: the number of abstract states visited by more than one VT (overlapping states)
+- Column 5 `partial_waste_ratio`: the ratio of overlapping states to total states
+
+Below is an example output of the result CSV file `results-VT18-13hours.csv`:
+
+```bash
+time_secs,total_all_states,total_unique_states,partial_overlap,partial_waste_ratio, ...
+3600,6808300,713237,1,0.000001,0,0.000000, ...
+7200,13490985,1357573,1,0.000001,0,0.000000, ...
+...
+```
+
+**Due to the complexity of this experiment, please contact us via HotCRP any time if you need any information. Thanks.**
 **After Swarm experiments, we recommend you to delete all Swarm logs on client machines via `cd ~ && make clean` to facilitate other reviewers' use of the shared client machines. Thanks.** 
 
 #### RefFS Performance and Reliability (Figure 7)
