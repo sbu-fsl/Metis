@@ -1,18 +1,33 @@
 #!/bin/bash
 
-########### Figure 6: Metis performance with Swarm (distributed) verification ###########
-
-rmmod brd
+########### 1st script of Figure 6: Metis performance with Swarm (distributed) verification ###########
+TERMTIME="13h"
+VTNUM=6
+SWARM_SCRIPT="mcfs-main.pml.swarm"
 
 cd ../fs-state 
 
-./loadmods.sh
+sudo ./stop.sh
+sudo rmmod brd
+sudo ./loadmods.sh
 
 yes | sudo sh -c 'cp -f swarm-fast24ae.lib swarm.lib'
 
-make clean
+sudo make clean
 
-./setup_swarm.sh -f ext4:256:ext2:256 -n 6
+sudo ./setup_swarm.sh -f ext4:256:ext2:256 -n $VTNUM
 
-./mcfs-main.pml.swarm 
+# Replace "sh ./${" pattern to "sudo sh ./${"
 
+if ! grep -q "sudo sh \./" $SWARM_SCRIPT; then
+    sed -i 's|sh \./\${|sudo sh \./\${|g' $SWARM_SCRIPT
+fi
+
+sudo ./mcfs-main.pml.swarm &
+
+# Wait for 13 hours
+sleep $TERMTIME
+
+sudo ./stop.sh
+ssh metis-ae1-swarm1 'sudo /home/cc/stop.sh'
+ssh metis-ae1-swarm2 'sudo /home/cc/stop.sh'

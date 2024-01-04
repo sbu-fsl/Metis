@@ -450,7 +450,8 @@ runcmd make install
 
 # IMPORTANT: directory on remote machines to copy files to
 # If REMOTEDIR is empty, meaning the root directory "~/"
-REMOTEDIR="/mcfs-swarm/"
+# REMOTEDIR="/mcfs-swarm/"
+REMOTEDIR=""
 # Use ssh and scp to set up swarm for remotes
 count=0
 for i in $(grep -Po '\t.*:\d+( |\t)' ${SWARM_CONF}); do

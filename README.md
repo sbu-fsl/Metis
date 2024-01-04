@@ -476,25 +476,54 @@ This section shows the performance and scalability of Metis using Swarm Verifica
 Basically, we need to specify a "master" machine to run the Metis Swarm driver and generate 
 Swarm scripts for each "client" machine. The "master" machine must be able to connect with all the "client" machines 
 via ssh keys without password. We have already configured the Chameleon Cloud machines with proper connections between
-"master" and "client" machines. Among the machines we provided, your dedicated `Metis-inst-FAST24-AE*-U22` machine 
-should be the "master" which runs the Swarm driver. The other two `Metis-AE1-Swarm*` machines should be the "client" machines.
+"master" and "client" machines. If you want to set up ssh connections by yourself, you can add ssh public keys of your 
+machines (both `root` and `cc` users) to `authorized_keys` file of your Swarm client machines: `metis-ae1-swarm1` and
+`metis-ae1-swarm2`. Among the machines we provided, your dedicated `Metis-inst-FAST24-AE*-U22` machine 
+should be the "master" which runs the Swarm driver. The other two `Metis-AE1-Swarm*` machines should be the shared "client" machines.
 You don't need to do anything on the client machines except ensuring that there is no other person using the 
-"clients" as all the execution on "clients" will be handled by the "master" remotely. 
+"clients" as all the execution on "clients" will be handled by the "master" remotely via ssh/scp. 
 
 We replicate the Figure 6 experiment in our paper: Metis with Swarm on 3 machines (1 master and 2 clients), and each 
 machine runs 6 VTs to test Ext4 vs. Ext2. We provided a Swarm config file `fs-state/swarm-fast24ae.lib`,
 **please make sure the hostname of client machines is correctly specified in the line 20 of `swarm-fast24ae.lib` in all lowercase.**
 Before running Swarm experiment, you need to login to the "client" machines and run `cd ~/Metis/fs-state && sudo ./loadmods.sh` to load
 devices, and you may need to use `stop.sh` or `sudo rmmod brd` as needed. You should also clean up 
-all the previous logs via `sudo make clean`, because we want to use only the logs generated from the 
-Swarm experiment for analysis.
+all the previous logs via `cd ~ && make clean`, because later we want to use the logs generated from only 
+your Swarm experiment, for analysis.
 
-You can run the following commands to reproduce the Figure 6 experiment on the three machines:
+You can run the following commands to reproduce the Figure 6 experiment on the three machines. 
+The `figure-6-exp.sh` script creates devices on the "master" machine, override the swarm config file, 
+sets up Metis swarm environment, and generate and execute a monolithic Swarm script `mcfs-main.pml.swarm`
+to run VTs on both "master" and "client" machines.
 
 ```bash
 cd ~/Metis/ae-experiments
 sudo ./figure-6-exp.sh
 ```
+
+After starting `figure-6-exp.sh`, your current terminal on the "master" will be blocked by the running Metis 
+processes. Concurrently, the master machine sends necessary files to all clients, and each client will
+compile VTs, produce small scripts, and execute Metis with different combination of VTs and options. 
+Ideally, you should see six `pan*` running processes (you can check via `ps` or `htop`) on every master/client 
+machine. If they are properly running, you can see multiple groups of logs on `/home/cc/Metis/fs-state` of the master
+machine and `/home/cc` of the client machines.  By the file names, you can see which VT (pan) these logs come from.
+We will later use these logs to obtain performance metrics and overlapping rate shown in our paper, so please do not 
+delete these logs until you complete the post-Swarm analysis.
+
+We ran 13 hours Metis with Swarm in figure 6, so we set default experimental time length in `figure-6-exp.sh`
+as 13 hours as well (determined by `TERMTIME`). After 13 hours, the `figure-6-exp.sh` script will terminate 
+all VTs from all machines. To obtain the performance numbers in figure 5, we need to do post-experiment analysis
+via `figure-6-analysis.sh`.  This script requires `rename` utility installed on the master machine:
+
+```bash
+sudo apt update
+sudo apt install rename
+```
+
+
+
+
+**After Swarm experiments, we recommend you to delete all Swarm logs on client machines via `cd ~ && make clean` to facilitate other reviewers' use of the shared client machines. Thanks.** 
 
 #### RefFS Performance and Reliability (Figure 7)
 
