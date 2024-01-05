@@ -880,7 +880,7 @@ results from Metis, code coverage investigation, etc.
 
 ### other folders
 
-For the explanation of other folders, please refer to this [README](./other-folders.md).
+For the explanation of other folders, please refer to this [README](./README-others.md).
 
 ## Citation 
 
