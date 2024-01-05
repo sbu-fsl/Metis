@@ -307,6 +307,8 @@ runcmd install_pkg libboost-all-dev
 runcmd install_pkg liburcu-dev
 runcmd install_pkg libxxhash-dev
 runcmd install_pkg nilfs-tools
+runcmd install_pkg rename
+runcmd install_pkg mtd-utils
 
 required_repos=(swarm spin zlib xxHash)
 

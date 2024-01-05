@@ -484,12 +484,46 @@ You don't need to do anything on the client machines except ensuring that there 
 "clients" as all the execution on "clients" will be handled by the "master" remotely via ssh/scp. 
 
 We replicate the Figure 6 experiment in our paper: Metis with Swarm on 3 machines (1 master and 2 clients), and each 
-machine runs 6 VTs to test Ext4 vs. Ext2. We provided a Swarm config file `fs-state/swarm-fast24ae.lib`,
-**please make sure the hostname of client machines is correctly specified in the line 20 of `swarm-fast24ae.lib` in all lowercase.**
+machine runs 6 VTs to test Ext4 vs. Ext2. We provided a Swarm config file `fs-state/swarm-fast24ae.lib`.
+**Please make sure the hostname of client machines is correctly specified in the line 20 of `swarm-fast24ae.lib` in all lowercase.**
 Before running Swarm experiment, you need to login to the "client" machines and run `cd ~/Metis/fs-state && sudo ./loadmods.sh` to load
 devices, and you may need to use `stop.sh` or `sudo rmmod brd` as needed. You should also clean up 
 all the previous logs via `cd ~ && make clean`, because later we want to use the logs generated from only 
-your Swarm experiment, for analysis.
+your Swarm experiment, for analysis.  The cleanup and device loading commands are showed as follows.
+
+**On the master machine:**
+
+```bash
+cd ~/Metis/fs-state
+sudo ./stop.sh
+# Run stop.sh twice to make sure all devices are unmounted
+sudo ./stop.sh
+sudo make clean
+sudo rm *.log.gz
+# Optional: for removing and loading ramdisks
+sudo rmmod brd
+sudo ./loadmods.sh
+# Optional: clear previous Metis Swarm analysis CSV results
+cd ~/Metis/scripts/multi_machines_analysis
+rm time-absfs-*.csv results-*.csv
+```
+
+**On the two shared client machines:**
+
+```bash
+cd ~
+sudo ./stop.sh
+# Run stop.sh twice to make sure all devices are unmounted
+sudo ./stop.sh
+sudo make clean
+sudo rm *.log.gz
+# Optional: for removing and loading ramdisks
+sudo rmmod brd
+sudo ./loadmods.sh
+# Optional: clear previous Metis Swarm analysis CSV results
+cd ~/Metis/scripts/multi_machines_analysis
+rm time-absfs-*.csv 
+```
 
 You can run the following commands to reproduce the Figure 6 experiment on the three machines. 
 The `figure-6-exp.sh` script creates devices on the "master" machine, override the swarm config file, 
@@ -694,7 +728,31 @@ a potential bug is detected.
 
 ##### Verify the JFFS2 bug write_begin was fixed on the newer Linux kernel (v6.6.8)
 
-TODO
+You can log in to the `Metis-AE1-newkernel-U22` machine, which has newer Linux kernel v6.6.8,
+to verify the fix of JFFS2 write_bug bug and other fixed bugs. You can do the same thing 
+as bug reproduction to check if the bug still persists on the newer kernel:
+
+```bash
+# log in to newer kernel instance: ssh cc@129.114.109.191
+cd ~/Metis/fs_bugs/jffs2/write_begin/
+make
+sudo bash reproduce_jffs2_write_begin_issue.sh
+```
+
+You can see this reproducer will not expose the JFFS2 write_begin bug, and 
+the file content is correct (hole is filled with byte 0) because it was 
+already fixed:
+
+```bash
+the correct file should be 8 x 1s, then 12 x 0s, then 4 x 2s
+the INcorrect file has 16 x 1s, then 4 x 0s, then 4 x 2s
+00000000  01 01 01 01 01 01 01 01  00 00 00 00 00 00 00 00  |................|
+00000010  00 00 00 00 02 02 02 02                           |........|
+00000018
+```
+
+Similarly, you can run Metis to test JFFS2 or other file systems on this newer kernel 
+machine, and you can observe that already-fixed bugs will not be reported by Metis.
 
 ##### Reproduce bugs from other file systems by Metis
 
@@ -777,6 +835,11 @@ Command './setup-deps.sh' exited with error (2).
 Please go to the root directory of the Metis directory and do `make && make clean` to 
 install Metis/MCFS libraries and header files.
 
+
+#### figure-6-analysis.sh: find: ‘/home/cc/my_mounting_point’: Transport endpoint is not connected
+
+You can safely ignore this warning, which does not affect the experiment. This is due to the 
+special file `/home/cc/my_mounting_point` on Chameleon Cloud instances.
 
 ## Major Components:
 

@@ -28,6 +28,10 @@ sudo ./mcfs-main.pml.swarm &
 # Wait for 13 hours
 sleep $TERMTIME
 
+# Call stop script twice for each machine to make sure all resources (e.g., mounted devices) are clean up
+sudo ./stop.sh
 sudo ./stop.sh
 ssh metis-ae1-swarm1 'sudo /home/cc/stop.sh'
+ssh metis-ae1-swarm1 'sudo /home/cc/stop.sh'
+ssh metis-ae1-swarm2 'sudo /home/cc/stop.sh'
 ssh metis-ae1-swarm2 'sudo /home/cc/stop.sh'
