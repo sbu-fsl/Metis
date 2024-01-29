@@ -15,9 +15,9 @@ Reproduction:
 
 2. Unmount nova
 
-3. Remount nova at the same mount point.
+3. Remount nova at the same mount point
 
-4. Repeat steps 2 and 3 repeatedly till the kernel hangs
+4. Repeat steps 2 and 3 till the kernel hangs
 
 Fix:
 Before calling schedule(), it is verified whether the thread has been
