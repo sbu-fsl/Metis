@@ -5,9 +5,9 @@ Subject: [PATCH] fs/nova: fix kernel hang when snapshot cleaner thread is not st
 
 When nova is unmounted, the snapshot cleaner kthread is stopped with
 kthread_stop() in nova_save_snapshots(). If kthread_stop() finishes
-execution before schedule() in snapshot_cleaner_try_sleeping(), the
-kernel will hang when schedule() is called since the task has already been
-freed and cannot be scheduled.
+execution before schedule() is invoked in snapshot_cleaner_try_sleeping(),
+the kernel will hang when schedule() is called since the task has already
+been freed and cannot be scheduled.
 
 Reproduction:
 
