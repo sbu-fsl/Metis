@@ -1,0 +1,51 @@
+#From 6cb09212daf5936168abc431f278e1329f235563 Mon Sep 17 00:00:00 2001
+from: Gautam Ahuja <gaahuja@cs.stonybrook.edu>
+#Date: Sun, 24 Jul 2022 08:04:14 +0000
+Subject: [PATCH] fs/nova: fix kernel hang when snapshot cleaner thread is scheduled after it has been stopped
+
+When nova is unmounted, the snapshot cleaner kernel thread is stopped with
+kthread_stop() in nova_save_snapshots(). If kthread_stop() finishes
+execution before schedule() in snapshot_cleaner_try_sleeping(), the
+kernel will hang when schedule() is called since the task has already been
+freed.
+
+Reproduction:
+
+1. Mount a fresh nova instance using 'mount -t NOVA -o init' command
+
+2. Unmount nova
+
+3. Remount nova at the same mount point.
+
+4. Repeat steps 2 and 3 repeatedly till the kernel hangs
+
+Fix:
+Before calling schedule(), it is verified whether the thread has been stopped using kthread_should_stop(). schedule() will not be called if this evaluates to true.
+
+The patch below fixes this bug.  The bug was discovered using a new tool
+for finding f/s bugs using model checking, called Metis 
+
+Signed-off-by: Gautam Ahuja <gaahuja@cs.stonybrook.edu>
+# Signed-off-by: Yifei Liu <yifeliu@cs.stonybrook.edu>
+# Signed-off-by: Erez Zadok <ezk@cs.stonybrook.edu>
+---
+
+diff --git a/fs/nova/snapshot.c b/fs/nova/snapshot.c
+index 90d4f635292f..26a75d62c58a 100644
+--- a/fs/nova/snapshot.c
++++ b/fs/nova/snapshot.c
+@@ -1319,8 +1319,13 @@ int nova_destroy_snapshot_infos(struct super_block *sb)
+ static void snapshot_cleaner_try_sleeping(struct nova_sb_info *sbi)
+ {
+ 	DEFINE_WAIT(wait);
+-
+ 	prepare_to_wait(&sbi->snapshot_cleaner_wait, &wait, TASK_INTERRUPTIBLE);
++	
++	if (kthread_should_stop()) {
++		finish_wait(&sbi->snapshot_cleaner_wait, &wait);
++		return;
++	}
++	
+ 	schedule();
+ 	finish_wait(&sbi->snapshot_cleaner_wait, &wait);
+ }

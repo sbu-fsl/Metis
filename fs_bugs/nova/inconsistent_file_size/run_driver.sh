@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DRIVER_LOOP_MAX=100000000
+DRIVER_LOOP_MAX=100000
 
 NOVA_MNT_DIR="/mnt/novatest"
 PMEM_DEVICE="/dev/pmem0"
@@ -16,4 +16,4 @@ mkdir -p $NOVA_MNT_DIR
 
 modprobe nova
 
-./driver $NOVA_MNT_DIR $PMEM_DEVICE
+./driver $NOVA_MNT_DIR $PMEM_DEVICE $DRIVER_LOOP_MAX
