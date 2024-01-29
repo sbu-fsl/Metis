@@ -7,7 +7,7 @@ When nova is unmounted, the snapshot cleaner kthread is stopped with
 kthread_stop() in nova_save_snapshots(). If kthread_stop() finishes
 execution before schedule() in snapshot_cleaner_try_sleeping(), the
 kernel will hang when schedule() is called since the task has already been
-freed.
+freed and cannot be scheduled.
 
 Reproduction:
 
