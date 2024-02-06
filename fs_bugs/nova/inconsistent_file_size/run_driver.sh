@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DRIVER_LOOP_MAX=100000
+DRIVER_LOOP_MAX=10000000
 
 NOVA_MNT_DIR="/mnt/novatest"
 PMEM_DEVICE="/dev/pmem0"

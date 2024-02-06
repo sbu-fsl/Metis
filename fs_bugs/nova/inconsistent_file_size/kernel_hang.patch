@@ -1,13 +1,12 @@
 #From 6cb09212daf5936168abc431f278e1329f235563 Mon Sep 17 00:00:00 2001
-from: Gautam Ahuja <gaahuja@cs.stonybrook.edu>
+From: Gautam Ahuja <gaahuja@cs.stonybrook.edu>
 #Date: Sun, 24 Jul 2022 08:04:14 +0000
 Subject: [PATCH] fs/nova: fix kernel hang when snapshot cleaner thread is not stopped properly
 
 When nova is unmounted, the snapshot cleaner kthread is stopped with
-kthread_stop() in nova_save_snapshots(). If kthread_stop() finishes
-execution before schedule() is invoked in snapshot_cleaner_try_sleeping(),
-the kernel will hang when schedule() is called since the task has already
-been freed and cannot be scheduled.
+kthread_stop() in nova_save_snapshots(). If schedule() is called within
+kthread_stop()'s wait_for_completion() the kthread will go to sleep
+forever waiting for an interrupt. 
 
 Reproduction:
 
@@ -19,10 +18,13 @@ Reproduction:
 
 4. Repeat steps 2 and 3 till the kernel hangs
 
+We wrote a script and helper C program to reproduce the bug
+(run_driver.sh, driver.c, and Makefile). We can
+make them available to anyone.
+
 Fix:
-Before calling schedule(), it is verified whether the thread has been
-stopped using kthread_should_stop(). If this evaluates to true, the
-kthread is not scheduled and instead finishes its wait.
+In the try sleeping loop, the kthread is not scheduled if
+kthread_should_stop() evaluates to true.
 
 The patch below fixes this bug.  The bug was discovered using a new tool
 for finding f/s bugs using model checking, called Metis 
@@ -32,22 +34,20 @@ Signed-off-by: Gautam Ahuja <gaahuja@cs.stonybrook.edu>
 # Signed-off-by: Erez Zadok <ezk@cs.stonybrook.edu>
 ---
 
+
 diff --git a/fs/nova/snapshot.c b/fs/nova/snapshot.c
-index 90d4f635292f..26a75d62c58a 100644
+index 90d4f635292f..4432f9063615 100644
 --- a/fs/nova/snapshot.c
 +++ b/fs/nova/snapshot.c
-@@ -1319,8 +1319,13 @@ int nova_destroy_snapshot_infos(struct super_block *sb)
- static void snapshot_cleaner_try_sleeping(struct nova_sb_info *sbi)
- {
+@@ -1321,7 +1321,10 @@ static void snapshot_cleaner_try_sleeping(struct nova_sb_info *sbi)
  	DEFINE_WAIT(wait);
--
+ 
  	prepare_to_wait(&sbi->snapshot_cleaner_wait, &wait, TASK_INTERRUPTIBLE);
-+	
-+	if (kthread_should_stop()) {
-+		finish_wait(&sbi->snapshot_cleaner_wait, &wait);
-+		return;
-+	}
-+	
- 	schedule();
+-	schedule();
++
++	if (!kthread_should_stop())
++		schedule();
++
  	finish_wait(&sbi->snapshot_cleaner_wait, &wait);
  }
+ 
