@@ -2,7 +2,7 @@
  * File:   driver.c
  * Author: Stony Brook University FSL Lab
  * Date:   February 9, 2024
- * Brief:  This file reproduces kernel hang in NOVA fs by repeatedly mounting-unmounting the it in a tight loop.
+ * Brief:  This file reproduces kernel hang in NOVA fs by repeatedly mounting-unmounting it in a tight loop.
  * 
  * Copyright (c) [year] [author]
  * 
