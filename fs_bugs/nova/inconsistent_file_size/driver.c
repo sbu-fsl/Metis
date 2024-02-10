@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include <sys/mount.h>
 #include <sys/wait.h>
-#include <time.h>
 #include <limits.h>
 
 int execute_cmd_status(const char *cmd)
