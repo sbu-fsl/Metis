@@ -1,7 +1,19 @@
+/*
+ * File:   driver.c
+ * Author: Stony Brook University FSL Lab
+ * Date:   February 9, 2024
+ * Brief:  This file reproduces kernel hang in NOVA fs by repeatedly mounting-unmounting the it in a tight loop.
+ * 
+ * Copyright (c) [year] [author]
+ * 
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mount.h>
 #include <sys/wait.h>
+#include <time.h>
+#include <limits.h>
 
 int execute_cmd_status(const char *cmd)
 {
@@ -12,60 +24,67 @@ int execute_cmd_status(const char *cmd)
 
 int main(int argc, char **argv)
 {
-    if (argc < 3) {
-        fprintf(stderr, "Usage: %s <nova-mountpoint> <nova-device> <loop-max>\n", 
-            argv[0]);
-        exit(1);
-    }
-
-    char *nova_mp = NULL, *nova_dev = NULL;
-    nova_mp = argv[1];
-    nova_dev = argv[2];
-    int PATH_MAX = 4096;
-
-    const long loop_max = atol(argv[3]);
-
+    char *nova_mp = NULL;
+    char *nova_dev = NULL;
+    long loop_max;
     char cmdbuf[PATH_MAX];
-    
     int ret = -1;
     long loop_id = 0;
 
-    // Mount and initialise NOVA
-    snprintf(cmdbuf, PATH_MAX, "mount -t NOVA -o init %s %s", nova_dev,nova_mp);
+    if (argc < 3)
+    {
+        fprintf(stderr, "Usage: %s <nova-mountpoint> <nova-device> <loop-max>\n",
+                argv[0]);
+        exit(1);
+    }
+
+    nova_mp = argv[1];
+    nova_dev = argv[2];
+    loop_max = atol(argv[3]);
+
+    // Mount and initialise NOVA for the first time. This is similar to mkfs
+    snprintf(cmdbuf, PATH_MAX, "mount -t NOVA -o init %s %s", nova_dev, nova_mp);
     ret = execute_cmd_status(cmdbuf);
-    
-    if(ret != 0) {
+
+    if (ret != 0)
+    {
         fprintf(stderr, "Failed to init mount nova at device=%s mountpoint=%s err:%d", nova_dev, nova_mp, ret);
         exit(1);
     }
 
     ret = umount2(nova_mp, 0);
-    if( ret != 0) {
-    fprintf(stderr, "Failed to unmount NOVA at mp: %s err:%d", nova_mp, ret);
-    exit(1);
+    if (ret != 0)
+    {
+        fprintf(stderr, "Failed to unmount NOVA at mp: %s err:%d", nova_mp, ret);
+        exit(1);
     }
 
-    while (loop_id < loop_max) {
+    // Now that the file system has been initialized, mounted, and unmounted, we will proceed with the mount-unmount loop.
+    while (loop_id < loop_max)
+    {
         fprintf(stdout, "loop_id: %ld\n", loop_id);
 
         // Mount NOVA
-        snprintf(cmdbuf, PATH_MAX, "mount -t NOVA %s %s", nova_dev,nova_mp);
+        snprintf(cmdbuf, PATH_MAX, "mount -t NOVA %s %s", nova_dev, nova_mp);
         ret = execute_cmd_status(cmdbuf);
 
-        if(ret != 0) {
+        if (ret != 0)
+        {
             fprintf(stderr, "Failed to mount nova at device=%s mountpoint=%s err:%d", nova_dev, nova_mp, ret);
             exit(1);
         }
 
-        //Unmount NOVA
+        // Unmount NOVA
         ret = umount2(nova_mp, 0);
-        if( ret != 0) {
+        if (ret != 0)
+        {
             fprintf(stderr, "Failed to unmount NOVA at mp: %s err:%d", nova_mp, ret);
             exit(1);
-       }
+        }
 
         ++loop_id;
     }
-    printf("NO DISCREPANCY FOUND, EXITING");
+
+    fprintf(stdout, "No discrepancy found, EXITING\n");
     return 0;
 }
