@@ -1,5 +1,5 @@
 #File:   Makefile
-#Author: Stony Brook University FSL Lab
+#Author: Stony Brook University FSL
 #Date:   February 9, 2024
 #Brief:  This compiles driver.c and runs it
 
