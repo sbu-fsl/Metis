@@ -21,7 +21,8 @@
 
 int execute_cmd_status(const char *cmd)
 {
-    if (cmd == NULL) {
+    if (cmd == NULL) 
+    {
     fprintf(stderr, "Command should not be NULL.\n");
     return -1;
     }
