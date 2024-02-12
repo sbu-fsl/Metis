@@ -72,8 +72,11 @@ int main(int argc, char **argv)
     // Now that the file system has been initialized, mounted, and unmounted, we will proceed with the mount-unmount loop.
     while (loop_id < loop_max)
     {
-        fprintf(stdout, "loop_id: %ld\n", loop_id);
-
+        if (loop_id%100 == 0) 
+        {
+            fprintf(stdout, "loop_id: %ld\n", loop_id);
+        }
+        
         // Mount NOVA
         snprintf(cmdbuf, PATH_MAX, "mount -t NOVA %s %s", nova_dev, nova_mp);
         ret = execute_cmd_status(cmdbuf);

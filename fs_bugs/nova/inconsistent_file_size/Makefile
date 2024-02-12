@@ -12,8 +12,8 @@
 # License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
 
 #Usage: 
-#	make (compiles driver)
-#	sudo make run-driver (compiles and runs the driver)
+#	sudo make (compiles driver, prepares mountpoint)
+#	sudo make run-driver (compiles driver, prepares mountpoint, and runs the driver)
 #	make clean (removes compiled files)
 
 CC=gcc
@@ -30,18 +30,24 @@ NOVA_MNT_DIR="/mnt/novatest"
 #The pmem device which the fs is mounted on
 PMEM_DEVICE="/dev/pmem0"
 
-driver: driver.c
+driver: unmount remove-directory create-directory add-module driver.c
 	$(CC) -o driver driver.c  $(CFLAGS)
 
-run-driver: driver
+unmount:
 	if test -n "$$(mount | grep $(PMEM_DEVICE))" ; then \
 		umount $(PMEM_DEVICE) || exit $$? ; \
-	fi ; \
-	if test -d $(NOVA_MNT_DIR) ; then \
-		rm -rf $(NOVA_MNT_DIR) ; \
-	fi ; \
-	mkdir -p $(NOVA_MNT_DIR) ; \
-	modprobe nova ; \
+	fi ;
+
+remove-directory:
+	rm -rf $(NOVA_MNT_DIR)
+
+create-directory:
+	mkdir -p $(NOVA_MNT_DIR)
+
+add-module:
+	modprobe nova
+
+run-driver: driver
 	./driver $(NOVA_MNT_DIR) $(PMEM_DEVICE) $(DRIVER_LOOP_MAX)
 
 clean:
