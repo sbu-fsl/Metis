@@ -1,11 +1,16 @@
 /*
  * File:   driver.c
- * Author: Stony Brook University FSL
  * Date:   February 9, 2024
  * Brief:  This file reproduces kernel hang in NOVA fs by repeatedly mounting-unmounting it in a tight loop.
  * 
- * Copyright (c) [year] [author]
- * 
+ * Copyright (c) 2020-2024 Gautam Ahuja
+ * Copyright (c) 2020-2024 Yifei Liu
+ * Copyright (c) 2020-2024 Erez Zadok
+ * Copyright (c) 2020-2024 Stony Brook University
+ * Copyright (c) 2020-2024 The Research Foundation of SUNY
+ *
+ * You can redistribute it and/or modify it under the terms of the Apache
+ * License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
  */
 
 #include <stdio.h>
@@ -20,7 +25,7 @@ int execute_cmd_status(const char *cmd)
     fprintf(stderr, "Command should not be NULL.\n");
     return -1;
     }
-       
+
     int retval = system(cmd);
     int status = WEXITSTATUS(retval);
     return status;
