@@ -12,7 +12,7 @@
 # License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
 
 #Usage: 
-#	sudo make (compiles driver, prepares mountpoint)
+#	make (compiles driver)
 #	sudo make run-driver (compiles driver, prepares mountpoint, and runs the driver)
 #	make clean (removes compiled files)
 
@@ -30,7 +30,7 @@ NOVA_MNT_DIR="/mnt/novatest"
 #The pmem device which the fs is mounted on
 PMEM_DEVICE="/dev/pmem0"
 
-driver: unmount remove-directory create-directory add-module driver.c
+driver: driver.c
 	$(CC) -o driver driver.c  $(CFLAGS)
 
 unmount:
@@ -47,7 +47,7 @@ create-directory:
 add-module:
 	modprobe nova
 
-run-driver: driver
+run-driver: unmount remove-directory create-directory add-module driver
 	./driver $(NOVA_MNT_DIR) $(PMEM_DEVICE) $(DRIVER_LOOP_MAX)
 
 clean:
