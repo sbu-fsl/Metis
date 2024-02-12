@@ -16,6 +16,11 @@
 
 int execute_cmd_status(const char *cmd)
 {
+    if (cmd == NULL) {
+    fprintf(stderr, "Command should not be NULL.\n");
+    return -1;
+    }
+       
     int retval = system(cmd);
     int status = WEXITSTATUS(retval);
     return status;
