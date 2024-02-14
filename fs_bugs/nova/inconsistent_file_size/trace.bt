@@ -1,0 +1,30 @@
+#!/usr/bin/bpftrace
+
+kprobe:__x64_sys_umount
+ {
+  printf("__x64_sys_umount called\n");
+}
+kprobe:nova_put_super
+{
+  printf("Nova put super called\n");
+}
+
+kprobe:prepare_to_wait
+{
+  printf("Begin Prepare to wait\n");
+}
+
+kprobe:nova_snapshot_cleaner
+{
+  printf("Run fn nova_snapshot cleaner\n");
+}
+
+kprobe:kthread_stop
+{
+  printf("Called kthread_stop\n");
+}
+
+kprobe:nova_clean_snapshot 
+{
+  printf("Called nova_clean_snapshot\n");
+}

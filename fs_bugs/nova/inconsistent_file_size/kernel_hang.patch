@@ -1,0 +1,58 @@
+From: Gautam Ahuja <gaahuja@cs.stonybrook.edu>
+Date: Wed, 14 Feb 2024 12:17:14 +0000
+Subject: [PATCH] fs/nova: fix kernel hang when snapshot cleaner thread is not stopped properly
+
+When nova is unmounted, the snapshot cleaner kthread is stopped with
+kthread_stop() in nova_save_snapshots(). If schedule() is called within
+kthread_stop()'s wait_for_completion(), the kthread will go to sleep
+forever waiting for an interrupt, resulting in a hang.
+
+Reproduction:
+
+1. Mount a fresh nova instance using the 'mount -t NOVA -o init' command
+
+2. Unmount nova
+
+3. Remount nova at the same mount point
+
+4. Repeat steps 2 and 3 in a tight loop until the kernel hangs.  In our 
+experiments, we’re able to reproduce this within a range of 40 - 480 
+seconds with an average of  254 seconds.
+
+We wrote a script and helper C program to reproduce the bug
+(Makefile and driver.c).
+
+Fix:
+In the try-sleeping loop, the kthread is not scheduled out if
+kthread_should_stop() evaluates to true. 
+
+This fix follows standard practices found in other linux filesystems like 
+UBIFS and NFS.
+
+The patch below fixes this bug.  We ran the same scripts above for 10 
+million times and 17 hours, and the bug did not trigger.  The bug was 
+discovered using a new tool for finding f/s bugs using model checking, 
+called Metis.
+
+Signed-off-by: Gautam Ahuja <gaahuja@cs.stonybrook.edu>
+Signed-off-by: Yifei Liu <yifeliu@cs.stonybrook.edu>
+Signed-off-by: Erez Zadok <ezk@cs.stonybrook.edu>
+
+---
+
+diff --git a/fs/nova/snapshot.c b/fs/nova/snapshot.c
+index 90d4f635292f..4432f9063615 100644
+--- a/fs/nova/snapshot.c
++++ b/fs/nova/snapshot.c
+@@ -1321,7 +1321,10 @@ static void snapshot_cleaner_try_sleeping(struct nova_sb_info *sbi)
+ 	DEFINE_WAIT(wait);
+ 
+ 	prepare_to_wait(&sbi->snapshot_cleaner_wait, &wait, TASK_INTERRUPTIBLE);
+-	schedule();
++
++	if (!kthread_should_stop())
++		schedule();
++
+ 	finish_wait(&sbi->snapshot_cleaner_wait, &wait);
+ }
+ 
