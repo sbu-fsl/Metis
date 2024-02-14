@@ -23,8 +23,8 @@ int execute_cmd_status(const char *cmd)
 {
     if (cmd == NULL) 
     {
-    fprintf(stderr, "Command should not be NULL.\n");
-    return -1;
+        fprintf(stderr, "Command should not be NULL.\n");
+        return -1;
     }
 
     int retval = system(cmd);
@@ -98,6 +98,6 @@ int main(int argc, char **argv)
         ++loop_id;
     }
 
-    fprintf(stdout, "No discrepancy found, EXITING\n");
+    fprintf(stdout, "No error found, EXITING\n");
     return 0;
 }
