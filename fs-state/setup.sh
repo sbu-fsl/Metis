@@ -34,7 +34,7 @@ declare -A FS_DEV_MAP
 FS_DEV_MAP+=( ["btrfs"]="ram" ["ext2"]="ram" ["ext4"]="ram" ["f2fs"]="ram" )
 FS_DEV_MAP+=( ["jffs2"]="mtdblock" ["ramfs"]="" ["tmpfs"]="" )
 FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" ["nilfs2"]="ram" ["jfs"]="ram")
-
+FS_DEV_MAP+=( ["pmfs"]="pmem" )
 mount_all() {
     SWARM_ID=$1;
     n_fs=${#FSLIST[@]};
@@ -120,8 +120,10 @@ n_fs=${#FSLIST[@]};
 # Get each device name in device list
 ALL_RAMS=0
 ALL_MTDBLOCKS=0
+ALL_PMEMS=0
 RAM_NAME="ram"
 MTDBLOCK_NAME="mtdblock"
+PMEM_NAME="pmem"
 
 # Number of ram and mtdblocks to use
 for i in $(seq 0 $(($n_fs-1))); do
@@ -133,12 +135,15 @@ for i in $(seq 0 $(($n_fs-1))); do
     elif [ "$dev_type" = "$MTDBLOCK_NAME" ]
     then 
         ALL_MTDBLOCKS=$(($ALL_MTDBLOCKS + 1))
+    else
+        ALL_PMEMS=$(($ALL_PMEMS + 1))
     fi
 done
 
 # Populate DEVLIST
 RAM_CNT=0
 MTDBLOCK_CNT=0
+PMEM_CNT=0
 for i in $(seq 0 $(($n_fs-1))); do
     fs=${FSLIST[$i]};
     dev_type=${FS_DEV_MAP[${fs}]}
@@ -152,6 +157,11 @@ for i in $(seq 0 $(($n_fs-1))); do
         MTDBLOCK_ID=$(($SWARM_ID * $ALL_MTDBLOCKS + $MTDBLOCK_CNT))
         MTDBLOCK_CNT=$(($MTDBLOCK_CNT + 1))
         DEVLIST[$i]="/dev/mtdblock$MTDBLOCK_ID"
+    elif [ "$dev_type" = "$PMEM_NAME" ]
+    then
+        PMEM_ID=$(($SWARM_ID * $ALL_PMEMS + $PMEM_CNT))
+        PMEM_CNT=$(($PMEM_CNT + 1))
+        DEVLIST[$i]="/dev/pmem$PMEM_ID"
     elif [ "$dev_type" = "" ]
     then
         DEVLIST[$i]=""
@@ -359,6 +369,17 @@ setup_jfs() {
 }
 
 unset_jfs() {
+    :
+}
+setup_pmfs() {
+    DEVFILE="$1";
+
+    devsize=$(runcmd verify_device $DEVFILE pmfs $(expr 16 \* 1024 \* 1024))
+    runcmd dd if=/dev/zero of=$DEVFILE bs=1k count=$(expr $devsize / 1024)
+    runcmd  insmod /home/ubuntu/PMFS-new/pmfs.ko
+}
+
+unset_pmfs() {
     :
 }
 

@@ -57,11 +57,18 @@ void mountall()
 {
     int failpos, err;
     for (int i = 0; i < get_n_fs(); ++i) {
+        int ret = -1;
         /* Skip verifs */
         if (is_verifs(get_fslist()[i]))
             continue;
         /* mount(source, target, fstype, mountflags, option_str) */
-        int ret = mount(get_devlist()[i], get_basepaths()[i], get_fslist()[i], MS_NOATIME, "");
+        else if(is_pmfs(get_fslist()[i])) {
+            char cmdbuf[PATH_MAX];
+            snprintf(cmdbuf, PATH_MAX, "mount -t pmfs -o noatime %s %s", get_devlist()[i], get_basepaths()[i]);
+            ret = execute_cmd_status(cmdbuf);                       
+        } else {
+            ret = mount(get_devlist()[i], get_basepaths()[i], get_fslist()[i], MS_NOATIME, "");
+        }    
         if (ret != 0) {
             failpos = i;
             err = errno;

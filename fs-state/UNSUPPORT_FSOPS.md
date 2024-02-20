@@ -2,7 +2,7 @@
 
 While using MCFS, it is required to disable some operations (i.e., system calls) that are not supported by certain file systems under testing.  Otherwise, one would return **ENOTSUP** error directly. 
 
-| VeriFS1 | VeriFS2 | Ext2 |
+| VeriFS1 | VeriFS2 | Ext2 | PMFS |
 | --- | --- | --- |
 | xattrs |   | fallocate |
 | rename |   |   |

@@ -256,11 +256,11 @@ install_swarm() {
 
 colorecho cyan "Installing required packages..."
 runcmd sudo apt update
-# Basic tools and compilers
+# Basic tools and compilersi
 runcmd install_pkg gcc g++ git vim
 runcmd install_pkg build-essential m4 autoconf bison flex cmake make
 # Dependencies for MCFS
-runcmd install_pkg mtd-tools linux-headers-$(uname -r) libssl-dev
+#runcmd install_pkg mtd-tools linux-headers-$(uname -r) libssl-dev
 runcmd install_pkg libfuse-dev
 runcmd install_pkg google-perftools
 runcmd install_pkg libgoogle-perftools-dev

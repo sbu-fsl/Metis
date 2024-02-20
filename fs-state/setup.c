@@ -18,7 +18,7 @@ static void execute_cmd(const char *cmd)
     }
 }
 
-static int execute_cmd_status(const char *cmd)
+int execute_cmd_status(const char *cmd)
 {
     int retval = system(cmd);
     int status = WEXITSTATUS(retval);
@@ -313,6 +313,35 @@ static int setup_verifs2(int i)
     return 0;
 }
 
+static int setup_pmfs(const char *devname, const char *basepath, const size_t size_kb)
+{
+    int ret;
+    char cmdbuf[PATH_MAX];
+    //128MiB
+    ret = check_device(devname, 128 * 1024);
+    if (ret != 0)
+    {
+        fprintf(stderr, "Cannot %s because %s is bad or not ready.\n",
+                __FUNCTION__, devname);
+        return ret;
+    }
+    // fill the device with zeros
+    snprintf(cmdbuf, PATH_MAX,
+             "dd if=/dev/zero of=%s bs=1k count=%zu",
+             devname, size_kb);
+    execute_cmd(cmdbuf);
+
+    snprintf(cmdbuf, PATH_MAX, "mount -t pmfs -o init %s %s", devname, basepath);
+    ret = execute_cmd_status(cmdbuf);
+    if(ret!=0) {
+        fprintf(stderr, "Cannot %s because initial mount failed at device: %s\n",
+                __FUNCTION__, devname);
+        return ret;
+    }
+    ret = umount2(basepath, 0);    
+    return ret;
+}
+
 void setup_filesystems()
 {
     int ret;
@@ -342,6 +371,10 @@ void setup_filesystems()
         else if (strcmp(get_fslist()[i], "nilfs2") == 0)
         {
             ret = setup_nilfs2(get_devlist()[i], get_devsize_kb()[i]);
+        }
+        else if (strcmp(get_fslist()[i], "pmfs") == 0)
+        {
+            ret = setup_pmfs(get_devlist()[i], get_basepaths()[i], get_devsize_kb()[i]);
         }
         // TODO: we need to consider VeriFS1 and VeriFS2 separately here
         else if (is_verifs(get_fslist()[i]))

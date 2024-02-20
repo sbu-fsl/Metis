@@ -12,6 +12,7 @@ static const char *mcfs_globals_env_key = "MCFS_FSLIST";
 static const char *globals_delim = ":";
 static const char *ramdisk_name = "ram";
 static const char *mtdblock_name = "mtdblock";
+static const char *pmem_name = "pmem";
 
 static char *fslist_to_copy[MAX_FS];
 static size_t devsize_kb_to_copy[MAX_FS];
@@ -27,7 +28,7 @@ static char **tmp_fpool = NULL;
 static char **tmp_dpool = NULL;
 #endif
 
-dev_nums_t dev_nums = {.all_rams = 0, .all_mtdblocks = 0};
+dev_nums_t dev_nums = {.all_rams = 0, .all_mtdblocks = 0, .all_pmems=0};
 
 /*
  * current is the list of directories previous depth
@@ -225,13 +226,16 @@ static void prepare_dev_suffix()
         else if (strcmp(dev_all[dev_idx], mtdblock_name) == 0) {
             ++dev_nums.all_mtdblocks;
         }
+        else if (strcmp(dev_all[dev_idx], pmem_name) == 0) {
+            ++dev_nums.all_pmems;
+        }
     }
     dev_idx = -1;
 
     /* populate device name (including orginal and used dev names) */
     size_t len;
-    int ram_cnt = 0, mtdblock_cnt = 0;
-    int ram_id = -1, mtdblock_id = -1;
+    int ram_cnt = 0, mtdblock_cnt = 0, pmem_cnt=0;
+    int ram_id = -1, mtdblock_id = -1, pmem_id=0;
 
     globals_t_p->devlist = calloc(globals_t_p->_n_fs, sizeof(char*));
     if (!globals_t_p->devlist) 
@@ -265,6 +269,17 @@ static void prepare_dev_suffix()
             globals_t_p->devlist[i] = calloc(len + 1, sizeof(char));
             snprintf(globals_t_p->devlist[i], len + 1, "/dev/%s%d", 
                 mtdblock_name, mtdblock_id);
+            ++mtdblock_cnt;
+        }
+        else if (strcmp(dev_all[dev_idx], pmem_name) == 0) {
+            if (globals_t_p->_swarm_id >= 1)
+                pmem_id = pmem_cnt + (globals_t_p->_swarm_id - 1) * dev_nums.all_pmems;
+            else
+                pmem_id = pmem_cnt;
+            len = snprintf(NULL, 0, "/dev/%s%d", pmem_name, pmem_id);
+            globals_t_p->devlist[i] = calloc(len + 1, sizeof(char));
+            snprintf(globals_t_p->devlist[i], len + 1, "/dev/%s%d", 
+                pmem_name, pmem_id);
             ++mtdblock_cnt;
         }
         else { // No Disk required 

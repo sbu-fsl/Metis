@@ -37,6 +37,7 @@
 
 #define VERIFS_PREFIX       "veri"
 #define BTRFS_NAME          "btrfs"
+#define PMFS_NAME           "pmfs"
 #define XFS_NAME            "xfs"
 #define VERIFS1_NAME        "verifs1"
 #define NILFS2_NAME         "nilfs2"
@@ -46,8 +47,12 @@ static inline bool is_verifs(const char *fsname)
 {
     return strncmp(fsname, VERIFS_PREFIX, VERIFS_PREFIX_LEN) == 0;
 }
-
+static inline bool is_pmfs(const char *fsname)
+{
+    return strcmp(fsname, PMFS_NAME) == 0;
+}
 void setup_filesystems();
+int execute_cmd_status(const char *cmd);
 int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode);
 
 #endif // _SETUP_H_
