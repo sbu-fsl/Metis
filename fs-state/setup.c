@@ -318,9 +318,41 @@ static int setup_verifs1(int i)
 static int setup_verifs2(int i)
 {
     char cmdbuf[PATH_MAX];
+    char* mountpoint = get_basepaths()[i];
+    const int MAX_WAIT_SECONDS = 5;
+    const int MAX_WAIT_TIME = MAX_WAIT_SECONDS * 1000000;
+    int stat_result;
 
+    
+    struct stat initialStat, currentStat;
+    stat_result = stat(mountpoint, &initialStat);
     snprintf(cmdbuf, PATH_MAX, "mount -t fuse.fuse-cpp-ramfs verifs2 %s", get_basepaths()[i]);
     execute_cmd(cmdbuf);
+    
+    // wait until refFS is fully setup at mountpoint (when st_dev or st_ino updates at the mountpoint)
+    int wait_time = 1; // initial wait time, in microseconds.
+    int total_time = 0;
+    bool mounted = false;
+    while (total_time < MAX_WAIT_TIME) {
+        stat_result = stat(mountpoint, &currentStat);
+        if(stat_result){
+            fprintf(stderr, "Cannot stat mountpoint %s\n", mountpoint);
+            return stat_result;
+        }
+        if (currentStat.st_dev != initialStat.st_dev || currentStat.st_ino != initialStat.st_ino) {
+            mounted = true;
+            break;
+        }
+        usleep(wait_time);
+        total_time += wait_time;
+        // wait until next attempt is multiplied by 2, for similar reason to umount() in mount.c
+        wait_time = (wait_time > MAX_WAIT_TIME/2) ? MAX_WAIT_TIME : (wait_time*2);
+    }
+
+    if (!mounted){
+        fprintf(stderr, "Cannot mount %s , did not setup in time.\n", mountpoint);
+        return 1;
+    }
     return 0;
 }
 
