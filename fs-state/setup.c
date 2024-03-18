@@ -12,6 +12,8 @@
 #include "fileutil.h"
 #include <sys/wait.h>
 
+#define VERIFS2_MP_PREFIX "/mnt/test-verifs2-"
+
 static void execute_cmd(const char *cmd)
 {
     int retval = system(cmd);
@@ -34,6 +36,14 @@ int execute_cmd_status(const char *cmd)
     int retval = system(cmd);
     int status = WEXITSTATUS(retval);
     return status;
+}
+
+static int is_mounted(const char *path) {
+    char command[256];
+    snprintf(command, sizeof(command), "mountpoint -q \"%s\"", path);
+    // Executes the command. 
+    // If the directory is a mountpoint, the command returns 0, else non-zero.
+    return system(command) == 0;
 }
 
 static int check_device(const char *devname, const size_t exp_size_kb)
@@ -319,34 +329,52 @@ static int setup_verifs2(int i)
 {
     char cmdbuf[PATH_MAX];
     char* mountpoint = get_basepaths()[i];
-    const int MAX_WAIT_SECONDS = 5;
-    const int MAX_WAIT_TIME = MAX_WAIT_SECONDS * 1000000;
-    int stat_result;
-
-    
-    struct stat initialStat, currentStat;
-    stat_result = stat(mountpoint, &initialStat);
-    snprintf(cmdbuf, PATH_MAX, "mount -t fuse.fuse-cpp-ramfs verifs2 %s", get_basepaths()[i]);
-    execute_cmd(cmdbuf);
-    
+    // Max 5 seconds
+    const int MAX_WAIT_MCSECONDS = 5;
+    const int MAX_WAIT_TIME = MAX_WAIT_MCSECONDS * 1000000;
     // wait until refFS is fully setup at mountpoint (when st_dev or st_ino updates at the mountpoint)
     int wait_time = 1; // initial wait time, in microseconds.
     int total_time = 0;
     bool mounted = false;
-    while (total_time < MAX_WAIT_TIME) {
-        stat_result = stat(mountpoint, &currentStat);
-        if(stat_result){
-            fprintf(stderr, "Cannot stat mountpoint %s\n", mountpoint);
-            return stat_result;
+
+    if (is_mounted(mountpoint)) {
+        snprintf(cmdbuf, sizeof(cmdbuf), "umount \"%s\"", mountpoint);
+        
+        if (execute_cmd_status(cmdbuf) != 0) {
+            fprintf(stderr, "Failed to unmount an existing VeriFS2 file system.\n");
         }
-        if (currentStat.st_dev != initialStat.st_dev || currentStat.st_ino != initialStat.st_ino) {
+        return -1;
+    }
+
+    // Remove the mountpoint if it exists and create a new one to remove 
+    // all the content inside the mountpoint
+    if (strncmp(mountpoint, VERIFS2_MP_PREFIX, strlen(VERIFS2_MP_PREFIX)) == 0) {
+        snprintf(cmdbuf, PATH_MAX, "rm -rf %s", mountpoint);
+
+        if (execute_cmd_status(cmdbuf) != 0) {
+            fprintf(stderr, "Failed to remove content in the VeriFS2 mount point during setup.\n");
+        }
+
+        if (mkdir(mountpoint, 0755) == -1) {
+            perror("Failed to create the VeriFS2 mount point.\n");
+            return -1;
+        }
+    }
+
+    while (total_time < MAX_WAIT_TIME) {
+        snprintf(cmdbuf, PATH_MAX, "mount -t fuse.fuse-cpp-ramfs verifs2 %s", mountpoint);
+        execute_cmd(cmdbuf);
+
+        usleep(wait_time);
+
+        if (is_mounted(mountpoint)) {
             mounted = true;
             break;
         }
-        usleep(wait_time);
+        
         total_time += wait_time;
         // wait until next attempt is multiplied by 2, for similar reason to umount() in mount.c
-        wait_time = (wait_time > MAX_WAIT_TIME/2) ? MAX_WAIT_TIME : (wait_time*2);
+        wait_time = (wait_time > MAX_WAIT_TIME/2) ? MAX_WAIT_TIME : (wait_time * 2);
     }
 
     if (!mounted){
