@@ -125,7 +125,10 @@ void unmount_all(bool strict)
     for (int i = 0; i < get_n_fs(); ++i) {
         if (is_verifs(get_fslist()[i]))
             continue;
-        int retry_limit = 20;
+
+        // Change retry limit from 20 to 19 to avoid excessive delay
+        int retry_limit = 19;
+        int num_retries = 0;
         /* We have to unfreeze the frozen file system before unmounting it.
          * Otherwise the system will hang! */
         /*
@@ -133,25 +136,39 @@ void unmount_all(bool strict)
             fsthaw(get_fslist()[i], get_devlist()[i], get_basepaths()[i]);
         }
         */
-try_unmount:
-        ret = umount2(get_basepaths()[i], 0);
-        if (ret != 0) {
+    
+        while (retry_limit > 0) {
+            ret = umount2(get_basepaths()[i], 0);
+            if (ret == 0) {
+                break; // Success, exit the retry loop
+            }        
+
             /* If unmounting failed due to device being busy, again up to
-             * retry_limit times with 100 * 2^n ms (n = num_retries) */
-            useconds_t waitms = (100 << (10 - retry_limit));
-            if (errno == EBUSY && retry_limit > 0) {
-                fprintf(stderr, "File system %s mounted on %s is busy. Retry "
-                        "unmounting after %dms.\n", get_fslist()[i], get_basepaths()[i],
+            * retry_limit times with 100 * 2^n ms (n = num_retries) */
+            if (errno == EBUSY) {
+                // 100 * (1 <<  0) = 100ms
+                // 100 * (1 << 18) = 100 * 262144 = 26.2144s
+                useconds_t waitms = 100 * (1 << num_retries); // Exponential backoff starting at 100ms
+                fprintf(stderr, "File system %s mounted on %s is busy. Retry %d times,"
+                        "unmounting after %dms.\n", get_fslist()[i], get_basepaths()[i], num_retries + 1,
                         waitms);
                 usleep(1000 * waitms);
+                num_retries++;
                 retry_limit--;
                 save_lsof();
-                goto try_unmount;
+            } 
+            else {
+                // Handle non-EBUSY errors immediately without retrying
+                fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
+                        get_fslist()[i], get_basepaths()[i], errnoname(errno));
+                has_failure = true;
             }
-            fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
-                    get_fslist()[i], get_basepaths()[i], errnoname(errno));
-            has_failure = true;
-        }
+            if (retry_limit == 0) {
+                fprintf(stderr, "Failed to unmount file system %s at %s after retries.\n",
+                        get_fslist()[i], get_basepaths()[i]);
+                has_failure = true;
+            }
+       }
     }
     if (has_failure && strict)
         exit(1);
