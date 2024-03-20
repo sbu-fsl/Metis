@@ -552,6 +552,10 @@ static void precreate_pools()
             for (int j = 0; j < get_n_fs(); ++j) {
                 path_len = snprintf(NULL, 0, "%s%s", get_basepaths()[j], bfs_fd_pool[i]);
                 path_name = calloc(1, path_len + 1);
+                if (!path_name) {
+                    fprintf(stderr, "calloc error happened for prepopulation pathname!\n");
+                    exit(EXIT_FAILURE);
+                }
                 snprintf(path_name, path_len + 1, "%s%s", get_basepaths()[j], bfs_fd_pool[i]);
                 int ret = -1;
                 ret = mkdir_p(path_name, 0755, 0644);
@@ -563,6 +567,7 @@ static void precreate_pools()
             }
         }
     }
+    // Do not mount VeriFS here
     unmount_all_strict();
     /* Free the temp file/dir pool to save memory */
     fclose(fp);
