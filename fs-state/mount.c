@@ -163,12 +163,13 @@ void unmount_all(bool strict)
                         get_fslist()[i], get_basepaths()[i], errnoname(errno));
                 has_failure = true;
             }
-            if (retry_limit == 0) {
-                fprintf(stderr, "Failed to unmount file system %s at %s after retries.\n",
-                        get_fslist()[i], get_basepaths()[i]);
-                has_failure = true;
-            }
-       }
+        }
+        
+        if (retry_limit == 0) {
+            fprintf(stderr, "Failed to unmount file system %s at %s after retries.\n",
+                    get_fslist()[i], get_basepaths()[i]);
+            has_failure = true;
+        }
     }
     if (has_failure && strict)
         exit(1);
