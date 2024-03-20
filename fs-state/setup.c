@@ -356,7 +356,7 @@ static int setup_verifs2(int i)
         }
 
         if (mkdir(mountpoint, 0755) == -1) {
-            perror("Failed to create the VeriFS2 mount point.\n");
+            fprintf(stderr, "Failed to create the VeriFS2 mount point.\n");
             return -1;
         }
     }
