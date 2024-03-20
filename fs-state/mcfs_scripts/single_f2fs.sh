@@ -19,7 +19,7 @@ F2FS_SZKB=38912 # 38 MiB
 cd ..
 sudo ./stop.sh
 
-cd ../kernel/brd
+cd ../kernel/brd-for-$(uname -r)/
 sudo rmmod brd
 make -C /lib/modules/$(uname -r)/build M=$(pwd)
 sudo insmod brd.ko rd_nr=2 rd_sizes=$EXT4_SZKB,$F2FS_SZKB
