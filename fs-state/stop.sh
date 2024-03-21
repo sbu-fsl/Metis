@@ -28,7 +28,7 @@ unmount_with_retry() {
     while [ $attempt -le $max_retries ]; do
         if mountpoint -q "$target"; then
             echo "Attempting to unmount $target (Attempt $attempt/$max_retries)..."
-            if umount "$target"; then
+            if umount -l "$target"; then
                 echo "$target unmounted successfully."
                 break
             else
