@@ -133,13 +133,6 @@ static inline void dump_all_cbufs()
 }
 #endif
 
-#ifdef FILEDIR_POOL
-static inline bool need_pre_create(double prob)
-{
-    return rand() <  prob * ((double)RAND_MAX + 1.0);
-}
-#endif
-
 #ifndef ABORT_ON_FAIL
 #define ABORT_ON_FAIL 0
 #endif

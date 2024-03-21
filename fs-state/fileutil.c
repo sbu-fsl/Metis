@@ -533,6 +533,14 @@ static void unmap_devices()
 #ifdef FILEDIR_POOL
 static void precreate_pools()
 {
+    // Using srand(time(NULL)); will (likely) make each VT have a same 
+    // starting point.  The following code uses a more granular time
+    // to seed the random number generator.
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    unsigned long time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
+    srand(time_in_micros);
+    
     double fs_exist_prob = FILEDIR_EXIST_PROB;
     size_t path_len;
     char *path_name;
@@ -547,7 +555,7 @@ static void precreate_pools()
     // Mount all the file systems first
     mountall();
     for (int i = 0; i < combo_pool_idx; ++i) {
-        if (need_pre_create(fs_exist_prob)) {
+        if (rand() <  fs_exist_prob * ((double)RAND_MAX + 1.0)) {
             fprintf(fp, "%s\n", bfs_fd_pool[i]);
             for (int j = 0; j < get_n_fs(); ++j) {
                 path_len = snprintf(NULL, 0, "%s%s", get_basepaths()[j], bfs_fd_pool[i]);
