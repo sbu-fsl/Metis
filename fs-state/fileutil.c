@@ -653,6 +653,42 @@ static long checkpoint_before_hook(unsigned char *ptr)
 
     return 0;
 }
+void corrupt_device(){
+    int fd_urandom, fd_ram0;
+    ssize_t bytes_read, bytes_written;
+    char buffer[] = {'a','b','c','d'};
+    fd_ram0 = open("/dev/ram0", O_WRONLY);
+    if (fd_ram0 == -1) {
+        fprintf(stderr,"Error opening /dev/ram0\n");
+        return;
+    }
+    if (lseek(fd_ram0, 1024, SEEK_SET) == -1) {
+        fprintf(stderr,"Error seeking /dev/ram0\n");
+        close(fd_ram0);
+        exit(EXIT_FAILURE);
+    }
+    // Read from /dev/urandom and write to /dev/ram0
+    //while ((bytes_read = read(fd_urandom, buffer, 100)) > 0) 
+    {
+        bytes_written = write(fd_ram0, buffer, strlen(buffer));
+        if (bytes_written == -1) {
+            fprintf(stderr,"Error writing to /dev/ram0 with error: %s\n",strerror(errno));
+            close(fd_ram0);
+            return;
+        }
+    }
+
+    if (bytes_read == -1) {
+        fprintf(stderr,"Error reading from /dev/urandom\n");
+        close(fd_ram0);
+        return;
+    }
+
+    // Close file descriptors
+    close(fd_ram0);
+  
+    //fprintf(stderr,"Data copied from /dev/urandom to /dev/ram0 successfully.\n");
+}
 
 /*
  *  Called after the spin's checkpoint of concrete state
@@ -660,7 +696,9 @@ static long checkpoint_before_hook(unsigned char *ptr)
 static long checkpoint_after_hook(unsigned char *ptr)
 {
     unmap_devices();
-    // assert(do_fsck());
+    corrupt_device();
+    if(globals_t_p->fsck>0 && count%globals_t_p->fsck == 0)
+        assert(do_fsck());
     // dump_fs_images("snapshots");
     return 0;
 }
@@ -687,7 +725,7 @@ static long restore_before_hook(unsigned char *ptr)
         }
     }
 
-    // assert(do_fsck());
+    assert(do_fsck());
     return 0;
 }
 
@@ -697,7 +735,7 @@ static long restore_before_hook(unsigned char *ptr)
 static long restore_after_hook(unsigned char *ptr)
 {
     unmap_devices();
-    // assert(do_fsck());
+    assert(do_fsck());
     // dump_fs_images("after-restore");
     return 0;
 }

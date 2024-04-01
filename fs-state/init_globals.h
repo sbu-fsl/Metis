@@ -79,6 +79,7 @@ static inline bool is_prefix(const char *pre, const char *str)
 
 typedef struct all_global_params {
     int _swarm_id;
+    int fsck;
     unsigned int _n_fs;
     char **fslist;
     char **fssuffix;

@@ -45,11 +45,13 @@ bool do_fsck()
     char cmdbuf[ARG_MAX];
     bool isgood = true;
     for (int i = 0; i < get_n_fs(); ++i) {
-        snprintf(cmdbuf, ARG_MAX, "fsck -N -t %s %s 2>&1", get_fslist()[i],
+        snprintf(cmdbuf, ARG_MAX, "sudo fsck -t %s %s 2>&1", get_fslist()[i],
                  get_devlist()[i]);
+        fprintf(stderr, "%s\n",cmdbuf);
         FILE *cmdfp = popen(cmdbuf, "r");
         size_t outlen = 0;
         char *output = receive_output(cmdfp, &outlen);
+        fprintf(stderr,"%s\n", output);
         int ret = pclose(cmdfp);
         if (ret != 0) {
             fprintf(stderr, "fsck %s failed and returned %d, %s may have been "
