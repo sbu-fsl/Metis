@@ -434,8 +434,17 @@ for i in $(seq 0 $(($C_TRACK_CNT-1))); do
     C_TRACK_STMT="${C_TRACK_STMT}${CTRACKLIST[$i]}\\n"
 done
 
-sed "/$PML_START_PATN/,/$PML_END_PATN/{//!d}" $PML_SRC > $PML_TEMP
-sed "/$PML_START_PATN/a$C_TRACK_STMT" $PML_TEMP > $PML_SRC
+# Need to handle if there is no c_track statements (i.e., checking VeriFS 
+# only). In this case, C_TRACK_CNT is 0 and C_TRACK_STMT is empty, and we 
+# do not need to modify the promela code.
+
+if [[ $C_TRACK_CNT -ne 0 && -n "$C_TRACK_STMT" ]]; then
+    sed "/$PML_START_PATN/,/$PML_END_PATN/{//!d}" $PML_SRC > $PML_TEMP
+    sed "/$PML_START_PATN/a$C_TRACK_STMT" $PML_TEMP > $PML_SRC
+    echo "Altering Promela driver with c_track statements."
+else
+    echo "Checking VeriFS/RefFS only, no need to alter Promela driver."
+fi
 
 runcmd make parameters
 
