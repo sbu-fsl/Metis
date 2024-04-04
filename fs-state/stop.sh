@@ -13,10 +13,11 @@
 #
 
 # kill processes that might reserve some resource
-pkill -9 -f 'mcfs-main.pml'
-pkill -9 -f 'mcfs-main.pml.swarm'
-pkill -9 -f 'script[0-9]+'
-pkill -9 -f 'pan[0-9]+'
+pkill -9 -f "./mcfs-main.pml"
+pkill -9 -f "./mcfs-main.pml.swarm"
+pkill -9 -f "sh ./script"
+# Need to kill both "pan" and "pan[0-9+]" processes
+pkill -9 -f "./pan"
 
 # Function to unmount a device with retries
 unmount_with_retry() {
