@@ -18,6 +18,8 @@
 # 
 # This script should be placed in fs-state/mcfs_scripts folder
 
+# Usage: ./only_fs.sh <file system name> <time to sleep> (e.g., ./only_fs.sh ext4 1h)
+
 CURDIR=$(pwd)
 
 # Supported File Systems: ext4, verifs2, btrfs, jfs
@@ -35,7 +37,6 @@ NILFS2_SZKB=1028 # 1028 KiB
 FSNAME=$1
 FSSZKB=0
 
-# Usage: ./only_fs.sh <file system name> (e.g., ./only_fs.sh ext4 1h)
 if [ -z "$1" ]; then
     echo "Error: File system name is missing."
     exit 1

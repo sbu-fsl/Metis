@@ -2,7 +2,6 @@
 
 #
 # Copyright (c) 2020-2024 Yifei Liu
-# Copyright (c) 2020-2024 Wei Su
 # Copyright (c) 2020-2024 Erez Zadok
 # Copyright (c) 2020-2024 Stony Brook University
 # Copyright (c) 2020-2024 The Research Foundation of SUNY
@@ -18,9 +17,11 @@
 # Make sure the swarm.lib is set up (esp. cpus)
 
 # At most 16 VTs per machine due to compilation options in swarm.lib
+# Make sure VeriFS2/RefFS is installed
+
 NUMVT=16 
 
-EXT4_SZKB=256
+VERIFS2_SZKB=0
 
 cd ..
 sudo ./stop.sh
@@ -28,4 +29,4 @@ sudo rmmod brd
 
 ./loadmods.sh
 
-./setup_swarm.sh -f ext4:$EXT4_SZKB -n $NUMVT
+./setup_swarm.sh -f verifs2:$VERIFS2_SZKB -n $NUMVT
