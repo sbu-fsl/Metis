@@ -266,6 +266,20 @@ install_swarm() {
     popd;
 }
 
+install_criu() {
+    pushd $BASEDIR;
+    runcmd prepare_repo criu git@github.com:checkpoint-restore/criu.git;
+
+    cd criu
+    runcmd git fetch
+    runcmd git checkout v3.19;
+    if should_override criu; then
+        make clean;
+    fi
+    runcmd make;
+    runcmd sudo make install;
+}
+
 colorecho cyan "Installing required packages..."
 runcmd sudo apt update
 # Basic tools and compilers
@@ -323,7 +337,7 @@ runcmd install_pkg gnutls-dev
 runcmd install_pkg libnftables-dev
 runcmd install_pkg asciidoc
 
-required_repos=(swarm spin reffs zlib xxHash nfs_ganesha)
+required_repos=(swarm spin reffs zlib xxHash nfs_ganesha criu)
 
 for repo in ${required_repos[@]}; do
     runcmd install_$repo;
