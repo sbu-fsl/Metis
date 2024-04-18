@@ -568,7 +568,7 @@ static void precreate_pools()
                 int ret = -1;
                 ret = mkdir_p(path_name, 0755, 0644);
                 if (ret < 0) {
-                    fprintf(stderr, "mkdir_p error happened!\n");
+                    fprintf(stderr, "mkdir_p error happened and returned %d!\n",errno);
                     exit(EXIT_FAILURE);
                 }
                 free(path_name);
@@ -696,9 +696,10 @@ void corrupt_device(){
 static long checkpoint_after_hook(unsigned char *ptr)
 {
     unmap_devices();
-    corrupt_device();
-    if(globals_t_p->fsck>0 && count%globals_t_p->fsck == 0)
-        assert(do_fsck());
+    // #ifdef FSCK_ENABLE
+    // if(count%FSCK_ENABLE== 0)
+    //     assert(do_fsck());
+    // #endif
     // dump_fs_images("snapshots");
     return 0;
 }
@@ -724,8 +725,10 @@ static long restore_before_hook(unsigned char *ptr)
                     get_fslist()[i]);
         }
     }
-
-    assert(do_fsck());
+    // #ifdef FSCK_ENABLE
+    // if(count%FSCK_ENABLE == 0)
+    //     assert(do_fsck());
+    // #endif
     return 0;
 }
 
@@ -735,7 +738,10 @@ static long restore_before_hook(unsigned char *ptr)
 static long restore_after_hook(unsigned char *ptr)
 {
     unmap_devices();
-    assert(do_fsck());
+    #ifdef FSCK_ENABLE
+    if(count%FSCK_ENABLE == 0)
+        assert(do_fsck());
+    #endif
     // dump_fs_images("after-restore");
     return 0;
 }

@@ -1,10 +1,10 @@
 COMMON_DIR := ../common
 COMMON_SRC := $(wildcard $(COMMON_DIR)/*.c) $(wildcard $(COMMON_DIR)/*.cpp)
 COMMON_OBJ := $(patsubst $(COMMON_DIR)/%,%.o,$(COMMON_SRC))
-override CFLAGS += -g -I../include -D PRINTF -fcommon -DCBUF_IMAGE -DFILEDIR_POOL -DCOMPLEX_FSOPS # -D T_RAND -D P_RAND
+FSCK ?=10
+override CFLAGS += -g -I../include -D PRINTF -fcommon -DCBUF_IMAGE -DFILEDIR_POOL -DCOMPLEX_FSOPS -DFSCK_ENABLE=$(FSCK)# -D T_RAND -D P_RAND
 override LIBS += -lssl -lcrypto -lrt -lstdc++ -lstdc++fs -lpthread -lprofiler -lxxhash -lz -lm
 PAN = pan
-
 all: mcfs-main.pml parameters common-libs init_globals.o absfs-set
 	spin -a mcfs-main.pml; \
 	gcc -g -o $(PAN) pan.c init_globals.o set.o fileutil.c perf.c mount.c setup.c common-libs.a $(CFLAGS) $(LIBS); \

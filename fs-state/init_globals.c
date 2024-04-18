@@ -19,9 +19,7 @@ int combo_pool_idx;
 #endif
 
 static char *mcfs_globals_env;
-static char *fsck_globals_env;
 static const char *mcfs_globals_env_key = "MCFS_FSLIST";
-static const char *fsck_globals_env_key = "FSCK";
 static const char *globals_delim = ":";
 static const char *ramdisk_name = "ram";
 static const char *mtdblock_name = "mtdblock";
@@ -202,7 +200,6 @@ static int parse_env_arguments(char* env_to_parse)
 static int get_mcfs_env_arguments() 
 {
     char globals_used_env_key[ENV_KEY_MAX];
-    char fsck_used_env_key[ENV_KEY_MAX];
     /* 
      * No swarm mode (single Spin pan process), Use swarm id 0 
      * Swarm mode, Use swarm id starting from 1
@@ -211,24 +208,14 @@ static int get_mcfs_env_arguments()
     /* USE MCFS_FSLIST${_swarm_id} as env name */
     sprintf(globals_used_env_key, "%s%u", mcfs_globals_env_key, 
         globals_t_p->_swarm_id);
-    /* USE FSCK${_swarm_id} as env name  for exported variable FSCK from setup.sh*/
-    sprintf(fsck_used_env_key, "%s%u", fsck_globals_env_key, 
-        globals_t_p->_swarm_id);
     mcfs_globals_env = getenv(globals_used_env_key);
-    fsck_globals_env = getenv(fsck_used_env_key);
     /* Validate existence of environment vars */
     if (!mcfs_globals_env) {
         fprintf(stderr, "globals env %s is not set.\n", 
             globals_used_env_key);
         return -EINVAL;
     }
-    if (!fsck_globals_env) {
-        fprintf(stderr, "fsck env %s is not set.\n", 
-            fsck_used_env_key);
-        return -EINVAL;
-    }
     int ret = -1;
-    globals_t_p->fsck = atoi(fsck_globals_env);
     ret = parse_env_arguments(mcfs_globals_env);
     return ret;
 }

@@ -26,7 +26,6 @@ POSITIONAL=()
 _CFLAGS=""
 KEEP_FS=0
 SETUP_ONLY=0
-FSCK=0
 CLEAN_AFTER_EXP=0
 REPLAY=0
 exclude_dirs=(
@@ -105,11 +104,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         -e|--use-env)
             USE_ENV_VAR=1
-            shift
-            ;;
-        -F|--fsck)
-            FSCK="$2"
-            shift
             shift
             ;;
         *)
@@ -454,8 +448,6 @@ if [ "$SETUP_ONLY" != "1" ]; then
     # Set environment variable MCFS_FSLIST for MCFS C Sources
     if [ "$USE_ENV_VAR" = "1" ]; then
         export MCFS_FSLIST$SWARM_ID="$MCFSLIST"
-        export FSCK$SWARM_ID="$FSCK"
-        echo "fsck value has been set to $FSCK";
         ./pan -K $SWARM_ID 2>error.log > output.log
     else
         ./pan -K $SWARM_ID:$MCFSLIST 2>error.log > output.log
