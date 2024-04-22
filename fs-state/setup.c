@@ -13,6 +13,10 @@
 #include <sys/wait.h>
 
 #define VERIFS2_MP_PREFIX "/mnt/test-verifs2-"
+#define NFS_GANESHA_EXPORT_PATH "/mnt/test-export-nfs-ganesha"
+#define NFS_GANESHA_CONF_PATH "ganesha.conf"
+#define NFS_GANESHA_LOG_PATH "ganesha.log"
+#define NFS_GANESHA_DEBUG_LEVEL "NIV_DEBUG"
 
 static void execute_cmd(const char *cmd)
 {
@@ -316,6 +320,79 @@ static int setup_nilfs2(const char *devname, const size_t size_kb)
     return 0;
 }
 
+static int setup_nfs_ganesha_generic(int fs_idx)
+{
+    /* Clean up any Genesha resources */
+    // Make sure the export path is created 
+    // Ganesha client mount directory should be created in populate_mountpoints()
+    struct stat st;
+    if (stat(NFS_GANESHA_EXPORT_PATH, &st) == -1) {
+        if (mkdir(NFS_GANESHA_EXPORT_PATH, 0755) == -1) {
+            fprintf(stderr, "Failed to create NFS Ganesha export path.\n");
+            return -2;
+        }
+    }
+    // Make sure server export directory is not mounted 
+    if (is_mounted(NFS_GANESHA_EXPORT_PATH)) {
+        if (umount(NFS_GANESHA_EXPORT_PATH) == -1) {
+            fprintf(stderr, "Failed to unmount NFS Ganesha export path.\n");
+            return -3;
+        }
+    }
+    // Make sure client mount point is not mounted
+    if (is_mounted(get_basepaths()[fs_idx])) {
+        if (umount(get_basepaths()[fs_idx]) == -1) {
+            fprintf(stderr, "Failed to unmount NFS Ganesha client mount path.\n");
+            return -4;
+        }
+    }
+    return 0;
+}
+
+/* Setup NFS-Ganesha server and client on the same machine with 
+ * an ext4 file system as the backing store
+ */
+static int setup_nfs_ganesha_ext4(int fs_idx, const char *devname, const size_t size_kb)
+{
+    // Set up NFS-Ganesha server export and client mount paths on the same machine
+    int ret = -1;
+    char cmdbuf[PATH_MAX];
+    ret = setup_nfs_ganesha_generic(fs_idx);
+    if (ret != 0) {
+        return ret;
+    }
+    // Check export path device: Ext4 device >= 256 KiB and fill the device with zeros
+    ret = check_device(devname, 256);
+    if (ret != 0) {
+        fprintf(stderr, "Cannot %s because %s is bad or not ready.\n",
+                __FUNCTION__, devname);
+        return ret;
+    }
+    snprintf(cmdbuf, PATH_MAX,
+             "dd if=/dev/zero of=%s bs=1k count=%zu",
+             devname, size_kb);
+    execute_cmd(cmdbuf);
+    // Format the device with ext4 file system
+    snprintf(cmdbuf, PATH_MAX, "mkfs.ext4 -F %s", devname);
+    execute_cmd(cmdbuf); 
+    // Mount ramdisk device on the Ganesha server export directory
+    ret = mount(devname, NFS_GANESHA_EXPORT_PATH, "ext4", MS_NOATIME, "");
+    if (ret != 0) {
+        fprintf(stderr, "Failed to mount NFS Ganesha export path.\n");
+        return -5;
+    }
+
+    // TODO: There should be NO NFS-Ganesha server running at this point, we 
+    // terminated the ganesha.nfsd process in the setup.sh script already
+    // TODO: Do we delete the previous Ganesha log or append it?
+    // Start NFS Ganesha with the desired configuration file
+    snprintf(cmdbuf, PATH_MAX, "ganesha.nfsd -L %s -f %s -N %s", 
+        NFS_GANESHA_LOG_PATH, NFS_GANESHA_CONF_PATH, NFS_GANESHA_DEBUG_LEVEL);
+    execute_cmd(cmdbuf);
+    
+    return 0;
+}
+
 static int setup_verifs1(int i)
 {
     char cmdbuf[PATH_MAX];
@@ -443,9 +520,13 @@ void setup_filesystems()
         {
             ret = setup_nilfs2(get_devlist()[i], get_devsize_kb()[i]);
         }
-         else if (strcmp(get_fslist()[i], "nova") == 0)
+        else if (strcmp(get_fslist()[i], "nova") == 0)
         {
             ret = setup_nova(get_devlist()[i], get_basepaths()[i], get_devsize_kb()[i]);
+        }
+        else if (strcmp(get_fslist()[i], "nfs-ganesha-ext4") == 0)
+        {
+            ret = setup_nfs_ganesha_ext4(i, get_devlist()[i], get_devsize_kb()[i]);
         }
         // TODO: we need to consider VeriFS1 and VeriFS2 separately here
         else if (is_verifs(get_fslist()[i]))
