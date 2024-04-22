@@ -67,6 +67,7 @@ bool do_fsck()
 void mountall()
 {
     int failpos, err;
+    char cmdbuf[PATH_MAX];
     for (int i = 0; i < get_n_fs(); ++i) {
         int ret = -1;
         /* Skip verifs */
@@ -74,10 +75,16 @@ void mountall()
             continue;
         /* mount(source, target, fstype, mountflags, option_str) */
         else if(is_nova(get_fslist()[i])) {
-            char cmdbuf[PATH_MAX];
-            snprintf(cmdbuf, PATH_MAX, "mount -t NOVA -o noatime %s %s", get_devlist()[i], get_basepaths()[i]);
+            snprintf(cmdbuf, PATH_MAX, "mount -t NOVA -o noatime %s %s", 
+                get_devlist()[i], get_basepaths()[i]);
             ret = execute_cmd_status(cmdbuf);                       
-        } else {
+        }
+        else if (is_nfs_ganesha(get_fslist()[i])) {
+            snprintf(cmdbuf, PATH_MAX, "mount.nfs4 -o vers=4,noatime %s:%s %s", 
+                NFS_GANESHA_LOCALHOST, NFS_GANESHA_EXPORT_PATH, get_basepaths()[i]);
+            ret = execute_cmd_status(cmdbuf);
+        }
+        else {
             ret = mount(get_devlist()[i], get_basepaths()[i], get_fslist()[i], MS_NOATIME, "");
         }        
         if (ret != 0) {

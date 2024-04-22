@@ -13,7 +13,6 @@
 #include <sys/wait.h>
 
 #define VERIFS2_MP_PREFIX "/mnt/test-verifs2-"
-#define NFS_GANESHA_EXPORT_PATH "/mnt/test-export-nfs-ganesha"
 #define NFS_GANESHA_CONF_PATH "ganesha.conf"
 #define NFS_GANESHA_LOG_PATH "ganesha.log"
 #define NFS_GANESHA_DEBUG_LEVEL "NIV_DEBUG"
@@ -332,18 +331,19 @@ static int setup_nfs_ganesha_generic(int fs_idx)
             return -2;
         }
     }
+    // Make sure client mount point is not mounted
+    // Mount client first, then server
+    if (is_mounted(get_basepaths()[fs_idx])) {
+        if (umount(get_basepaths()[fs_idx]) == -1) {
+            fprintf(stderr, "Failed to unmount NFS Ganesha client mount path.\n");
+            return -4;
+        }
+    }
     // Make sure server export directory is not mounted 
     if (is_mounted(NFS_GANESHA_EXPORT_PATH)) {
         if (umount(NFS_GANESHA_EXPORT_PATH) == -1) {
             fprintf(stderr, "Failed to unmount NFS Ganesha export path.\n");
             return -3;
-        }
-    }
-    // Make sure client mount point is not mounted
-    if (is_mounted(get_basepaths()[fs_idx])) {
-        if (umount(get_basepaths()[fs_idx]) == -1) {
-            fprintf(stderr, "Failed to unmount NFS Ganesha client mount path.\n");
-            return -4;
         }
     }
     return 0;
@@ -382,14 +382,13 @@ static int setup_nfs_ganesha_ext4(int fs_idx, const char *devname, const size_t 
         return -5;
     }
 
-    // TODO: There should be NO NFS-Ganesha server running at this point, we 
+    // There should be NO NFS-Ganesha server running at this point, we 
     // terminated the ganesha.nfsd process in the setup.sh script already
-    // TODO: Do we delete the previous Ganesha log or append it?
     // Start NFS Ganesha with the desired configuration file
     snprintf(cmdbuf, PATH_MAX, "ganesha.nfsd -L %s -f %s -N %s", 
         NFS_GANESHA_LOG_PATH, NFS_GANESHA_CONF_PATH, NFS_GANESHA_DEBUG_LEVEL);
     execute_cmd(cmdbuf);
-    
+
     return 0;
 }
 
