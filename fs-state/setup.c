@@ -36,9 +36,18 @@ static void execute_cmd(const char *cmd)
 
 int execute_cmd_status(const char *cmd)
 {
+    if (cmd == NULL) {
+        return -1;  // Or another error handling code if cmd is NULL
+    }
+
     int retval = system(cmd);
-    int status = WEXITSTATUS(retval);
-    return status;
+
+    if (retval == -1) {
+        return -1;  // System call failed
+    } else if (WIFEXITED(retval)) {
+        return WEXITSTATUS(retval);  // Return the exit status of the command
+    }
+    return -2;  // Indicate abnormal termination, could use a different error code
 }
 
 static int is_mounted(const char *path) {
@@ -319,7 +328,40 @@ static int setup_nilfs2(const char *devname, const size_t size_kb)
     return 0;
 }
 
-static int setup_nfs_ganesha_generic(int fs_idx)
+static int start_nfs_ganesha_server(int idx) {
+    int ret = 0;
+    int retry_limit = 10;
+    bool has_failure = false;
+    char cmdbuf[PATH_MAX];
+
+    snprintf(cmdbuf, PATH_MAX, "ganesha.nfsd -L %s -f %s -N %s", 
+        NFS_GANESHA_LOG_PATH, NFS_GANESHA_CONF_PATH, NFS_GANESHA_DEBUG_LEVEL);
+    execute_cmd(cmdbuf);
+
+check_server_status:
+    ret = execute_cmd_status("rpcinfo -u localhost nfs");
+    if (ret != 0) {
+        /* If unmounting failed due to device being busy, again up to
+            * retry_limit times with 100 * 2^n ms (n = num_retries) */
+        useconds_t waitms = (1 << (10 - retry_limit));
+        if (retry_limit > 0) {
+            fprintf(stderr, "NFS-ganesha server not started. Checking status after %dms.\n", waitms);
+            usleep(1000 * waitms);
+            retry_limit--;
+            goto check_server_status;
+        }
+        fprintf(stderr, "Could not start NFS-Ganesha-server %s at %s (%s)\n",
+                get_fslist()[idx], get_basepaths()[idx], errnoname(errno));
+        has_failure = true;
+    }
+
+    if(has_failure)
+        return -1;
+
+    return 0;
+}
+
+static int setup_nfs_ganesha_mountpoints(int fs_idx)
 {
     /* Clean up any Genesha resources */
     // Make sure the export path is created 
@@ -357,7 +399,7 @@ static int setup_nfs_ganesha_ext4(int fs_idx, const char *devname, const size_t 
     // Set up NFS-Ganesha server export and client mount paths on the same machine
     int ret = -1;
     char cmdbuf[PATH_MAX];
-    ret = setup_nfs_ganesha_generic(fs_idx);
+    ret = setup_nfs_ganesha_mountpoints(fs_idx);
     if (ret != 0) {
         return ret;
     }
@@ -385,9 +427,7 @@ static int setup_nfs_ganesha_ext4(int fs_idx, const char *devname, const size_t 
     // There should be NO NFS-Ganesha server running at this point, we 
     // terminated the ganesha.nfsd process in the setup.sh script already
     // Start NFS Ganesha with the desired configuration file
-    snprintf(cmdbuf, PATH_MAX, "ganesha.nfsd -L %s -f %s -N %s", 
-        NFS_GANESHA_LOG_PATH, NFS_GANESHA_CONF_PATH, NFS_GANESHA_DEBUG_LEVEL);
-    execute_cmd(cmdbuf);
+    start_nfs_ganesha_server(fs_idx);
 
     return 0;
 }

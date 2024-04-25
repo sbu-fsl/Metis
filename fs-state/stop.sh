@@ -18,6 +18,7 @@ pkill -9 -f "./mcfs-main.pml.swarm"
 pkill -9 -f "sh ./script"
 # Need to kill both "pan" and "pan[0-9+]" processes
 pkill -9 -f "./pan"
+pkill -9 -f "ganesha.nfsd"
 
 # Function to unmount a device with retries
 unmount_with_retry() {
