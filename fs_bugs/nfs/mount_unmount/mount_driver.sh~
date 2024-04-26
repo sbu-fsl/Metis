@@ -1,0 +1,82 @@
+#!/bin/bash
+  
+SERVER_MNT_DIR="/mnt/server";
+LOCAL_MNT_DIR="/mnt/local";
+
+EXT4_RAMDISK="dev/ram1";
+
+
+setup() {
+    if test -n "$(mount | grep $SERVER_MNT_DIR)" ; then
+        umount $SERVER_MNT_DIR || exit $?
+    fi
+
+    if test -n "$(mount | grep $LOCAL_MNT_DIR)" ; then
+        umount $LOCAL_MNT_DIR || exit $?
+    fi
+
+    # Remove mount point if not created, and create it again
+    if test -d $SERVER_MNT_DIR ; then
+        rm -rf $SERVER_MNT_DIR
+    fi
+
+    if test -d $LOCAL_MNT_DIR ; then
+        rm -rf $LOCAL_MNT_DIR
+    fi
+
+    mkdir -p $SERVER_MNT_DIR
+    mkdir -p $LOCAL_MNT_DIR
+    chmod 755 $SERVER_MNT_DIR
+    chmod 755 $LOCAL_MNT_DIR
+
+    systemctl restart nfs-kernel-server
+
+    mkfs.ext4 /dev/ram1
+}
+
+
+# Run driver
+setup
+
+
+mount -t ext4 /dev/ram1 /mnt/server
+
+#exportfs -o sync,no_root_squash,rw,insecure,fsid=0 localhost:/
+exportfs -o rw,sync,no_root_squash localhost:/mnt/server
+mount -t nfs -o rw,sync,vers=3 localhost:/mnt/server /mnt/local
+#mount -t nfs4 -o rw,sync localhost:/mnt/server /mnt/local
+df -H
+
+umount /mnt/local
+exportfs -u localhost:/mnt/server
+lsof /mnt/server
+mount
+umount /mnt/server
+df -H
+  
+  
+    # ret = mount("/dev/ram1", "/mnt/server", "ext4", MS_NOATIME, NULL);
+    # // snprintf(cmdbuf, PATH_MAX, "mount -t ext4 /dev/ram1 /mnt/server");
+    # //  ret = execute_cmd_status(cmdbuf);
+    # fprintf(stderr, "EXT4 mount, ret=%d\n", ret);
+
+    # snprintf(cmdbuf, PATH_MAX, "exportfs -o rw,sync,no_root_squash localhost:/mnt/server");
+    # ret = execute_cmd_status(cmdbuf);
+    # fprintf(stderr, "Executed command = %s, ret=%d\n", cmdbuf, ret);
+
+    # ret = mount("localhost:/mnt/server", "/mnt/local", "nfs", MS_NOATIME, "rw,sync,vers=3,addr=127.0.0.1");
+    # fprintf(stderr, "NFS mount, ret=%d\n", ret);
+
+    # ret = umount2("/mnt/local", 0);
+    #  fprintf(stderr, "NFS unmount, ret=%d\n", ret);
+
+
+    # snprintf(cmdbuf, PATH_MAX, "exportfs -u localhost:/mnt/server");
+    # ret = execute_cmd_status(cmdbuf);
+    # fprintf(stderr, "Executed command = %s, ret=%d\n", cmdbuf, ret);
+    
+    # usleep(5000000);
+    # // snprintf(cmdbuf, PATH_MAX, "umount /dev/ram1");
+    # // ret = execute_cmd_status(cmdbuf);
+    # ret = umount2("dev/ram1", 0);
+    # fprintf(stderr, "EXT4 unmount, ret=%d\n", ret);

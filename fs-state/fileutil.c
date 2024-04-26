@@ -755,7 +755,8 @@ static bool check_equal_eligible(void)
                 strcmp(get_fslist()[i], XFS_NAME) == 0   || 
                 strcmp(get_fslist()[i], VERIFS1_NAME) == 0 || 
                 strcmp(get_fslist()[i], NILFS2_NAME) == 0 ||
-                strcmp(get_fslist()[i], NOVA_NAME) == 0 ) {
+                strcmp(get_fslist()[i], NOVA_NAME) == 0 ||
+                strcmp(get_fslist()[i], NFS_NAME) == 0) {
             return false;
         }
     }
