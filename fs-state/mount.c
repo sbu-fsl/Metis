@@ -80,7 +80,7 @@ void mountall()
             ret = execute_cmd_status(cmdbuf);                       
         }
         else if (is_nfs_ganesha(get_fslist()[i])) {
-            snprintf(cmdbuf, PATH_MAX, "mount.nfs4 -o vers=4,noatime %s:%s %s", 
+            snprintf(cmdbuf, PATH_MAX, "mount.nfs4 -o vers=4 %s:%s %s", 
                 NFS_GANESHA_LOCALHOST, NFS_GANESHA_EXPORT_PATH, get_basepaths()[i]);
             ret = execute_cmd_status(cmdbuf);
         }

@@ -1,13 +1,14 @@
 #!/bin/bash
 
-NFS_GANESHA_EXT4_SZKB=256
+# 256 KiB, 16 MiB (16384)
+NFS_GANESHA_EXT4_SZKB=16384
 EXT4_SZKB=256 
 
 cd ..
 sudo ./stop.sh
 sudo rmmod brd
 
-# If Ext4 has the same size as Ext2
+# If NFS-Ganesha-Ext4 has the same size as Ext4
 if [ "$NFS_GANESHA_EXT4_SZKB" -eq "$EXT4_SZKB" ]; then
     sudo ./loadmods.sh
 else

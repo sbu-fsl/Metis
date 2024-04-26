@@ -55,7 +55,7 @@
 #define NILFS2_NAME         "nilfs2"
 #define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
 #define NFS_GANESHA_PREFIX_LEN  (sizeof(NFS_GANESHA_PREFIX) - 1)
-#define NFS_GANESHA_EXPORT_PATH "/mnt/test-export-nfs-ganesha"
+#define NFS_GANESHA_EXPORT_PATH "/mnt/test-nfs-ganesha-export"
 #define NFS_GANESHA_LOCALHOST "127.0.0.1"
 
 static inline bool is_verifs(const char *fsname)

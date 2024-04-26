@@ -13,8 +13,8 @@
 #include <sys/wait.h>
 
 #define VERIFS2_MP_PREFIX "/mnt/test-verifs2-"
-#define NFS_GANESHA_CONF_PATH "ganesha.conf"
-#define NFS_GANESHA_LOG_PATH "ganesha.log"
+#define NFS_GANESHA_CONF_PATH "/mcfs/Metis-Check-NFS-Ganesha-2024-0417/Metis/fs-state/ganesha.conf"
+#define NFS_GANESHA_LOG_PATH "/mcfs/Metis-Check-NFS-Ganesha-2024-0417/Metis/fs-state/ganesha.log"
 #define NFS_GANESHA_DEBUG_LEVEL "NIV_DEBUG"
 
 static void execute_cmd(const char *cmd)
