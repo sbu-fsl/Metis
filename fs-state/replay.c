@@ -37,15 +37,18 @@ int main(int argc, char **argv)
 	 * Open the dump_prepopulate_*.log files to create the pre-populated
 	 * files and directories.
 	 */
-	FILE *pre_fp = fopen("dump_prepopulate_0.log", "r");
+	char *dump_prepopulate_file_name = "dump_prepopulate_0_kh6.log";
+    char *sequence_log_file_name = "sequence-pan-20240209-182859-244192_kh6.log";
+
+    FILE *pre_fp = fopen(dump_prepopulate_file_name, "r");
 	if (!pre_fp) {
-		printf("Cannot open dump_prepopulate_0.log. Does it exist?\n");
+		printf("Cannot open %s. Does it exist?\n", dump_prepopulate_file_name);
 		exit(1);
 	}
 	/* Open sequence file */
-	FILE *seqfp = fopen("sequence-pan-20231214-014909-2031206.log", "r");
+	FILE *seqfp = fopen(sequence_log_file_name, "r");
 	if (!seqfp) {
-		printf("Cannot open sequence.log. Does it exist?\n");
+		printf("Cannot open %s. Does it exist?\n", sequence_log_file_name);
 		exit(1);
 	}
 
@@ -118,10 +121,18 @@ int main(int argc, char **argv)
 		} else if (strncmp(funcname, "link", len) == 0) {
 			do_link(&argvec);
 		} else if (strncmp(funcname, "checkpoint", len) == 0) {
-			flag_ckpt = true;
+			if (ENABLE_REPLAYER_CHECKPOINT)
+			    flag_ckpt = true;
+            else 
+                flag_ckpt = false;
+
 			seq--;
 		} else if (strncmp(funcname, "restore", len) == 0) {
-			flag_restore = true;
+			if (ENABLE_REPLAYER_RESTORE)
+			    flag_restore = true;
+            else
+                flag_restore = false;
+
 			seq--;
 		} else {
 			printf("Unrecognized op: %s\n", funcname);

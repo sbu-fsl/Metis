@@ -11,6 +11,84 @@
 
 #include "replayutil.h"
 
+#ifdef ENABLE_REPLAYER_CHECKPOINT
+static void do_checkpoint(const char *devpath, char **bufptr)
+{
+	int devfd = open(devpath, O_RDWR);
+	assert(devfd >= 0);
+	size_t fs_size = fsize(devfd);
+	char *buffer, *ptr;
+	// size_t remaining = fs_size;
+	// const size_t bs = 4096;
+
+	ptr = mmap(NULL, fs_size, PROT_READ | PROT_WRITE, MAP_SHARED, devfd, 0);
+	assert(ptr != MAP_FAILED);
+	buffer = malloc(fs_size);
+	assert(buffer);
+
+	memcpy(buffer, ptr, fs_size);
+	*bufptr = buffer;
+
+	munmap(ptr, fs_size);
+	close(devfd);
+}
+
+void checkpoint(int seq, vector_t states)
+{
+	fs_state_t state;
+	state.seqid = seq;
+	state.images = calloc(get_n_fs(), sizeof(char *));
+	for (int i = 0; i < get_n_fs(); ++i) {
+		do_checkpoint(get_devlist()[i], &state.images[i]);
+	}
+	vector_add(&states, &state);
+	printf("checkpoint\n");
+}
+#else
+void checkpoint(int seq, vector_t states)
+{
+	printf("checkpoint() is disabled!\n");
+}
+#endif
+
+#ifdef ENABLE_REPLAYER_RESTORE
+static void do_restore(const char *devpath, char *buffer)
+{
+	int devfd = open(devpath, O_RDWR);
+	assert(devfd >= 0);
+	size_t size = fsize(devfd);
+	char *ptr;
+
+	ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, devfd, 0);
+	assert(ptr != MAP_FAILED);
+	
+	memcpy(ptr, buffer, size);
+        free(buffer);
+
+	munmap(ptr, size);
+	close(devfd);
+}
+
+void restore(vector_t states)
+{
+	fs_state_t *state = vector_peek_top(&states, fs_state_t);
+	if (!state)
+		return;
+	for (int i = 0; i < get_n_fs(); ++i) {
+		do_restore(get_devlist()[i], state->images[i]);
+	}
+	if (state->images)
+		free(state->images);
+	vector_pop_back(&states);
+	printf("restore (to the state just before seqid = %d)\n", state->seqid);
+}
+#else
+void restore(vector_t states)
+{
+	printf("restore() is disabled!\n");
+}
+#endif
+
 void extract_fields(vector_t *fields_vec, char *line, const char *delim)
 {
 	vector_init(fields_vec, char *);
@@ -172,70 +250,6 @@ void replayer_init(vector_t states)
 	srand(time(0));
 	populate_replay_basepaths();
 	vector_init(&states, fs_state_t);
-}
-
-static void do_checkpoint(const char *devpath, char **bufptr)
-{
-	int devfd = open(devpath, O_RDWR);
-	assert(devfd >= 0);
-	size_t fs_size = fsize(devfd);
-	char *buffer, *ptr;
-	// size_t remaining = fs_size;
-	// const size_t bs = 4096;
-
-	ptr = mmap(NULL, fs_size, PROT_READ | PROT_WRITE, MAP_SHARED, devfd, 0);
-	assert(ptr != MAP_FAILED);
-	buffer = malloc(fs_size);
-	assert(buffer);
-
-	memcpy(buffer, ptr, fs_size);
-	*bufptr = buffer;
-
-	munmap(ptr, fs_size);
-	close(devfd);
-}
-
-void checkpoint(int seq, vector_t states)
-{
-	fs_state_t state;
-	state.seqid = seq;
-	state.images = calloc(get_n_fs(), sizeof(char *));
-	for (int i = 0; i < get_n_fs(); ++i) {
-		do_checkpoint(get_devlist()[i], &state.images[i]);
-	}
-	vector_add(&states, &state);
-	printf("checkpoint\n");
-}
-
-static void do_restore(const char *devpath, char *buffer)
-{
-	int devfd = open(devpath, O_RDWR);
-	assert(devfd >= 0);
-	size_t size = fsize(devfd);
-	char *ptr;
-
-	ptr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, devfd, 0);
-	assert(ptr != MAP_FAILED);
-	
-	memcpy(ptr, buffer, size);
-        free(buffer);
-
-	munmap(ptr, size);
-	close(devfd);
-}
-
-void restore(vector_t states)
-{
-	fs_state_t *state = vector_peek_top(&states, fs_state_t);
-	if (!state)
-		return;
-	for (int i = 0; i < get_n_fs(); ++i) {
-		do_restore(get_devlist()[i], state->images[i]);
-	}
-	if (state->images)
-		free(state->images);
-	vector_pop_back(&states);
-	printf("restore (to the state just before seqid = %d)\n", state->seqid);
 }
 
 char *get_replayed_absfs(const char *basepath,

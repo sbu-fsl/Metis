@@ -23,6 +23,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+// Both of them should have the same value (0 or 1) or it would lead to an error while replaying
+#define ENABLE_REPLAYER_CHECKPOINT 0
+#define ENABLE_REPLAYER_RESTORE 0
+
 #define __USE_XOPEN_EXTENDED 1
 #include <ftw.h>
 
