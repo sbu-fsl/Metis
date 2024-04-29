@@ -62,3 +62,4 @@ char *get_replayed_absfs(const char *basepath, unsigned int hash_method, char *a
 void execute_cmd(const char *cmd);
 
 #endif
+

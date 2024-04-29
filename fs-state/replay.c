@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 		/* remove the newline character */
 		if (line[len - 1] == '\n')
 			line[len - 1] = '\0';
-		printf("seq=%d ", seq);
+		printf("seq=%d \n", seq);
 		/* parse the line */
 		vector_t argvec;
 		extract_fields(&argvec, line, ", ");
@@ -121,14 +121,14 @@ int main(int argc, char **argv)
 		} else if (strncmp(funcname, "link", len) == 0) {
 			do_link(&argvec);
 		} else if (strncmp(funcname, "checkpoint", len) == 0) {
-			if (ENABLE_REPLAYER_CHECKPOINT)
+			if (ENABLE_REPLAYER_CHECKPOINT && ENABLE_REPLAYER_RESTORE)
 			    flag_ckpt = true;
             else 
                 flag_ckpt = false;
 
 			seq--;
 		} else if (strncmp(funcname, "restore", len) == 0) {
-			if (ENABLE_REPLAYER_RESTORE)
+			if (ENABLE_REPLAYER_RESTORE && ENABLE_REPLAYER_CHECKPOINT)
 			    flag_restore = true;
             else
                 flag_restore = false;
