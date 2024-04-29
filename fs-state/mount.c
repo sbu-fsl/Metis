@@ -50,14 +50,12 @@ bool do_fsck()
             snprintf(cmdbuf, ARG_MAX, "sudo btrfs check %s 2>&1",  get_devlist()[i]);
         }
         else{
-            snprintf(cmdbuf, ARG_MAX, "sudo fsck -t %s %s 2>&1", get_fslist()[i],
+            snprintf(cmdbuf, ARG_MAX, "sudo fsck -p -t %s %s 2>&1", get_fslist()[i],
                  get_devlist()[i]);
         }
-        fprintf(stderr, "%s\n",cmdbuf);
         FILE *cmdfp = popen(cmdbuf, "r");
         size_t outlen = 0;
         char *output = receive_output(cmdfp, &outlen);
-        fprintf(stderr,"%s\n", output);
         int ret = pclose(cmdfp);
         if (ret != 0) {
             fprintf(stderr, "fsck %s failed and returned %d, %s may have been "

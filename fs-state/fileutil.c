@@ -687,8 +687,10 @@ static long checkpoint_after_hook(unsigned char *ptr)
 {
     unmap_devices();
     #ifdef FSCK_ENABLE
+    /*Run fsck at an interval(By default 10)*/
     if(count%FSCK_ENABLE== 0)
-        corrupt_device();
+        /*Use this function only to test the fsck functionality*/
+        //corrupt_device();
         assert(do_fsck());
     #endif
     // dump_fs_images("snapshots");
