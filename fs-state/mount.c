@@ -84,8 +84,6 @@ void mountall()
             failpos = i;
             err = errno;
             goto err;
-        } else {
-            printf("mount successful\n");
         }
     }
     return;
@@ -142,7 +140,6 @@ void unmount_all(bool strict)
         while (retry_limit > 0) {
             ret = umount2(get_basepaths()[i], 0);
             if (ret == 0) {
-                printf("unmount successful\n");
                 break; // Success, exit the retry loop
             }        
 
