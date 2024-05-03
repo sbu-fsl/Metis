@@ -121,17 +121,19 @@ int main(int argc, char **argv)
 		} else if (strncmp(funcname, "link", len) == 0) {
 			do_link(&argvec);
 		} else if (strncmp(funcname, "checkpoint", len) == 0) {
-			if (ENABLE_REPLAYER_CHECKPOINT && ENABLE_REPLAYER_RESTORE)
-			    flag_ckpt = true;
-            else 
-                flag_ckpt = false;
+			#if (ENABLE_REPLAYER_CHECKPOINT && ENABLE_REPLAYER_RESTORE)
+				flag_ckpt = true;
+            		#else 
+                		flag_ckpt = false;
+			#endif
 
 			seq--;
 		} else if (strncmp(funcname, "restore", len) == 0) {
-			if (ENABLE_REPLAYER_RESTORE && ENABLE_REPLAYER_CHECKPOINT)
-			    flag_restore = true;
-            else
-                flag_restore = false;
+			#if (ENABLE_REPLAYER_RESTORE && ENABLE_REPLAYER_CHECKPOINT)
+			    	flag_restore = true;
+			#else
+                		flag_restore = false;
+			#endif
 
 			seq--;
 		} else {
