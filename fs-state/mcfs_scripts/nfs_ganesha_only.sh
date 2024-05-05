@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# 256 KiB, 16 MiB (16384)
-NFS_GANESHA_EXT4_SZKB=16384
+# 256 KiB or 16 MiB (16384)
+NFS_GANESHA_EXT4_SZKB=256
 
 cd ..
 sudo ./stop.sh

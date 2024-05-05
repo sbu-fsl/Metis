@@ -79,7 +79,26 @@ void mountall()
                 get_devlist()[i], get_basepaths()[i]);
             ret = execute_cmd_status(cmdbuf);                       
         }
-        else if (is_nfs_ganesha(get_fslist()[i])) {
+        else if (is_nfs_ganesha_ext4(get_fslist()[i])) {
+            /* Mount NFS-Ganesha server export path */
+            ret = mount(get_devlist()[i], NFS_GANESHA_EXPORT_PATH, "ext4", MS_NOATIME, "");
+            if (ret != 0) {
+                failpos = i;
+                err = errno;
+                fprintf(stderr, "Could not mount file system %s at %s (%s)\n",
+                        get_fslist()[i], NFS_GANESHA_EXPORT_PATH, errnoname(err));
+                goto err;
+            }
+            /* Restart NFS-Ganesha service to export the server path */
+            ret = start_nfs_ganesha_server(i);
+            if (ret != 0) {
+                failpos = i;
+                err = errno;
+                fprintf(stderr, "Could not start NFS-Ganesha server (%s)\n",
+                        errnoname(err));
+                goto err;
+            }
+            /* Mount NFS-Ganesha client */
             snprintf(cmdbuf, PATH_MAX, "mount.nfs4 -o vers=4 %s:%s %s", 
                 NFS_GANESHA_LOCALHOST, NFS_GANESHA_EXPORT_PATH, get_basepaths()[i]);
             ret = execute_cmd_status(cmdbuf);
@@ -130,52 +149,80 @@ void unmount_all(bool strict)
     record_fs_stat();
 #endif
     for (int i = 0; i < get_n_fs(); ++i) {
-        if (is_verifs(get_fslist()[i]))
-            continue;
-
         // Change retry limit from 20 to 19 to avoid excessive delay
         int retry_limit = 19;
         int num_retries = 0;
-        /* We have to unfreeze the frozen file system before unmounting it.
-         * Otherwise the system will hang! */
-        /*
-        if (fs_frozen[i]) {
-            fsthaw(get_fslist()[i], get_devlist()[i], get_basepaths()[i]);
-        }
-        */
-    
-        while (retry_limit > 0) {
-            ret = umount2(get_basepaths()[i], 0);
-            if (ret == 0) {
-                break; // Success, exit the retry loop
-            }        
+        char cmdbuf[PATH_MAX];
 
-            /* If unmounting failed due to device being busy, again up to
-            * retry_limit times with 100 * 2^n ms (n = num_retries) */
-            if (errno == EBUSY) {
-                // 100 * (1 <<  0) = 100ms
-                // 100 * (1 << 18) = 100 * 262144 = 26.2144s
-                useconds_t waitms = 100 * (1 << num_retries); // Exponential backoff starting at 100ms
-                fprintf(stderr, "File system %s mounted on %s is busy. Retry %d times,"
-                        "unmounting after %dms.\n", get_fslist()[i], get_basepaths()[i], num_retries + 1,
-                        waitms);
-                usleep(1000 * waitms);
-                num_retries++;
-                retry_limit--;
-                save_lsof();
-            } 
-            else {
-                // Handle non-EBUSY errors immediately without retrying
-                fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
+        if (is_verifs(get_fslist()[i])) {
+            continue;
+        }
+        else if (is_nfs_ganesha_ext4(get_fslist()[i])) {
+            /* Unmount NFS-Ganesha client */
+            ret = umount2(get_basepaths()[i], 0);
+            if (ret != 0) {
+                fprintf(stderr, "[NFS-Ganesha Ext4] Client path: could not unmount file system %s at %s (%s)\n",
                         get_fslist()[i], get_basepaths()[i], errnoname(errno));
                 has_failure = true;
             }
+            /* Unexport the Ganesha server export path */
+            snprintf(cmdbuf, PATH_MAX, "dbus-send --system --type=method_call --print-reply --dest=org.ganesha.nfsd /org/ganesha/nfsd/ExportMgr org.ganesha.nfsd.exportmgr.RemoveExport uint16:%u", NFS_GANESHA_EXPORT_ID);
+            ret = execute_cmd_status(cmdbuf);
+            if (ret != 0) {
+                fprintf(stderr, "[NFS-Ganesha Ext4] D-bus server unexport: could not unexport file system %s at %s (%s)\n",
+                        get_fslist()[i], get_basepaths()[i], errnoname(errno));
+                has_failure = true;
+            }
+            /* Unmount NFS-Ganesha server export path */
+            ret = umount2(NFS_GANESHA_EXPORT_PATH, 0);
+            if (ret != 0) {
+                fprintf(stderr, "[NFS-Ganesha Ext4] Server export: could not unmount file system %s at %s (%s)\n",
+                        get_fslist()[i], NFS_GANESHA_EXPORT_PATH, errnoname(errno));
+                has_failure = true;
+            }
         }
+        else {
+            /* We have to unfreeze the frozen file system before unmounting it.
+            * Otherwise the system will hang! */
+            /*
+            if (fs_frozen[i]) {
+                fsthaw(get_fslist()[i], get_devlist()[i], get_basepaths()[i]);
+            }
+            */
         
-        if (retry_limit == 0) {
-            fprintf(stderr, "Failed to unmount file system %s at %s after retries.\n",
-                    get_fslist()[i], get_basepaths()[i]);
-            has_failure = true;
+            while (retry_limit > 0) {
+                ret = umount2(get_basepaths()[i], 0);
+                if (ret == 0) {
+                    break; // Success, exit the retry loop
+                }        
+
+                /* If unmounting failed due to device being busy, again up to
+                * retry_limit times with 100 * 2^n ms (n = num_retries) */
+                if (errno == EBUSY) {
+                    // 100 * (1 <<  0) = 100ms
+                    // 100 * (1 << 18) = 100 * 262144 = 26.2144s
+                    useconds_t waitms = 100 * (1 << num_retries); // Exponential backoff starting at 100ms
+                    fprintf(stderr, "File system %s mounted on %s is busy. Retry %d times,"
+                            "unmounting after %dms.\n", get_fslist()[i], get_basepaths()[i], num_retries + 1,
+                            waitms);
+                    usleep(1000 * waitms);
+                    num_retries++;
+                    retry_limit--;
+                    save_lsof();
+                } 
+                else {
+                    // Handle non-EBUSY errors immediately without retrying
+                    fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
+                            get_fslist()[i], get_basepaths()[i], errnoname(errno));
+                    has_failure = true;
+                }
+            }
+            
+            if (retry_limit == 0) {
+                fprintf(stderr, "Failed to unmount file system %s at %s after retries.\n",
+                        get_fslist()[i], get_basepaths()[i]);
+                has_failure = true;
+            }
         }
     }
     if (has_failure && strict)

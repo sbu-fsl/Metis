@@ -402,7 +402,8 @@ setup_nfs-ganesha-ext4() {
     GANESHA_LOG_FILE="ganesha.log"
 
     # Stop all NFS-Ganesha "ganesha.nfsd" processes
-    killall ganesha.nfsd 2>/dev/null || echo "No ganesha.nfsd processes were running."
+    killall ganesha.nfsd 2>/dev/null
+    systemctl stop nfs-ganesha 2>/dev/null
     # If any previous log exists, rename it based on its timestamp
     if [ -f "$GANESHA_LOG_FILE" ]; then
         GANESHA_LOG_TS=$(stat -c %W "${GANESHA_LOG_FILE}")

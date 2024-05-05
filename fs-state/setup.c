@@ -13,9 +13,7 @@
 #include <sys/wait.h>
 
 #define VERIFS2_MP_PREFIX "/mnt/test-verifs2-"
-#define NFS_GANESHA_CONF_PATH "/mcfs/Metis-Check-NFS-Ganesha-2024-0417/Metis/fs-state/ganesha.conf"
-#define NFS_GANESHA_LOG_PATH "/mcfs/Metis-Check-NFS-Ganesha-2024-0417/Metis/fs-state/ganesha.log"
-#define NFS_GANESHA_DEBUG_LEVEL "NIV_DEBUG"
+// TODO: MUST BE FULL PATH FOR GANESHA LOG/CONF FILE, NEED TO FIGURE OUT WHY
 
 static void execute_cmd(const char *cmd)
 {
@@ -328,14 +326,14 @@ static int setup_nilfs2(const char *devname, const size_t size_kb)
     return 0;
 }
 
-static int start_nfs_ganesha_server(int idx) {
+int start_nfs_ganesha_server(int idx) {
     int ret = 0;
     int retry_limit = 10;
     bool has_failure = false;
     char cmdbuf[PATH_MAX];
 
-    snprintf(cmdbuf, PATH_MAX, "ganesha.nfsd -L %s -f %s -N %s", 
-        NFS_GANESHA_LOG_PATH, NFS_GANESHA_CONF_PATH, NFS_GANESHA_DEBUG_LEVEL);
+    // Remember to do "systemctl enable nfs-ganesha" first
+    snprintf(cmdbuf, PATH_MAX, "systemctl restart nfs-ganesha");
     execute_cmd(cmdbuf);
 
 check_server_status:
@@ -355,7 +353,7 @@ check_server_status:
         has_failure = true;
     }
 
-    if(has_failure)
+    if (has_failure)
         return -1;
 
     return 0;
@@ -416,18 +414,16 @@ static int setup_nfs_ganesha_ext4(int fs_idx, const char *devname, const size_t 
     execute_cmd(cmdbuf);
     // Format the device with ext4 file system
     snprintf(cmdbuf, PATH_MAX, "mkfs.ext4 -F %s", devname);
-    execute_cmd(cmdbuf); 
-    // Mount ramdisk device on the Ganesha server export directory
-    ret = mount(devname, NFS_GANESHA_EXPORT_PATH, "ext4", MS_NOATIME, "");
-    if (ret != 0) {
-        fprintf(stderr, "Failed to mount NFS Ganesha export path.\n");
-        return -5;
-    }
+    execute_cmd(cmdbuf);
 
-    // There should be NO NFS-Ganesha server running at this point, we 
-    // terminated the ganesha.nfsd process in the setup.sh script already
-    // Start NFS Ganesha with the desired configuration file
-    start_nfs_ganesha_server(fs_idx);
+    /* There should be NO NFS-Ganesha server running at this point, we 
+     * terminated the ganesha.nfsd process/service in the setup.sh script already
+     * Start NFS Ganesha with the desired configuration and log files 
+     * that are set in /etc/systemd/system/nfs-ganesha.service
+     * Let's not start Ganesha server here, but start right after the mount
+     * of the Ganesha server export path
+     */
+    // start_nfs_ganesha_server(fs_idx);
 
     return 0;
 }
