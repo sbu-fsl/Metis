@@ -755,7 +755,8 @@ static bool check_equal_eligible(void)
                 strcmp(get_fslist()[i], XFS_NAME) == 0   || 
                 strcmp(get_fslist()[i], VERIFS1_NAME) == 0 || 
                 strcmp(get_fslist()[i], NILFS2_NAME) == 0 ||
-                strcmp(get_fslist()[i], NOVA_NAME) == 0 ) {
+                strcmp(get_fslist()[i], NOVA_NAME) == 0 ||
+                strcmp(get_fslist()[i], TESTFS_NAME) == 0) {
             return false;
         }
     }
@@ -899,3 +900,4 @@ void __attribute__((destructor)) cleanup()
     cleanup_cir_bufs(fsimg_bufs);
 #endif
 }
+

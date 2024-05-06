@@ -44,7 +44,7 @@ exclude_files=()
 declare -A FS_DEV_MAP
 FS_DEV_MAP+=( ["btrfs"]="ram" ["ext2"]="ram" ["ext4"]="ram" ["f2fs"]="ram" )
 FS_DEV_MAP+=( ["jffs2"]="mtdblock" ["ramfs"]="" ["tmpfs"]="" )
-FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" ["nilfs2"]="ram" ["jfs"]="ram")
+FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" ["nilfs2"]="ram" ["jfs"]="ram" ["testFS"]="ram")
 FS_DEV_MAP+=( ["nova"]="pmem" )
 
 mount_all() {
@@ -133,9 +133,11 @@ n_fs=${#FSLIST[@]};
 ALL_RAMS=0
 ALL_MTDBLOCKS=0
 ALL_PMEMS=0
+ALL_LOOPS=0
 RAM_NAME="ram"
 MTDBLOCK_NAME="mtdblock"
 PMEM_NAME="pmem"
+LOOP_NAME="loop"
 
 # Number of ram, mtdblocks, and pmem to use
 for i in $(seq 0 $(($n_fs-1))); do
@@ -147,6 +149,9 @@ for i in $(seq 0 $(($n_fs-1))); do
     elif [ "$dev_type" = "$MTDBLOCK_NAME" ]
     then 
         ALL_MTDBLOCKS=$(($ALL_MTDBLOCKS + 1))
+    elif [ "$dev_type" = "$LOOP_NAME" ]
+    then 
+        ALL_LOOPS=$(($ALL_LOOPS + 1))
     else
         ALL_PMEMS=$(($ALL_PMEMS + 1))
     fi
@@ -156,6 +161,7 @@ done
 RAM_CNT=0
 MTDBLOCK_CNT=0
 PMEM_CNT=0
+LOOP_CNT=0
 for i in $(seq 0 $(($n_fs-1))); do
     fs=${FSLIST[$i]};
     dev_type=${FS_DEV_MAP[${fs}]}
@@ -174,6 +180,11 @@ for i in $(seq 0 $(($n_fs-1))); do
         PMEM_ID=$(($SWARM_ID * $ALL_PMEMS + $PMEM_CNT))
         PMEM_CNT=$(($PMEM_CNT + 1))
         DEVLIST[$i]="/dev/pmem$PMEM_ID"
+    elif [ "$dev_type" = "$LOOP_NAME" ]
+    then
+        LOOP_ID=$(($SWARM_ID * $ALL_LOOPS + $LOOP_CNT))
+        LOOP_CNT=$(($LOOP_CNT + 1))
+        DEVLIST[$i]="/dev/loop$LOOP_ID"
     elif [ "$dev_type" = "" ]
     then
         DEVLIST[$i]=""
@@ -396,6 +407,19 @@ unset_nova() {
     :
 }
 
+setup_testFS() {
+    DEVFILE="$1";
+    echo "testFS DEVFILE: $DEVFILE"
+    devsize=$(runcmd verify_device $DEVFILE testFS $(expr 50 \* 1024 \* 1024))
+    runcmd insmod /mnt/mcfs/testFS/testFS.ko
+    runcmd dd if=/dev/zero of=$DEVFILE bs=1k count=$(expr $devsize / 1024)
+    runcmd /mnt/mcfs/testFS/mkfs.testFS $DEVFILE
+}
+
+unset_testFS() {
+    :
+}
+
 # Setup mount points and each file system
 for i in $(seq 0 $(($n_fs-1))); do
     # Run individual file system setup scripts defined above
@@ -466,3 +490,4 @@ if [ "$REPLAY" = "1" ]; then
     ./replay 2>&1 > replay.log
     mount_all $SWARM_ID;
 fi
+
