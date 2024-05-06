@@ -429,15 +429,15 @@ static int setup_testFS(const char *devname, const char *basepath, const size_t 
     // fill the device with zeros
     printf("devname passed in setup_testFS(): %s", devname);
     snprintf(cmdbuf, PATH_MAX,
-             "dd if=/dev/zero of=/dev/ram1 bs=1k count=%zu",
-             size_kb);
+             "dd if=/dev/zero of=%s bs=1k count=%zu",
+             devname, size_kb);
     execute_cmd(cmdbuf);
      
     snprintf(cmdbuf, PATH_MAX,
-	    "/mnt/mcfs/testFS/mkfs.testFS /dev/ram1");
+	    "/mnt/mcfs/testFS/mkfs.testFS %s", devname);
     execute_cmd(cmdbuf);
 
-    snprintf(cmdbuf, PATH_MAX, "mount -t testFS -o init /dev/ram1 %s", basepath);
+    snprintf(cmdbuf, PATH_MAX, "mount -t testFS -o init %s %s", devname, basepath);
     ret = execute_cmd_status(cmdbuf);
     if(ret!=0) {
         fprintf(stderr, "Cannot %s because initial mount failed at device: %s\n",
