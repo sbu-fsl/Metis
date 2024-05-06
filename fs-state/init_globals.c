@@ -24,6 +24,7 @@ static const char *globals_delim = ":";
 static const char *ramdisk_name = "ram";
 static const char *mtdblock_name = "mtdblock";
 static const char *pmem_name = "pmem";
+//static const char *loop_name = "loop";
 
 static char *fslist_to_copy[MAX_FS];
 static size_t devsize_kb_to_copy[MAX_FS];
@@ -228,6 +229,7 @@ static void prepare_dev_suffix()
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
         dev_idx = get_dev_from_fs(fslist_to_copy[i]);
         if (dev_idx == -1) {
+	    fprintf(stderr, "Inside first for-loop of prepare_dev_suffix() in init_globals.c");
             fprintf(stderr, "File system type not supported for device\n");
             exit(EXIT_FAILURE);
         }
@@ -238,7 +240,10 @@ static void prepare_dev_suffix()
             ++dev_nums.all_mtdblocks;
         }else if (strcmp(dev_all[dev_idx], pmem_name) == 0) {
             ++dev_nums.all_pmems;
-        }
+        } 
+	//else if (strcmp(dev_all[dev_idx], loop_name) == 0) {
+        //    ++dev_nums.all_loops;
+        //}
     }
     dev_idx = -1;
 
@@ -256,6 +261,7 @@ static void prepare_dev_suffix()
     for (int i = 0; i < globals_t_p->_n_fs; ++i) {
         dev_idx = get_dev_from_fs(fslist_to_copy[i]);
         if (dev_idx == -1) {
+	    fprintf(stderr, "Inside second loop of prepare_dev_suffixI() in init_globals.c");
             fprintf(stderr, "File system type not supported\n");
             exit(EXIT_FAILURE);
         }
@@ -291,9 +297,20 @@ static void prepare_dev_suffix()
             snprintf(globals_t_p->devlist[i], len + 1, "/dev/%s%d", 
                 pmem_name, pmem_id);
             ++pmem_cnt;
-        }
+        } 
+        //else if (strcmp(dev_all[dev_idx], loop_name) == 0) {
+        //    if (globals_t_p->_swarm_id >= 1)
+        //       loop_id = loop_cnt + (globals_t_p->_swarm_id - 1) * dev_nums.all_loops;
+        //    else
+        //        loop_id = loop_cnt;
+        //    len = snprintf(NULL, 0, "/dev/%s%d", loop_name, loop_id);
+        //    globals_t_p->devlist[i] = calloc(len + 1, sizeof(char));
+        //    snprintf(globals_t_p->devlist[i], len + 1, "/dev/%s%d", 
+        //        loop_name, loop_id);
+        //   ++loop_cnt;
+        //}
         else { // No Disk required 
-            globals_t_p->devlist[i] = NULL;
+           globals_t_p->devlist[i] = NULL;
         }
         /* Populate fs suffix -- format -$fsid-$swarmid */
         len = snprintf(NULL, 0, "-i%d-s%d", i, globals_t_p->_swarm_id);
@@ -746,3 +763,4 @@ void __attribute__((destructor)) globals_cleanup(void)
     if (fs_frozen)
         free(fs_frozen);
 }
+

@@ -52,6 +52,7 @@
 #define XFS_NAME            "xfs"
 #define VERIFS1_NAME        "verifs1"
 #define NILFS2_NAME         "nilfs2"
+#define TESTFS_NAME       "testFS"
 #define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
 
 static inline bool is_verifs(const char *fsname)
@@ -64,9 +65,15 @@ static inline bool is_nova(const char *fsname)
     return strcmp(fsname, NOVA_NAME) == 0;
 }
 
+static inline bool is_testFS(const char *fsname)
+{
+    return strcmp(fsname, TESTFS_NAME) == 0;
+}
+
 void setup_filesystems();
 int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode);
 
 int execute_cmd_status(const char *cmd);
 
 #endif // _SETUP_H_
+

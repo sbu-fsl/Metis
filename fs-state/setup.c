@@ -413,6 +413,41 @@ static int setup_nova(const char *devname, const char *basepath, const size_t si
     ret = umount2(basepath, 0);    
     return ret;
 }
+
+static int setup_testFS(const char *devname, const char *basepath, const size_t size_kb)
+{
+    int ret;
+    char cmdbuf[PATH_MAX];
+    //128MiB
+    ret = check_device(devname, 50 * 1024);
+    if (ret != 0)
+    {
+        fprintf(stderr, "Cannot %s because %s is bad or not ready.\n",
+                __FUNCTION__, devname);
+        return ret;
+    }
+    // fill the device with zeros
+    printf("devname passed in setup_testFS(): %s", devname);
+    snprintf(cmdbuf, PATH_MAX,
+             "dd if=/dev/zero of=/dev/ram1 bs=1k count=%zu",
+             size_kb);
+    execute_cmd(cmdbuf);
+     
+    snprintf(cmdbuf, PATH_MAX,
+	    "/mnt/mcfs/testFS/mkfs.testFS /dev/ram1");
+    execute_cmd(cmdbuf);
+
+    snprintf(cmdbuf, PATH_MAX, "mount -t testFS -o init /dev/ram1 %s", basepath);
+    ret = execute_cmd_status(cmdbuf);
+    if(ret!=0) {
+        fprintf(stderr, "Cannot %s because initial mount failed at device: %s\n",
+                __FUNCTION__, devname);
+        return ret;
+    }
+    ret = umount2(basepath, 0);    
+    return ret;
+}
+
 void setup_filesystems()
 {
     int ret;
@@ -443,9 +478,13 @@ void setup_filesystems()
         {
             ret = setup_nilfs2(get_devlist()[i], get_devsize_kb()[i]);
         }
-         else if (strcmp(get_fslist()[i], "nova") == 0)
+        else if (strcmp(get_fslist()[i], "nova") == 0)
         {
             ret = setup_nova(get_devlist()[i], get_basepaths()[i], get_devsize_kb()[i]);
+        }
+        else if (strcmp(get_fslist()[i], "testFS") == 0)
+        {
+            ret = setup_testFS(get_devlist()[i], get_basepaths()[i], get_devsize_kb()[i]);
         }
         // TODO: we need to consider VeriFS1 and VeriFS2 separately here
         else if (is_verifs(get_fslist()[i]))
@@ -530,3 +569,4 @@ int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode)
 
     return 0;
 }
+

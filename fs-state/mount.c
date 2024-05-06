@@ -77,6 +77,11 @@ void mountall()
             char cmdbuf[PATH_MAX];
             snprintf(cmdbuf, PATH_MAX, "mount -t NOVA -o noatime %s %s", get_devlist()[i], get_basepaths()[i]);
             ret = execute_cmd_status(cmdbuf);                       
+        }
+        else if (is_testFS(get_fslist()[i])) {
+            char cmdbuf[PATH_MAX];
+            snprintf(cmdbuf, PATH_MAX, "mount -t testFS -o noatime %s %s", get_devlist()[i], get_basepaths()[i]);
+            ret = execute_cmd_status(cmdbuf);
         } else {
             ret = mount(get_devlist()[i], get_basepaths()[i], get_fslist()[i], MS_NOATIME, "");
         }        
@@ -258,3 +263,4 @@ int unfreeze_all()
         }
     }
 }
+

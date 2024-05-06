@@ -309,6 +309,7 @@ runcmd install_pkg libxxhash-dev
 runcmd install_pkg nilfs-tools
 runcmd install_pkg rename
 runcmd install_pkg mtd-utils
+runcmd install_pkg linux-headers-$(uname -r)
 
 required_repos=(swarm spin zlib xxHash)
 
@@ -317,3 +318,4 @@ for repo in ${required_repos[@]}; do
 done
 
 colorecho green "Environment setup complete!";
+
