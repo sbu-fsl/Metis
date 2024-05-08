@@ -11,6 +11,9 @@
 
 #define _XOPEN_SOURCE 500
 #define _POSIX_C_SOURCE 2
+
+#define NFS_GANESHA_UNEXPORT_ENABLED
+
 #include "fileutil.h"
 
 //static bool fs_frozen[N_FS] = {0};
@@ -165,6 +168,7 @@ void unmount_all(bool strict)
                         get_fslist()[i], get_basepaths()[i], errnoname(errno));
                 has_failure = true;
             }
+#ifdef NFS_GANESHA_UNEXPORT_ENABLED
             /* Unexport the Ganesha server export path */
             snprintf(cmdbuf, PATH_MAX, "dbus-send --system --type=method_call --print-reply --dest=org.ganesha.nfsd /org/ganesha/nfsd/ExportMgr org.ganesha.nfsd.exportmgr.RemoveExport uint16:%u", NFS_GANESHA_EXPORT_ID);
             ret = execute_cmd_status(cmdbuf);
@@ -173,6 +177,16 @@ void unmount_all(bool strict)
                         get_fslist()[i], get_basepaths()[i], errnoname(errno));
                 has_failure = true;
             }
+#else
+            /* Stop NFS-Ganesha service instead of unexporting Ganesha server export path */
+            snprintf(cmdbuf, PATH_MAX, "systemctl stop nfs-ganesha");
+            ret = execute_cmd_status(cmdbuf);
+            if (ret != 0) {
+                fprintf(stderr, "[NFS-Ganesha Ext4] Server stop: could not stop NFS-Ganesha service (%s)\n",
+                        errnoname(errno));
+                has_failure = true;
+            }
+#endif
             /* Unmount NFS-Ganesha server export path */
             ret = umount2(NFS_GANESHA_EXPORT_PATH, 0);
             if (ret != 0) {
