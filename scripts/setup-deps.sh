@@ -326,18 +326,19 @@ runcmd install_pkg nilfs-tools
 runcmd install_pkg rename
 runcmd install_pkg mtd-utils
 # protobuf libraries required by CRIU
-runcmd install_pkg protobuf-compiler 
-runcmd install_pkg protobuf-c-compiler
-runcmd install_pkg libprotobuf-c-dev
-runcmd install_pkg libnet-dev
+# runcmd install_pkg protobuf-compiler 
+# runcmd install_pkg protobuf-c-compiler
+# runcmd install_pkg libprotobuf-c-dev
+# runcmd install_pkg libnet-dev
 # for make install CRIU
-runcmd install_pkg libbsd-dev
-runcmd install_pkg libdrm-dev
-runcmd install_pkg gnutls-dev
-runcmd install_pkg libnftables-dev
-runcmd install_pkg asciidoc
+# runcmd install_pkg libbsd-dev
+# runcmd install_pkg libdrm-dev
+# runcmd install_pkg gnutls-dev
+# runcmd install_pkg libnftables-dev
+# runcmd install_pkg asciidoc
 
-required_repos=(swarm spin reffs zlib xxHash nfs_ganesha criu)
+# Comment: deleted criu
+required_repos=(swarm spin reffs zlib xxHash nfs_ganesha)
 
 for repo in ${required_repos[@]}; do
     runcmd install_$repo;
