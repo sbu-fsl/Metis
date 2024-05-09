@@ -46,14 +46,15 @@
 #ifndef _SETUP_H_
 #define _SETUP_H_
 
-#define VERIFS_PREFIX       "veri"
+#define VERIFS_AFFIX       "verifs"
 #define NOVA_NAME           "nova"
 #define NFS_GANESHA_EXT4_NAME  "nfs-ganesha-ext4"
+#define NFS_NAME            "nfs"
 #define BTRFS_NAME          "btrfs"
 #define XFS_NAME            "xfs"
 #define VERIFS1_NAME        "verifs1"
+// #define VERIFS2_NAME        "verifs2"
 #define NILFS2_NAME         "nilfs2"
-#define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
 #define NFS_GANESHA_EXT4_NAME_LEN  (sizeof(NFS_GANESHA_EXT4_NAME) - 1)
 #define NFS_GANESHA_EXPORT_PATH "/mnt/test-nfs-ganesha-export"
 #define NFS_GANESHA_LOCALHOST "127.0.0.1"
@@ -61,7 +62,7 @@
 
 static inline bool is_verifs(const char *fsname)
 {
-    return strncmp(fsname, VERIFS_PREFIX, VERIFS_PREFIX_LEN) == 0;
+    return (strstr(fsname, VERIFS_AFFIX) != NULL);
 }
 
 static inline bool is_nova(const char *fsname)

@@ -12,7 +12,7 @@
 #include "fileutil.h"
 #include <sys/wait.h>
 
-#define VERIFS2_MP_PREFIX "/mnt/test-verifs2-"
+#define MP_PREFIX "/mnt/test-"
 // TODO: MUST BE FULL PATH FOR GANESHA LOG/CONF FILE, NEED TO FIGURE OUT WHY
 
 static void execute_cmd(const char *cmd)
@@ -428,19 +428,9 @@ static int setup_nfs_ganesha_ext4(int fs_idx, const char *devname, const size_t 
     return 0;
 }
 
-static int setup_verifs1(int i)
+static int mount_verifs2(char *mountpoint)
 {
     char cmdbuf[PATH_MAX];
-
-    snprintf(cmdbuf, PATH_MAX, "crmfs %s", get_basepaths()[i]);
-    execute_cmd(cmdbuf);
-    return 0;
-}
-
-static int setup_verifs2(int i)
-{
-    char cmdbuf[PATH_MAX];
-    char* mountpoint = get_basepaths()[i];
     // Max 5 seconds
     const int MAX_WAIT_SECONDS = 5;
     const int MAX_WAIT_TIME = MAX_WAIT_SECONDS * 1000000;
@@ -460,7 +450,7 @@ static int setup_verifs2(int i)
 
     // Remove the mountpoint if it exists and create a new one to remove 
     // all the content inside the mountpoint
-    if (strncmp(mountpoint, VERIFS2_MP_PREFIX, strlen(VERIFS2_MP_PREFIX)) == 0) {
+    if (strncmp(mountpoint, MP_PREFIX, strlen(MP_PREFIX)) == 0) {
         snprintf(cmdbuf, PATH_MAX, "rm -rf %s", mountpoint);
 
         if (execute_cmd_status(cmdbuf) != 0) {
@@ -472,6 +462,10 @@ static int setup_verifs2(int i)
             fprintf(stderr, "Failed to create the VeriFS2 mount point.\n");
             return -3;
         }
+    }
+    else {
+        fprintf(stderr, "Invalid mountpoint for VeriFS2: %s\n", mountpoint);
+        return -4;
     }
 
     while (total_time < MAX_WAIT_TIME && !mounted) {
@@ -492,9 +486,51 @@ static int setup_verifs2(int i)
 
     if (!mounted){
         fprintf(stderr, "Cannot mount %s , did not setup in time.\n", mountpoint);
-        return -4;
+        return -5;
     }
     return 0;
+}
+
+static int setup_nfs_ganesha_verifs2(int fs_idx)
+{
+    // Set up NFS-Ganesha server export and client mount paths on the same machine
+    int ret = -1;
+    char cmdbuf[PATH_MAX];
+    ret = setup_nfs_ganesha_mountpoints(fs_idx);
+    if (ret != 0) {
+        return ret;
+    }
+    // Mount VeriFS2 at the NFS-Ganesha server path
+    ret = mount_verifs2(NFS_GANESHA_EXPORT_PATH);
+    if (ret != 0) {
+        return ret;
+    }
+    // Start NFS Ganesha service only once here for VeriFS2
+    start_nfs_ganesha_server(fs_idx);
+    // Mount the NFS-Ganesha client path with the passed get_basepaths()[i]
+    snprintf(cmdbuf, PATH_MAX, "mount.nfs4 -o vers=4 %s:%s %s", 
+        NFS_GANESHA_LOCALHOST, NFS_GANESHA_EXPORT_PATH, get_basepaths()[fs_idx]);
+    ret = execute_cmd_status(cmdbuf);
+    if (ret != 0) {
+        fprintf(stderr, "Failed to mount NFS-Ganesha client path %s for VeriFS2.\n", get_basepaths()[fs_idx]);
+        return -6;
+    }
+    return 0;
+}
+
+static int setup_verifs1(int i)
+{
+    char cmdbuf[PATH_MAX];
+
+    snprintf(cmdbuf, PATH_MAX, "crmfs %s", get_basepaths()[i]);
+    execute_cmd(cmdbuf);
+    return 0;
+}
+
+static int setup_verifs2(int i)
+{
+    char *mountpoint = get_basepaths()[i];
+    return mount_verifs2(mountpoint);
 }
 
 static int setup_nova(const char *devname, const char *basepath, const size_t size_kb)
@@ -562,6 +598,10 @@ void setup_filesystems()
         else if (strcmp(get_fslist()[i], "nfs-ganesha-ext4") == 0)
         {
             ret = setup_nfs_ganesha_ext4(i, get_devlist()[i], get_devsize_kb()[i]);
+        }
+        else if (strcmp(get_fslist()[i], "nfs-ganesha-verifs2") == 0)
+        {
+            ret = setup_nfs_ganesha_verifs2(i);
         }
         // TODO: we need to consider VeriFS1 and VeriFS2 separately here
         else if (is_verifs(get_fslist()[i]))
