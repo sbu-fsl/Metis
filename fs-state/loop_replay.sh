@@ -21,9 +21,3 @@ for ((i = 0; i < num_executions; i++)); do
     	# sleep (duration in secs) before next execution
     	sleep 5
 done
-
-
-
-
-
-
