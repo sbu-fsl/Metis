@@ -23,9 +23,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-// Both of them should have the same value (0 or 1) or it would lead to an error while replaying
-#define ENABLE_REPLAYER_CHECKPOINT 0
-#define ENABLE_REPLAYER_RESTORE 0
+// This flag governs whether replayer uses Checkpoint/Restore (1) or not (0) during its execution
+// By default Checkpoint/Restore is disabled as it causes memory leak while replaying large sequence of operations
+#define ENABLE_REPLAYER_CR 0
 
 #define __USE_XOPEN_EXTENDED 1
 #include <ftw.h>
