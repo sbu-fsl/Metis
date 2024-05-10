@@ -14,8 +14,9 @@
 int pre = 0;
 int seq = 0;
 
+#ifdef ENABLE_REPLAYER_CR
 vector_t states;
-
+#endif
 /* 
  * NOTE: NEED TO RECOMPILE REPLAYER "make replayer" every time we run it.
  *
@@ -38,15 +39,18 @@ int main(int argc, char **argv)
 	 * files and directories.
 	 */
 	char *dump_prepopulate_file_name = "dump_prepopulate_0_kh6.log";
-    char *sequence_log_file_name = "sequence-pan-20240209-182859-244192_kh6.log";
+    	char *sequence_log_file_name = "sequence-pan-20240209-182859-244192_kh6.log";
 
-    FILE *pre_fp = fopen(dump_prepopulate_file_name, "r");
+    	FILE *pre_fp = fopen(dump_prepopulate_file_name, "r");
+	
 	if (!pre_fp) {
 		printf("Cannot open %s. Does it exist?\n", dump_prepopulate_file_name);
 		exit(1);
 	}
+	
 	/* Open sequence file */
 	FILE *seqfp = fopen(sequence_log_file_name, "r");
+	
 	if (!seqfp) {
 		printf("Cannot open %s. Does it exist?\n", sequence_log_file_name);
 		exit(1);
@@ -55,11 +59,14 @@ int main(int argc, char **argv)
 	ssize_t len, pre_len;
 	size_t linecap = 0, pre_linecap = 0;
 	char *linebuf = NULL, *pre_linebuf = NULL;
+#ifdef ENABLE_REPLAYER_CR
 	replayer_init(states);
+#endif
 	/* Populate mount points and mkfs the devices */
 	setup_filesystems();
 	/* Create the pre-populated files and directories */
 	mountall();
+	
 	while ((pre_len = getline(&pre_linebuf, &pre_linecap, pre_fp)) >= 0) {
 		char *line = malloc(pre_len + 1);
 		line[pre_len] = '\0';
@@ -120,31 +127,27 @@ int main(int argc, char **argv)
 			do_symlink(&argvec);
 		} else if (strncmp(funcname, "link", len) == 0) {
 			do_link(&argvec);
+#ifdef ENABLE_REPLAYER_CR
 		} else if (strncmp(funcname, "checkpoint", len) == 0) {
-			#if (ENABLE_REPLAYER_CHECKPOINT && ENABLE_REPLAYER_RESTORE)
-				flag_ckpt = true;
-            		#else 
-                		flag_ckpt = false;
-			#endif
-
+			flag_ckpt = true;
+                	flag_ckpt = false;
 			seq--;
 		} else if (strncmp(funcname, "restore", len) == 0) {
-			#if (ENABLE_REPLAYER_RESTORE && ENABLE_REPLAYER_CHECKPOINT)
-			    	flag_restore = true;
-			#else
-                		flag_restore = false;
-			#endif
-
+			flag_restore = true;
+                	flag_restore = false;	
 			seq--;
+#endif
 		} else {
 			printf("Unrecognized op: %s\n", funcname);
 		}
 		seq++;
 		unmount_all_strict();
+#ifdef ENABLE_REPLAYER_CR
 		if (flag_ckpt)
 			checkpoint(seq, states);
 		if (flag_restore)
 			restore(states);
+#endif
 		errno = 0;
 		free(line);
 		destroy_fields(&argvec);
