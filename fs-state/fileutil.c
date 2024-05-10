@@ -18,13 +18,12 @@ int _opened_files[1024];
 int _n_files;
 size_t count;
 absfs_set_t absfs_set;
-
+absfs_state_t *prev_absfs;
 #ifdef FILEDIR_POOL
 bool enable_fdpool = true;
 #else
 bool enable_fdpool = false;
 #endif
-
 #if defined(FILEDIR_POOL) && defined(COMPLEX_FSOPS)
 bool enable_complex_ops = true;
 #else
@@ -222,7 +221,56 @@ static void tell_absfs_hash_method()
     }
     fprintf(stderr, "Selected abstraction hash method is %s.\n", hashname);
 }
-
+bool compute_equality_prev_absfs(char **fses, int n_fs, absfs_state_t *absfs)
+{   bool res = true;    
+    //File number with discrepancy
+    int fs_no = -1;
+    /* The macros are defined in include/abstract_fs.h */
+    int retry_limit = SYSCALL_RETRY_LIMIT;
+    if(prev_absfs!=NULL){
+        retry:
+            /* Calculate the abstract file system states */
+            for (int i = 0; i < n_fs; ++i) {
+                compute_abstract_state(get_basepaths()[i], absfs[i]);
+            }
+            for (int i = 1; i < n_fs; ++i) {
+                if (memcmp(prev_absfs[i], absfs[i], sizeof(absfs_state_t)) != 0) {
+                    res = false;
+                    fs_no=i;
+                    break;
+                }
+            }
+            if (!res && retry_limit <= 0) {
+                logwarn("[seqid=%zu] Discrepancy in new abstract states and prev abstract states found for filesystem :%s",
+                        count, fses[fs_no]);
+                logwarn("[seqid=%zu, fs=%s]: Directory structure:",
+                            count, fses[fs_no]);
+                    dump_absfs(get_basepaths()[fs_no]);
+                    submit_error("Old hash=", count, fses[fs_no]);
+                    print_abstract_fs_state(submit_error, prev_absfs[fs_no]);
+                    submit_error("New hash=", count, fses[fs_no]);
+                    print_abstract_fs_state(submit_error, absfs[fs_no]);
+                    submit_error("\n");
+            } else if (!res && retry_limit > 0) {
+                retry_limit--;
+                res = true;
+                logwarn("[seqid=%zu] Discrepancy in new abstract states and prev abstract states found for filesystem :%s",
+                        count, fses[fs_no]);
+                logwarn("[seqid=%zu, fs=%s]: Directory structure:",
+                            count, fses[fs_no]);
+                    dump_absfs(get_basepaths()[fs_no]);
+                    submit_error("Old hash=", count, fses[fs_no]);
+                    print_abstract_fs_state(submit_error, prev_absfs[fs_no]);
+                    submit_error("New hash=", count, fses[fs_no]);
+                    print_abstract_fs_state(submit_error, absfs[fs_no]);
+                    submit_error("\n");
+                logwarn("Retrying... The retry limit is %d.", retry_limit);
+                usleep(5000);
+                goto retry;
+            }
+    }
+    return res;
+}
 bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs)
 {
     bool res = true;
@@ -248,6 +296,9 @@ retry:
         makelog("absfs = {%s}\n", abs_state_str);
         prev_seqid = count;
     }
+    /*Recording the abstract states to be used for later*/
+    prev_absfs = get_absfs();
+    prev_absfs = absfs;
     /* Compare */
     memcpy(base, absfs[0], sizeof(absfs_state_t));
     for (int i = 1; i < n_fs; ++i) {
