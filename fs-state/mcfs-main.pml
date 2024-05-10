@@ -26,7 +26,7 @@ proctype worker()
             /* creat, check: return, errno, existence */
             makelog("BEGIN: create_file\n");
             mountall();
-            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_rets()));
+            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_absfs()));
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
@@ -56,7 +56,7 @@ proctype worker()
         c_code {
             makelog("BEGIN: write_file\n");
             mountall();
-            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_rets()));
+            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(),get_absfs()));
             // off_t offset = pick_value(0, 32768, 1024);
             // size_t writelen = pick_value(0, 32768, 2048);
             char *data = malloc(Pworker->writelen);
@@ -95,7 +95,7 @@ proctype worker()
         c_code {
             makelog("BEGIN: truncate\n");
             mountall();
-            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_rets()));
+            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_absfs()));
             // off_t flen = pick_value(0, 200000, 10000);
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
@@ -122,7 +122,7 @@ proctype worker()
         c_code {
             makelog("BEGIN: unlink\n");
             mountall();
-            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_rets()));
+            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_absfs()));
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
@@ -148,7 +148,7 @@ proctype worker()
         c_code {
             makelog("BEGIN: mkdir\n");
             mountall();
-            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_rets()));
+            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_absfs()));
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_dpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
@@ -175,7 +175,7 @@ proctype worker()
         c_code {
             makelog("BEGIN: rmdir\n");
             mountall();
-            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_rets()));
+            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_absfs()));
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_dpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
@@ -202,7 +202,7 @@ proctype worker()
             /* chmod, check: return, errno, absfs */
             makelog("BEGIN: chmod\n");
             mountall();
-            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_rets()));
+            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_absfs()));
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
@@ -229,7 +229,7 @@ proctype worker()
             /* chown_file, check: return, errno, absfs */
             makelog("BEGIN: chown_file\n");
             mountall();
-            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_rets()));
+            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_absfs()));
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
@@ -256,7 +256,7 @@ proctype worker()
             /* chgrp_file, check: return, errno, absfs */
             makelog("BEGIN: chgrp_file\n");
             mountall();
-            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_rets()));
+            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_absfs()));
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 for (int i = 0; i < get_n_fs(); ++i) {
@@ -282,7 +282,7 @@ proctype worker()
         c_code {
             makelog("BEGIN: setxattr\n");
             mountall();
-            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_rets()));
+            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_absfs()));
             int name_idx = random() % 2;
             int src_idx = pick_random(0, get_fpoolsize() - 1);
             for (int i = 0; i < get_n_fs(); ++i) {
@@ -305,7 +305,7 @@ proctype worker()
         c_code {
             makelog("BEGIN: removexattr\n");
             mountall();
-            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_rets()));
+            expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_absfs()));
             int name_idx = random() % 2;
             int src_idx = pick_random(0, get_fpoolsize() - 1);
             for (int i = 0; i < get_n_fs(); ++i) {
@@ -328,7 +328,7 @@ proctype worker()
             c_code { 
                 makelog("BEGIN: rename\n");
                 mountall();
-                expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_rets()));
+                expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_absfs()));
                 int dir_or_file = random() % 2;
                 /* Case of file */
                 if (dir_or_file == 0) {
@@ -365,7 +365,7 @@ proctype worker()
             c_code {
                 makelog("BEGIN: link\n");
                 mountall();
-                expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_rets()));
+                expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_absfs()));
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 int dst_idx = pick_random(0, get_fpoolsize() - 1);
 
@@ -387,7 +387,7 @@ proctype worker()
             c_code {
                 makelog("BEGIN: symlink\n");
                 mountall();
-                expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_rets()));
+                expect(compute_equality_prev_absfs(get_fslist(), get_n_fs(), get_absfs()));
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
                 int dst_idx = pick_random(0, get_fpoolsize() - 1);
 

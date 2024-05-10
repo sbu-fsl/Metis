@@ -241,7 +241,7 @@ static inline ssize_t fsize(int fd)
         return -1;
     }
 }
-
+bool compute_equality_prev_absfs(char **fses, int n_fs, absfs_state_t *absfs);
 bool compare_equality_values(char **fses, int n_fs, int *nums);
 bool compare_equality_fexists(char **fses, int n_fs, char **fpaths);
 bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths);
