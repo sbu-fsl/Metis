@@ -14,7 +14,7 @@
 int pre = 0;
 int seq = 0;
 
-#ifdef ENABLE_REPLAYER_CR
+#if ENABLE_REPLAYER_CR
 vector_t states;
 #endif
 /* 
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 	ssize_t len, pre_len;
 	size_t linecap = 0, pre_linecap = 0;
 	char *linebuf = NULL, *pre_linebuf = NULL;
-#ifdef ENABLE_REPLAYER_CR
+#if ENABLE_REPLAYER_CR
 	replayer_init(states);
 #endif
 	/* Populate mount points and mkfs the devices */
@@ -107,7 +107,9 @@ int main(int argc, char **argv)
 		vector_t argvec;
 		extract_fields(&argvec, line, ", ");
 		char *funcname = *vector_get(&argvec, char *, 0);
+#if ENABLE_REPLAYER_CR		
 		bool flag_ckpt = false, flag_restore = false;
+#endif
 		mountall();
 		if (strncmp(funcname, "create_file", len) == 0) {
 			do_create_file(&argvec);
@@ -127,14 +129,18 @@ int main(int argc, char **argv)
 			do_symlink(&argvec);
 		} else if (strncmp(funcname, "link", len) == 0) {
 			do_link(&argvec);
-#ifdef ENABLE_REPLAYER_CR
 		} else if (strncmp(funcname, "checkpoint", len) == 0) {
+#if ENABLE_REPLAYER_CR			
 			flag_ckpt = true;
-                	flag_ckpt = false;
 			seq--;
+#else
+			seq--;
+#endif
 		} else if (strncmp(funcname, "restore", len) == 0) {
+#if ENABLE_REPLAYER_CR
 			flag_restore = true;
-                	flag_restore = false;	
+			seq--;
+#else
 			seq--;
 #endif
 		} else {
@@ -142,7 +148,7 @@ int main(int argc, char **argv)
 		}
 		seq++;
 		unmount_all_strict();
-#ifdef ENABLE_REPLAYER_CR
+#if ENABLE_REPLAYER_CR
 		if (flag_ckpt)
 			checkpoint(seq, states);
 		if (flag_restore)
