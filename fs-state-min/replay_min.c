@@ -14,8 +14,6 @@
 int pre = 0;
 int seq = 0;
 
-vector_t states;
-
 /* 
  * NOTE: NEED TO RECOMPILE REPLAYER "make replayer" every time we run it.
  *
@@ -37,22 +35,28 @@ int main(int argc, char **argv)
 	 * Open the dump_prepopulate_*.log files to create the pre-populated
 	 * files and directories.
 	 */
-	FILE *pre_fp = fopen("dump_prepopulate_0.log", "r");
+	char *dump_prepopulate_file_name = "dump_prepopulate_0_kh6.log";
+    char *sequence_log_file_name = "sequence-pan-20240209-182859-244192_kh6.log";
+
+    FILE *pre_fp = fopen(dump_prepopulate_file_name, "r");
+	
 	if (!pre_fp) {
-		printf("Cannot open dump_prepopulate_0.log. Does it exist?\n");
+		printf("Cannot open %s. Does it exist?\n", dump_prepopulate_file_name);
 		exit(1);
 	}
+	
 	/* Open sequence file */
-	FILE *seqfp = fopen("sequence-pan-20231214-014909-2031206.log", "r");
+	FILE *seqfp = fopen(sequence_log_file_name, "r");
+	
 	if (!seqfp) {
-		printf("Cannot open sequence.log. Does it exist?\n");
+		printf("Cannot open %s. Does it exist?\n", sequence_log_file_name);
 		exit(1);
 	}
 
 	ssize_t len, pre_len;
 	size_t linecap = 0, pre_linecap = 0;
 	char *linebuf = NULL, *pre_linebuf = NULL;
-	replayer_init(states);
+
 	/* Populate mount points and mkfs the devices */
 	setup_filesystems();
 	/* Create the pre-populated files and directories */
@@ -97,41 +101,30 @@ int main(int argc, char **argv)
 		vector_t argvec;
 		extract_fields(&argvec, line, ", ");
 		char *funcname = *vector_get(&argvec, char *, 0);
-		bool flag_ckpt = false, flag_restore = false;
+
 		mountall();
+		
 		if (strncmp(funcname, "create_file", len) == 0) {
 			do_create_file(&argvec);
 		} else if (strncmp(funcname, "write_file", len) == 0) {
 			do_write_file(&argvec, seq);
-		} else if (strncmp(funcname, "truncate", len) == 0) {
-			do_truncate(&argvec);
 		} else if (strncmp(funcname, "unlink", len) == 0) {
 			do_unlink(&argvec);
 		} else if (strncmp(funcname, "mkdir", len) == 0) {
 			do_mkdir(&argvec);
 		} else if (strncmp(funcname, "rmdir", len) == 0) {
 			do_rmdir(&argvec);
-		} else if (strncmp(funcname, "rename", len) == 0) {
-			do_rename(&argvec);
-		} else if (strncmp(funcname, "symlink", len) == 0) {
-			do_symlink(&argvec);
-		} else if (strncmp(funcname, "link", len) == 0) {
-			do_link(&argvec);
 		} else if (strncmp(funcname, "checkpoint", len) == 0) {
-			flag_ckpt = true;
 			seq--;
 		} else if (strncmp(funcname, "restore", len) == 0) {
-			flag_restore = true;
 			seq--;
 		} else {
 			printf("Unrecognized op: %s\n", funcname);
 		}
+		
 		seq++;
+
 		unmount_all_strict();
-		if (flag_ckpt)
-			checkpoint(seq, states);
-		if (flag_restore)
-			restore(states);
 		errno = 0;
 		free(line);
 		destroy_fields(&argvec);
