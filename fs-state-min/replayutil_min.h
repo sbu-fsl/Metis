@@ -43,17 +43,10 @@ void extract_fields(vector_t *fields_vec, char *line, const char *delim);
 void destroy_fields(vector_t *fields_vec);
 int do_create_file(vector_t *argvec);
 int do_write_file(vector_t *argvec, int seq);
-int do_truncate(vector_t *argvec);
 int do_unlink(vector_t *argvec);
 int do_mkdir(vector_t *argvec);
 int do_rmdir(vector_t *argvec);
-int do_rename(vector_t *argvec);
-int do_symlink(vector_t *argvec);
-int do_link(vector_t *argvec);
 void populate_replay_basepaths();
-void replayer_init(vector_t states);
-void checkpoint(int seq, vector_t states);
-void restore(vector_t states);
 char *get_replayed_absfs(const char *basepath, unsigned int hash_method, char *abs_state_str);
 void execute_cmd(const char *cmd);
 
