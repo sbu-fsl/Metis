@@ -18,22 +18,7 @@ void mountall()
     int failpos, err;
     for (int i = 0; i < get_n_fs(); ++i) {
         int ret = -1;
-        /* Skip verifs */
-        if (is_verifs(get_fslist()[i]))
-            continue;
-        /* mount(source, target, fstype, mountflags, option_str) */
-        else if(is_nova(get_fslist()[i])) {
-            char cmdbuf[PATH_MAX];
-            snprintf(cmdbuf, PATH_MAX, "mount -t NOVA -o noatime %s %s", get_devlist()[i], get_basepaths()[i]);
-            ret = execute_cmd_status(cmdbuf);                       
-        }
-        else if (is_testFS(get_fslist()[i])) {
-            char cmdbuf[PATH_MAX];
-            snprintf(cmdbuf, PATH_MAX, "mount -t testFS -o noatime %s %s", get_devlist()[i], get_basepaths()[i]);
-            ret = execute_cmd_status(cmdbuf);
-        } else {
-            ret = mount(get_devlist()[i], get_basepaths()[i], get_fslist()[i], MS_NOATIME, "");
-        }        
+        ret = mount(get_devlist()[i], get_basepaths()[i], get_fslist()[i], MS_NOATIME, "");     
         if (ret != 0) {
             failpos = i;
             err = errno;
@@ -44,13 +29,11 @@ void mountall()
 err:
     /* undo mounts */
     for (int i = 0; i < failpos; ++i) {
-        if (is_verifs(get_fslist()[i]))
-            continue;
         umount2(get_basepaths()[i], MNT_FORCE);
     }
     fprintf(stderr, "Could not mount file system %s in %s at %s (%s)\n",
             get_fslist()[failpos], get_devlist()[failpos], get_basepaths()[failpos],
-            errnoname(err));
+            strerror(err));
     exit(1);
 }
 
@@ -77,9 +60,6 @@ void unmount_all(bool strict)
     record_fs_stat();
 #endif
     for (int i = 0; i < get_n_fs(); ++i) {
-        if (is_verifs(get_fslist()[i]))
-            continue;
-
         // Change retry limit from 20 to 19 to avoid excessive delay
         int retry_limit = 19;
         int num_retries = 0;
@@ -114,7 +94,7 @@ void unmount_all(bool strict)
             else {
                 // Handle non-EBUSY errors immediately without retrying
                 fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
-                        get_fslist()[i], get_basepaths()[i], errnoname(errno));
+                        get_fslist()[i], get_basepaths()[i], strerror(errno));
                 has_failure = true;
             }
         }

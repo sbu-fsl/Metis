@@ -44,13 +44,13 @@ static int check_device(const char *devname, const size_t exp_size_kb)
     struct stat devinfo;
     if (fd < 0) {
         fprintf(stderr, "Cannot open %s (err=%s, %d)\n",
-                devname, errnoname(errno), errno);
+                devname, strerror(errno), errno);
         return -errno;
     }
     int retval = fstat(fd, &devinfo);
     if (retval < 0) {
         fprintf(stderr, "Cannot stat %s (err=%s, %d)\n",
-                devname, errnoname(errno), errno);
+                devname, strerror(errno), errno);
         close(fd);
         return -errno;
     }

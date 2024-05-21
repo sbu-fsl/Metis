@@ -115,7 +115,7 @@ static inline void compute_abstract_state(const char *basepath,
     get_epoch(); \
     submit_error("[%4ld.%09ld] %s:%d:%s: " msg " (%s)\n", epoch.tv_sec, \
                  epoch.tv_nsec, __FILE__, __LINE__, __func__, ##__VA_ARGS__, \
-                 errnoname(errno));
+                 strerror(errno));
 
 #define min(x, y) ((x >= y) ? y : x)
 
@@ -262,10 +262,10 @@ void mountall();
 void unmount_all(bool strict);
 void record_fs_stat();
 void start_perf_metrics_thread();
-// bool do_fsck();
-// int fsfreeze(const char *fstype, const char *devpath, const char *mountpoint);
-// int fsthaw(const char *fstype, const char *devpath, const char *mountpoint);
-// int unfreeze_all();
+bool do_fsck();
+int fsfreeze(const char *fstype, const char *devpath, const char *mountpoint);
+int fsthaw(const char *fstype, const char *devpath, const char *mountpoint);
+int unfreeze_all();
 void clear_excluded_files();
 // int setup_generic(const char *fsname, const char *devname, const size_t size_kb);
 // int setup_jffs2(const char *devname, const size_t size_kb);

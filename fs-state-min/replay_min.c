@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 		/* remove the newline character */
 		if (line[len - 1] == '\n')
 			line[len - 1] = '\0';
-		printf("seq=%d ", seq);
+		printf("seq=%d \n", seq);
 		/* parse the line */
 		vector_t argvec;
 		extract_fields(&argvec, line, ", ");
@@ -114,9 +114,7 @@ int main(int argc, char **argv)
 			do_mkdir(&argvec);
 		} else if (strncmp(funcname, "rmdir", len) == 0) {
 			do_rmdir(&argvec);
-		} else if (strncmp(funcname, "checkpoint", len) == 0) {
-			seq--;
-		} else if (strncmp(funcname, "restore", len) == 0) {
+		} else if (strncmp(funcname, "checkpoint", len) == 0 || strncmp(funcname, "restore", len) == 0) {
 			seq--;
 		} else {
 			printf("Unrecognized op: %s\n", funcname);
