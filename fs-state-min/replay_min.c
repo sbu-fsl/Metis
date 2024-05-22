@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+// #include <time.h>
 #include <stdbool.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -32,14 +32,303 @@
 #include <linux/limits.h>
 #include <linux/fs.h>
 #include <openssl/md5.h>
+#include <stddef.h>
+#include <sys/types.h>
+#include <math.h>
+#include <limits.h>
+#include <openssl/opensslv.h>
 
-#include "vector.h"
-#include "operations.h"
-#include "abstract_fs.h"
-#include "nanotiming.h"
-// #include "fileutil_min.h" // includes "abstract_fs.h"
+//From abstract_fs.h
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#include <openssl/evp.h>
+#else
+#include <openssl/md5.h>
+#endif
+#include <dirent.h>
+
+//From nanotiming.h
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#else
+#include <time.h>
+#include <sys/time.h>
+#endif
 
 #include "init_globals_min.h"
+// #include "vector.h"
+// #include "operations.h"
+// #include "abstract_fs.h"
+// #include "nanotiming.h"
+// #include "config_min.h"
+// #include "fileutil_min.h" // includes "abstract_fs.h"
+
+//From vector.h
+
+#define DEFAULT_INITCAP 16
+
+struct vector {
+    unsigned char *data;
+    size_t unitsize;
+    size_t len;
+    size_t capacity;
+};
+
+typedef struct vector vector_t;
+
+static inline void _vector_init(struct vector *vec, size_t unitsize, size_t initcap) {
+    if (initcap < DEFAULT_INITCAP)
+        initcap = DEFAULT_INITCAP;
+    vec->unitsize = unitsize;
+    vec->len = 0;
+    vec->capacity = initcap;
+    vec->data = (unsigned char *)calloc(initcap, unitsize);
+}
+#define vector_init_2(vec, type)    _vector_init(vec, sizeof(type), DEFAULT_INITCAP)
+#define vector_init_3(vec, type, initcap)   _vector_init(vec, sizeof(type), initcap)
+#define vector_init_x(a, b, c, func, ...)   func
+/* Macro function with optional arg: vector_init(struct vector *vec, type, [initcap=16]) */
+#define vector_init(...)    vector_init_x(__VA_ARGS__,\
+                                          vector_init_3(__VA_ARGS__),\
+                                          vector_init_2(__VA_ARGS__)\
+                                         )
+
+static inline int vector_expand(struct vector *vec) {
+    size_t newcap = vec->unitsize * vec->capacity * 2;
+    unsigned char *newptr = (unsigned char *)realloc(vec->data, newcap);
+    if (newptr == NULL)
+        return ENOMEM;
+    vec->data = newptr;
+    vec->capacity *= 2;
+    return 0;
+}
+
+static inline int vector_add(struct vector *vec, void *el) {
+    int ret;
+    if (vec->len >= vec->capacity) {
+        if ((ret = vector_expand(vec)) != 0)
+            return ret;
+    }
+    size_t offset = vec->len * vec->unitsize;
+    memcpy(vec->data + offset, el, vec->unitsize);
+    vec->len++;
+    return 0;
+}
+
+static inline void *_vector_get(struct vector *vec, size_t index) {
+    if (index < 0 || index >= vec->len)
+        return NULL;
+    return (void *)(vec->data + index * vec->unitsize);
+}
+#define vector_get(vec, type, index) \
+    (type *)_vector_get(vec, index)
+
+static inline void *_vector_peek_top(struct vector *vec) {
+    if (vec->len == 0)
+        return NULL;
+    return (void *)(vec->data + (vec->len - 1) * vec->unitsize);
+}
+#define vector_peek_top(vec, type) \
+    (type *)_vector_peek_top(vec)
+
+static inline void vector_try_shrink(struct vector *vec) {
+    if (vec->len >= vec->capacity / 2)
+        return;
+    if (vec->len <= DEFAULT_INITCAP)
+        return;
+    size_t newcap = vec->capacity / 2 * vec->unitsize;
+    vec->data = (unsigned char *)realloc(vec->data, newcap);
+}
+
+static inline void vector_pop_back(struct vector *vec) {
+    if (vec->len == 0)
+        return;
+    vec->len--;
+    vector_try_shrink(vec);
+}
+
+static inline int vector_set(struct vector *vec, size_t index, void *el) {
+    if (index < 0 || index >= vec->len)
+        return ERANGE;
+    size_t offset = vec->unitsize * index;
+    memcpy(vec->data + offset, el, vec->unitsize);
+    return 0;
+}
+
+static inline int vector_erase(struct vector *vec, size_t index) {
+    if (index >= vec->len)
+        return ERANGE;
+    size_t dest_off = index * vec->unitsize;
+    size_t src_off = (index + 1) * vec->unitsize;
+    size_t count = (vec->len - index - 1) * vec->unitsize;
+    memmove(vec->data + dest_off, vec->data + src_off, count);
+    vec->len--;
+    vector_try_shrink(vec);
+    return 0;
+}
+
+static inline void vector_sort(struct vector *vec,
+                               int (*comp)(const void *, const void *))
+{
+    qsort(vec->data, vec->len, vec->unitsize, comp);
+}
+
+static inline size_t vector_length(struct vector *vec) {
+    return vec->len;
+}
+
+static inline size_t vector_memusage(struct vector *vec) {
+    return vec->capacity * vec->unitsize;
+}
+
+static inline size_t vector_size(struct vector *vec) {
+    return vec->len * vec->unitsize;
+}
+
+static inline void vector_destroy(struct vector *vec) {
+    free(vec->data);
+    memset(vec, 0, sizeof(struct vector));
+}
+
+#define vector_iter(vec, type, entry) \
+    int _i; \
+    for (entry = (type *)((vec)->data), _i = 0; _i < (vec)->len; ++_i, ++entry)
+
+//From operations.h
+// Maximum open flags: otcal 037777777 (11111111111111111111111) = 23 bits
+#define MAX_FLAG_BITS 23
+
+/* 
+ * CONFIGURABLE MACROS
+ */
+
+// Ration in rank-size distribution or sampling
+#define RZD_RATIO 0.9
+
+// 0 - uniform, 1 - probability, 2 - Inverse by harmonic mean weighting, 3 - Inverse by subtraction from 100%
+// 4 - rank-size distribution (based on RZD_RATIO), 5 - Inverse rank-size distribution (based on RZD_RATIO) 
+// #define OPEN_FLAG_PATTERN 0
+
+// Probability of choosing each open flag bit (e.g., 0.5: 50% each bit is set to 1)
+// CONFIGURE PROB_FACTOR if OPEN_FLAG_PATTERN == 0
+#define UNIFORM_FLAG_RATE 0.5
+/* Scale the probabilities in flagBitPercent by multiplying this PROB_FACTOR
+ * PROB_FACTOR == 1 means do not scale the probabilities
+ * PROB_FACTOR > 1 means increase the probabilities
+ * 0 < PROB_FACTOR < 1 means decrease the probabilities
+ */
+// CONFIGURE PROB_FACTOR if OPEN_FLAG_PATTERN == 1 or 2 or 3
+// #define PROB_FACTOR 1
+#define PROB_FACTOR 5
+
+// Write size configurable macros
+// 0 - uniform distribution, 1 - RZD normalization, 2 - Inverse RZD normalization
+// #define WRITE_SIZE_PATTERN 1
+
+// Marcos to distinguish open flags for different operations
+#define USE_CREATE_FLAG 0
+#define USE_WRITE_FLAG 1
+
+// Write size fixed macros
+#define WRITE_SIZE_PARTS 33
+
+// Rank-size distribution for write size 
+#define WRITE_SIZE_RZD_RATIO 0.9
+
+typedef struct all_inputs {
+    int create_open_flag;
+    int write_open_flag;
+    size_t write_size;
+} inputs_t;
+
+extern inputs_t *inputs_t_p;
+
+/* Write size partition data structure */
+typedef struct write_size_partition {
+    size_t minsz;
+    size_t maxsz;
+} writesz_partition_t;
+
+// We investigate 34 write size partitions: equal to 0, 0, 1, ... 31, 32
+extern writesz_partition_t writesz_parts[WRITE_SIZE_PARTS];
+
+// Random integer generator [min, max] included
+static inline size_t rand_size(size_t min, size_t max)
+{
+   return min + rand() % (max + 1 - min);
+}
+
+void populate_writesz_parts();
+
+void syscall_inputs_init();
+
+// Probable weight for each open flags
+// Does not need to be real percentage value, as long as it can represent weights for each flag
+/*
+ * TODO: more flexible Probabilities Three different variants: uniform, prob, inverse-prob
+ * 1. Probabilities in the kernel
+ * 2. Inverse variant probs: more occurrence in the kernel, less prob to be chosen (think about it)
+ * Find out the inverse probality of each flag bit
+ */
+extern const double flagBitPercent[MAX_FLAG_BITS];
+
+extern double whmFlagPercent[MAX_FLAG_BITS];
+extern double subFlagPercent[MAX_FLAG_BITS];
+extern double rzdFlagPercent[MAX_FLAG_BITS];
+extern double inv_rzdFlagPercent[MAX_FLAG_BITS];
+
+int create_file(const char *path, int flags, int mode);
+ssize_t write_file(const char *path, int flags, void *data, off_t offset, size_t length);
+int fallocate_file(const char *path, off_t offset, off_t len);
+int chown_file(const char *path, uid_t owner);
+int chgrp_file(const char *path, gid_t group);
+
+// Driver functions
+int pick_open_flags(int pattern, int ops);
+size_t pick_write_sizes(int pattern);
+
+#ifndef PATH_MAX
+#define PATH_MAX    4096
+#endif
+
+#define SYSCALL_RETRY_LIMIT 5
+#define RETRY_WAIT_USECS    1000
+#define with_retry(retry_cond, retry_limit, wait_us, retry_action, retval, \
+                   func, ...) \
+    int _retry_count = 0; \
+    do { \
+        retval = func(__VA_ARGS__); \
+        if (!(retry_cond)) { \
+            break; \
+        } else { \
+            retry_action(#func, #retry_cond, _retry_count + 1); \
+            usleep(wait_us); \
+        } \
+    } while (_retry_count++ < retry_limit);
+/* This should be a multiple of N_FS
+ * in order to avoid false discrepancy in open() tests */
+#define MAX_OPENED_FILES 192
+/* The file name of or the path to the performance log */
+#define PERF_PREFIX      "perf"
+/* The name of or the path to the logs (without .log suffix) */
+#define SEQ_PREFIX       "sequence"
+#define OUTPUT_PREFIX    "output"
+#define ERROR_PREFIX     "error"
+/* Interval of perf metrics logging (in secs) */
+#define PERF_INTERVAL    5
+/* Max length of function name in log */
+#define FUNC_NAME_LEN    16
+/* Abort the whole program when expect() fails */
+#define ABORT_ON_FAIL    1
+
+/* File/Dir Pool Related Configurations */
+#ifdef FILEDIR_POOL
+#define FILE_COUNT 3
+#define DIR_COUNT 2
+#define PATH_DEPTH 2
+#define MCFS_NAME_LEN 4
+#endif
+
 #ifdef CBUF_IMAGE
 // #include "circular_buf.h"
 #define CBUF_SIZE 10
@@ -97,6 +386,59 @@ void cleanup_cir_bufs(circular_buf_sum_t *fsimg_bufs);
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+//From nanotiming.h
+/**
+ * current_utc_time:- Retrieve current UTC time and output it via
+ *                    struct timespec
+ */
+void current_utc_time(struct timespec *ts);
+void timediff(struct timespec *res, struct timespec *end, struct timespec *start);
+// 
+/**
+ * benchmark:- Run specified function and report the time it took.
+ * @func: The function to use.
+ * @arg:  The void pointer arg to pass in
+ *
+ * Note that there is a convention over the function to be benchmarked.
+ * It is supposed to be in the form `int func(void *args)`
+ * The integer return value indicates its "exit status", and the void *
+ * argument it receives can be used for anything but usually a list of
+ * parameters it needs.
+ *
+ * For example:
+ *
+ * struct func_arg_list {
+ *      int a;
+ *      int b;
+ * };
+ *
+ * int func(void *args)
+ * {
+ *     struct func_arg_list *pars;
+ *     if (!args) {
+ *         return -1;
+ *     }
+ *     pars = (struct func_arg_list *)args;
+ *
+ *     // The payload to do...
+ *
+ *     // If success
+ *     return 0;
+ * }
+ *
+ * The return value is a `struct timespec` representing the time
+ * it used to finish the function.
+ */
+struct timespec benchmark(int (*func)(void *), void *);
+/**
+ * bechmark_mt:- Benchmark for multiple times
+ * @func: the function to benchmark
+ * @arg: the void pointer arg to pass in
+ * @times: number of iterations
+ */
+struct timespec benchmark_mt(int (*func)(void *), void *, unsigned int times);
 
 // From set_min.h
 typedef struct AbsfsSet* absfs_set_t;
