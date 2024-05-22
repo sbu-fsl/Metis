@@ -23,6 +23,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+// This flag governs whether replayer uses Checkpoint/Restore (1) or not (0) during its execution
+// By default Checkpoint/Restore is disabled as it causes memory leak while replaying large sequence of operations
+#define ENABLE_REPLAYER_CR 0
+
 #define __USE_XOPEN_EXTENDED 1
 #include <ftw.h>
 
@@ -58,3 +62,4 @@ char *get_replayed_absfs(const char *basepath, unsigned int hash_method, char *a
 void execute_cmd(const char *cmd);
 
 #endif
+
