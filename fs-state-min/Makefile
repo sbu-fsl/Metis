@@ -17,8 +17,8 @@ common-libs: $(COMMON_OBJ)
 %.cpp.o: $(COMMON_DIR)/%.cpp
 	g++ -std=c++11 -Wall -Werror -o $@ -fPIC -c $< $(CFLAGS) $(LIBS)
 
-replayer_min: replay_min.c replayutil_min.o init_globals_min.o setup_min.c mount_min.c common-libs
-	gcc -o replay_min replay_min.c replayutil_min.o init_globals_min.o setup_min.c mount_min.c \
+replayer_min: replay_min.c init_globals_min.o setup_min.c mount_min.c common-libs
+	gcc -o replay_min replay_min.c init_globals_min.o setup_min.c mount_min.c \
                 -DNO_FS_STAT common-libs.a $(CFLAGS) $(LIBS)
 				
 replayutil_min.o: replayutil_min.c
