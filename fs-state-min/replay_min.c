@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-// #include <time.h>
 #include <stdbool.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -62,10 +61,90 @@
 // #include "nanotiming.h"
 // #include "config_min.h"
 // #include "fileutil_min.h" // includes "abstract_fs.h"
+//From operations.h
+// Maximum open flags: otcal 037777777 (11111111111111111111111) = 23 bits
+#define MAX_FLAG_BITS 23
+/* 
+ * CONFIGURABLE MACROS
+ */
+
+// Ration in rank-size distribution or sampling
+#define RZD_RATIO 0.9
+
+// 0 - uniform, 1 - probability, 2 - Inverse by harmonic mean weighting, 3 - Inverse by subtraction from 100%
+// 4 - rank-size distribution (based on RZD_RATIO), 5 - Inverse rank-size distribution (based on RZD_RATIO) 
+// #define OPEN_FLAG_PATTERN 0
+
+// Probability of choosing each open flag bit (e.g., 0.5: 50% each bit is set to 1)
+// CONFIGURE PROB_FACTOR if OPEN_FLAG_PATTERN == 0
+#define UNIFORM_FLAG_RATE 0.5
+/* Scale the probabilities in flagBitPercent by multiplying this PROB_FACTOR
+ * PROB_FACTOR == 1 means do not scale the probabilities
+ * PROB_FACTOR > 1 means increase the probabilities
+ * 0 < PROB_FACTOR < 1 means decrease the probabilities
+ */
+// CONFIGURE PROB_FACTOR if OPEN_FLAG_PATTERN == 1 or 2 or 3
+// #define PROB_FACTOR 1
+#define PROB_FACTOR 5
+
+// Write size configurable macros
+// 0 - uniform distribution, 1 - RZD normalization, 2 - Inverse RZD normalization
+// #define WRITE_SIZE_PATTERN 1
+
+// Marcos to distinguish open flags for different operations
+#define USE_CREATE_FLAG 0
+#define USE_WRITE_FLAG 1
+
+// Write size fixed macros
+#define WRITE_SIZE_PARTS 33
+
+// Rank-size distribution for write size 
+#define WRITE_SIZE_RZD_RATIO 0.9
+
+#define SYSCALL_RETRY_LIMIT 5
+#define RETRY_WAIT_USECS    1000
+
+//From config_min.h
+/* This should be a multiple of N_FS
+ * in order to avoid false discrepancy in open() tests */
+#define MAX_OPENED_FILES 192
+/* The file name of or the path to the performance log */
+#define PERF_PREFIX      "perf"
+/* The name of or the path to the logs (without .log suffix) */
+#define SEQ_PREFIX       "sequence"
+#define OUTPUT_PREFIX    "output"
+#define ERROR_PREFIX     "error"
+/* Interval of perf metrics logging (in secs) */
+#define PERF_INTERVAL    5
+/* Max length of function name in log */
+#define FUNC_NAME_LEN    16
+/* Abort the whole program when expect() fails */
+#define ABORT_ON_FAIL    1
+
+#define VERIFS_PREFIX       "veri"
+#define NOVA_NAME           "nova"
+#define BTRFS_NAME          "btrfs"
+#define XFS_NAME            "xfs"
+#define VERIFS1_NAME        "verifs1"
+#define NILFS2_NAME         "nilfs2"
+#define TESTFS_NAME       "testFS"
+#define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
+
+#ifndef MAX_FS
+#define MAX_FS      20
+#endif
+
+#define ENV_KEY_MAX 20
+
+#ifndef MAX_DIR_NUM
+#define MAX_DIR_NUM 200
+#endif
 
 //From vector.h
-
 #define DEFAULT_INITCAP 16
+
+int pre = 0;
+int seq = 0;
 
 struct vector {
     unsigned char *data;
@@ -140,51 +219,6 @@ static inline void vector_try_shrink(struct vector *vec) {
     vec->data = (unsigned char *)realloc(vec->data, newcap);
 }
 
-static inline void vector_pop_back(struct vector *vec) {
-    if (vec->len == 0)
-        return;
-    vec->len--;
-    vector_try_shrink(vec);
-}
-
-static inline int vector_set(struct vector *vec, size_t index, void *el) {
-    if (index < 0 || index >= vec->len)
-        return ERANGE;
-    size_t offset = vec->unitsize * index;
-    memcpy(vec->data + offset, el, vec->unitsize);
-    return 0;
-}
-
-static inline int vector_erase(struct vector *vec, size_t index) {
-    if (index >= vec->len)
-        return ERANGE;
-    size_t dest_off = index * vec->unitsize;
-    size_t src_off = (index + 1) * vec->unitsize;
-    size_t count = (vec->len - index - 1) * vec->unitsize;
-    memmove(vec->data + dest_off, vec->data + src_off, count);
-    vec->len--;
-    vector_try_shrink(vec);
-    return 0;
-}
-
-static inline void vector_sort(struct vector *vec,
-                               int (*comp)(const void *, const void *))
-{
-    qsort(vec->data, vec->len, vec->unitsize, comp);
-}
-
-static inline size_t vector_length(struct vector *vec) {
-    return vec->len;
-}
-
-static inline size_t vector_memusage(struct vector *vec) {
-    return vec->capacity * vec->unitsize;
-}
-
-static inline size_t vector_size(struct vector *vec) {
-    return vec->len * vec->unitsize;
-}
-
 static inline void vector_destroy(struct vector *vec) {
     free(vec->data);
     memset(vec, 0, sizeof(struct vector));
@@ -193,47 +227,6 @@ static inline void vector_destroy(struct vector *vec) {
 #define vector_iter(vec, type, entry) \
     int _i; \
     for (entry = (type *)((vec)->data), _i = 0; _i < (vec)->len; ++_i, ++entry)
-
-//From operations.h
-// Maximum open flags: otcal 037777777 (11111111111111111111111) = 23 bits
-#define MAX_FLAG_BITS 23
-
-/* 
- * CONFIGURABLE MACROS
- */
-
-// Ration in rank-size distribution or sampling
-#define RZD_RATIO 0.9
-
-// 0 - uniform, 1 - probability, 2 - Inverse by harmonic mean weighting, 3 - Inverse by subtraction from 100%
-// 4 - rank-size distribution (based on RZD_RATIO), 5 - Inverse rank-size distribution (based on RZD_RATIO) 
-// #define OPEN_FLAG_PATTERN 0
-
-// Probability of choosing each open flag bit (e.g., 0.5: 50% each bit is set to 1)
-// CONFIGURE PROB_FACTOR if OPEN_FLAG_PATTERN == 0
-#define UNIFORM_FLAG_RATE 0.5
-/* Scale the probabilities in flagBitPercent by multiplying this PROB_FACTOR
- * PROB_FACTOR == 1 means do not scale the probabilities
- * PROB_FACTOR > 1 means increase the probabilities
- * 0 < PROB_FACTOR < 1 means decrease the probabilities
- */
-// CONFIGURE PROB_FACTOR if OPEN_FLAG_PATTERN == 1 or 2 or 3
-// #define PROB_FACTOR 1
-#define PROB_FACTOR 5
-
-// Write size configurable macros
-// 0 - uniform distribution, 1 - RZD normalization, 2 - Inverse RZD normalization
-// #define WRITE_SIZE_PATTERN 1
-
-// Marcos to distinguish open flags for different operations
-#define USE_CREATE_FLAG 0
-#define USE_WRITE_FLAG 1
-
-// Write size fixed macros
-#define WRITE_SIZE_PARTS 33
-
-// Rank-size distribution for write size 
-#define WRITE_SIZE_RZD_RATIO 0.9
 
 typedef struct all_inputs {
     int create_open_flag;
@@ -291,8 +284,6 @@ size_t pick_write_sizes(int pattern);
 #define PATH_MAX    4096
 #endif
 
-#define SYSCALL_RETRY_LIMIT 5
-#define RETRY_WAIT_USECS    1000
 #define with_retry(retry_cond, retry_limit, wait_us, retry_action, retval, \
                    func, ...) \
     int _retry_count = 0; \
@@ -305,23 +296,6 @@ size_t pick_write_sizes(int pattern);
             usleep(wait_us); \
         } \
     } while (_retry_count++ < retry_limit);
-
-//From config_min.h
-/* This should be a multiple of N_FS
- * in order to avoid false discrepancy in open() tests */
-#define MAX_OPENED_FILES 192
-/* The file name of or the path to the performance log */
-#define PERF_PREFIX      "perf"
-/* The name of or the path to the logs (without .log suffix) */
-#define SEQ_PREFIX       "sequence"
-#define OUTPUT_PREFIX    "output"
-#define ERROR_PREFIX     "error"
-/* Interval of perf metrics logging (in secs) */
-#define PERF_INTERVAL    5
-/* Max length of function name in log */
-#define FUNC_NAME_LEN    16
-/* Abort the whole program when expect() fails */
-#define ABORT_ON_FAIL    1
 
 /* File/Dir Pool Related Configurations */
 #ifdef FILEDIR_POOL
@@ -372,18 +346,6 @@ void dump_all_circular_bufs(circular_buf_sum_t *fsimg_bufs, char **fslist,
 void cleanup_cir_bufs(circular_buf_sum_t *fsimg_bufs);
 
 #endif
-
-// #ifndef _SETUP_H_
-// #define _SETUP_H_
-
-#define VERIFS_PREFIX       "veri"
-#define NOVA_NAME           "nova"
-#define BTRFS_NAME          "btrfs"
-#define XFS_NAME            "xfs"
-#define VERIFS1_NAME        "verifs1"
-#define NILFS2_NAME         "nilfs2"
-#define TESTFS_NAME       "testFS"
-#define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
 
 #ifdef __cplusplus
 extern "C" {
@@ -443,16 +405,6 @@ extern "C" {
         return round_up(n, unit) - unit;
     }
 
-#ifndef MAX_FS
-#define MAX_FS      20
-#endif
-
-#define ENV_KEY_MAX 20
-
-#ifndef MAX_DIR_NUM
-#define MAX_DIR_NUM 200
-#endif
-
 #define nelem(array)  (sizeof(array) / sizeof(array[0]))
 
 #define mem_alloc_err(...) \
@@ -506,27 +458,16 @@ typedef struct all_global_params {
     char **devlist;
     size_t *devsize_kb;
     char **basepaths;
-    char **testdirs;
-    char **testfiles;
-    void **fsimgs;
-    int *fsfds;
-    absfs_state_t *absfs;
-    int *rets;
-    int *errs;
     /* Fields related to new operations and dir structure */
     int fpoolsize;
     int dpoolsize;
-    char ***filepool; // number of file systems -> size of file pool -> each file pathname
-    char ***directorypool;
     /* Fields on xattr */
     char **xfpaths;
 } globals_t;
 
-// extern globals_t *globals_t_p;
-// extern bool *fs_frozen;
-
 globals_t *globals_t_p;
 bool *fs_frozen;
+
 static inline unsigned int get_n_fs() {
     return globals_t_p->_n_fs;
 }
@@ -551,48 +492,12 @@ static inline char **get_basepaths() {
     return globals_t_p->basepaths;
 }
 
-static inline char **get_testdirs() {
-    return globals_t_p->testdirs;
-}
-
-static inline char **get_testfiles() {
-    return globals_t_p->testfiles;
-}
-
-static inline void **get_fsimgs() {
-    return globals_t_p->fsimgs;
-}
-
-static inline int *get_fsfds() {
-    return globals_t_p->fsfds;
-}
-
-static inline absfs_state_t *get_absfs() {
-    return globals_t_p->absfs;
-}
-
-static inline int *get_rets() {
-    return globals_t_p->rets;
-}
-
-static inline int *get_errs() {
-    return globals_t_p->errs;
-}
-
 static inline int get_fpoolsize() {
     return globals_t_p->fpoolsize;
 }
 
 static inline int get_dpoolsize() {
     return globals_t_p->dpoolsize;
-}
-
-static inline char ***get_filepool() {
-    return globals_t_p->filepool;
-}
-
-static inline char ***get_directorypool() {
-    return globals_t_p->directorypool;
 }
 
 static inline char **get_xfpaths() {
@@ -779,8 +684,7 @@ private:
 #endif
 
 /* End of C++ declarations */
-// globals_t *globals_t_p;
-// bool *fs_frozen;
+
 #ifdef FILEDIR_POOL
 char **bfs_fd_pool;
 int combo_pool_idx;
@@ -933,63 +837,6 @@ static int get_mcfs_cli_arguments()
     return ret;
 }
 
-/* swarm_id should already be gotten before this function */
-static int parse_env_arguments(char* env_to_parse)
-{
-    /* Parsing the MCFS options from env */
-    int tok_cnt = 0;
-    char *context = NULL;
-    /* Example: ext4:256:jffs2:512 fs1:size1(KB):fs2:size2(KB) */
-    char *token = strtok_r(env_to_parse, globals_delim, &context);
-    while (token != NULL) {
-        /* Fetch file system name */
-        if (tok_cnt % 2 == 0) {
-            fslist_to_copy[tok_cnt / 2] = calloc(strlen(token) + 1, 
-                sizeof(char));
-            if (!fslist_to_copy[tok_cnt / 2])
-                mem_alloc_err();
-            strcpy(fslist_to_copy[tok_cnt / 2], token);
-        }
-        /* Fetch device size */
-        else {
-            devsize_kb_to_copy[tok_cnt / 2] = atoi(token);
-        }
-        ++tok_cnt;
-        token = strtok_r(NULL, globals_delim, &context);
-    }
-    if (tok_cnt % 2 != 0) {
-        fprintf(stderr, "Incorrect env format! Exp: fs1:size1:fs2:size2\n");
-        return -EINVAL; 
-    }
-    /* _n_fs */
-    globals_t_p->_n_fs = tok_cnt / 2;
-    return 0;
-}
-
-static int get_mcfs_env_arguments() 
-{
-    char globals_used_env_key[ENV_KEY_MAX];
-    /* 
-     * No swarm mode (single Spin pan process), Use swarm id 0 
-     * Swarm mode, Use swarm id starting from 1
-     */
-    globals_t_p->_swarm_id = atoi(global_args);
-    /* USE MCFS_FSLIST${_swarm_id} as env name */
-    sprintf(globals_used_env_key, "%s%u", mcfs_globals_env_key, 
-        globals_t_p->_swarm_id);
-
-    mcfs_globals_env = getenv(globals_used_env_key);
-    /* Validate existence of environment vars */
-    if (!mcfs_globals_env) {
-        fprintf(stderr, "globals env %s is not set.\n", 
-            globals_used_env_key);
-        return -EINVAL;
-    }
-    int ret = -1;
-    ret = parse_env_arguments(mcfs_globals_env);
-    return ret;
-}
-
 static void prepare_dev_suffix()
 {
     /* figure out total number of ram/mtdblocks gonna be used */
@@ -1066,17 +913,6 @@ static void prepare_dev_suffix()
                 pmem_name, pmem_id);
             ++pmem_cnt;
         } 
-        //else if (strcmp(dev_all[dev_idx], loop_name) == 0) {
-        //    if (globals_t_p->_swarm_id >= 1)
-        //       loop_id = loop_cnt + (globals_t_p->_swarm_id - 1) * dev_nums.all_loops;
-        //    else
-        //        loop_id = loop_cnt;
-        //    len = snprintf(NULL, 0, "/dev/%s%d", loop_name, loop_id);
-        //    globals_t_p->devlist[i] = calloc(len + 1, sizeof(char));
-        //    snprintf(globals_t_p->devlist[i], len + 1, "/dev/%s%d", 
-        //        loop_name, loop_id);
-        //   ++loop_cnt;
-        //}
         else { // No Disk required 
            globals_t_p->devlist[i] = NULL;
         }
@@ -1119,43 +955,6 @@ static void init_all_steady_globals()
     /* basepaths */
     globals_t_p->basepaths = calloc(globals_t_p->_n_fs, sizeof(char*));
     if (!globals_t_p->basepaths) 
-        mem_alloc_err();
-
-#ifndef FILEDIR_POOL
-    /* testdirs */
-    globals_t_p->testdirs = calloc(globals_t_p->_n_fs, sizeof(char*));
-    if (!globals_t_p->testdirs) 
-        mem_alloc_err();
-
-    /* testfiles */
-    globals_t_p->testfiles = calloc(globals_t_p->_n_fs, sizeof(char*));
-    if (!globals_t_p->testfiles) 
-        mem_alloc_err();
-#endif
-
-    /* fsimgs */
-    globals_t_p->fsimgs = calloc(globals_t_p->_n_fs, sizeof(void*));
-    if (!globals_t_p->fsimgs) 
-        mem_alloc_err();
-
-    /* fsfds */
-    globals_t_p->fsfds = calloc(globals_t_p->_n_fs, sizeof(int));
-    if (!globals_t_p->fsfds) 
-        mem_alloc_err();
-
-    /* absfs */
-    globals_t_p->absfs = calloc(globals_t_p->_n_fs, sizeof(absfs_state_t));
-    if (!globals_t_p->absfs) 
-        mem_alloc_err();
-
-    /* rets */
-    globals_t_p->rets = calloc(globals_t_p->_n_fs, sizeof(int));
-    if (!globals_t_p->rets) 
-        mem_alloc_err();
-
-    /* errs */
-    globals_t_p->errs = calloc(globals_t_p->_n_fs, sizeof(int));
-    if (!globals_t_p->errs) 
         mem_alloc_err();
 
     /* get_xfpaths */
@@ -1224,20 +1023,6 @@ static void init_multi_files_params()
     tmp_fpool = calloc(fpool_sz, sizeof(char*));
     tmp_dpool = calloc(dpool_sz, sizeof(char*));
 
-    /* Initialize filepool */
-    globals_t_p->filepool = calloc(globals_t_p->_n_fs, sizeof(char*));
-
-    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        globals_t_p->filepool[i] = calloc(fpool_sz, sizeof(char*));
-    }
-
-    /* Initialize directorypool */
-    globals_t_p->directorypool = calloc(globals_t_p->_n_fs, sizeof(char*));
-
-    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        globals_t_p->directorypool[i] = calloc(dpool_sz, sizeof(char*));
-    }
-
     size_t len = 0;
     current[0] = calloc(1, len + 1);
 
@@ -1245,24 +1030,6 @@ static void init_multi_files_params()
         pool_dfs(PATH_DEPTH, current, 1);
     }
 
-    /* Populate the file/dir pool in globals */
-    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        for (int j = 0; j < fpool_sz; ++j) {
-            size_t fname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], 
-                                        tmp_fpool[j]);
-            globals_t_p->filepool[i][j] = calloc(1, fname_len + 1);
-            snprintf(globals_t_p->filepool[i][j], fname_len + 1, "%s%s", 
-                    get_basepaths()[i], tmp_fpool[j]);
-        }
-
-        for (int j = 0; j < dpool_sz; ++j) {
-            size_t dname_len = snprintf(NULL, 0, "%s%s", get_basepaths()[i], 
-                                        tmp_dpool[j]);
-            globals_t_p->directorypool[i][j] = calloc(1, dname_len + 1);
-            snprintf(globals_t_p->directorypool[i][j], dname_len + 1, "%s%s", 
-                    get_basepaths()[i], tmp_dpool[j]);       
-        }
-    }
 }
 
 /* 
@@ -1338,39 +1105,6 @@ static void free_all_globals()
     if (globals_t_p->devsize_kb)
         free(globals_t_p->devsize_kb);
 
-    /* Free all steady members */
-    if (globals_t_p->fsimgs)
-        free(globals_t_p->fsimgs);
-    if (globals_t_p->fsfds)
-        free(globals_t_p->fsfds);
-    if (globals_t_p->absfs)
-        free(globals_t_p->absfs);
-    if (globals_t_p->rets)
-        free(globals_t_p->rets);
-    if (globals_t_p->errs)
-        free(globals_t_p->errs);
-
-#ifdef FILEDIR_POOL
-    /* Free file and dir pools */
-    for (int i = 0; i < globals_t_p->_n_fs; ++i) {
-        for (int j = 0; j < globals_t_p->fpoolsize; ++j) {
-            if (globals_t_p->filepool[i][j])
-                free(globals_t_p->filepool[i][j]);
-        }
-        if (globals_t_p->filepool[i])
-            free(globals_t_p->filepool[i]);
-
-        for (int j = 0; j < globals_t_p->dpoolsize; ++j) {
-            if (globals_t_p->directorypool[i][j])
-                free(globals_t_p->directorypool[i][j]);
-        }
-        if (globals_t_p->directorypool[i])
-            free(globals_t_p->directorypool[i]);
-    }
-    free(globals_t_p->filepool);
-    free(globals_t_p->directorypool);
-#endif
-
     /* Free global structure pointer */
     if (globals_t_p)
         free(globals_t_p);
@@ -1419,64 +1153,6 @@ static int cli_or_env_args(int argc, char *argv[])
     return 1;
 }
 
-static void dump_all_globals()
-{
-    FILE * fp;
-    char dump_fn[MAX_FS + 10];
-    sprintf(dump_fn, "dump_globals_%u.log", globals_t_p->_swarm_id);
-    fp = fopen (dump_fn, "w");
-    if (!fp) {
-        fprintf(stderr, "Error opening file %s\n", dump_fn);
-        exit(1);
-    }
-    fprintf(fp, "swarm_id: %u\n", globals_t_p->_swarm_id);
-    fprintf(fp, "n_fs: %u\n", globals_t_p->_n_fs);
-    for(int i = 0; i < globals_t_p->_n_fs; ++i) {
-        fprintf(fp, "fs index: %d\n", i);
-        fprintf(fp, "fs:%s\tsuffix:%s\tdevice:%s\tdevszkb:%ld\n", 
-            globals_t_p->fslist[i], globals_t_p->fssuffix[i], 
-            globals_t_p->devlist[i], globals_t_p->devsize_kb[i]);
-    }
-    fclose(fp);
-}
-
-#ifdef FILEDIR_POOL
-static void dump_file_dir_pools()
-{
-    FILE * fp;
-    char dump_fn[PATH_MAX];
-    sprintf(dump_fn, "dump_fdpools_%u.log", globals_t_p->_swarm_id);
-    fp = fopen(dump_fn, "w");
-    if (!fp) {
-        fprintf(stderr, "Error opening file %s\n", dump_fn);
-        exit(1);
-    }
-    fprintf(fp, "swarm_id: %u\n", globals_t_p->_swarm_id);
-    fprintf(fp, "n_fs: %u\n\n", globals_t_p->_n_fs);
-    // dump the pool information
-    fprintf(fp, "File pool size: %d\n", globals_t_p->fpoolsize);
-    fprintf(fp, "Directory pool size: %d\n", globals_t_p->dpoolsize);
-
-    fprintf(fp, "--- FILE POOL ---\n");
-    for (int i = 0; i < get_n_fs(); ++i) {
-        fprintf(fp, "File system %d: \n", i + 1);
-        for (int j = 0; j < globals_t_p->fpoolsize; ++j) {
-            fprintf(fp, "%s\n", get_filepool()[i][j]);
-        }
-    }
-    fprintf(fp, "\n");
-    fprintf(fp, "--- DIRECTORY POOL ---\n");
-    for (int i = 0; i < get_n_fs(); ++i) {
-        fprintf(fp, "File system %d: \n", i + 1);
-        for (int j = 0; j < globals_t_p->dpoolsize; ++j) {
-            fprintf(fp, "%s\n", get_directorypool()[i][j]);
-        }
-    }
-    fprintf(fp, "\n");
-    fclose(fp);
-}
-#endif
-
 void __attribute__((constructor)) globals_init(int argc, char *argv[])
 {
     int ret = -1;
@@ -1488,12 +1164,9 @@ void __attribute__((constructor)) globals_init(int argc, char *argv[])
     }
     /* Init a global structure pointer */
     init_globals_pointer();
-    /* Process enviroment variable */
-    if (opt_ret == 0) {
-        ret = get_mcfs_env_arguments();
-    }
+    
     /* Process CLI options */
-    else if (opt_ret == 1) {
+    if (opt_ret == 1) {
         ret = get_mcfs_cli_arguments();
     }
     if (ret < 0) {
@@ -1512,14 +1185,11 @@ void __attribute__((constructor)) globals_init(int argc, char *argv[])
     init_multi_files_params();
     /* BFS the file and dir pools and get a combo pool */
     build_bfs_fdcombo_pool();
-    /* (default commented out) Dump file dir pools: dump_fd_pools_0.log */
-    dump_file_dir_pools();
 #endif
     /* Initialize fs_frozen status flags*/
     fs_frozen = calloc(get_n_fs(), sizeof(bool));
     if (!fs_frozen)
         mem_alloc_err();
-    dump_all_globals();
 }
 
 /*
@@ -1532,15 +1202,9 @@ void __attribute__((destructor)) globals_cleanup(void)
         free(fs_frozen);
 }
 
-// #define DRIVER_ABORT_MINS 40
-
-// #define GCOV_ABORT_MINS 30
-
-#define XATTR_BUF_SIZE 256
 static const char *xattr_names[] = {"user.mcfsone", "user.mcfstwo"};
 static const char *xattr_vals[] = {"MCFSValueOne", "MCFSValueTwo"};
 
-extern globals_t *globals_t_p;
 extern struct fs_stat *fsinfos;
 extern int cur_pid;
 extern char func[FUNC_NAME_LEN + 1];
@@ -1800,9 +1464,6 @@ static inline void unmount_all_relaxed()
 {
     unmount_all(false);
 }
-
-int pre = 0;
-int seq = 0;
 
 void extract_fields(vector_t *fields_vec, char *line, const char *delim)
 {
