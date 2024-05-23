@@ -1,11 +1,19 @@
 #!/bin/bash
   
-SERVER_MNT_DIR="/mnt/server";
-LOCAL_MNT_DIR="/mnt/local";
+SERVER_MNT_DIR="/mnt/server"
+LOCAL_MNT_DIR="/mnt/local"
+EXT4_RAMDISK="/dev/ram0"
+SLEEP_SECONDS=5
 
-EXT4_RAMDISK="/dev/ram1";
-
+# Set up device and mount points
 setup() {
+    if lsmod | grep -q "^brd"; then
+        echo "brd module is loaded. Unloading it now."
+        rmmod brd
+    fi
+
+    modprobe brd rd_size=256
+
     if test -n "$(mount | grep $SERVER_MNT_DIR)" ; then
         umount $SERVER_MNT_DIR || exit $?
     fi
@@ -29,12 +37,12 @@ setup() {
     chmod 755 $LOCAL_MNT_DIR
 
     if systemctl is-active --quiet nfs-kernel-server; then
-    echo "NFS kernel server is already running."
+        echo "NFS kernel server is already running."
     else
-    echo "Starting NFS kernel server..."
-    systemctl start nfs-kernel-server
-    sleep 20
-    echo "NFS kernel server started."
+        echo "Starting NFS kernel server..."
+        systemctl start nfs-kernel-server
+        sleep 20
+        echo "NFS kernel server started."
     fi
 
     MKFS_FLAGS="-F -v -E lazy_itable_init=0,lazy_journal_init=0"
@@ -47,7 +55,7 @@ setup
 loop_max=10
 
 for ((i=1; i<=$loop_max; i++)); do
-    echo "----- Loop id: $i ----- "
+    echo " ---------- Loop ID: $i ---------- "
         
     mount -t ext4 $EXT4_RAMDISK $SERVER_MNT_DIR
 
@@ -60,16 +68,18 @@ for ((i=1; i<=$loop_max; i++)); do
     umount $LOCAL_MNT_DIR
     exportfs -u localhost:$SERVER_MNT_DIR
 
+    total_sleep=0
     while true; do
-    umount $SERVER_MNT_DIR
+        umount $SERVER_MNT_DIR
 
-    if [ $? -eq 0 ]; then
-        echo "Unmount succeeded"
-        break
-    else
-        echo "Unmount failed, sleeping for 5 seconds"
-        sleep 5
-    fi
+        if [ $? -eq 0 ]; then
+            echo "Unmount succeeded with $total_sleep seconds of sleep."
+            break
+        else
+            echo "Unmount failed, sleeping for 5 seconds..."
+            total_sleep=$((total_sleep+SLEEP_SECONDS))
+            sleep $SLEEP_SECONDS
+        fi
     done
 
 done
