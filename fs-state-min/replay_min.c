@@ -118,8 +118,6 @@
 #define PERF_INTERVAL    5
 /* Max length of function name in log */
 #define FUNC_NAME_LEN    16
-/* Abort the whole program when expect() fails */
-#define ABORT_ON_FAIL    1
 
 #define VERIFS_PREFIX       "veri"
 #define NOVA_NAME           "nova"
@@ -228,33 +226,6 @@ static inline void vector_destroy(struct vector *vec) {
     int _i; \
     for (entry = (type *)((vec)->data), _i = 0; _i < (vec)->len; ++_i, ++entry)
 
-typedef struct all_inputs {
-    int create_open_flag;
-    int write_open_flag;
-    size_t write_size;
-} inputs_t;
-
-extern inputs_t *inputs_t_p;
-
-/* Write size partition data structure */
-typedef struct write_size_partition {
-    size_t minsz;
-    size_t maxsz;
-} writesz_partition_t;
-
-// We investigate 34 write size partitions: equal to 0, 0, 1, ... 31, 32
-extern writesz_partition_t writesz_parts[WRITE_SIZE_PARTS];
-
-// Random integer generator [min, max] included
-static inline size_t rand_size(size_t min, size_t max)
-{
-   return min + rand() % (max + 1 - min);
-}
-
-void populate_writesz_parts();
-
-void syscall_inputs_init();
-
 // Probable weight for each open flags
 // Does not need to be real percentage value, as long as it can represent weights for each flag
 /*
@@ -263,39 +234,49 @@ void syscall_inputs_init();
  * 2. Inverse variant probs: more occurrence in the kernel, less prob to be chosen (think about it)
  * Find out the inverse probality of each flag bit
  */
-extern const double flagBitPercent[MAX_FLAG_BITS];
 
-extern double whmFlagPercent[MAX_FLAG_BITS];
-extern double subFlagPercent[MAX_FLAG_BITS];
-extern double rzdFlagPercent[MAX_FLAG_BITS];
-extern double inv_rzdFlagPercent[MAX_FLAG_BITS];
+int create_file(const char *path, int flags, int mode)
+{
+    int fd = open(path, flags, mode);
+    if (fd >= 0) {
+        close(fd);
+    }
+    return (fd >= 0) ? 0 : -1;
+}
 
-int create_file(const char *path, int flags, int mode);
-ssize_t write_file(const char *path, int flags, void *data, off_t offset, size_t length);
-int fallocate_file(const char *path, off_t offset, off_t len);
-int chown_file(const char *path, uid_t owner);
-int chgrp_file(const char *path, gid_t group);
+ssize_t write_file(const char *path, int flags, void *data, off_t offset, size_t length)
+{
+    int fd = open(path, flags, O_RDWR);
+    int err;
+    if (fd < 0) {
+        return -1;
+    }
+    off_t res = lseek(fd, offset, SEEK_SET);
+    if (res == (off_t) -1) {
+        err = errno;
+        goto exit_err;
+    }
+    ssize_t writesz = write(fd, data, length);
+    if (writesz < 0) {
+        err = errno;
+        goto exit_err;
+    }
+    if (writesz < length) {
+        fprintf(stderr, "Note: less data written than expected (%ld < %zu)\n",
+                writesz, length);
+    }
+    close(fd);
+    return writesz;
 
-// Driver functions
-int pick_open_flags(int pattern, int ops);
-size_t pick_write_sizes(int pattern);
+exit_err:
+    close(fd);
+    errno = err;
+    return -1;
+}
 
 #ifndef PATH_MAX
 #define PATH_MAX    4096
 #endif
-
-#define with_retry(retry_cond, retry_limit, wait_us, retry_action, retval, \
-                   func, ...) \
-    int _retry_count = 0; \
-    do { \
-        retval = func(__VA_ARGS__); \
-        if (!(retry_cond)) { \
-            break; \
-        } else { \
-            retry_action(#func, #retry_cond, _retry_count + 1); \
-            usleep(wait_us); \
-        } \
-    } while (_retry_count++ < retry_limit);
 
 /* File/Dir Pool Related Configurations */
 #ifdef FILEDIR_POOL
@@ -303,48 +284,6 @@ size_t pick_write_sizes(int pattern);
 #define DIR_COUNT 2
 #define PATH_DEPTH 2
 #define MCFS_NAME_LEN 4
-#endif
-
-#ifdef CBUF_IMAGE
-// #include "circular_buf.h"
-#define CBUF_SIZE 10
-#define KB_TO_BYTES 1024
-
-struct fsimg_buf {
-    void *state; // concrete state (f/s image buffer)
-    bool ckpt; // if true, checkpointed image; if false, restored image
-    size_t depth; // state_depth
-    size_t seqid; // seq id (count) corresponds to the image
-};
-
-typedef struct fsimg_buf fsimg_buf_t;
-
-// Circular buffer structure for each file system
-struct circular_buf {
-    fsimg_buf_t img_buf[CBUF_SIZE];
-    size_t head_idx; // [0, CBUF_SIZE - 1]
-    size_t size; // The size of currently saved images, size <= CBUF_SIZE
-};
-
-typedef struct circular_buf circular_buf_t;
-
-// Data structure to represent all the circular buffers in MCFS
-// The number of circular buffer is equivalent to the number of file systems
-struct circular_buf_sum {
-    circular_buf_t *cir_bufs; // length is number of f/s 
-    unsigned int buf_num; // number of file systems
-};
-
-typedef struct circular_buf_sum circular_buf_sum_t;
-
-void circular_buf_init(circular_buf_sum_t **fsimg_bufs, int n_fs, size_t *devsize_kb);
-void insert_circular_buf(circular_buf_sum_t *fsimg_bufs, int fs_idx, 
-                            size_t devsize_kb, void *save_state, 
-                            size_t state_depth, size_t seq_id, bool is_ckpt);
-void dump_all_circular_bufs(circular_buf_sum_t *fsimg_bufs, char **fslist, 
-    size_t *devsize_kb);
-void cleanup_cir_bufs(circular_buf_sum_t *fsimg_bufs);
-
 #endif
 
 #ifdef __cplusplus
@@ -674,12 +613,6 @@ struct AbstractFile {
 private:
     void retry_warning(const std::string& funcname, const std::string& cond, int retry_count) const;
 };
-
-#define DEFINE_SYSCALL_WITH_RETRY(ret_type, func, ...) \
-    ret_type _ret; \
-    with_retry(((intptr_t)_ret < 0 && errno == EBUSY), SYSCALL_RETRY_LIMIT, \
-               RETRY_WAIT_USECS, retry_warning, _ret, func, __VA_ARGS__); \
-    return _ret;
 
 #endif
 
@@ -1221,9 +1154,9 @@ extern int absfs_hash_method;
 extern bool enable_fdpool;
 extern bool enable_complex_ops;
 
-#ifdef CBUF_IMAGE
-extern circular_buf_sum_t *fsimg_bufs;
-#endif
+// #ifdef CBUF_IMAGE
+// extern circular_buf_sum_t *fsimg_bufs;
+// #endif
 
 struct fs_stat {
     size_t capacity;
@@ -1307,42 +1240,6 @@ static inline void print_expect_failed(const char *expr, const char *file,
     logerr("[seqid=%zu] Expectation failed at %s:%d: %s\n",
            count, file, line, expr);
 }
-
-#ifdef CBUF_IMAGE
-static inline void dump_all_cbufs()
-{
-    dump_all_circular_bufs(fsimg_bufs, get_fslist(), get_devsize_kb());
-}
-#endif
-
-#ifndef ABORT_ON_FAIL
-#define ABORT_ON_FAIL 0
-#endif
-
-#ifdef CBUF_IMAGE
-#define expect(expr) \
-    do { \
-        if (!(expr)) { \
-            print_expect_failed(#expr, __FILE__, __LINE__); \
-            dump_all_cbufs(); \
-            if (ABORT_ON_FAIL) { \
-                fflush(stderr); \
-                exit(1); \
-            } \
-        } \
-    } while(0)
-#else
-#define expect(expr) \
-    do { \
-        if (!(expr)) { \
-            print_expect_failed(#expr, __FILE__, __LINE__); \
-            if (ABORT_ON_FAIL) { \
-                fflush(stderr); \
-                exit(1); \
-            } \
-        } \
-    } while(0)
-#endif
 
 /* Randomly pick a value in the range of [min, max] */
 static inline size_t pick_value(size_t min, size_t max, size_t step)
