@@ -54,13 +54,6 @@
 #include <sys/time.h>
 #endif
 
-// #include "init_globals_min.h"
-// #include "vector.h"
-// #include "operations.h"
-// #include "abstract_fs.h"
-// #include "nanotiming.h"
-// #include "config_min.h"
-// #include "fileutil_min.h" // includes "abstract_fs.h"
 //From operations.h
 // Maximum open flags: otcal 037777777 (11111111111111111111111) = 23 bits
 #define MAX_FLAG_BITS 23
@@ -290,40 +283,6 @@ exit_err:
 extern "C" {
 #endif
 
-//From abstract_fs.h
-#include <xxhash.h>
-#include <zlib.h>
-
-    typedef unsigned char absfs_state_t[16];
-    typedef int (*printer_t)(const char *fmt, ...);
-
-    enum hash_type{xxh128_t, xxh3_t, md5_t,crc32_t};
-
-    struct abstract_fs {
-        unsigned int hash_option;
-        union{
-            XXH3_state_t *xxh_state;
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-            EVP_MD_CTX *md5_state;
-#else
-            MD5_CTX md5_state;
-#endif
-            uLong crc32_state;
-        };
-        absfs_state_t state;
-    };
-
-    typedef struct abstract_fs absfs_t;
-
-    /**
-     * get_state_prefix: Get the 32-bit prefix of the "abstract file
-     *   system state signature", which is a 128-bit MD5 hash
-     *
-     * @param[in] absfs: The abstract file system object
-     *
-     * @return: First 32-bit of the state hash value
-     */
-
 #define nelem(array)  (sizeof(array) / sizeof(array[0]))
 
 #define mem_alloc_err(...) \
@@ -421,175 +380,9 @@ extern char **bfs_fd_pool;
 extern int combo_pool_idx;
 #endif
 
-//From nanotiming.h
-/**
- * current_utc_time:- Retrieve current UTC time and output it via
- *                    struct timespec
- */
-void current_utc_time(struct timespec *ts);
-void timediff(struct timespec *res, struct timespec *end, struct timespec *start);
-// 
-/**
- * benchmark:- Run specified function and report the time it took.
- * @func: The function to use.
- * @arg:  The void pointer arg to pass in
- *
- * Note that there is a convention over the function to be benchmarked.
- * It is supposed to be in the form `int func(void *args)`
- * The integer return value indicates its "exit status", and the void *
- * argument it receives can be used for anything but usually a list of
- * parameters it needs.
- *
- * For example:
- *
- * struct func_arg_list {
- *      int a;
- *      int b;
- * };
- *
- * int func(void *args)
- * {
- *     struct func_arg_list *pars;
- *     if (!args) {
- *         return -1;
- *     }
- *     pars = (struct func_arg_list *)args;
- *
- *     // The payload to do...
- *
- *     // If success
- *     return 0;
- * }
- *
- * The return value is a `struct timespec` representing the time
- * it used to finish the function.
- */
-struct timespec benchmark(int (*func)(void *), void *);
-/**
- * bechmark_mt:- Benchmark for multiple times
- * @func: the function to benchmark
- * @arg: the void pointer arg to pass in
- * @times: number of iterations
- */
-struct timespec benchmark_mt(int (*func)(void *), void *, unsigned int times);
-
-// From set_min.h
-typedef struct AbsfsSet* absfs_set_t;
-
-void absfs_set_init(absfs_set_t *set);
-void absfs_set_destroy(absfs_set_t set);
-int absfs_set_add(absfs_set_t set, absfs_state_t *states);
-size_t absfs_set_size(absfs_set_t set);
-
-// From log.h
-struct logger {
-    FILE *file;
-    /* name: relative or absolute path to the log file, but excludes
-     * the '.log' extension suffix. */
-    char *name;
-    size_t bytes_written;
-    /* To be assigned from stat.st_mode */
-    mode_t type;
-};
-
-struct log_entry {
-    struct logger *dest;
-    size_t loglen;
-    char *content;
-};
-
-// Get a string of current date and time in the format of yyyymmdd-hhmmss
-static inline void get_datetime_stamp(char *strbuf, size_t maxlen) {
-  time_t now;
-  struct tm now_tm;
-  now = time(NULL);
-  gmtime_r(&now, &now_tm);
-  strftime(strbuf, maxlen, "%Y%m%d-%H%M%S", &now_tm);
-}
-
-static inline void add_ts_to_logname(char *strbuf, size_t maxlen,
-    const char *logname, const char *progname, const char *suffix) {
-  // yyyymmdd-hhmmss'\0' -> total 16 characters
-  char tsbuf[16] = {0};
-  get_datetime_stamp(tsbuf, 16);
-  snprintf(strbuf, maxlen, "%s-%s-%s-%d%s", logname, progname, tsbuf, getpid(),
-           suffix);
-}
-
-int submit_log(struct logger *dest, const char *fmt, ...);
-int submit_message(const char *fmt, ...);
-int vsubmit_message(const char *fmt, va_list args);
-int submit_error(const char *fmt, ...);
-int vsubmit_error(const char *fmt, va_list args);
-int submit_seq(const char *fmt, ...);
-int vsubmit_seq(const char *fmt, va_list args);
-void make_logger(struct logger *lgr, const char *name, FILE *default_fp);
-void init_log_daemon(const char *output_log_name, const char *err_log_name,
-        const char *seq_name);
-void destroy_log_daemon();
-ssize_t get_progname(char *outbuf);
-
 #ifdef __cplusplus
 }
 #endif
-
-//From abstract_fs.h
-/* C++ declarations */
-#ifdef __cplusplus
-
-#include <vector>
-#include <experimental/filesystem>
-
-namespace fs = std::experimental::filesystem;
-
-typedef int (*printer_t)(const char *fmt, ...);
-
-struct AbstractFile {
-    std::string fullpath;
-    /* Abstract path is irrelevant to the basepath of the mount point */
-    std::string abstract_path;
-    struct {
-        mode_t mode;
-        size_t size;
-        nlink_t nlink;
-        uid_t uid;
-        gid_t gid;
-    } attrs;
-
-    struct {
-        blksize_t blksize;
-        blkcnt_t blocks;
-    } _attrs;
-
-    /* Feed the attributes and content of the file described by
-     * this AbstractFile into MD5 hash calculator and update the
-     * MD5 context object. */
-    printer_t printer;
-
-    void FeedHasher(absfs_t *absfs);
-
-    bool CheckValidity();
-
-    /* System call wrappers that can retry on EBUSY */
-    int Open(int flag);
-
-    ssize_t Read(int fd, void *buf, size_t count);
-
-    int Lstat(struct stat *statbuf);
-
-    DIR *Opendir();
-
-    struct dirent *Readdir(DIR *dirp);
-
-    int Closedir(DIR *dirp);
-
-private:
-    void retry_warning(const std::string& funcname, const std::string& cond, int retry_count) const;
-};
-
-#endif
-
-/* End of C++ declarations */
 
 #ifdef FILEDIR_POOL
 char **bfs_fd_pool;
@@ -1092,16 +885,11 @@ extern int _opened_files[1024];
 extern int _n_files;
 extern size_t count;
 extern char *basepaths[];
-extern absfs_set_t absfs_set;
 extern int pan_argc;
 extern char **pan_argv;
 extern int absfs_hash_method;
 extern bool enable_fdpool;
 extern bool enable_complex_ops;
-
-// #ifdef CBUF_IMAGE
-// extern circular_buf_sum_t *fsimg_bufs;
-// #endif
 
 struct fs_stat {
     size_t capacity;
@@ -1117,76 +905,9 @@ struct imghash {
     size_t count;
 };
 
-static inline void get_epoch()
-{
-    struct timespec now;
-    current_utc_time(&now);
-    timediff(&epoch, &now, &begin_time);
-}
-
-static inline void makelog(const char *format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    get_epoch();
-    submit_message("[%4ld.%09ld] ", epoch.tv_sec, epoch.tv_nsec);
-    vsubmit_message(format, args);
-}
-
-static inline void record_seq(const char *format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    vsubmit_seq(format, args);
-}
-
-#define makecall(retvar, err, argfmt, funcname, ...) \
-    count++; \
-    memset(func, 0, FUNC_NAME_LEN + 1); \
-    strncpy(func, #funcname, FUNC_NAME_LEN); \
-    cur_pid = Pworker->_pid; \
-    record_seq("%s, " argfmt "\n", func, __VA_ARGS__); \
-    errno = 0; \
-    retvar = funcname(__VA_ARGS__); \
-    err = errno; \
-    makelog("[seqid = %zu] %s (" argfmt ")", \
-            count, func, __VA_ARGS__); \
-    submit_message(" -> ret = %d, err = %s\n", retvar, strerror(errno)); \
-    errno = err;
-
-#define logwarn(msg, ...) \
-    get_epoch(); \
-    submit_error("[%4ld.%09ld] %s:%d:%s: " msg "\n", epoch.tv_sec, \
-                 epoch.tv_nsec, __FILE__, __LINE__, __func__, ##__VA_ARGS__);
-
-#define logerr(msg, ...) \
-    get_epoch(); \
-    submit_error("[%4ld.%09ld] %s:%d:%s: " msg " (%s)\n", epoch.tv_sec, \
-                 epoch.tv_nsec, __FILE__, __LINE__, __func__, ##__VA_ARGS__, \
-                 strerror(errno));
-
 #define min(x, y) ((x >= y) ? y : x)
 
-static inline void print_expect_failed(const char *expr, const char *file,
-                                       int line)
-{
-    logerr("[seqid=%zu] Expectation failed at %s:%d: %s\n",
-           count, file, line, expr);
-}
-
-/* Randomly pick a value in the range of [min, max] */
-static inline size_t pick_value(size_t min, size_t max, size_t step)
-{
-    return min + rand() / (RAND_MAX / (max - min + 1) + 1) / step * step;
-}
-
 enum fill_type {PATTERN, ONES, BYTE_REPEAT, RANDOM_EACH_BYTE};
-
-/* Randomly pick a value in the range of [min, max] without steps */
-static inline size_t pick_random(size_t min, size_t max)
-{
-   return min + rand() / (RAND_MAX / (max - min + 1) + 1);
-}
 
 /* Generate data into a given buffer.
  * @value: 0-255 for uniform characters, -1 for random filling */
@@ -1230,11 +951,6 @@ static inline void generate_data(char *buffer, size_t len, size_t offset, enum f
     }
 }
 
-static inline bool check_file_existence(const char *path)
-{
-    return access(path, F_OK) == 0;
-}
-
 static inline ssize_t fsize(int fd)
 {
     struct stat info;
@@ -1258,32 +974,9 @@ static inline ssize_t fsize(int fd)
     }
 }
 
-bool compare_equality_values(char **fses, int n_fs, int *nums);
-bool compare_equality_fexists(char **fses, int n_fs, char **fpaths);
-bool compare_equality_fcontent(char **fses, int n_fs, char **fpaths);
-bool compare_equality_absfs(char **fses, int n_fs, absfs_state_t *absfs);
-bool compare_equality_file_xattr(char **fses, int n_fs, char **xfpaths);
-int compare_file_content(const char *path1, const char *path2);
-
-void show_open_flags(uint64_t flags);
-int myopen(const char *pathname, int flags, mode_t mode);
-void fsimg_checkpoint(const char *mntpoint);
-void closeall();
-void cleanup();
 void mountall();
 void unmount_all(bool strict);
 void record_fs_stat();
-void start_perf_metrics_thread();
-bool do_fsck();
-int fsfreeze(const char *fstype, const char *devpath, const char *mountpoint);
-int fsthaw(const char *fstype, const char *devpath, const char *mountpoint);
-int unfreeze_all();
-void clear_excluded_files();
-// int setup_generic(const char *fsname, const char *devname, const size_t size_kb);
-// int setup_jffs2(const char *devname, const size_t size_kb);
-// void execute_cmd(const char *cmd);
-// int execute_cmd_status(const char *cmd);
-// void populate_mountpoints();
 
 static inline void unmount_all_strict()
 {
@@ -1428,21 +1121,6 @@ err:
     exit(1);
 }
 
-static void save_lsof()
-{
-    int ret;
-    static int report_count = 0;
-    char progname[NAME_MAX] = {0};
-    char logname[NAME_MAX] = {0};
-    char cmd[PATH_MAX] = {0};
-
-    get_progname(progname);
-    add_ts_to_logname(logname, NAME_MAX, "lsof", progname, "");
-    ret = snprintf(cmd, PATH_MAX, "lsof > %s-%d.txt", logname, report_count++);
-    assert(ret >= 0);
-    ret = system(cmd);
-}
-
 void unmount_all(bool strict)
 {
     bool has_failure = false;
@@ -1454,14 +1132,7 @@ void unmount_all(bool strict)
         // Change retry limit from 20 to 19 to avoid excessive delay
         int retry_limit = 19;
         int num_retries = 0;
-        /* We have to unfreeze the frozen file system before unmounting it.
-         * Otherwise the system will hang! */
-        /*
-        if (fs_frozen[i]) {
-            fsthaw(get_fslist()[i], get_devlist()[i], get_basepaths()[i]);
-        }
-        */
-    
+        
         while (retry_limit > 0) {
             ret = umount2(get_basepaths()[i], 0);
             if (ret == 0) {
@@ -1480,7 +1151,6 @@ void unmount_all(bool strict)
                 usleep(1000 * waitms);
                 num_retries++;
                 retry_limit--;
-                save_lsof();
             } 
             else {
                 // Handle non-EBUSY errors immediately without retrying
