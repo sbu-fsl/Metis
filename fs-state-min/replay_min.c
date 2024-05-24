@@ -315,13 +315,6 @@ extern "C" {
 
     typedef struct abstract_fs absfs_t;
 
-    void init_abstract_fs(absfs_t *absfs);
-    void destroy_abstract_fs(absfs_t *absfs);
-    int scan_abstract_fs(absfs_t *absfs, const char *basepath, bool verbose,
-                         printer_t verbose_printer);
-    void print_abstract_fs_state(printer_t printer, const absfs_state_t state);
-    void print_filemode(printer_t printer, mode_t mode);
-
     /**
      * get_state_prefix: Get the 32-bit prefix of the "abstract file
      *   system state signature", which is a 128-bit MD5 hash
@@ -330,19 +323,6 @@ extern "C" {
      *
      * @return: First 32-bit of the state hash value
      */
-    static inline uint32_t get_state_prefix(absfs_t *absfs) {
-        uint32_t prefix;
-        memcpy(&prefix, &absfs->md5_state, sizeof(uint32_t));
-        return prefix;
-    }
-
-    static inline size_t round_up(size_t n, size_t unit) {
-        return ((n + unit - 1) / unit) * unit;
-    }
-
-    static inline size_t round_down(size_t n, size_t unit) {
-        return round_up(n, unit) - unit;
-    }
 
 #define nelem(array)  (sizeof(array) / sizeof(array[0]))
 
@@ -355,20 +335,13 @@ extern "C" {
 
 typedef struct all_dev_nums {
     int all_rams;
-    int all_mtdblocks;
-    int all_pmems;
 //   int all_loops;
 } dev_nums_t;
 
-static const char *fs_all[] = {"btrfs", "ext2", "ext4", "f2fs", 
-                               "jffs2", "ramfs", "tmpfs", "verifs1", 
-                               "verifs2", "xfs", "nilfs2", "jfs",
-                               "nova", "testFS"};
+static const char *fs_all[] = {"ext4","jfs"};
                                
-static const char *dev_all[]= {"ram", "ram", "ram", "ram", 
-                                "mtdblock", "", "", "", 
-                                "", "ram", "ram", "ram",
-                                "pmem", "ram"};
+static const char *dev_all[]= {"ram","ram"};
+
 #define ALL_FS nelem(fs_all)
 
 static inline int get_dev_from_fs(char *fs_type) {
@@ -645,7 +618,7 @@ static char **tmp_fpool = NULL;
 static char **tmp_dpool = NULL;
 #endif
 
-dev_nums_t dev_nums = {.all_rams = 0, .all_mtdblocks = 0, .all_pmems=0};
+dev_nums_t dev_nums = {.all_rams = 0};
 
 /*
  * current is the list of directories previous depth
@@ -784,21 +757,15 @@ static void prepare_dev_suffix()
         else if (strcmp(dev_all[dev_idx], ramdisk_name) == 0) {
             ++dev_nums.all_rams;
         }
-        else if (strcmp(dev_all[dev_idx], mtdblock_name) == 0) {
-            ++dev_nums.all_mtdblocks;
-        }else if (strcmp(dev_all[dev_idx], pmem_name) == 0) {
-            ++dev_nums.all_pmems;
-        } 
-	//else if (strcmp(dev_all[dev_idx], loop_name) == 0) {
-        //    ++dev_nums.all_loops;
-        //}
     }
     dev_idx = -1;
 
     /* populate device name (including orginal and used dev names) */
     size_t len;
-    int ram_cnt = 0, mtdblock_cnt = 0, pmem_cnt=0;
-    int ram_id = -1, mtdblock_id = -1, pmem_id=0;
+    // int ram_cnt = 0, mtdblock_cnt = 0, pmem_cnt=0;
+    // int ram_id = -1, mtdblock_id = -1, pmem_id=0;
+
+    int ram_cnt = 0, ram_id = -1;
 
     globals_t_p->devlist = calloc(globals_t_p->_n_fs, sizeof(char*));
     if (!globals_t_p->devlist) 
@@ -824,28 +791,6 @@ static void prepare_dev_suffix()
                 ramdisk_name, ram_id);
             ++ram_cnt;
         }
-        else if (strcmp(dev_all[dev_idx], mtdblock_name) == 0) {
-            if (globals_t_p->_swarm_id >= 1)
-                mtdblock_id = mtdblock_cnt + (globals_t_p->_swarm_id - 1) * dev_nums.all_mtdblocks;
-            else
-                mtdblock_id = mtdblock_cnt;
-            len = snprintf(NULL, 0, "/dev/%s%d", mtdblock_name, mtdblock_id);
-            globals_t_p->devlist[i] = calloc(len + 1, sizeof(char));
-            snprintf(globals_t_p->devlist[i], len + 1, "/dev/%s%d", 
-                mtdblock_name, mtdblock_id);
-            ++mtdblock_cnt;
-        }
-        else if (strcmp(dev_all[dev_idx], pmem_name) == 0) {
-            if (globals_t_p->_swarm_id >= 1)
-                pmem_id = pmem_cnt + (globals_t_p->_swarm_id - 1) * dev_nums.all_pmems;
-            else
-                pmem_id = pmem_cnt;
-            len = snprintf(NULL, 0, "/dev/%s%d", pmem_name, pmem_id);
-            globals_t_p->devlist[i] = calloc(len + 1, sizeof(char));
-            snprintf(globals_t_p->devlist[i], len + 1, "/dev/%s%d", 
-                pmem_name, pmem_id);
-            ++pmem_cnt;
-        } 
         else { // No Disk required 
            globals_t_p->devlist[i] = NULL;
         }
@@ -1195,18 +1140,6 @@ static inline void record_seq(const char *format, ...)
     vsubmit_seq(format, args);
 }
 
-static inline void compute_abstract_state(const char *basepath,
-    absfs_state_t state)
-{
-    absfs_t absfs;
-
-    absfs.hash_option = absfs_hash_method;
-    init_abstract_fs(&absfs);
-    scan_abstract_fs(&absfs, basepath, false, submit_error);
-    memcpy(state, absfs.state, sizeof(absfs_state_t));
-    destroy_abstract_fs(&absfs);
-}
-
 #define makecall(retvar, err, argfmt, funcname, ...) \
     count++; \
     memset(func, 0, FUNC_NAME_LEN + 1); \
@@ -1469,29 +1402,6 @@ void populate_replay_basepaths()
 		snprintf(get_basepaths()[i], len + 1, "/mnt/test-%s%s", 
 								get_fslist()[i], get_fssuffix()[i]);
 	}
-}
-
-char *get_replayed_absfs(const char *basepath,
-    unsigned int hash_method, char *abs_state_str)
-{
-    int ret;
-    absfs_t absfs;
-    absfs.hash_option = hash_method;
-    init_abstract_fs(&absfs);
-    ret = scan_abstract_fs(&absfs, basepath, false, printf);
-
-    if (ret) {
-        printf("Error occurred when computing absfs...\n");
-        return NULL;
-    }
-
-    char *strp = abs_state_str;
-    for (int i = 0; i < 16; ++i) {
-        size_t res = snprintf(strp, 3, "%02x", absfs.state[i]);
-        strp += res;
-    }
-    destroy_abstract_fs(&absfs);
-    return abs_state_str;
 }
 
 void mountall()
