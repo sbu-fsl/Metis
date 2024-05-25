@@ -1283,6 +1283,26 @@ static int setup_jfs(const char *devname, const size_t size_kb)
     return 0;
 }
 
+static int setup_generic(const char *fsname, const char *devname, const size_t size_kb)
+{
+    int ret;
+    char cmdbuf[PATH_MAX];
+    ret = check_device(devname, size_kb);
+		        
+    if (ret != 0) {
+    	fprintf(stderr, "Cannot setup %s because %s is bad or not ready.\n",fsname, devname);
+	return ret;
+    }
+    // fill the device with zeros
+    snprintf(cmdbuf, PATH_MAX,"dd if=/dev/zero of=%s bs=1k count=%zu status=none",devname, size_kb);
+    execute_cmd(cmdbuf);
+    // format the device with the specified file system
+    snprintf(cmdbuf, PATH_MAX, "mkfs.%s %s", fsname, devname);
+    execute_cmd(cmdbuf);
+
+    return 0;
+}
+
 void setup_filesystems()
 {
     int ret;
@@ -1291,12 +1311,14 @@ void setup_filesystems()
     for (int i = 0; i < get_n_fs(); ++i) {
         if (strcmp(get_fslist()[i], "jfs") == 0) {
             ret = setup_jfs(get_devlist()[i], get_devsize_kb()[i]);
-        }
+        } else {
+	    ret = setup_generic(get_fslist()[i], get_devlist()[i], get_devsize_kb()[i]);
+	}
     }
     
     if (ret != 0)
     {
-        fprintf(stderr, "Cannot setup JFS file system (ret = %d)\n", ret);
+        fprintf(stderr, "Cannot setup %s file system (ret = %d)\n", get_fslist()[i], ret);
         exit(1);
     }
 }
