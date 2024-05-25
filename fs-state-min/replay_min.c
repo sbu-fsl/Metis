@@ -55,77 +55,12 @@
 #endif
 
 //From operations.h
-// Maximum open flags: otcal 037777777 (11111111111111111111111) = 23 bits
-#define MAX_FLAG_BITS 23
-/* 
- * CONFIGURABLE MACROS
- */
-
-// Ration in rank-size distribution or sampling
-#define RZD_RATIO 0.9
-
-// 0 - uniform, 1 - probability, 2 - Inverse by harmonic mean weighting, 3 - Inverse by subtraction from 100%
-// 4 - rank-size distribution (based on RZD_RATIO), 5 - Inverse rank-size distribution (based on RZD_RATIO) 
-// #define OPEN_FLAG_PATTERN 0
-
-// Probability of choosing each open flag bit (e.g., 0.5: 50% each bit is set to 1)
-// CONFIGURE PROB_FACTOR if OPEN_FLAG_PATTERN == 0
-#define UNIFORM_FLAG_RATE 0.5
-/* Scale the probabilities in flagBitPercent by multiplying this PROB_FACTOR
- * PROB_FACTOR == 1 means do not scale the probabilities
- * PROB_FACTOR > 1 means increase the probabilities
- * 0 < PROB_FACTOR < 1 means decrease the probabilities
- */
-// CONFIGURE PROB_FACTOR if OPEN_FLAG_PATTERN == 1 or 2 or 3
-// #define PROB_FACTOR 1
-#define PROB_FACTOR 5
-
-// Write size configurable macros
-// 0 - uniform distribution, 1 - RZD normalization, 2 - Inverse RZD normalization
-// #define WRITE_SIZE_PATTERN 1
-
-// Marcos to distinguish open flags for different operations
-#define USE_CREATE_FLAG 0
-#define USE_WRITE_FLAG 1
-
-// Write size fixed macros
-#define WRITE_SIZE_PARTS 33
-
-// Rank-size distribution for write size 
-#define WRITE_SIZE_RZD_RATIO 0.9
-
-#define SYSCALL_RETRY_LIMIT 5
-#define RETRY_WAIT_USECS    1000
-
-//From config_min.h
-/* This should be a multiple of N_FS
- * in order to avoid false discrepancy in open() tests */
-#define MAX_OPENED_FILES 192
-/* The file name of or the path to the performance log */
-#define PERF_PREFIX      "perf"
-/* The name of or the path to the logs (without .log suffix) */
-#define SEQ_PREFIX       "sequence"
-#define OUTPUT_PREFIX    "output"
-#define ERROR_PREFIX     "error"
-/* Interval of perf metrics logging (in secs) */
-#define PERF_INTERVAL    5
 /* Max length of function name in log */
 #define FUNC_NAME_LEN    16
-
-#define VERIFS_PREFIX       "veri"
-#define NOVA_NAME           "nova"
-#define BTRFS_NAME          "btrfs"
-#define XFS_NAME            "xfs"
-#define VERIFS1_NAME        "verifs1"
-#define NILFS2_NAME         "nilfs2"
-#define TESTFS_NAME       "testFS"
-#define VERIFS_PREFIX_LEN   (sizeof(VERIFS_PREFIX) - 1)
 
 #ifndef MAX_FS
 #define MAX_FS      20
 #endif
-
-#define ENV_KEY_MAX 20
 
 #ifndef MAX_DIR_NUM
 #define MAX_DIR_NUM 200
@@ -134,8 +69,25 @@
 //From vector.h
 #define DEFAULT_INITCAP 16
 
-int pre = 0;
-int seq = 0;
+#ifndef PATH_MAX
+#define PATH_MAX    4096
+#endif
+
+/* File/Dir Pool Related Configurations */
+#ifdef FILEDIR_POOL
+#define FILE_COUNT 3
+#define DIR_COUNT 2
+#define PATH_DEPTH 2
+#define MCFS_NAME_LEN 4
+
+char **bfs_fd_pool;
+int combo_pool_idx;
+static int fpool_idx = 0;
+static int dpool_idx = 0;
+/* Temp file and dir pools are freed in precreate_pools */
+static char **tmp_fpool = NULL;
+static char **tmp_dpool = NULL;
+#endif
 
 struct vector {
     unsigned char *data;
@@ -143,6 +95,9 @@ struct vector {
     size_t len;
     size_t capacity;
 };
+
+int pre = 0;
+int seq = 0;
 
 typedef struct vector vector_t;
 
@@ -218,66 +173,6 @@ static inline void vector_destroy(struct vector *vec) {
 #define vector_iter(vec, type, entry) \
     int _i; \
     for (entry = (type *)((vec)->data), _i = 0; _i < (vec)->len; ++_i, ++entry)
-
-// Probable weight for each open flags
-// Does not need to be real percentage value, as long as it can represent weights for each flag
-/*
- * TODO: more flexible Probabilities Three different variants: uniform, prob, inverse-prob
- * 1. Probabilities in the kernel
- * 2. Inverse variant probs: more occurrence in the kernel, less prob to be chosen (think about it)
- * Find out the inverse probality of each flag bit
- */
-
-int create_file(const char *path, int flags, int mode)
-{
-    int fd = open(path, flags, mode);
-    if (fd >= 0) {
-        close(fd);
-    }
-    return (fd >= 0) ? 0 : -1;
-}
-
-ssize_t write_file(const char *path, int flags, void *data, off_t offset, size_t length)
-{
-    int fd = open(path, flags, O_RDWR);
-    int err;
-    if (fd < 0) {
-        return -1;
-    }
-    off_t res = lseek(fd, offset, SEEK_SET);
-    if (res == (off_t) -1) {
-        err = errno;
-        goto exit_err;
-    }
-    ssize_t writesz = write(fd, data, length);
-    if (writesz < 0) {
-        err = errno;
-        goto exit_err;
-    }
-    if (writesz < length) {
-        fprintf(stderr, "Note: less data written than expected (%ld < %zu)\n",
-                writesz, length);
-    }
-    close(fd);
-    return writesz;
-
-exit_err:
-    close(fd);
-    errno = err;
-    return -1;
-}
-
-#ifndef PATH_MAX
-#define PATH_MAX    4096
-#endif
-
-/* File/Dir Pool Related Configurations */
-#ifdef FILEDIR_POOL
-#define FILE_COUNT 3
-#define DIR_COUNT 2
-#define PATH_DEPTH 2
-#define MCFS_NAME_LEN 4
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -375,41 +270,17 @@ static inline char **get_xfpaths() {
     return globals_t_p->xfpaths;
 }
 
-#ifdef FILEDIR_POOL
-extern char **bfs_fd_pool;
-extern int combo_pool_idx;
-#endif
-
 #ifdef __cplusplus
 }
 #endif
 
-#ifdef FILEDIR_POOL
-char **bfs_fd_pool;
-int combo_pool_idx;
-#endif
-
-static char *mcfs_globals_env;
-static const char *mcfs_globals_env_key = "MCFS_FSLIST";
 static const char *globals_delim = ":";
 static const char *ramdisk_name = "ram";
-static const char *mtdblock_name = "mtdblock";
-static const char *pmem_name = "pmem";
-//static const char *loop_name = "loop";
 
 static char *fslist_to_copy[MAX_FS];
 static size_t devsize_kb_to_copy[MAX_FS];
 static char *global_args = NULL;
 static int opt_ret = -1;
-
-#ifdef FILEDIR_POOL
-static int fpool_idx = 0;
-static int dpool_idx = 0;
-
-/* Temp file and dir pools are freed in precreate_pools */
-static char **tmp_fpool = NULL;
-static char **tmp_dpool = NULL;
-#endif
 
 dev_nums_t dev_nums = {.all_rams = 0};
 
@@ -555,9 +426,6 @@ static void prepare_dev_suffix()
 
     /* populate device name (including orginal and used dev names) */
     size_t len;
-    // int ram_cnt = 0, mtdblock_cnt = 0, pmem_cnt=0;
-    // int ram_id = -1, mtdblock_id = -1, pmem_id=0;
-
     int ram_cnt = 0, ram_id = -1;
 
     globals_t_p->devlist = calloc(globals_t_p->_n_fs, sizeof(char*));
@@ -873,37 +741,7 @@ void __attribute__((destructor)) globals_cleanup(void)
         free(fs_frozen);
 }
 
-static const char *xattr_names[] = {"user.mcfsone", "user.mcfstwo"};
-static const char *xattr_vals[] = {"MCFSValueOne", "MCFSValueTwo"};
-
-extern struct fs_stat *fsinfos;
-extern int cur_pid;
 extern char func[FUNC_NAME_LEN + 1];
-extern struct timespec begin_time;
-extern struct timespec epoch;
-extern int _opened_files[1024];
-extern int _n_files;
-extern size_t count;
-extern char *basepaths[];
-extern int pan_argc;
-extern char **pan_argv;
-extern int absfs_hash_method;
-extern bool enable_fdpool;
-extern bool enable_complex_ops;
-
-struct fs_stat {
-    size_t capacity;
-    size_t bytes_free;
-    size_t bytes_avail;
-    size_t total_inodes;
-    size_t free_inodes;
-    size_t block_size;
-};
-
-struct imghash {
-    unsigned char md5[16];
-    size_t count;
-};
 
 #define min(x, y) ((x >= y) ? y : x)
 
@@ -974,7 +812,6 @@ static inline ssize_t fsize(int fd)
     }
 }
 
-void mountall();
 void unmount_all(bool strict);
 void record_fs_stat();
 
@@ -1010,6 +847,45 @@ void destroy_fields(vector_t *fields_vec)
 		free(*field);
 	}
 	vector_destroy(fields_vec);
+}
+
+int create_file(const char *path, int flags, int mode)
+{
+    int fd = open(path, flags, mode);
+    if (fd >= 0) {
+        close(fd);
+    }
+    return (fd >= 0) ? 0 : -1;
+}
+
+ssize_t write_file(const char *path, int flags, void *data, off_t offset, size_t length)
+{
+    int fd = open(path, flags, O_RDWR);
+    int err;
+    if (fd < 0) {
+        return -1;
+    }
+    off_t res = lseek(fd, offset, SEEK_SET);
+    if (res == (off_t) -1) {
+        err = errno;
+        goto exit_err;
+    }
+    ssize_t writesz = write(fd, data, length);
+    if (writesz < 0) {
+        err = errno;
+        goto exit_err;
+    }
+    if (writesz < length) {
+        fprintf(stderr, "Note: less data written than expected (%ld < %zu)\n",
+                writesz, length);
+    }
+    close(fd);
+    return writesz;
+
+exit_err:
+    close(fd);
+    errno = err;
+    return -1;
 }
 
 int do_create_file(vector_t *argvec)
@@ -1310,10 +1186,10 @@ void setup_filesystems()
 
     for (int i = 0; i < get_n_fs(); ++i) {
         if (strcmp(get_fslist()[i], "jfs") == 0) {
-		ret = setup_jfs(get_devlist()[i], get_devsize_kb()[i]);
+		    ret = setup_jfs(get_devlist()[i], get_devsize_kb()[i]);
         } else {
 	    	ret = setup_generic(get_fslist()[i], get_devlist()[i], get_devsize_kb()[i]);
-	}
+	    }
    
     	if (ret != 0)
     	{
