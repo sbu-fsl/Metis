@@ -1310,16 +1310,16 @@ void setup_filesystems()
 
     for (int i = 0; i < get_n_fs(); ++i) {
         if (strcmp(get_fslist()[i], "jfs") == 0) {
-            ret = setup_jfs(get_devlist()[i], get_devsize_kb()[i]);
+		ret = setup_jfs(get_devlist()[i], get_devsize_kb()[i]);
         } else {
-	    ret = setup_generic(get_fslist()[i], get_devlist()[i], get_devsize_kb()[i]);
+	    	ret = setup_generic(get_fslist()[i], get_devlist()[i], get_devsize_kb()[i]);
 	}
-    }
-    
-    if (ret != 0)
-    {
-        fprintf(stderr, "Cannot setup %s file system (ret = %d)\n", get_fslist()[i], ret);
-        exit(1);
+   
+    	if (ret != 0)
+    	{
+        	fprintf(stderr, "Cannot setup %s file system (ret = %d)\n", get_fslist()[i], ret);
+         	exit(1);
+    	}
     }
 }
 
