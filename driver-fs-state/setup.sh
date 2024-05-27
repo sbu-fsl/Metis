@@ -38,6 +38,7 @@ PML_SRC="./mcfs-main.pml"
 PML_TEMP="./.pml_tmp"
 PML_START_PATN="\/\* The persistent content of the file systems \*\/"
 PML_END_PATN="\/\* Abstract state signatures of the file systems \*\/"
+NFS_SUFFIX="server";
 
 exclude_files=()
 # Create file system and device key-value map
@@ -391,7 +392,17 @@ for i in $(seq 0 $(($n_fs-1))); do
         if [ -d /mnt/test-$fs-i$i-s$SWARM_ID ]; then
             runcmd rm -rf /mnt/test-$fs-i$i-s$SWARM_ID;
         fi
-        runcmd mkdir -p /mnt/test-$fs-i$i-s$SWARM_ID;
+
+        if [ -d /mnt/test-$fs-i$i-s$SWARM_ID-$NFS_SUFFIX ]; then
+            runcmd rm -rf /mnt/test-$fs-i$i-s$SWARM_ID-$NFS_SUFFIX;
+        fi
+
+        if [ "$fs" = 'nfs' ]; then
+            runcmd mkdir -p /mnt/test-$fs-i$i-s$SWARM_ID-$NFS-SUFFIX;
+        fi
+
+
+
     fi
 done
 

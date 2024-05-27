@@ -77,6 +77,22 @@ void mountall()
             char cmdbuf[PATH_MAX];
             snprintf(cmdbuf, PATH_MAX, "mount -t NOVA -o noatime %s %s", get_devlist()[i], get_basepaths()[i]);
             ret = execute_cmd_status(cmdbuf);                       
+        } else if(is_nfs(get_fslist()[i])) {
+            char cmdbuf[PATH_MAX]; 
+            char serverbasepath[strlen(get_basepaths()[i]) + NFS_SERVER_SUFFIX_LEN + 1];
+            char clientmountpath[strlen(NFS_EXPORT_IP) + strlen(get_basepaths()[i]) + NFS_SERVER_SUFFIX_LEN + 1];
+
+            snprintf(serverbasepath, sizeof(serverbasepath), "%s-%s",get_basepaths()[i], NFS_SERVER_SUFFIX);
+            snprintf(clientmountpath,  sizeof(clientmountpath), "%s:%s",NFS_EXPORT_IP, serverbasepath);
+
+            ret = mount(get_devlist()[i], serverbasepath, "ext4", MS_NOATIME, "");
+            snprintf(cmdbuf, PATH_MAX,
+             "exportfs -o rw,sync,no_root_squash %s", clientmountpath);
+             ret = execute_cmd_status(cmdbuf);
+
+            //Compared to a mount shell command, we also need to specify addr again in mount options for the C system call (https://stackoverflow.com/questions/28350912/nfs-mount-system-call-in-linux)
+            ret = mount(clientmountpath, get_basepaths()[i], get_fslist()[i], MS_NOATIME, "rw,sync,vers=3,addr=127.0.0.1");
+            //TODO: gaahuja nfsv3 vs v4 handling, error handling                     
         } else {
             ret = mount(get_devlist()[i], get_basepaths()[i], get_fslist()[i], MS_NOATIME, "");
         }        
@@ -119,6 +135,8 @@ void unmount_all(bool strict)
 {
     bool has_failure = false;
     int ret;
+    int retNFS = -1;
+    int retServerFS = -1;
 #ifndef NO_FS_STAT
     record_fs_stat();
 #endif
@@ -138,11 +156,35 @@ void unmount_all(bool strict)
         */
     
         while (retry_limit > 0) {
-            ret = umount2(get_basepaths()[i], 0);
+            if(is_nfs(get_fslist()[i])) {
+            char cmdbuf[PATH_MAX]; 
+
+            char serverbasepath[strlen(get_basepaths()[i]) + NFS_SERVER_SUFFIX_LEN + 1];
+            char clientmountpath[strlen(NFS_EXPORT_IP) + strlen(get_basepaths()[i]) + NFS_SERVER_SUFFIX_LEN + 1];
+
+            snprintf(serverbasepath, sizeof(serverbasepath), "%s-%s",get_basepaths()[i], NFS_SERVER_SUFFIX);
+            snprintf(clientmountpath,  sizeof(clientmountpath), "%s:%s",NFS_EXPORT_IP, serverbasepath);
+            
+            snprintf(cmdbuf, PATH_MAX, "umount %s", clientmountpath);
+             if(retNFS != 0) {
+                retNFS = execute_cmd_status(cmdbuf);
+                //fprintf(stderr, "Unmounted nfs at %s, retNFS=%d err=%s \n", clientmountpath, retNFS, errnoname(errno));
+                snprintf(cmdbuf, PATH_MAX,
+                    "exportfs -u %s", clientmountpath);
+                execute_cmd_status(cmdbuf);
+            }
+            if(retNFS == 0) {
+             retServerFS = umount2(serverbasepath,0);
+            }
+            ret = retNFS | retServerFS;
+            //fprintf(stderr, "retNFS=%d retServer=%d errNo=%d errName=%s\n", retNFS, retServerFS, errno, errnoname(errno));
+            }
+            else {
+                ret = umount2(get_basepaths()[i], 0);
+            }
             if (ret == 0) {
                 break; // Success, exit the retry loop
             }        
-
             /* If unmounting failed due to device being busy, again up to
             * retry_limit times with 100 * 2^n ms (n = num_retries) */
             if (errno == EBUSY) {

@@ -42,7 +42,7 @@ PML_END_PATN="\/\* Abstract state signatures of the file systems \*\/"
 exclude_files=()
 # Create file system and device key-value map
 declare -A FS_DEV_MAP
-FS_DEV_MAP+=( ["btrfs"]="ram" ["ext2"]="ram" ["ext4"]="ram" ["f2fs"]="ram" )
+FS_DEV_MAP+=( ["btrfs"]="ram" ["ext2"]="ram" ["ext4"]="ram" ["f2fs"]="ram" ["nfs"]="ram")
 FS_DEV_MAP+=( ["jffs2"]="mtdblock" ["ramfs"]="" ["tmpfs"]="" )
 FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" ["nilfs2"]="ram" ["jfs"]="ram")
 FS_DEV_MAP+=( ["nova"]="pmem" )
@@ -396,6 +396,24 @@ unset_nova() {
     :
 }
 
+setup_nfs() {
+    #TODO gaahuja : add flexibility for nfs versioning, ip flexibility, choosing underlying server file system, export args to c code?
+    # DEVFILE="$1";
+    #SERVERDEVFILE = "/nfsserver/$DEVFILE" 
+    # NFS_SERVER_FS="ext4"
+    # echo "BEFORE NFS SETUP"
+    # setup_ext $NFS_SERVER_FS $DEVFILE 0;
+    # echo "MODIFYING /cat/exports";
+    #Underlying fs created 
+    :
+}
+
+unset_nfs() {
+    DEVFILE="$1";
+    #Remove entry for nfs server
+     sed -i "/$DEVFILE/d" /etc/exports 2> /dev/null
+}
+
 # Setup mount points and each file system
 for i in $(seq 0 $(($n_fs-1))); do
     # Run individual file system setup scripts defined above
@@ -405,6 +423,7 @@ for i in $(seq 0 $(($n_fs-1))); do
     # Do not need to set up VeriFS
     if [ "${fs:0:${VERI_PREFIX_LEN}}" != "$VERIFS_PREFIX" ]; then
         # Unmount first
+
         if [ "$(mount | grep /mnt/test-$fs-i$i-s$SWARM_ID)" ]; then
             runcmd umount -f /mnt/test-$fs-i$i-s$SWARM_ID;
         fi
@@ -415,6 +434,11 @@ for i in $(seq 0 $(($n_fs-1))); do
             runcmd rm -rf /mnt/test-$fs-i$i-s$SWARM_ID;
         fi
         runcmd mkdir -p /mnt/test-$fs-i$i-s$SWARM_ID;
+        # For NFS, need to create another dir for fs mounted on the server
+
+        if [[ "$fs" == nfs* ]]; then
+            runcmd mkdir -p /mnt/test-$fs-i$i-s$SWARM_ID-server;
+        fi
     fi
 done
 

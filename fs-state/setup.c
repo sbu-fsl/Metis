@@ -413,6 +413,33 @@ static int setup_nova(const char *devname, const char *basepath, const size_t si
     ret = umount2(basepath, 0);    
     return ret;
 }
+
+static int setup_nfs(const char *serverfsname, const char *devname, const char *basepath, const size_t size_kb)
+{
+    //TODO: gaahuja add support for other underlying fs than ext4/ext2, other networking setup? change nfs-ram mapping in init_globals.c to be extensible
+    int ret;
+    char cmdbuf[PATH_MAX]; 
+    FILE *exports; 
+
+    fprintf(stderr, "Will setup %s with underlying fs= %s\n",
+        __FUNCTION__, serverfsname);
+
+    ret =  setup_generic(serverfsname, devname, size_kb);
+
+    snprintf(cmdbuf, PATH_MAX,
+            "systemctl restart nfs-kernel-server");
+
+    ret = execute_cmd_status(cmdbuf);
+    if( ret!=0 ) {
+        fprintf(stderr, "Cannot restart nfs server (ret=%d \n",
+                ret);
+        exit(1);
+    }
+
+    return ret;
+
+}
+
 void setup_filesystems()
 {
     int ret;
@@ -443,9 +470,13 @@ void setup_filesystems()
         {
             ret = setup_nilfs2(get_devlist()[i], get_devsize_kb()[i]);
         }
-         else if (strcmp(get_fslist()[i], "nova") == 0)
+        else if (strcmp(get_fslist()[i], "nova") == 0)
         {
             ret = setup_nova(get_devlist()[i], get_basepaths()[i], get_devsize_kb()[i]);
+        }
+        else if (strcmp(get_fslist()[i], "nfs") == 0)
+        {
+            ret = setup_nfs("ext4", get_devlist()[i], get_basepaths()[i], get_devsize_kb()[i]);
         }
         // TODO: we need to consider VeriFS1 and VeriFS2 separately here
         else if (is_verifs(get_fslist()[i]))
