@@ -116,15 +116,6 @@ static inline void *_vector_peek_top(struct vector *vec) {
 #define vector_peek_top(vec, type) \
     (type *)_vector_peek_top(vec)
 
-static inline void vector_try_shrink(struct vector *vec) {
-    if (vec->len >= vec->capacity / 2)
-        return;
-    if (vec->len <= DEFAULT_INITCAP)
-        return;
-    size_t newcap = vec->capacity / 2 * vec->unitsize;
-    vec->data = (unsigned char *)realloc(vec->data, newcap);
-}
-
 static inline void vector_destroy(struct vector *vec) {
     free(vec->data);
     memset(vec, 0, sizeof(struct vector));
@@ -472,13 +463,6 @@ static void execute_cmd(const char *cmd)
     }
 }
 
-int execute_cmd_status(const char *cmd)
-{
-    int retval = system(cmd);
-    int status = WEXITSTATUS(retval);
-    return status;
-}
-
 static int check_device(const char *devname, const size_t exp_size_kb)
 {
     int fd = open(devname, O_RDONLY);
@@ -521,7 +505,11 @@ static void populate_mountpoints()
 
     snprintf(check_mount_cmdbuf, PATH_MAX, "mount | grep %s", get_basepaths());    
         /* If the mountpoint has fs mounted, then unmount it */
-    if (execute_cmd_status(check_mount_cmdbuf) == 0) {
+    
+    int check_mount_cmdbuf_retval = system(check_mount_cmdbuf);
+    int check_mount_cmdbuf_status = WEXITSTATUS(check_mount_cmdbuf_retval);
+
+    if (check_mount_cmdbuf_status == 0) {
         snprintf(unmount_cmdbuf, PATH_MAX, "umount -f %s", get_basepaths());
         execute_cmd(unmount_cmdbuf);
     }
