@@ -34,7 +34,7 @@ int seq = 0;
 unsigned int n_fs = 1;
 char *fsys = "jfs";
 char *fssuffix = "-i1-s0";
-char *device = "/dev/ram1";
+char *device = "/dev/ram0";
 size_t devsize = (size_t)16384;
 char *basepath = "/mnt/test-jfs-i1-s0";
 
