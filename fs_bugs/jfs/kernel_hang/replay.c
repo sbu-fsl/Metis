@@ -49,15 +49,21 @@
 #define PATH_MAX    4096
 #endif
 
+int pre = 0;
+int seq = 0;
+unsigned int n_fs = 1;
+char *fsys = "jfs";
+char *fssuffix = "-i1-s0";
+char *device = "/dev/ram1";
+size_t devsize = (size_t)16384;
+char *basepath = "/mnt/test-jfs-i1-s0";
+
 struct vector {
     unsigned char *data;
     size_t unitsize;
     size_t len;
     size_t capacity;
 };
-
-int pre = 0;
-int seq = 0;
 
 typedef struct vector vector_t;
 
@@ -105,6 +111,7 @@ static inline void *_vector_get(struct vector *vec, size_t index) {
         return NULL;
     return (void *)(vec->data + index * vec->unitsize);
 }
+
 #define vector_get(vec, type, index) \
     (type *)_vector_get(vec, index)
 
@@ -113,6 +120,7 @@ static inline void *_vector_peek_top(struct vector *vec) {
         return NULL;
     return (void *)(vec->data + (vec->len - 1) * vec->unitsize);
 }
+
 #define vector_peek_top(vec, type) \
     (type *)_vector_peek_top(vec)
 
@@ -125,42 +133,35 @@ static inline void vector_destroy(struct vector *vec) {
     int _i; \
     for (entry = (type *)((vec)->data), _i = 0; _i < (vec)->len; ++_i, ++entry)
 
-unsigned int _n_fs = 1;
-char *fsl = "jfs";
-char *suffix = "-i1-s0";
-char *device = "/dev/ram1";
-size_t devsize = (size_t)16384;
-char *basepath = "/mnt/test-jfs-i1-s0";
-
-static inline unsigned int get_n_fs() {
-    return _n_fs;
-}
-
-static inline char *get_fslist() {
-    return fsl;
-}
-
-static inline char *get_fssuffix() {
-    return suffix;
-}
-
-static inline char *get_devlist() {
-    return device;
-}
-
-static inline size_t get_devsize_kb() {
-    return devsize;
-}
-
-static inline char *get_basepaths() {
-    return basepath;
-}
-
 extern char func[FUNC_NAME_LEN + 1];
 
 #define min(x, y) ((x >= y) ? y : x)
 
 enum fill_type {PATTERN, ONES, BYTE_REPEAT, RANDOM_EACH_BYTE};
+
+void extract_fields(vector_t *fields_vec, char *line, const char *delim)
+{
+	vector_init(fields_vec, char *);
+	char *field = strtok(line, delim);
+	while (field) {
+		size_t flen = strlen(field);
+		char *field_copy = malloc(flen + 1);
+		assert(field_copy);
+		field_copy[flen] = '\0';
+		strncpy(field_copy, field, flen);
+		vector_add(fields_vec, &field_copy);
+		field = strtok(NULL, ", ");
+	}
+}
+
+void destroy_fields(vector_t *fields_vec)
+{
+	char **field;
+	vector_iter(fields_vec, char *, field) {
+		free(*field);
+	}
+	vector_destroy(fields_vec);
+}
 
 /* Generate data into a given buffer.
  * @value: 0-255 for uniform characters, -1 for random filling */
@@ -239,30 +240,6 @@ static inline void unmount_all_relaxed()
     unmount_all(false);
 }
 
-void extract_fields(vector_t *fields_vec, char *line, const char *delim)
-{
-	vector_init(fields_vec, char *);
-	char *field = strtok(line, delim);
-	while (field) {
-		size_t flen = strlen(field);
-		char *field_copy = malloc(flen + 1);
-		assert(field_copy);
-		field_copy[flen] = '\0';
-		strncpy(field_copy, field, flen);
-		vector_add(fields_vec, &field_copy);
-		field = strtok(NULL, ", ");
-	}
-}
-
-void destroy_fields(vector_t *fields_vec)
-{
-	char **field;
-	vector_iter(fields_vec, char *, field) {
-		free(*field);
-	}
-	vector_destroy(fields_vec);
-}
-
 int create_file(const char *path, int flags, int mode)
 {
     int fd = open(path, flags, mode);
@@ -333,7 +310,7 @@ int do_write_file(vector_t *argvec, int seq)
 	assert(buffer != NULL);
 	/* This is to make sure data written to all file systems in the same
 	 * group of operations is the same */
-	int integer_to_write = seq / get_n_fs();
+	int integer_to_write = seq / n_fs;
 	generate_data(buffer, writelen, offset, BYTE_REPEAT, integer_to_write);
 	int ret = write_file(filepath, flags, buffer, offset, writelen);
 	int err = errno;
@@ -381,7 +358,7 @@ void mountall()
     int failpos, err;
 
     int ret = -1;
-    ret = mount(get_devlist(), get_basepaths(), get_fslist(), MS_NOATIME, "");     
+    ret = mount(device, basepath, fsys, MS_NOATIME, "");     
     if (ret != 0) {
         // failpos = i;
         err = errno;
@@ -392,10 +369,10 @@ void mountall()
 err:
     /* undo mounts */
     for (int i = 0; i < failpos; ++i) {
-        umount2(get_basepaths(), MNT_FORCE);
+        umount2(basepath, MNT_FORCE);
     }
     fprintf(stderr, "Could not mount file system %s in %s at %s (%s)\n",
-            get_fslist(), get_devlist(), get_basepaths(),
+            fsys, device, basepath,
             strerror(err));
     exit(1);
 }
@@ -410,7 +387,7 @@ void unmount_all(bool strict)
     int num_retries = 0;
     
     while (retry_limit > 0) {
-        ret = umount2(get_basepaths(), 0);
+        ret = umount2(basepath, 0);
         if (ret == 0) {
             break; // Success, exit the retry loop
         }        
@@ -422,7 +399,7 @@ void unmount_all(bool strict)
             // 100 * (1 << 18) = 100 * 262144 = 26.2144s
             useconds_t waitms = 100 * (1 << num_retries); // Exponential backoff starting at 100ms
             fprintf(stderr, "File system %s mounted on %s is busy. Retry %d times,"
-                    "unmounting after %dms.\n", get_fslist(), get_basepaths(), num_retries + 1,
+                    "unmounting after %dms.\n", fsys, basepath, num_retries + 1,
                     waitms);
             usleep(1000 * waitms);
             num_retries++;
@@ -431,14 +408,14 @@ void unmount_all(bool strict)
         else {
             // Handle non-EBUSY errors immediately without retrying
             fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
-                    get_fslist(), get_basepaths(), strerror(errno));
+                    fsys, basepath, strerror(errno));
             has_failure = true;
         }
     }
     
     if (retry_limit == 0) {
         fprintf(stderr, "Failed to unmount file system %s at %s after retries.\n",
-                get_fslist(), get_basepaths());
+                fsys, basepath);
         has_failure = true;
     }
     if (has_failure && strict)
@@ -503,14 +480,14 @@ static void populate_mountpoints()
     char rm_mp_cmdbuf[PATH_MAX];
     char mk_mp_cmdbuf[PATH_MAX];
 
-    snprintf(check_mount_cmdbuf, PATH_MAX, "mount | grep %s", get_basepaths());    
+    snprintf(check_mount_cmdbuf, PATH_MAX, "mount | grep %s", basepath);    
         /* If the mountpoint has fs mounted, then unmount it */
     
     int check_mount_cmdbuf_retval = system(check_mount_cmdbuf);
     int check_mount_cmdbuf_status = WEXITSTATUS(check_mount_cmdbuf_retval);
 
     if (check_mount_cmdbuf_status == 0) {
-        snprintf(unmount_cmdbuf, PATH_MAX, "umount -f %s", get_basepaths());
+        snprintf(unmount_cmdbuf, PATH_MAX, "umount -f %s", basepath);
         execute_cmd(unmount_cmdbuf);
     }
     /* 
@@ -526,7 +503,7 @@ static void populate_mountpoints()
      * VeriFS in the setup shell scripts before running pan.
      */
 
-    snprintf(mk_mp_cmdbuf, PATH_MAX, "mkdir -p %s", get_basepaths());
+    snprintf(mk_mp_cmdbuf, PATH_MAX, "mkdir -p %s", basepath);
     execute_cmd(mk_mp_cmdbuf);
 }
 
@@ -559,13 +536,13 @@ void setup_filesystems()
     int ret;
     populate_mountpoints();
 
-    if (strcmp(get_fslist(), "jfs") == 0) {
-		ret = setup_jfs(get_devlist(), get_devsize_kb());
+    if (strcmp(fsys, "jfs") == 0) {
+		ret = setup_jfs(device, devsize());
     } 
     
     if (ret != 0)
     {
-        fprintf(stderr, "Cannot setup %s file system (ret = %d)\n", get_fslist(), ret);
+        fprintf(stderr, "Cannot setup %s file system (ret = %d)\n", fsys, ret);
         exit(1);
     }
 }
@@ -625,6 +602,7 @@ int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode)
 
     return 0;
 }
+
 /* 
  * NOTE: NEED TO RECOMPILE REPLAYER "make replayer" every time we run it.
  *
@@ -684,9 +662,9 @@ int main(int argc, char **argv)
 		size_t pre_path_len;
 		char *pre_path_name;
 		
-		pre_path_len = snprintf(NULL, 0, "%s%s", get_basepaths(), line);
+		pre_path_len = snprintf(NULL, 0, "%s%s", basepath, line);
 		pre_path_name = calloc(1, pre_path_len + 1);
-		snprintf(pre_path_name, pre_path_len + 1, "%s%s", get_basepaths(), line);
+		snprintf(pre_path_name, pre_path_len + 1, "%s%s", basepath, line);
 		// printf("pre_path_name=%s\n", pre_path_name);
 		int ret = -1;
 		ret = mkdir_p(pre_path_name, 0755, 0644);
