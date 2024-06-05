@@ -19,7 +19,6 @@
 #include <assert.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
-#include <math.h>
 #include <limits.h>
 
 /* Max length of function name in log */
@@ -403,131 +402,6 @@ void unmount_all(bool strict)
         exit(1);
 }
 
-
-static void execute_cmd(const char *cmd)
-{
-    int retval = system(cmd);
-    int status, signal = 0;
-    if ((status = WEXITSTATUS(retval)) != 0) {
-        fprintf(stderr, "Command `%s` failed with %d.\n", cmd, status);
-    }
-    if (WIFSIGNALED(retval)) {
-        signal = WTERMSIG(retval);
-        fprintf(stderr, "Command `%s` terminated with signal %d.\n", cmd,
-                signal);
-    }
-    if (status || signal) {
-        exit(1);
-    }
-}
-
-static int check_device(const char *devname, const size_t exp_size_kb)
-{
-    int fd = open(devname, O_RDONLY);
-    struct stat devinfo;
-    if (fd < 0) {
-        fprintf(stderr, "Cannot open %s (err=%s, %d)\n",
-                devname, strerror(errno), errno);
-        return -errno;
-    }
-    int retval = fstat(fd, &devinfo);
-    if (retval < 0) {
-        fprintf(stderr, "Cannot stat %s (err=%s, %d)\n",
-                devname, strerror(errno), errno);
-        close(fd);
-        return -errno;
-    }
-    if (!S_ISBLK(devinfo.st_mode)) {
-        fprintf(stderr, "%s is not a block device.\n", devname);
-        close(fd);
-        return -ENOTBLK;
-    }
-    size_t devsize = fsize(fd);
-    if (devsize < exp_size_kb * 1024) {
-        fprintf(stderr, "%s is smaller than expected (expected %zu KB, "
-                "got %zu).\n", devname, exp_size_kb, devsize / 1024);
-        close(fd);
-        return -ENOSPC;
-    }
-    close(fd);
-    return 0; 
-}
-
-static void populate_mountpoints()
-{
-    char check_mount_cmdbuf[PATH_MAX];
-    char unmount_cmdbuf[PATH_MAX];
-    char check_mp_exist_cmdbuf[PATH_MAX];
-    char rm_mp_cmdbuf[PATH_MAX];
-    char mk_mp_cmdbuf[PATH_MAX];
-
-    snprintf(check_mount_cmdbuf, PATH_MAX, "mount | grep %s", basepath);    
-        /* If the mountpoint has fs mounted, then unmount it */
-    
-    int check_mount_cmdbuf_retval = system(check_mount_cmdbuf);
-    int check_mount_cmdbuf_status = WEXITSTATUS(check_mount_cmdbuf_retval);
-
-    if (check_mount_cmdbuf_status == 0) {
-        snprintf(unmount_cmdbuf, PATH_MAX, "umount -f %s", basepath);
-        execute_cmd(unmount_cmdbuf);
-    }
-    /* 
-     * Caveat: if we use file/dir pools and test in-memory file systems
-     * like VeriFS, we should not remove the mount point here because
-     * we need to pre-create files/dirs in the pool. Removing mountpoints
-     * simply erase the precreated files/dirs.
-     *
-     * Also, we cannot mount VeriFS and other in-memory file systems on
-     * a non-empty mount point.
-     * 
-     * The correct way would be removing and recreating mount point of 
-     * VeriFS in the setup shell scripts before running pan.
-     */
-
-    snprintf(mk_mp_cmdbuf, PATH_MAX, "mkdir -p %s", basepath);
-    execute_cmd(mk_mp_cmdbuf);
-}
-
-static int setup_jfs(const char *devname, const size_t size_kb)
-{
-    int ret;
-    char cmdbuf[PATH_MAX];
-    // Expected >= 16 MiB
-    ret = check_device(devname, 16 * 1024);
-    if (ret != 0)
-    {
-        fprintf(stderr, "Cannot %s because %s is bad or not ready.\n",
-                __FUNCTION__, devname);
-        return ret;
-    }
-    // fill the device with zeros
-    snprintf(cmdbuf, PATH_MAX,
-             "dd if=/dev/zero of=%s bs=1k count=%zu",
-             devname, size_kb);
-    execute_cmd(cmdbuf);
-    // format the device with the specified file system
-    snprintf(cmdbuf, PATH_MAX, "mkfs.jfs -f %s", devname);
-    execute_cmd(cmdbuf);
-
-    return 0;
-}
-
-void setup_filesystems()
-{
-    int ret;
-    populate_mountpoints();
-
-    if (strcmp(fsys, "jfs") == 0) {
-		ret = setup_jfs(device, devsize);
-    } 
-    
-    if (ret != 0)
-    {
-        fprintf(stderr, "Cannot setup %s file system (ret = %d)\n", fsys, ret);
-        exit(1);
-    }
-}
-
 int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode)
 {
     const size_t len = strlen(path);
@@ -617,9 +491,6 @@ int main(int argc, char **argv)
 		printf("Cannot open %s. Does it exist?\n", sequence_log_file_name);
 		exit(1);
 	}    
-
-	/* Populate mount points and mkfs the devices */
-	setup_filesystems();
 
 	/* Create the pre-populated files and directories */
 	mountall();
