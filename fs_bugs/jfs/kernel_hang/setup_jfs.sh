@@ -13,7 +13,7 @@
 #
 
 MOUNTPOINT="/mnt/test-jfs-i1-s0"
-devname="/dev/ram1"
+devname="/dev/ram0"
 size_kb=$((16 * 1024))
 
 loadmods() {
@@ -30,7 +30,7 @@ loadmods() {
     fi
 
     # Load the brd module with the specified RAM disk size
-    modprobe brd rd_nr=2 rd_size=$size_kb
+    modprobe brd rd_nr=1 rd_size=$size_kb
 
     # Verify if the module is loaded
     if lsmod | grep -q brd; then
