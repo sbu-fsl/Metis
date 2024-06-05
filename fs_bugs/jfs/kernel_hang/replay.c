@@ -121,26 +121,26 @@ enum fill_type {PATTERN, ONES, BYTE_REPEAT, RANDOM_EACH_BYTE};
 
 void extract_fields(vector_t *fields_vec, char *line, const char *delim)
 {
-	vector_init(fields_vec, char *);
-	char *field = strtok(line, delim);
-	while (field) {
-		size_t flen = strlen(field);
-		char *field_copy = malloc(flen + 1);
-		assert(field_copy);
-		field_copy[flen] = '\0';
-		strncpy(field_copy, field, flen);
-		vector_add(fields_vec, &field_copy);
-		field = strtok(NULL, ", ");
-	}
+    vector_init(fields_vec, char *);
+    char *field = strtok(line, delim);
+    while (field) {
+        size_t flen = strlen(field);
+        char *field_copy = malloc(flen + 1);
+        assert(field_copy);
+        field_copy[flen] = '\0';
+        strncpy(field_copy, field, flen);
+        vector_add(fields_vec, &field_copy);
+        field = strtok(NULL, ", ");
+    }
 }
 
 void destroy_fields(vector_t *fields_vec)
 {
-	char **field;
-	vector_iter(fields_vec, char *, field) {
-		free(*field);
-	}
-	vector_destroy(fields_vec);
+    char **field;
+    vector_iter(fields_vec, char *, field) {
+        free(*field);
+    }
+    vector_destroy(fields_vec);
 }
 
 /* Generate data into a given buffer.
@@ -261,76 +261,76 @@ exit_err:
 
 int do_create_file(vector_t *argvec)
 {
-	char *filepath = *vector_get(argvec, char *, 1);
-	char *flagstr = *vector_get(argvec, char *, 2);
-	char *modestr = *vector_get(argvec, char *, 3);
-	char *endptr;
-	int flags = (int)strtol(flagstr, &endptr, 8);
-	int mode = (int)strtol(modestr, &endptr, 8);
-	int res = create_file(filepath, flags, mode);
-	printf("create_file(%s, 0%o, 0%o) -> ret=%d, errno=%s\n",
-	       filepath, flags, mode, res, strerror(errno));
-	return res;
+    char *filepath = *vector_get(argvec, char *, 1);
+    char *flagstr = *vector_get(argvec, char *, 2);
+    char *modestr = *vector_get(argvec, char *, 3);
+    char *endptr;
+    int flags = (int)strtol(flagstr, &endptr, 8);
+    int mode = (int)strtol(modestr, &endptr, 8);
+    int res = create_file(filepath, flags, mode);
+    printf("create_file(%s, 0%o, 0%o) -> ret=%d, errno=%s\n",
+            filepath, flags, mode, res, strerror(errno));
+    return res;
 }
 
 int do_write_file(vector_t *argvec, int seq)
 {
-	char *filepath = *vector_get(argvec, char *, 1);
-	char *flagstr = *vector_get(argvec, char *, 2);
-	char *offset_str = *vector_get(argvec, char *, 4);
-	char *len_str = *vector_get(argvec, char *, 5);
-	char *endp;
-	int flags = (int)strtol(flagstr, &endp, 8);
-	off_t offset = strtol(offset_str, &endp, 10);
-	size_t writelen = strtoul(len_str, &endp, 10);
-	assert(offset != LONG_MAX);
-	assert(writelen != ULONG_MAX);
-	
-	char *buffer = malloc(writelen);
-	assert(buffer != NULL);
-	/* This is to make sure data written to all file systems in the same
-	 * group of operations is the same */
-	int integer_to_write = seq / n_fs;
-	generate_data(buffer, writelen, offset, BYTE_REPEAT, integer_to_write);
-	int ret = write_file(filepath, flags, buffer, offset, writelen);
-	int err = errno;
-	printf("write_file(%s, %o, %ld, %lu) -> ret=%d, errno=%s\n",
-	       filepath, flags, offset, writelen, ret, strerror(err));
-	free(buffer);
-	return ret;
+    char *filepath = *vector_get(argvec, char *, 1);
+    char *flagstr = *vector_get(argvec, char *, 2);
+    char *offset_str = *vector_get(argvec, char *, 4);
+    char *len_str = *vector_get(argvec, char *, 5);
+    char *endp;
+    int flags = (int)strtol(flagstr, &endp, 8);
+    off_t offset = strtol(offset_str, &endp, 10);
+    size_t writelen = strtoul(len_str, &endp, 10);
+    assert(offset != LONG_MAX);
+    assert(writelen != ULONG_MAX);
+
+    char *buffer = malloc(writelen);
+    assert(buffer != NULL);
+    /* This is to make sure data written to all file systems in the same
+        * group of operations is the same */
+    int integer_to_write = seq / n_fs;
+    generate_data(buffer, writelen, offset, BYTE_REPEAT, integer_to_write);
+    int ret = write_file(filepath, flags, buffer, offset, writelen);
+    int err = errno;
+    printf("write_file(%s, %o, %ld, %lu) -> ret=%d, errno=%s\n",
+            filepath, flags, offset, writelen, ret, strerror(err));
+    free(buffer);
+    return ret;
 }
 
 int do_unlink(vector_t *argvec)
 {
-	char *path = *vector_get(argvec, char *, 1);
-	int ret = unlink(path);
-	int err = errno;
-	printf("unlink(%s) -> ret=%d, errno=%s\n",
-	       path, ret, strerror(err));
-	return ret;
+    char *path = *vector_get(argvec, char *, 1);
+    int ret = unlink(path);
+    int err = errno;
+    printf("unlink(%s) -> ret=%d, errno=%s\n",
+            path, ret, strerror(err));
+    return ret;
 }
 
 int do_mkdir(vector_t *argvec)
 {
-	char *path = *vector_get(argvec, char *, 1);
-	char *modestr = *vector_get(argvec, char *, 2);
-	char *endp;
-	int mode = (int)strtol(modestr, &endp, 8);
-	int ret = mkdir(path, mode);
-	int err = errno;
-	printf("mkdir(%s, 0%o) -> ret=%d, errno=%s\n",
-	       path, mode, ret, strerror(err));
-	return ret;
+    char *path = *vector_get(argvec, char *, 1);
+    char *modestr = *vector_get(argvec, char *, 2);
+    char *endp;
+    int mode = (int)strtol(modestr, &endp, 8);
+    int ret = mkdir(path, mode);
+    int err = errno;
+    printf("mkdir(%s, 0%o) -> ret=%d, errno=%s\n",
+            path, mode, ret, strerror(err));
+    return ret;
 }
 
 int do_rmdir(vector_t *argvec)
 {
-	char *path = *vector_get(argvec, char *, 1);
-	int ret = rmdir(path);
-	int err = errno;
-	printf("rmdir(%s) -> ret=%d, errno=%s\n",
-	       path, ret, strerror(err));
-	return ret;
+    char *path = *vector_get(argvec, char *, 1);
+    int ret = rmdir(path);
+    int err = errno;
+    printf("rmdir(%s) -> ret=%d, errno=%s\n",
+            path, ret, strerror(err));
+    return ret;
 }
 
 void mountall()
@@ -473,10 +473,10 @@ int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode)
  */
 int main(int argc, char **argv)
 {
-	/* 
-	 * Open the dump_prepopulate_*.log files to create the pre-populated
-	 * files and directories.
-	 */
+    /* 
+    * Open the dump_prepopulate_*.log files to create the pre-populated
+    * files and directories.
+    */
     char *sequence_log_file_name = "jfs_op_sequence.log";
     char *file_dir_array[] = {"/f-01", "/d-00/f-01", "/d-00/f-02", "/d-01/f-00", "/d-01/f-02", "/d-00/d-01"};
     int i = 0;
@@ -484,82 +484,83 @@ int main(int argc, char **argv)
     size_t linecap = 0;
     char *linebuf = NULL;
 
-	/* Open sequence file */
-	FILE *seqfp = fopen(sequence_log_file_name, "r");
-	
-	if (!seqfp) {
-		printf("Cannot open %s. Does it exist?\n", sequence_log_file_name);
-		exit(1);
-	}    
+    /* Open sequence file */
+    FILE *seqfp = fopen(sequence_log_file_name, "r");
 
-	/* Create the pre-populated files and directories */
-	mountall();
+    if (!seqfp) {
+        printf("Cannot open %s. Does it exist?\n", sequence_log_file_name);
+        exit(1);
+    }    
+
+    /* Create the pre-populated files and directories */
+    mountall();
     while (file_dir_array[i] != NULL) {
         char *line = file_dir_array[i];
-		printf("pre=%d \n", pre);
-		/* parse the line for pre-populated files and directories */
-		size_t pre_path_len;
-		char *pre_path_name;
-		
-		pre_path_len = snprintf(NULL, 0, "%s%s", basepath, line);
-		pre_path_name = calloc(1, pre_path_len + 1);
-		snprintf(pre_path_name, pre_path_len + 1, "%s%s", basepath, line);
-		printf("pre_path_name=%s\n", pre_path_name);
-		int ret = -1;
-		ret = mkdir_p(pre_path_name, 0755, 0644);
+        printf("pre=%d \n", pre);
+        /* parse the line for pre-populated files and directories */
+        size_t pre_path_len;
+        char *pre_path_name;
+        
+        pre_path_len = snprintf(NULL, 0, "%s%s", basepath, line);
+        pre_path_name = calloc(1, pre_path_len + 1);
+        snprintf(pre_path_name, pre_path_len + 1, "%s%s", basepath, line);
+        printf("pre_path_name=%s\n", pre_path_name);
+        int ret = -1;
+        ret = mkdir_p(pre_path_name, 0755, 0644);
 
-		if (ret < 0) {
-			fprintf(stderr, "mkdir_p error happened!\n");
-			exit(EXIT_FAILURE);
-		}
-		
+        if (ret < 0) {
+            fprintf(stderr, "mkdir_p error happened!\n");
+            exit(EXIT_FAILURE);
+        }
+        
         free(pre_path_name);
-		
-		pre++;
+        
+        pre++;
         i++;
-	}
-	unmount_all_strict();
+    }
+    unmount_all_strict();
 
-	/* Replay the actual operation sequence */
-	while ((len = getline(&linebuf, &linecap, seqfp)) >= 0) {
-		char *line = malloc(len + 1);
-		line[len] = '\0';
-		strncpy(line, linebuf, len);
-		/* remove the newline character */
-		if (line[len - 1] == '\n')
-			line[len - 1] = '\0';
-		printf("seq=%d \n", seq);
-		/* parse the line */
-		vector_t argvec;
-		extract_fields(&argvec, line, ", ");
-		char *funcname = *vector_get(&argvec, char *, 0);
+    /* Replay the actual operation sequence */
+    while ((len = getline(&linebuf, &linecap, seqfp)) >= 0) {
+        char *line = malloc(len + 1);
+        line[len] = '\0';
+        strncpy(line, linebuf, len);
+        /* remove the newline character */
+        if (line[len - 1] == '\n')
+            line[len - 1] = '\0';
+        printf("seq=%d \n", seq);
+        /* parse the line */
+        vector_t argvec;
+        extract_fields(&argvec, line, ", ");
+        char *funcname = *vector_get(&argvec, char *, 0);
 
-		mountall();
-		
-		if (strncmp(funcname, "create_file", len) == 0) {
-			do_create_file(&argvec);
-		} else if (strncmp(funcname, "write_file", len) == 0) {
-			do_write_file(&argvec, seq);
-		} else if (strncmp(funcname, "unlink", len) == 0) {
-			do_unlink(&argvec);
-		} else if (strncmp(funcname, "mkdir", len) == 0) {
-			do_mkdir(&argvec);
-		} else if (strncmp(funcname, "rmdir", len) == 0) {
-			do_rmdir(&argvec);
-		} else {
-			printf("Unrecognized op: %s\n", funcname);
-		}
-		
-		seq++;
+        mountall();
+        
+        if (strncmp(funcname, "create_file", len) == 0) {
+            do_create_file(&argvec);
+        } else if (strncmp(funcname, "write_file", len) == 0) {
+            do_write_file(&argvec, seq);
+        } else if (strncmp(funcname, "unlink", len) == 0) {
+            do_unlink(&argvec);
+        } else if (strncmp(funcname, "mkdir", len) == 0) {
+            do_mkdir(&argvec);
+        } else if (strncmp(funcname, "rmdir", len) == 0) {
+            do_rmdir(&argvec);
+        } else {
+            printf("Unrecognized op: %s\n", funcname);
+        }
+        
+        seq++;
 
-		unmount_all_strict();
-		errno = 0;
-		free(line);
-		destroy_fields(&argvec);
-	}
-	/* Clean up */
-	fclose(seqfp);
-	free(linebuf);
+        unmount_all_strict();
+        errno = 0;
+        free(line);
+        destroy_fields(&argvec);
+    }
 
-	return 0;
+    /* Clean up */
+    fclose(seqfp);
+    free(linebuf);
+
+    return 0;
 }
