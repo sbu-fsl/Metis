@@ -10,7 +10,7 @@
 # Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
 #
 
-sequence_log_file_path = 'sequence-pan-20240209-182859-244192_kh6.log'
+sequence_log_file_path = 'jfs_kernel_hang_sequence.log'
 truncated_sequence_log_file_path = 'jfs_op_sequence.log'
 
 # Open the input file and output file
