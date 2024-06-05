@@ -45,7 +45,7 @@ declare -A FS_DEV_MAP
 FS_DEV_MAP+=( ["btrfs"]="ram" ["ext2"]="ram" ["ext4"]="ram" ["f2fs"]="ram" )
 FS_DEV_MAP+=( ["jffs2"]="mtdblock" ["ramfs"]="" ["tmpfs"]="" )
 FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" ["nilfs2"]="ram" ["jfs"]="ram")
-FS_DEV_MAP+=( ["nova"]="pmem" )
+FS_DEV_MAP+=( ["nova"]="pmem" ["nfs-ganesha-ext4"]="ram" ["nfs-ganesha-verifs2"]="" )
 
 mount_all() {
     SWARM_ID=$1;
@@ -393,6 +393,56 @@ setup_nova() {
 }
 
 unset_nova() {
+    :
+}
+
+setup_nfs-ganesha-ext4() {
+    DEVFILE=$1;
+    DEVSIZEKB=$2;
+    GANESHA_LOG_FILE="ganesha.log"
+
+    # Stop all NFS-Ganesha "ganesha.nfsd" processes
+    killall ganesha.nfsd 2>/dev/null
+    systemctl stop nfs-ganesha 2>/dev/null
+    # If any previous log exists, rename it based on its timestamp
+    if [ -f "$GANESHA_LOG_FILE" ]; then
+        GANESHA_LOG_TS=$(stat -c %W "${GANESHA_LOG_FILE}")
+        if [ "$GANESHA_LOG_TS" -eq 0 ]; then
+            # Creation time is not available, use modification time
+            GANESHA_LOG_TS=$(stat -c %Y "${GANESHA_LOG_FILE}")
+        fi
+        FORMATTED_TS=$(date -d "@$GANESHA_LOG_TS" +"%Y-%m-%d_%H-%M-%S")
+        # Rename the ganesha log file with its timestamp
+        mv "$GANESHA_LOG_FILE" "ganesha_${FORMATTED_TS}.log"
+    fi
+}
+
+unset_nfs-ganesha-ext4() {
+    :
+}
+
+setup_nfs-ganesha-verifs2() {
+    DEVFILE=$1;
+    DEVSIZEKB=$2;
+    GANESHA_LOG_FILE="ganesha.log"
+
+    # Stop all NFS-Ganesha "ganesha.nfsd" processes
+    killall ganesha.nfsd 2>/dev/null
+    systemctl stop nfs-ganesha 2>/dev/null
+    # If any previous log exists, rename it based on its timestamp
+    if [ -f "$GANESHA_LOG_FILE" ]; then
+        GANESHA_LOG_TS=$(stat -c %W "${GANESHA_LOG_FILE}")
+        if [ "$GANESHA_LOG_TS" -eq 0 ]; then
+            # Creation time is not available, use modification time
+            GANESHA_LOG_TS=$(stat -c %Y "${GANESHA_LOG_FILE}")
+        fi
+        FORMATTED_TS=$(date -d "@$GANESHA_LOG_TS" +"%Y-%m-%d_%H-%M-%S")
+        # Rename the ganesha log file with its timestamp
+        mv "$GANESHA_LOG_FILE" "ganesha_${FORMATTED_TS}.log"
+    fi
+}
+
+unset_nfs-ganesha-verifs2() {
     :
 }
 

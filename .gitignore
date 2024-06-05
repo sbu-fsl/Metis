@@ -50,3 +50,9 @@ swarm_done_s*
 # FAST24 Artifact Evaluation
 *.pdf
 results_perf_*
+# gprof profiling related
+gmon.out
+gmon*.txt
+# Ignore all *.out and *.txt
+*.out 
+*.txt 

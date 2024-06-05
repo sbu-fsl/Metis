@@ -219,7 +219,7 @@ install_zlib() {
     popd;
 }
 
-install_verifs2() {
+install_reffs() {
     pushd $BASEDIR;
     runcmd prepare_repo RefFS git@github.com:sbu-fsl/RefFS.git;
 
@@ -266,6 +266,20 @@ install_swarm() {
     popd;
 }
 
+install_criu() {
+    pushd $BASEDIR;
+    runcmd prepare_repo criu git@github.com:checkpoint-restore/criu.git;
+
+    cd criu
+    runcmd git fetch
+    runcmd git checkout v3.19;
+    if should_override criu; then
+        make clean;
+    fi
+    runcmd make;
+    runcmd sudo make install;
+}
+
 colorecho cyan "Installing required packages..."
 runcmd sudo apt update
 # Basic tools and compilers
@@ -280,6 +294,8 @@ runcmd install_pkg libgoogle-perftools-dev
 # Omitted on Ubuntu 22.04
 # runcmd install_pkg libnfsidmap2
 runcmd install_pkg libnfsidmap-dev
+# RPC library required by NFS-Ganesha
+runcmd install_pkg libtirpc-dev
 runcmd install_pkg libkrb5-3
 runcmd install_pkg libkrb5-dev
 runcmd install_pkg libk5crypto3
@@ -309,8 +325,20 @@ runcmd install_pkg libxxhash-dev
 runcmd install_pkg nilfs-tools
 runcmd install_pkg rename
 runcmd install_pkg mtd-utils
+# protobuf libraries required by CRIU
+# runcmd install_pkg protobuf-compiler 
+# runcmd install_pkg protobuf-c-compiler
+# runcmd install_pkg libprotobuf-c-dev
+# runcmd install_pkg libnet-dev
+# for make install CRIU
+# runcmd install_pkg libbsd-dev
+# runcmd install_pkg libdrm-dev
+# runcmd install_pkg gnutls-dev
+# runcmd install_pkg libnftables-dev
+# runcmd install_pkg asciidoc
 
-required_repos=(swarm spin zlib xxHash)
+# Comment: deleted criu
+required_repos=(swarm spin reffs zlib xxHash nfs_ganesha)
 
 for repo in ${required_repos[@]}; do
     runcmd install_$repo;
