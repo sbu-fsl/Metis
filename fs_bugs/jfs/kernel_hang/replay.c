@@ -22,11 +22,8 @@
 #include <math.h>
 #include <limits.h>
 
-//From operations.h
 /* Max length of function name in log */
 #define FUNC_NAME_LEN    16
-
-//From vector.h
 #define DEFAULT_INITCAP 16
 
 #ifndef PATH_MAX
@@ -596,11 +593,9 @@ int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode)
  * up with correct sizes.
  * We need to specify a sequence.log file (the sequence of operations 
  * to be replayed)
- * and a dump_prepopulate_*.log file (precreated files and dirs).
  * Usage: 
- *		sudo ./replay -K 0:ext4:256:jfs:16384 2>&1 > replay_jfs.log
- *		sudo ./replay -K 0:ext4:256:nilfs2:1028
- *		sudo ./replay -K 0:nilfs2:1028
+ *		sudo ./replay 2>&1 > replay_jfs.log
+ *		sudo ./replay
  */
 int main(int argc, char **argv)
 {
@@ -608,39 +603,28 @@ int main(int argc, char **argv)
 	 * Open the dump_prepopulate_*.log files to create the pre-populated
 	 * files and directories.
 	 */
-	char *dump_prepopulate_file_name = "dump_prepopulate_0_kh6.log";
     char *sequence_log_file_name = "jfs_op_sequence.log";
+    char *file_dir_array[] = {"/f-01", "/d-00/f-01", "/d-00/f-02", "/d-01/f-00", "/d-01/f-02", "/d-00/d-01"};
+    int i = 0;
+    ssize_t len;
+    size_t linecap = 0;
+    char *linebuf = NULL;
 
-    FILE *pre_fp = fopen(dump_prepopulate_file_name, "r");
-	
-	if (!pre_fp) {
-		printf("Cannot open %s. Does it exist?\n", dump_prepopulate_file_name);
-		exit(1);
-	}
-	
 	/* Open sequence file */
 	FILE *seqfp = fopen(sequence_log_file_name, "r");
 	
 	if (!seqfp) {
 		printf("Cannot open %s. Does it exist?\n", sequence_log_file_name);
 		exit(1);
-	}
-
-	ssize_t len, pre_len;
-	size_t linecap = 0, pre_linecap = 0;
-	char *linebuf = NULL, *pre_linebuf = NULL;
+	}    
 
 	/* Populate mount points and mkfs the devices */
 	setup_filesystems();
+
 	/* Create the pre-populated files and directories */
 	mountall();
-	while ((pre_len = getline(&pre_linebuf, &pre_linecap, pre_fp)) >= 0) {
-		char *line = malloc(pre_len + 1);
-		line[pre_len] = '\0';
-		strncpy(line, pre_linebuf, pre_len);
-		/* remove the newline character */
-		if (line[pre_len - 1] == '\n')
-			line[pre_len - 1] = '\0';
+    while (file_dir_array[i] != NULL) {
+        char *line = file_dir_array[i];
 		printf("pre=%d \n", pre);
 		/* parse the line for pre-populated files and directories */
 		size_t pre_path_len;
@@ -649,18 +633,22 @@ int main(int argc, char **argv)
 		pre_path_len = snprintf(NULL, 0, "%s%s", basepath, line);
 		pre_path_name = calloc(1, pre_path_len + 1);
 		snprintf(pre_path_name, pre_path_len + 1, "%s%s", basepath, line);
-		// printf("pre_path_name=%s\n", pre_path_name);
+		printf("pre_path_name=%s\n", pre_path_name);
 		int ret = -1;
 		ret = mkdir_p(pre_path_name, 0755, 0644);
+
 		if (ret < 0) {
 			fprintf(stderr, "mkdir_p error happened!\n");
 			exit(EXIT_FAILURE);
 		}
-		free(pre_path_name);
+		
+        free(pre_path_name);
 		
 		pre++;
+        i++;
 	}
 	unmount_all_strict();
+
 	/* Replay the actual operation sequence */
 	while ((len = getline(&linebuf, &linecap, seqfp)) >= 0) {
 		char *line = malloc(len + 1);
@@ -699,9 +687,7 @@ int main(int argc, char **argv)
 		destroy_fields(&argvec);
 	}
 	/* Clean up */
-	fclose(pre_fp);
 	fclose(seqfp);
-	free(pre_linebuf);
 	free(linebuf);
 
 	return 0;
