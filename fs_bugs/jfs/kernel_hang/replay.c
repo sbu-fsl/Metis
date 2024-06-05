@@ -18,25 +18,9 @@
 #include <unistd.h>
 #include <assert.h>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <ftw.h>
-#include <assert.h>
-#include <stdint.h>
-#include <stdarg.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
 #include <sys/mount.h>
-#include <sys/ioctl.h>
-#include <sys/xattr.h>
-#include <linux/limits.h>
-#include <linux/fs.h>
-#include <openssl/md5.h>
-#include <stddef.h>
-#include <sys/types.h>
 #include <math.h>
 #include <limits.h>
-#include <openssl/opensslv.h>
 
 //From operations.h
 /* Max length of function name in log */
@@ -537,7 +521,7 @@ void setup_filesystems()
     populate_mountpoints();
 
     if (strcmp(fsys, "jfs") == 0) {
-		ret = setup_jfs(device, devsize());
+		ret = setup_jfs(device, devsize);
     } 
     
     if (ret != 0)
