@@ -12,11 +12,45 @@
 # Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
 #
 
-MOUNTPOINT="/mnt/test-jfs-i1-s0"
-devname="/dev/ram0"
+mntpoint="/mnt/test-jfs-i1-s0"
+ram_device="/dev/ram0"
+loop_device="/dev/loop8"
+img_file="./loopfile.img"
 size_kb=$((16 * 1024))
 
-loadmods() {
+check_loopdev() {
+    # Check if the loop device is in use and detach if necessary
+    if losetup -a | grep -q "$loop_device"; then
+        echo "$loop_device is already in use. Detaching..."
+        sudo losetup -d "$loop_device"
+        if [ $? -ne 0 ]; then
+            echo "Failed to detach loop device: $loop_device"
+            exit 1
+        fi
+    fi
+
+    # Check if the loop device is mounted and unmount if necessary
+    if mount | grep -q "$loop_device"; then
+        echo "$loop_device is mounted. Unmounting..."
+        sudo umount "$loop_device"
+        if [ $? -ne 0 ]; then
+            echo "Failed to unmount loop device: $loop_device"
+            exit 1
+        fi
+    fi
+}
+
+setup_loopdev() {
+    # Set up the loop device
+    echo "Setting up the loop device..."
+    sudo losetup "$loop_device" "$img_file"
+    if [ $? -ne 0 ]; then
+        echo "Failed to set up loop device: $loop_device"
+        exit 1
+    fi
+}
+
+create_ramdev() {
 
     # Unload brd ramdisk kernel module
     if lsmod | grep -q "^brd"; then
@@ -67,91 +101,129 @@ loadmods() {
 populate_mountpoint() {
     
     # Check if any file-system has been mounted on the folder
-    if mount | grep -q "$MOUNTPOINT"; then
-        echo "A filesystem is mounted on $MOUNTPOINT. Unmounting..."
+    if mount | grep -q "$mntpoint"; then
+        echo "A filesystem is mounted on $mntpoint. Unmounting..."
         # Unmount the filesystem
-        umount -f "$MOUNTPOINT"
+        umount -f "$mntpoint"
         if [ $? -eq 0 ]; then
-            echo "Successfully unmounted $MOUNTPOINT."
+            echo "Successfully unmounted $mntpoint."
         else
-            echo "Failed to unmount $MOUNTPOINT. Please check for issues."
+            echo "Failed to unmount $mntpoint. Please check for issues."
             return 1
         fi
     else
-        echo "No filesystem is mounted on $MOUNTPOINT."
+        echo "No filesystem is mounted on $mntpoint."
     fi
 
     # Create the required directory
-    mkdir -p "$MOUNTPOINT"
+    mkdir -p "$mntpoint"
     if [ $? -eq 0 ]; then
-        echo "Successfully created directory $MOUNTPOINT."
+        echo "Successfully created directory $mntpoint."
     else
-        echo "Failed to create directory $MOUNTPOINT. Please check for issues."
+        echo "Failed to create directory $mntpoint. Please check for issues."
         return 1
     fi
 }
 
-check_device() {
-    local devname="$1"
-    local size_kb="$2"
+check_ramdev() {
+    # local ram_device="$1"
+    # local size_kb="$2"
     local exp_size_bytes=$((size_kb * 1024))
 
     # Open the device (check if the file exists and is readable)
-    if [ ! -r "$devname" ]; then
-        echo "Cannot open $devname (err=$(strerror $?))"
+    if [ ! -r "$ram_device" ]; then
+        echo "Cannot open $ram_device (err=$(strerror $?))"
         return 1
     fi
 
     # Get device info
-    if ! stat --printf='' "$devname" 2>/dev/null; then
-        echo "Cannot stat $devname (err=$(strerror $?))"
+    if ! stat --printf='' "$ram_device" 2>/dev/null; then
+        echo "Cannot stat $ram_device (err=$(strerror $?))"
         return 1
     fi
 
     # Check if it's a block device
-    if [ ! -b "$devname" ]; then
-        echo "$devname is not a block device."
+    if [ ! -b "$ram_device" ]; then
+        echo "$ram_device is not a block device."
         return 1
     fi
 
     # Get the size of the device in bytes
-    devsize=$(blockdev --getsize64 "$devname" 2>/dev/null)
+    devsize=$(blockdev --getsize64 "$ram_device" 2>/dev/null)
     if [ $? -ne 0 ]; then
-        echo "Cannot get size of $devname (err=$(strerror $?))"
+        echo "Cannot get size of $ram_device (err=$(strerror $?))"
         return 1
     fi
 
     # Check if the device size is smaller than expected
     if [ "$devsize" -lt "$exp_size_bytes" ]; then
-        echo "$devname is smaller than expected (expected ${size_kb} KB, got $((devsize / 1024)) KB)."
+        echo "$ram_device is smaller than expected (expected ${size_kb} KB, got $((devsize / 1024)) KB)."
         return 1
     fi
 
     return 0
 }
 
-setup_jfs() {
-    # Zero out the device
-    echo "Zeroing out $devname..."
-    dd if=/dev/zero of="$devname" bs=1k count="$size_kb"
+setup_jfs_on_loopdev() {
+    # Create the backing file
+    echo "Creating backing file..."
+    dd if=/dev/zero of="$img_file" bs=1K count="$size_kb"
     if [ $? -ne 0 ]; then
-        echo "Failed to zero out $devname."
+        echo "Failed to create image file: $img_file"
+        exit 1
+    fi
+
+    check_loopdev
+    setup_loopdev
+    
+    # Zero out the loop device (optional but recommended)
+    echo "Zeroing out the loop device..."
+    dd if=/dev/zero of="$loop_device" bs=1K count="$size_kb"
+    if [ $? -ne 0 ]; then
+        echo "Failed to zero out loop device: $loop_device"
+        sudo losetup -d "$loop_device"
+        exit 1
+    fi
+
+    # Create the JFS filesystem
+    echo "Creating JFS filesystem on the loop device..."
+    sudo mkfs.jfs -f "$loop_device"
+    if [ $? -ne 0 ]; then
+        echo "Failed to create JFS filesystem on: $loop_device"
+        sudo losetup -d "$loop_device"
+        exit 1
+    fi
+
+    echo "Successfully set up JFS filesystem on $loop_device"
+}
+
+setup_jfs_on_ramdev() {
+    create_ramdev
+    populate_mountpoint
+    check_ramdev
+
+    # Zero out the device
+    echo "Zeroing out $ram_device..."
+    dd if=/dev/zero of="$ram_device" bs=1k count="$size_kb"
+    if [ $? -ne 0 ]; then
+        echo "Failed to zero out $ram_device."
         return 1
     fi
 
     # Create the JFS file system
-    echo "Creating JFS file system on $devname..."
-    mkfs.jfs -f "$devname"
+    echo "Creating JFS file system on $ram_device..."
+    mkfs.jfs -f "$ram_device"
     if [ $? -ne 0 ]; then
-        echo "Failed to create JFS file system on $devname."
+        echo "Failed to create JFS file system on $ram_device."
         return 1
     fi
 
-    echo "Successfully set up JFS file system on $devname."
+    echo "Successfully set up JFS file system on $ram_device."
     return 0
 }
 
-loadmods
-populate_mountpoint
-check_device "$devname" "$size_kb"
-setup_jfs
+# To setup JFS on /dev/ram*
+setup_jfs_on_ramdev
+
+# To setup JFS on /dev/loop*
+# setup_jfs_on_loopdev
