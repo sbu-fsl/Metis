@@ -474,8 +474,7 @@ int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode)
 int main(int argc, char **argv)
 {
     /* 
-    * Open the dump_prepopulate_*.log files to create the pre-populated
-    * files and directories.
+    * Read the file_dir_array to create the pre-populated files and directories.
     */
     char *sequence_log_file_name = "jfs_op_sequence.log";
     char *file_dir_array[] = {"/f-01", "/d-00/f-01", "/d-00/f-02", "/d-01/f-00", "/d-01/f-02", "/d-00/d-01"};
@@ -497,7 +496,7 @@ int main(int argc, char **argv)
     while (file_dir_array[i] != NULL) {
         char *line = file_dir_array[i];
         printf("pre=%d \n", pre);
-        /* parse the line for pre-populated files and directories */
+        /* parse the array entry for pre-populated files and directories */
         size_t pre_path_len;
         char *pre_path_name;
         
