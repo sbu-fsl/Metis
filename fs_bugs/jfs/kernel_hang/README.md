@@ -6,7 +6,7 @@ We have prepared scripts to reproduce the Kernel Hang bug in JFS.
 
 > sudo bash ./setup_jfs.sh
 
-This command setups up a ramdisk of size 16 MiB, formats it using dd, creates a mountpoint and finally mounts the JFS filesystem. Note that we are using all the default options while setting up JFS.
+Depending upon the function invoked (setup_jfs_on_ramdev or setup_jfs_on_loopdev) in the script, this command setups up a ramdisk (of size 16 MiB) or a loop device, formats it using dd, and finally sets up the JFS filesystem. Note that we are using all the default options while setting up JFS.
 
 * Then compile the replayer using the following command:
 
@@ -18,4 +18,4 @@ This will produce an executable named 'replay'
 
 > sudo bash ./loop_replay.sh
 
-This command replays the sequence of operations capture in the jfs_op_sequence.log file, in a loop for a total of 100 times. A single execution of the replayer takes around 4 minutes. Through our experiments we have found that this approach helps us in reproducing the non-deterministic kernel hang bug for more than 50% of the executions. 
+This command replays the sequence of operations capture in the jfs_op_sequence.log file, in a loop for a total of 100 iterations. A single execution of the replayer takes around 4 minutes, thus completing the complete execution of script in ~5 hrs. Through our experiments we have found that this approach helps us in reproducing the non-deterministic kernel hang bug for more than 50% of the executions. 
