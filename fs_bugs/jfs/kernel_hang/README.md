@@ -1,6 +1,6 @@
 # JFS Kernel Hang Bug Reproduction
 
-We have prepared scripts to reproduce the Kernel Hang bug in JFS.
+We have prepared scripts to reproduce the non-deterministic Kernel Hang bug in JFS. We have used Linux Kernel v6.6.1 in our experiments.
 
 * To setup JFS, execute the following command:
 
