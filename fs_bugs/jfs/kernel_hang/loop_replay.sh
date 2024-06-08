@@ -16,7 +16,7 @@
 command="sudo ./replay"
 
 # Number of execution iterations
-num_executions=1
+num_executions=100
 
 for ((i = 0; i < num_executions; i++)); do
 	echo "Replay iteration: $((i+1))"
@@ -31,5 +31,5 @@ for ((i = 0; i < num_executions; i++)); do
     cat "$log_file"
 
     # sleep (duration in secs) before next execution
-    sleep 5
+    sleep 2
 done
