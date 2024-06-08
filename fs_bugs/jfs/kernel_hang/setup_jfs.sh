@@ -14,7 +14,7 @@
 
 mntpoint="/mnt/test-jfs-i1-s0"
 ram_device="/dev/ram0"
-loop_device="/dev/loop8"
+loop_device="$(sudo losetup -f)"
 img_file="./loopfile.img"
 size_kb=$((16 * 1024))
 
@@ -42,7 +42,7 @@ check_loopdev() {
 
 setup_loopdev() {
     # Set up the loop device
-    echo "Setting up the loop device..."
+    echo "Setting up the loop device: $loop_device"
     sudo losetup "$loop_device" "$img_file"
     if [ $? -ne 0 ]; then
         echo "Failed to set up loop device: $loop_device"
@@ -177,7 +177,7 @@ setup_jfs_on_loopdev() {
     setup_loopdev
     
     # Zero out the loop device (optional but recommended)
-    echo "Zeroing out the loop device..."
+    echo "Zeroing out the loop device: $loop_device"
     dd if=/dev/zero of="$loop_device" bs=1K count="$size_kb"
     if [ $? -ne 0 ]; then
         echo "Failed to zero out loop device: $loop_device"
@@ -186,7 +186,7 @@ setup_jfs_on_loopdev() {
     fi
 
     # Create the JFS filesystem
-    echo "Creating JFS filesystem on the loop device..."
+    echo "Creating JFS filesystem on the loop device: $loop_device"
     sudo mkfs.jfs -f "$loop_device"
     if [ $? -ne 0 ]; then
         echo "Failed to create JFS filesystem on: $loop_device"
@@ -223,7 +223,7 @@ setup_jfs_on_ramdev() {
 }
 
 # To setup JFS on /dev/ram*
-setup_jfs_on_ramdev
+# setup_jfs_on_ramdev
 
 # To setup JFS on /dev/loop*
-# setup_jfs_on_loopdev
+setup_jfs_on_loopdev
