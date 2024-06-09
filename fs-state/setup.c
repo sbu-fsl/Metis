@@ -359,15 +359,58 @@ check_server_status:
     return 0;
 }
 
-static int setup_nfs_ganesha_mountpoints(int fs_idx)
+int start_nfs_server(int idx) {
+    int ret = 0;
+    int retry_limit = 10;
+    bool has_failure = false;
+    char cmdbuf[PATH_MAX];
+
+    // Remember to do "systemctl enable nfs-kernel-server" first
+    snprintf(cmdbuf, PATH_MAX, "systemctl restart nfs-kernel-server");
+    execute_cmd(cmdbuf);
+
+check_server_status:
+    ret = execute_cmd_status("systemctl is-active --quiet nfs-kernel-server");
+    if (ret != 0) {
+        /* If unmounting failed due to device being busy, again up to
+            * retry_limit times with 100 * 2^n ms (n = num_retries) */
+        useconds_t waitms = (1 << (10 - retry_limit));
+        if (retry_limit > 0) {
+            fprintf(stderr, "nfs-kernel-server server not started. Checking status after %dms.\n", waitms);
+            usleep(1000 * waitms);
+            retry_limit--;
+            goto check_server_status;
+        }
+        fprintf(stderr, "Could not start nfs-kernel-server %s at %s (%s)\n",
+                get_fslist()[idx], get_basepaths()[idx], errnoname(errno));
+        has_failure = true;
+    }
+
+    if (has_failure)
+        return -1;
+
+    return 0;
+}
+
+static int setup_nfs_or_ganesha_mountpoints(int fs_idx)
 {
     /* Clean up any Genesha resources */
     // Make sure the export path is created 
     // Ganesha client mount directory should be created in populate_mountpoints()
     struct stat st;
-    if (stat(NFS_GANESHA_EXPORT_PATH, &st) == -1) {
-        if (mkdir(NFS_GANESHA_EXPORT_PATH, 0755) == -1) {
-            fprintf(stderr, "Failed to create NFS Ganesha export path.\n");
+    const char *export_path = NULL;
+    /* NFS-Ganesha */
+    if (is_nfs_ganesha(get_fslist()[fs_idx])) {
+        export_path = NFS_GANESHA_EXPORT_PATH;
+    }
+    /* Kernel NFS */
+    else {
+        export_path = NFS_EXPORT_PATH;
+    }
+
+    if (stat(export_path, &st) == -1) {
+        if (mkdir(export_path, 0755) == -1) {
+            fprintf(stderr, "Failed to create NFS or NFS-Ganesha export path.\n");
             return -2;
         }
     }
@@ -375,14 +418,14 @@ static int setup_nfs_ganesha_mountpoints(int fs_idx)
     // Mount client first, then server
     if (is_mounted(get_basepaths()[fs_idx])) {
         if (umount(get_basepaths()[fs_idx]) == -1) {
-            fprintf(stderr, "Failed to unmount NFS Ganesha client mount path.\n");
+            fprintf(stderr, "Failed to unmount NFS or NFS-Ganesha client mount path.\n");
             return -4;
         }
     }
     // Make sure server export directory is not mounted 
-    if (is_mounted(NFS_GANESHA_EXPORT_PATH)) {
-        if (umount(NFS_GANESHA_EXPORT_PATH) == -1) {
-            fprintf(stderr, "Failed to unmount NFS Ganesha export path.\n");
+    if (is_mounted(export_path)) {
+        if (umount(export_path) == -1) {
+            fprintf(stderr, "Failed to unmount NFS or NFS-Ganesha export path.\n");
             return -3;
         }
     }
@@ -392,12 +435,12 @@ static int setup_nfs_ganesha_mountpoints(int fs_idx)
 /* Setup NFS-Ganesha server and client on the same machine with 
  * an ext4 file system as the backing store
  */
-static int setup_nfs_ganesha_ext4(int fs_idx, const char *devname, const size_t size_kb)
+static int setup_nfs_or_ganesha_ext4(int fs_idx, const char *devname, const size_t size_kb)
 {
     // Set up NFS-Ganesha server export and client mount paths on the same machine
     int ret = -1;
     char cmdbuf[PATH_MAX];
-    ret = setup_nfs_ganesha_mountpoints(fs_idx);
+    ret = setup_nfs_or_ganesha_mountpoints(fs_idx);
     if (ret != 0) {
         return ret;
     }
@@ -496,7 +539,7 @@ static int setup_nfs_ganesha_verifs2(int fs_idx)
     // Set up NFS-Ganesha server export and client mount paths on the same machine
     int ret = -1;
     char cmdbuf[PATH_MAX];
-    ret = setup_nfs_ganesha_mountpoints(fs_idx);
+    ret = setup_nfs_or_ganesha_mountpoints(fs_idx);
     if (ret != 0) {
         return ret;
     }
@@ -513,6 +556,34 @@ static int setup_nfs_ganesha_verifs2(int fs_idx)
     ret = execute_cmd_status(cmdbuf);
     if (ret != 0) {
         fprintf(stderr, "Failed to mount NFS-Ganesha client path %s for VeriFS2.\n", get_basepaths()[fs_idx]);
+        return -6;
+    }
+    return 0;
+}
+
+static int setup_nfs_verifs2(int fs_idx)
+{
+    // Set up Kernel NFS server export and client mount paths on the same machine
+    int ret = -1;
+    char cmdbuf[PATH_MAX];
+    ret = setup_nfs_or_ganesha_mountpoints(fs_idx);
+    if (ret != 0) {
+        return ret;
+    }
+    // Mount VeriFS2 at the NFS server path
+    ret = mount_verifs2(NFS_EXPORT_PATH);
+    if (ret != 0) {
+        return ret;
+    }
+    // Start Kernel NFS server service only once here for VeriFS2
+    start_nfs_server(fs_idx);
+    // Mount the kernel NFS client path with the passed get_basepaths()[i]
+    // TODO: VeriFS2 uses NFSv3, as VeriFS2 cannot work with NFSv4 for some unknown reasons
+    snprintf(cmdbuf, PATH_MAX, "mount -t nfs -o rw,nolock,vers=3,proto=tcp %s:%s %s", 
+        NFS_LOCALHOST, NFS_EXPORT_PATH, get_basepaths()[fs_idx]);
+    ret = execute_cmd_status(cmdbuf);
+    if (ret != 0) {
+        fprintf(stderr, "Failed to mount NFS client path %s for VeriFS2.\n", get_basepaths()[fs_idx]);
         return -6;
     }
     return 0;
@@ -597,11 +668,17 @@ void setup_filesystems()
         }
         else if (strcmp(get_fslist()[i], "nfs-ganesha-ext4") == 0)
         {
-            ret = setup_nfs_ganesha_ext4(i, get_devlist()[i], get_devsize_kb()[i]);
+            ret = setup_nfs_or_ganesha_ext4(i, get_devlist()[i], get_devsize_kb()[i]);
         }
         else if (strcmp(get_fslist()[i], "nfs-ganesha-verifs2") == 0)
         {
             ret = setup_nfs_ganesha_verifs2(i);
+        }
+        else if (strcmp(get_fslist()[i], "nfs-ext4")) {
+            ret = setup_nfs_or_ganesha_ext4(i, get_devlist()[i], get_devsize_kb()[i]);
+        }
+        else if (strcmp(get_fslist()[i], "nfs-verifs2")) {
+            ret = setup_nfs_verifs2(i);
         }
         // TODO: we need to consider VeriFS1 and VeriFS2 separately here
         else if (is_verifs(get_fslist()[i]))

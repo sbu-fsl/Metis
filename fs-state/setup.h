@@ -49,16 +49,21 @@
 #define VERIFS_AFFIX       "verifs"
 #define NOVA_NAME           "nova"
 #define NFS_GANESHA_EXT4_NAME  "nfs-ganesha-ext4"
+#define NFS_GANESHA_NAME    "nfs-ganesha"
 #define NFS_NAME            "nfs"
 #define BTRFS_NAME          "btrfs"
 #define XFS_NAME            "xfs"
 #define VERIFS1_NAME        "verifs1"
 // #define VERIFS2_NAME        "verifs2"
 #define NILFS2_NAME         "nilfs2"
+/* NFS-Ganesha macros */
 #define NFS_GANESHA_EXT4_NAME_LEN  (sizeof(NFS_GANESHA_EXT4_NAME) - 1)
 #define NFS_GANESHA_EXPORT_PATH "/mnt/test-nfs-ganesha-export"
 #define NFS_GANESHA_LOCALHOST "127.0.0.1"
 #define NFS_GANESHA_EXPORT_ID 77
+/* Kernel NFS macros */
+#define NFS_EXPORT_PATH "/mnt/test-nfs-export"
+#define NFS_LOCALHOST "localhost"
 
 static inline bool is_verifs(const char *fsname)
 {
@@ -73,6 +78,11 @@ static inline bool is_nova(const char *fsname)
 static inline bool is_nfs_ganesha_ext4(const char *fsname)
 {
     return strncmp(fsname, NFS_GANESHA_EXT4_NAME, NFS_GANESHA_EXT4_NAME_LEN) == 0;
+}
+
+static inline bool is_nfs_ganesha(const char *fsname)
+{
+    return strncmp(fsname, NFS_GANESHA_NAME, strlen(NFS_GANESHA_NAME)) == 0;
 }
 
 void setup_filesystems();
