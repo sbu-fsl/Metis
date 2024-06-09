@@ -18,17 +18,14 @@ command="sudo ./replay"
 # Number of execution iterations
 num_executions=100
 
+# Single log file for all executions
+log_file="loop_replay.log"
+
 for ((i = 0; i < num_executions; i++)); do
-	echo "Replay iteration: $((i+1))"
-	echo
+    echo "Replay iteration: $((i+1))" | tee -a "$log_file"
 
-	log_file="loop_replay_$((i + 1)).log"
-
-    # Execute the command and capture output
-    $command > "$log_file" 2>&1
-
-    # Print output to console as well
-    cat "$log_file"
+    # Execute the command and display output only on the console
+    $command 2>&1
 
     # sleep (duration in secs) before next execution
     sleep 2
