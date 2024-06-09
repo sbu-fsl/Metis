@@ -327,12 +327,14 @@ static int setup_nilfs2(const char *devname, const size_t size_kb)
 }
 
 int start_nfs_ganesha_server(int idx) {
-    int ret = 0;
+    int ret = -1;
     int retry_limit = 10;
     bool has_failure = false;
     char cmdbuf[PATH_MAX];
 
-    // Remember to do "systemctl enable nfs-ganesha" first
+    /* Remember to do "systemctl enable nfs-ganesha" first
+     * This step also exports the server path
+     */
     snprintf(cmdbuf, PATH_MAX, "systemctl restart nfs-ganesha");
     execute_cmd(cmdbuf);
 
@@ -360,35 +362,26 @@ check_server_status:
 }
 
 int start_nfs_server(int idx) {
-    int ret = 0;
-    int retry_limit = 10;
-    bool has_failure = false;
+    int ret = -1;
     char cmdbuf[PATH_MAX];
 
     // Remember to do "systemctl enable nfs-kernel-server" first
     snprintf(cmdbuf, PATH_MAX, "systemctl restart nfs-kernel-server");
-    execute_cmd(cmdbuf);
-
-check_server_status:
-    ret = execute_cmd_status("systemctl is-active --quiet nfs-kernel-server");
+    ret = execute_cmd(cmdbuf);
     if (ret != 0) {
-        /* If unmounting failed due to device being busy, again up to
-            * retry_limit times with 100 * 2^n ms (n = num_retries) */
-        useconds_t waitms = (1 << (10 - retry_limit));
-        if (retry_limit > 0) {
-            fprintf(stderr, "nfs-kernel-server server not started. Checking status after %dms.\n", waitms);
-            usleep(1000 * waitms);
-            retry_limit--;
-            goto check_server_status;
-        }
-        fprintf(stderr, "Could not start nfs-kernel-server %s at %s (%s)\n",
-                get_fslist()[idx], get_basepaths()[idx], errnoname(errno));
-        has_failure = true;
-    }
-
-    if (has_failure)
+        fprintf(stderr, "Failed to start nfs-kernel-server.\n");
         return -1;
-
+    }
+    // Export the kernel NFS server path 
+    snprintf(cmdbuf, PATH_MAX, "exportfs -o rw,sync,no_root_squash %s:%s", 
+        NFS_LOCALHOST, NFS_EXPORT_PATH);
+    ret = execute_cmd_status(cmdbuf);
+    if (ret != 0) {
+        fprintf(stderr, "Failed to export kernel NFS server path %s for file system %s.\n", N
+            FS_EXPORT_PATH, get_fslist()[idx]);
+        return -2;
+    }
+    
     return 0;
 }
 

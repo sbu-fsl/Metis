@@ -12,6 +12,7 @@
 #define _XOPEN_SOURCE 500
 #define _POSIX_C_SOURCE 2
 
+// If defined, using dbus to unexport NFS-Ganesha
 #define NFS_GANESHA_UNEXPORT_ENABLED
 
 #include "fileutil.h"
@@ -73,9 +74,10 @@ void mountall()
     char cmdbuf[PATH_MAX];
     for (int i = 0; i < get_n_fs(); ++i) {
         int ret = -1;
-        /* Skip verifs */
-        if (is_verifs(get_fslist()[i]))
+        /* Skip VeriFS and NFS/Ganesha with VeriFS */
+        if (is_verifs(get_fslist()[i])) {
             continue;
+        }
         /* mount(source, target, fstype, mountflags, option_str) */
         else if(is_nova(get_fslist()[i])) {
             snprintf(cmdbuf, PATH_MAX, "mount -t NOVA -o noatime %s %s", 
@@ -83,7 +85,9 @@ void mountall()
             ret = execute_cmd_status(cmdbuf);                       
         }
         else if (is_nfs_ganesha_ext4(get_fslist()[i])) {
-            /* Mount NFS-Ganesha server export path */
+            /* Mount NFS-Ganesha server export path
+             * Mount first, otherwise cannot export this path 
+             */
             ret = mount(get_devlist()[i], NFS_GANESHA_EXPORT_PATH, "ext4", MS_NOATIME, "");
             if (ret != 0) {
                 failpos = i;
@@ -101,9 +105,35 @@ void mountall()
                         errnoname(err));
                 goto err;
             }
-            /* Mount NFS-Ganesha client */
+            /* Mount NFS-Ganesha client after starting Ganesha server 
+             * and exporting the server path
+             */
             snprintf(cmdbuf, PATH_MAX, "mount.nfs4 -o vers=4 %s:%s %s", 
                 NFS_GANESHA_LOCALHOST, NFS_GANESHA_EXPORT_PATH, get_basepaths()[i]);
+            ret = execute_cmd_status(cmdbuf);
+        }
+        else if (is_nfs_ext4(get_fslist()[i])) {
+            /* Mount NFS server export path */
+            ret = mount(get_devlist()[i], NFS_EXPORT_PATH, "ext4", MS_NOATIME, "");
+            if (ret != 0) {
+                failpos = i;
+                err = errno;
+                fprintf(stderr, "Could not mount file system %s at %s (%s)\n",
+                        get_fslist()[i], NFS_EXPORT_PATH, errnoname(err));
+                goto err;
+            }
+            /* Restart NFS-Ganesha service to export the server path */
+            ret = start_nfs_server(i);
+            if (ret != 0) {
+                failpos = i;
+                err = errno;
+                fprintf(stderr, "Could not start NFS server (%s)\n",
+                        errnoname(err));
+                goto err;
+            }
+            /* Mount NFS client after mounting the server export path */
+            snprintf(cmdbuf, PATH_MAX, "mount -t nfs -o rw,nolock,vers=4,proto=tcp %s:%s %s", 
+                NFS_LOCALHOST, NFS_EXPORT_PATH, get_basepaths()[i]);
             ret = execute_cmd_status(cmdbuf);
         }
         else {
@@ -156,7 +186,7 @@ void unmount_all(bool strict)
         int retry_limit = 19;
         int num_retries = 0;
         char cmdbuf[PATH_MAX];
-
+        /* Skip VeriFS and NFS/Ganesha with VeriFS */
         if (is_verifs(get_fslist()[i])) {
             continue;
         }
@@ -192,6 +222,24 @@ void unmount_all(bool strict)
             if (ret != 0) {
                 fprintf(stderr, "[NFS-Ganesha Ext4] Server export: could not unmount file system %s at %s (%s)\n",
                         get_fslist()[i], NFS_GANESHA_EXPORT_PATH, errnoname(errno));
+                has_failure = true;
+            }
+        }
+        else if (is_nfs_ext4(get_fslist()[i])) {
+            /* Unmount NFS client */
+            ret = umount2(get_basepaths()[i], 0);
+            if (ret != 0) {
+                fprintf(stderr, "[NFS Ext4] Client path: could not unmount file system %s at %s (%s)\n",
+                        get_fslist()[i], get_basepaths()[i], errnoname(errno));
+                has_failure = true;
+            }
+            /* Unexport NFS server */
+            snprintf(cmdbuf, PATH_MAX, "exportfs -u %s:%s", NFS_LOCALHOST, NFS_EXPORT_PATH);
+            /* Unmount NFS server export path */
+            ret = umount2(NFS_EXPORT_PATH, 0);
+            if (ret != 0) {
+                fprintf(stderr, "[NFS Ext4] Server export: could not unmount file system %s at %s (%s)\n",
+                        get_fslist()[i], NFS_EXPORT_PATH, errnoname(errno));
                 has_failure = true;
             }
         }
