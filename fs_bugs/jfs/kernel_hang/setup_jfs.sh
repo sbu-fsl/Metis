@@ -20,6 +20,12 @@ size_kb=$((16 * 1024))
 
 # Function to install jfsutils, which is required for mkfs.jfs
 install_jfsutils() {
+    # Check if jfsutils is already installed
+    if command -v fsck.jfs >/dev/null 2>&1; then
+        echo "jfsutils is already installed."
+        return 0
+    fi
+    
     # Determine the package manager and install jfsutils accordingly
     if command -v apt-get >/dev/null 2>&1; then
         echo "Detected apt-get. Installing jfsutils..."
