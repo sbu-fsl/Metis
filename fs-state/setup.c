@@ -366,8 +366,12 @@ int start_nfs_server(int idx) {
     char cmdbuf[PATH_MAX];
 
     // Remember to do "systemctl enable nfs-kernel-server" first
+    /* TODO: No need to restart nfs-kernel-server every time while
+     * mounting, we should only do export and unexport 
+     */
+
     snprintf(cmdbuf, PATH_MAX, "systemctl restart nfs-kernel-server");
-    ret = execute_cmd(cmdbuf);
+    ret = execute_cmd_status(cmdbuf);
     if (ret != 0) {
         fprintf(stderr, "Failed to start nfs-kernel-server.\n");
         return -1;
@@ -377,11 +381,11 @@ int start_nfs_server(int idx) {
         NFS_LOCALHOST, NFS_EXPORT_PATH);
     ret = execute_cmd_status(cmdbuf);
     if (ret != 0) {
-        fprintf(stderr, "Failed to export kernel NFS server path %s for file system %s.\n", N
-            FS_EXPORT_PATH, get_fslist()[idx]);
+        fprintf(stderr, "Failed to export kernel NFS server path %s for file system %s.\n", 
+            NFS_EXPORT_PATH, get_fslist()[idx]);
         return -2;
     }
-    
+
     return 0;
 }
 
@@ -659,7 +663,7 @@ void setup_filesystems()
         {
             ret = setup_nova(get_devlist()[i], get_basepaths()[i], get_devsize_kb()[i]);
         }
-        else if (strcmp(get_fslist()[i], "nfs-ganesha-ext4") == 0)
+        else if (strcmp(get_fslist()[i], "nfs-ganesha-ext4") == 0 || strcmp(get_fslist()[i], "nfs-ext4") == 0)
         {
             ret = setup_nfs_or_ganesha_ext4(i, get_devlist()[i], get_devsize_kb()[i]);
         }
@@ -667,10 +671,7 @@ void setup_filesystems()
         {
             ret = setup_nfs_ganesha_verifs2(i);
         }
-        else if (strcmp(get_fslist()[i], "nfs-ext4")) {
-            ret = setup_nfs_or_ganesha_ext4(i, get_devlist()[i], get_devsize_kb()[i]);
-        }
-        else if (strcmp(get_fslist()[i], "nfs-verifs2")) {
+        else if (strcmp(get_fslist()[i], "nfs-verifs2") == 0) {
             ret = setup_nfs_verifs2(i);
         }
         // TODO: we need to consider VeriFS1 and VeriFS2 separately here
@@ -686,6 +687,9 @@ void setup_filesystems()
             case '2':
                 ret = setup_verifs2(i);
                 break;
+            default:
+                fprintf(stderr, "Unknown VeriFS type: %s\n", fsname);
+                exit(1);
             }
         }
         else
