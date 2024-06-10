@@ -361,7 +361,23 @@ check_server_status:
     return 0;
 }
 
-int start_nfs_server(int idx) {
+int export_nfs_server(int idx) {
+    int ret = -1;
+    char cmdbuf[PATH_MAX];
+    // Export the kernel NFS server path 
+    snprintf(cmdbuf, PATH_MAX, "exportfs -o rw,sync,no_root_squash %s:%s", 
+        NFS_LOCALHOST, NFS_EXPORT_PATH);
+    ret = execute_cmd_status(cmdbuf);
+    if (ret != 0) {
+        fprintf(stderr, "Failed to export kernel NFS server path %s for file system %s.\n", 
+            NFS_EXPORT_PATH, get_fslist()[idx]);
+        return -2;
+    }
+    return 0;
+}
+
+static int start_nfs_server()
+{
     int ret = -1;
     char cmdbuf[PATH_MAX];
 
@@ -376,17 +392,15 @@ int start_nfs_server(int idx) {
         fprintf(stderr, "Failed to start nfs-kernel-server.\n");
         return -1;
     }
-    // Export the kernel NFS server path 
-    snprintf(cmdbuf, PATH_MAX, "exportfs -o rw,sync,no_root_squash %s:%s", 
-        NFS_LOCALHOST, NFS_EXPORT_PATH);
-    ret = execute_cmd_status(cmdbuf);
-    if (ret != 0) {
-        fprintf(stderr, "Failed to export kernel NFS server path %s for file system %s.\n", 
-            NFS_EXPORT_PATH, get_fslist()[idx]);
-        return -2;
-    }
-
     return 0;
+}
+
+static int start_and_export_nfs_server(int idx) {
+    if (start_nfs_server() != 0) {
+        return -1;
+    }
+    // Export NFS server path
+    return export_nfs_server(idx);
 }
 
 static int setup_nfs_or_ganesha_mountpoints(int fs_idx)
@@ -464,6 +478,14 @@ static int setup_nfs_or_ganesha_ext4(int fs_idx, const char *devname, const size
      * of the Ganesha server export path
      */
     // start_nfs_ganesha_server(fs_idx);
+    /* However, if we check nfs-ext4 whose start and export operations are
+     * separated, we need to start the server here and export/unexport 
+     * before/after each FS operation but don't need to restart nfs-kernel-server
+     * every time for an FS operation
+     */
+    if (is_nfs_ext4(get_fslist()[fs_idx])) {
+        return start_nfs_server();
+    }
 
     return 0;
 }
@@ -573,7 +595,7 @@ static int setup_nfs_verifs2(int fs_idx)
         return ret;
     }
     // Start Kernel NFS server service only once here for VeriFS2
-    start_nfs_server(fs_idx);
+    start_and_export_nfs_server(fs_idx);
     // Mount the kernel NFS client path with the passed get_basepaths()[i]
     // TODO: VeriFS2 uses NFSv3, as VeriFS2 cannot work with NFSv4 for some unknown reasons
     snprintf(cmdbuf, PATH_MAX, "mount -t nfs -o rw,nolock,vers=3,proto=tcp %s:%s %s", 

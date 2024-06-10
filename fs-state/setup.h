@@ -98,6 +98,6 @@ int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode);
 
 int execute_cmd_status(const char *cmd);
 int start_nfs_ganesha_server(int idx);
-int start_nfs_server(int idx);
+int export_nfs_server(int idx);
 
 #endif // _SETUP_H_
