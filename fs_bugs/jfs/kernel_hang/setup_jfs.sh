@@ -18,6 +18,30 @@ loop_device="$(sudo losetup -f)"
 img_file="./loopfile.img"
 size_kb=$((16 * 1024))
 
+# Function to install jfsutils, which is required for mkfs.jfs
+install_jfsutils() {
+    # Determine the package manager and install jfsutils accordingly
+    if command -v apt-get >/dev/null 2>&1; then
+        echo "Detected apt-get. Installing jfsutils..."
+        sudo apt-get update
+        sudo apt-get install -y jfsutils
+    elif command -v yum >/dev/null 2>&1; then
+        echo "Detected yum. Installing jfsutils..."
+        sudo yum install -y jfsutils
+    elif command -v dnf >/dev/null 2>&1; then
+        echo "Detected dnf. Installing jfsutils..."
+        sudo dnf install -y jfsutils
+    elif command -v pacman >/dev/null 2>&1; then
+        echo "Detected pacman. Installing jfsutils..."
+        sudo pacman -S jfsutils
+    else
+        echo "No known package manager found. Please install jfsutils manually."
+        return 1
+    fi
+
+    echo "jfsutils installation completed."
+}
+
 check_loopdev() {
     # Check if the loop device is in use and detach if necessary
     if losetup -a | grep -q "$loop_device"; then
@@ -222,8 +246,11 @@ setup_jfs_on_ramdev() {
     return 0
 }
 
+# First install jfsutils
+install_jfsutils
+
 # To setup JFS on /dev/ram*
-# setup_jfs_on_ramdev
+setup_jfs_on_ramdev
 
 # To setup JFS on /dev/loop*
-setup_jfs_on_loopdev
+# setup_jfs_on_loopdev
