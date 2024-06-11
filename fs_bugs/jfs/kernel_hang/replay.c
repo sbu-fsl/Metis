@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2020-2024 Yifei Liu
- * Copyright (c) 2020-2024 Wei Su
  * Copyright (c) 2020-2024 Divyaank Tiwari
  * Copyright (c) 2020-2024 Erez Zadok
  * Copyright (c) 2020-2024 Stony Brook University
@@ -344,7 +343,7 @@ void mountall()
     int failpos, err;
 
     int ret = -1;
-    ret = mount(device, basepath, fsys, MS_NOATIME, "");     
+    ret = mount(device, basepath, fsys, MS_NOATIME, "");
     if (ret != 0) {
         // failpos = i;
         err = errno;
@@ -371,12 +370,12 @@ void unmount_all(bool strict)
     // Change retry limit from 20 to 19 to avoid excessive delay
     int retry_limit = 19;
     int num_retries = 0;
-    
+
     while (retry_limit > 0) {
         ret = umount2(basepath, 0);
         if (ret == 0) {
             break; // Success, exit the retry loop
-        }        
+        }
 
         /* If unmounting failed due to device being busy, again up to
         * retry_limit times with 100 * 2^n ms (n = num_retries) */
@@ -390,7 +389,7 @@ void unmount_all(bool strict)
             usleep(1000 * waitms);
             num_retries++;
             retry_limit--;
-        } 
+        }
         else {
             // Handle non-EBUSY errors immediately without retrying
             fprintf(stderr, "Could not unmount file system %s at %s (%s)\n",
@@ -398,7 +397,7 @@ void unmount_all(bool strict)
             has_failure = true;
         }
     }
-    
+
     if (retry_limit == 0) {
         fprintf(stderr, "Failed to unmount file system %s at %s after retries.\n",
                 fsys, basepath);
@@ -412,15 +411,15 @@ int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode)
 {
     const size_t len = strlen(path);
     char _path[PATH_MAX];
-    char *p; 
+    char *p;
 
     errno = 0;
 
     /* Copy string so its mutable */
     if (len > sizeof(_path)-1) {
         errno = ENAMETOOLONG;
-        return -1; 
-    }   
+        return -1;
+    }
     strcpy(_path, path);
 
     bool next_f = false;
@@ -432,10 +431,10 @@ int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode)
             *p = '\0';
             if (mkdir(_path, dir_mode) != 0) {
                 if (errno != EEXIST) {
-                    return -1; 
+                    return -1;
                 }
             }
-            
+
             *p = '/';
 
             if (*(p + 1) == 'f')
@@ -456,7 +455,7 @@ int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode)
     if (next_d) {
         if (mkdir(_path, dir_mode) != 0) {
             if (errno != EEXIST) {
-                return -1; 
+                return -1;
             }
         }
     }
@@ -464,22 +463,22 @@ int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode)
     return 0;
 }
 
-/* 
+/*
  * NOTE: NEED TO RECOMPILE REPLAYER "make replayer" every time we run it.
  *
- * Make sure the required devices are already set up with correct sizes. 
+ * Make sure the required devices are already set up with correct sizes.
  *
- * Before running this program, make sure the devices are already set 
+ * Before running this program, make sure the devices are already set
  * up with correct sizes.
- * We need to specify a sequence.log file (the sequence of operations 
+ * We need to specify a sequence.log file (the sequence of operations
  * to be replayed)
- * Usage: 
+ * Usage:
  *		sudo ./replay 2>&1 > replay_jfs.log
  *		sudo ./replay
  */
 int main(int argc, char **argv)
 {
-    /* 
+    /*
     * Read the file_dir_array to create the pre-populated files and directories.
     */
     char *sequence_log_file_name = "jfs_op_sequence.log";
@@ -495,7 +494,7 @@ int main(int argc, char **argv)
     if (!seqfp) {
         printf("Cannot open %s. Does it exist?\n", sequence_log_file_name);
         exit(1);
-    }    
+    }
 
     /* Create the pre-populated files and directories */
     mountall();
@@ -505,7 +504,7 @@ int main(int argc, char **argv)
         /* parse the array entry for pre-populated files and directories */
         size_t pre_path_len;
         char *pre_path_name;
-        
+
         pre_path_len = snprintf(NULL, 0, "%s%s", basepath, line);
         pre_path_name = calloc(1, pre_path_len + 1);
         snprintf(pre_path_name, pre_path_len + 1, "%s%s", basepath, line);
@@ -517,9 +516,9 @@ int main(int argc, char **argv)
             fprintf(stderr, "mkdir_p error happened!\n");
             exit(EXIT_FAILURE);
         }
-        
+
         free(pre_path_name);
-        
+
         pre++;
         i++;
     }
@@ -540,7 +539,7 @@ int main(int argc, char **argv)
         char *funcname = *vector_get(&argvec, char *, 0);
 
         mountall();
-        
+
         if (strncmp(funcname, "create_file", len) == 0) {
             do_create_file(&argvec);
         } else if (strncmp(funcname, "write_file", len) == 0) {
@@ -554,7 +553,7 @@ int main(int argc, char **argv)
         } else {
             printf("Unrecognized op: %s\n", funcname);
         }
-        
+
         seq++;
 
         unmount_all_strict();

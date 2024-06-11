@@ -1,15 +1,13 @@
 #!/bin/bash
 
-#
 # Copyright (c) 2020-2024 Yifei Liu
-# Copyright (c) 2020-2024 Wei Su
 # Copyright (c) 2020-2024 Divyaank Tiwari
 # Copyright (c) 2020-2024 Erez Zadok
 # Copyright (c) 2020-2024 Stony Brook University
 # Copyright (c) 2020-2024 The Research Foundation of SUNY
 #
-# You can redistribute it and/or modify it under the terms of the Apache License, 
-# Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
+# You can redistribute it and/or modify it under the terms of the Apache
+# License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
 #
 
 mntpoint="/mnt/test-jfs-i1-s0"
@@ -25,7 +23,7 @@ install_jfsutils() {
         echo "jfsutils is already installed."
         return 0
     fi
-    
+
     # Determine the package manager and install jfsutils accordingly
     if command -v apt-get >/dev/null 2>&1; then
         echo "Detected apt-get. Installing jfsutils..."
@@ -129,7 +127,7 @@ create_ramdev() {
 }
 
 populate_mountpoint() {
-    
+
     # Check if any file-system has been mounted on the folder
     if mount | grep -q "$mntpoint"; then
         echo "A filesystem is mounted on $mntpoint. Unmounting..."
@@ -205,7 +203,7 @@ setup_jfs_on_loopdev() {
 
     check_loopdev
     setup_loopdev
-    
+
     # Zero out the loop device (optional but recommended)
     echo "Zeroing out the loop device: $loop_device"
     dd if=/dev/zero of="$loop_device" bs=1K count="$size_kb"
@@ -251,6 +249,9 @@ setup_jfs_on_ramdev() {
     echo "Successfully set up JFS file system on $ram_device."
     return 0
 }
+
+######################################################################
+### NOW ACTUALLY SETUP JFS
 
 # First install jfsutils
 install_jfsutils
