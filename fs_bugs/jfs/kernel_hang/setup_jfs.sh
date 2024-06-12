@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Copyright (c) 2020-2024 Yifei Liu
-# Copyright (c) 2020-2024 Divyaank Tiwari
+# Copyright (c) 2023-2024 Divyaank Tiwari
 # Copyright (c) 2020-2024 Erez Zadok
 # Copyright (c) 2020-2024 Stony Brook University
 # Copyright (c) 2020-2024 The Research Foundation of SUNY
@@ -46,6 +46,7 @@ install_jfsutils() {
     echo "jfsutils installation completed."
 }
 
+# This function checks the status of the loop device and prepares it for setup
 check_loopdev() {
     # Check if the loop device is in use and detach if necessary
     if losetup -a | grep -q "$loop_device"; then
@@ -68,6 +69,7 @@ check_loopdev() {
     fi
 }
 
+# This function sets up the loop device through the losetup command
 setup_loopdev() {
     # Set up the loop device
     echo "Setting up the loop device: $loop_device"
@@ -78,6 +80,7 @@ setup_loopdev() {
     fi
 }
 
+# Creates the ramdisk, loads brd module and checks whether the size is valid
 create_ramdev() {
 
     # Unload brd ramdisk kernel module
@@ -126,6 +129,7 @@ create_ramdev() {
 
 }
 
+# Checks and initializes the mount folder
 populate_mountpoint() {
 
     # Check if any file-system has been mounted on the folder
@@ -153,6 +157,7 @@ populate_mountpoint() {
     fi
 }
 
+# Verifies ramdisk device size
 check_ramdev() {
     # local ram_device="$1"
     # local size_kb="$2"
@@ -192,6 +197,7 @@ check_ramdev() {
     return 0
 }
 
+# This function orchestrates the creation of JFS file system on a loop device (/dev/loop*)
 setup_jfs_on_loopdev() {
     # Create the backing file
     echo "Creating backing file..."
@@ -225,6 +231,7 @@ setup_jfs_on_loopdev() {
     echo "Successfully set up JFS filesystem on $loop_device"
 }
 
+# This function orchestrates the creation of JFS file system on a ram device (/dev/ram*)
 setup_jfs_on_ramdev() {
     create_ramdev
     populate_mountpoint
