@@ -18,4 +18,4 @@ This will produce an executable named 'replay'
 
 > sudo bash ./loop_replay.sh
 
-This command replays the sequence of operations capture in the jfs_op_sequence.log file, in a loop for a total of 100 iterations.  A single execution of the replayer takes around 4 minutes, thus completing the complete execution of script in ~5 hrs.  In our many experiments, we have found that this approach helps us in reproducing the non-deterministic kernel hang bug for more than 50% of the executions.
+This command replays the sequence of operations capture in the jfs_op_sequence.log file, in a loop for a total of 100 iterations.  A single execution of the replayer takes around 4 minutes, thus completing the complete execution of script in ~5 hrs.  Through our experiments, we have found that this approach helps us in reproducing the non-deterministic kernel hang bug for more than 50% of the executions. During successful executions, when running the replayer on a ramdisk, the bug is typically encountered within 2 hours.
