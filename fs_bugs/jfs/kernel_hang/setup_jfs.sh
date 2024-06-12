@@ -10,10 +10,19 @@
 # License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
 #
 
+# Mount directory for JFS 
 mntpoint="/mnt/test-jfs-i1-s0"
+
+# Backing ramdisk for JFS
 ram_device="/dev/ram0"
+
+# Backing loop device for JFS
 loop_device="$(sudo losetup -f)"
+
+# Backing (zeroed-out) image file which is required by the loop device
 img_file="./loopfile.img"
+
+# Size of the ramdisk
 size_kb=$((16 * 1024))
 
 # Function to install jfsutils, which is required for mkfs.jfs
