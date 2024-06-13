@@ -49,17 +49,25 @@
 #define VERIFS_AFFIX       "verifs"
 #define NOVA_NAME           "nova"
 #define NFS_GANESHA_EXT4_NAME  "nfs-ganesha-ext4"
+#define NFS_GANESHA_NAME    "nfs-ganesha"
 #define NFS_NAME            "nfs"
 #define BTRFS_NAME          "btrfs"
 #define XFS_NAME            "xfs"
 #define VERIFS1_NAME        "verifs1"
 // #define VERIFS2_NAME        "verifs2"
 #define NILFS2_NAME         "nilfs2"
-#define NFS_GANESHA_EXT4_NAME_LEN  (sizeof(NFS_GANESHA_EXT4_NAME) - 1)
+/* NFS-Ganesha macros */
 #define NFS_GANESHA_EXPORT_PATH "/mnt/test-nfs-ganesha-export"
 #define NFS_GANESHA_LOCALHOST "127.0.0.1"
 #define NFS_GANESHA_EXPORT_ID 77
+/* Kernel NFS macros */
+#define NFS_EXT4_NAME  "nfs-ext4"
+#define NFS_EXPORT_PATH "/mnt/test-nfs-export"
+#define NFS_LOCALHOST "localhost"
 
+/* Check if "verifs" is a substring, which checks verifs1,
+ * verifs2, nfs-ganesha-verifs2, nfs-verifs2, etc. 
+ */
 static inline bool is_verifs(const char *fsname)
 {
     return (strstr(fsname, VERIFS_AFFIX) != NULL);
@@ -72,7 +80,17 @@ static inline bool is_nova(const char *fsname)
 
 static inline bool is_nfs_ganesha_ext4(const char *fsname)
 {
-    return strncmp(fsname, NFS_GANESHA_EXT4_NAME, NFS_GANESHA_EXT4_NAME_LEN) == 0;
+    return strncmp(fsname, NFS_GANESHA_EXT4_NAME, strlen(NFS_GANESHA_EXT4_NAME)) == 0;
+}
+
+static inline bool is_nfs_ganesha(const char *fsname)
+{
+    return strncmp(fsname, NFS_GANESHA_NAME, strlen(NFS_GANESHA_NAME)) == 0;
+}
+
+static inline bool is_nfs_ext4(const char *fsname)
+{
+    return strncmp(fsname, NFS_EXT4_NAME, strlen(NFS_EXT4_NAME)) == 0;
 }
 
 void setup_filesystems();
@@ -80,5 +98,6 @@ int mkdir_p(const char *path, mode_t dir_mode, mode_t file_mode);
 
 int execute_cmd_status(const char *cmd);
 int start_nfs_ganesha_server(int idx);
+int export_nfs_server(int idx);
 
 #endif // _SETUP_H_

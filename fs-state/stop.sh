@@ -67,3 +67,5 @@ for item in "${devices_and_mounts[@]}"; do
         fi
     done
 done
+
+sudo systemctl stop nfs-kernel-server

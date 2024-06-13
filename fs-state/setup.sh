@@ -46,6 +46,7 @@ FS_DEV_MAP+=( ["btrfs"]="ram" ["ext2"]="ram" ["ext4"]="ram" ["f2fs"]="ram" )
 FS_DEV_MAP+=( ["jffs2"]="mtdblock" ["ramfs"]="" ["tmpfs"]="" )
 FS_DEV_MAP+=( ["verifs1"]="" ["verifs2"]="" ["xfs"]="ram" ["nilfs2"]="ram" ["jfs"]="ram")
 FS_DEV_MAP+=( ["nova"]="pmem" ["nfs-ganesha-ext4"]="ram" ["nfs-ganesha-verifs2"]="" )
+FS_DEV_MAP+=( ["nfs-ext4"]="ram" ["nfs-verifs2"]="" )
 
 mount_all() {
     SWARM_ID=$1;
@@ -443,6 +444,22 @@ setup_nfs-ganesha-verifs2() {
 }
 
 unset_nfs-ganesha-verifs2() {
+    :
+}
+
+setup_nfs-ext4() {
+    :
+}
+
+unset_nfs-ext4() {
+    :
+}
+
+setup_nfs-verifs2() {
+    :
+}
+
+unset_nfs-verifs2() {
     :
 }
 
