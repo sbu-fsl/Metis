@@ -18,6 +18,8 @@
 #include <assert.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
+#include <sys/types.h>
+#include <sys/xattr.h>
 #include <limits.h>
 
 /* Max length of function name in log */
@@ -305,6 +307,19 @@ int do_write_file(vector_t *argvec, int seq)
     return ret;
 }
 
+int do_truncate(vector_t *argvec)
+{
+	char *filepath = *vector_get(argvec, char *, 1);
+	char *len_str = *vector_get(argvec, char *, 2);
+	off_t flen = atol(len_str);
+	
+	int ret = truncate(filepath, flen);
+	int err = errno;
+	printf("truncate(%s, %ld) -> ret=%d, errno=%s\n",
+	       filepath, flen, ret, strerror(err));
+	return ret;
+}
+
 int do_unlink(vector_t *argvec)
 {
     char *path = *vector_get(argvec, char *, 1);
@@ -313,6 +328,30 @@ int do_unlink(vector_t *argvec)
     printf("unlink(%s) -> ret=%d, errno=%s\n",
             path, ret, strerror(err));
     return ret;
+}
+
+int do_symlink(vector_t *argvec)
+{
+	char *srcpath = *vector_get(argvec, char *, 1);
+	char *dstpath = *vector_get(argvec, char *, 2);
+
+	int ret = symlink(srcpath, dstpath);
+	int err = errno;
+	printf("symlink(%s, %s) -> ret=%d, errno=%s\n",
+	       srcpath, dstpath, ret, strerror(err));
+	return ret;
+}
+
+int do_link(vector_t *argvec)
+{
+	char *srcpath = *vector_get(argvec, char *, 1);
+	char *dstpath = *vector_get(argvec, char *, 2);
+
+	int ret = link(srcpath, dstpath);
+	int err = errno;
+	printf("link(%s, %s) -> ret=%d, errno=%s\n",
+	       srcpath, dstpath, ret, strerror(err));
+	return ret;
 }
 
 int do_mkdir(vector_t *argvec)
@@ -335,6 +374,92 @@ int do_rmdir(vector_t *argvec)
     int err = errno;
     printf("rmdir(%s) -> ret=%d, errno=%s\n",
             path, ret, strerror(err));
+    return ret;
+}
+
+int do_setxattr(vector_t *argvec)
+{
+    char *path = *vector_get(argvec, char *, 1);
+    char *attr_name = *vector_get(argvec, char *, 2);
+    char *attr_value = *vector_get(argvec, char *, 3);
+    char *size = *vector_get(argvec, char *, 4);
+    char *flag = *vector_get(argvec, char *, 5);
+
+    char *size_ptr, *flag_ptr;
+    size_t attr_size = strtoul(size, &size_ptr, 10);
+    int flag_val = (int) strtol(flag, &flag_ptr, 0);
+
+    int ret = setxattr(path, attr_name, attr_value, attr_size, flag_val);
+    int err = errno;
+
+    printf("setxattr(%s, %s, %s, %zu, %d) -> ret=%d, errno=%s\n",
+            path, attr_name, attr_value, attr_size, flag_val, ret, strerror(err));
+    
+    return ret;
+}
+
+int do_removexattr(vector_t *argvec)
+{
+    char *path = *vector_get(argvec, char *, 1);
+    char *attr_name = *vector_get(argvec, char *, 2);
+
+    int ret = removexattr(path, attr_name);
+    int err = errno;
+
+    printf("removexattr(%s, %s) -> ret=%d, errno=%s\n",
+            path, attr_name, ret, strerror(err));
+    
+    return ret;   
+}
+
+int do_chown(vector_t *argvec)
+{
+    char *path = *vector_get(argvec, char *, 1);
+    char *owner_name = *vector_get(argvec, char *, 2);
+
+    char *owner_str;
+    uid_t uid = strtoul(owner_name, &owner_str, 10);
+
+    int ret = chown(path, uid, -1);
+    int err = errno;
+
+    printf("chown(%s, %d) -> ret=%d, errno=%s\n",
+            path, (int) uid, ret, strerror(err));
+    
+    return ret;
+}
+
+int do_chgrp(vector_t *argvec)
+{
+    char *path = *vector_get(argvec, char *, 1);
+    char *group_name = *vector_get(argvec, char *, 2);
+
+    char *group_str;
+    gid_t gid = strtoul(group_name, &group_str, 10);
+
+    int ret = chown(path, -1, gid);
+    int err = errno;
+
+    printf("chgrp(%s, %d) -> ret=%d, errno=%s\n",
+            path, (int) gid, ret, strerror(err));
+    
+    return ret;   
+}
+
+int do_chmod(vector_t *argvec)
+{
+    char *path = *vector_get(argvec, char *, 1);
+    char *mode_val = *vector_get(argvec, char *, 2);
+
+    char *mode_str;
+    mode_t mode = strtol(mode_val, &mode_str, 8);
+
+    int ret = chmod(path, mode);
+    int err = errno;
+
+    printf("chmod(%s, 0%o) -> ret=%d, errno=%s\n",
+            path, mode, ret, strerror(err));
+    
     return ret;
 }
 
@@ -544,13 +669,29 @@ int main(int argc, char **argv)
             do_create_file(&argvec);
         } else if (strncmp(funcname, "write_file", len) == 0) {
             do_write_file(&argvec, seq);
-        } else if (strncmp(funcname, "unlink", len) == 0) {
-            do_unlink(&argvec);
-        } else if (strncmp(funcname, "mkdir", len) == 0) {
+        } else if (strncmp(funcname, "truncate", len) == 0) {
+	   do_truncate(&argvec);
+	} else if (strncmp(funcname, "mkdir", len) == 0) {
             do_mkdir(&argvec);
         } else if (strncmp(funcname, "rmdir", len) == 0) {
             do_rmdir(&argvec);
-        } else {
+        } else if (strncmp(funcname, "symlink", len) == 0) {
+	    do_symlink(&argvec);
+	} else if (strncmp(funcname, "link", len) == 0) {
+	    do_link(&argvec);
+	} else if (strncmp(funcname, "unlink", len) == 0) {
+            do_unlink(&argvec);
+        } else if (strncmp(funcname, "chmod", len) == 0) {
+	    do_chmod(&argvec);
+	} else if (strncmp(funcname, "chgrp_file", len) == 0) {
+	    do_chgrp(&argvec);
+	} else if (strncmp(funcname, "chown_file", len) == 0) {
+	    do_chown(&argvec);
+	} else if (strncmp(funcname, "removexattr", len) == 0) {
+	    do_removexattr(&argvec);
+	} else if (strncmp(funcname, "setxattr", len) == 0) {
+	    do_setxattr(&argvec);
+	} else {
             printf("Unrecognized op: %s\n", funcname);
         }
 
