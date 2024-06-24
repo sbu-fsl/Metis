@@ -612,6 +612,9 @@ int main(int argc, char **argv)
     ssize_t len;
     size_t linecap = 0;
     char *linebuf = NULL;
+    
+    // Determine the number of elements in file_dir_array
+    int num_elements = sizeof(file_dir_array) / sizeof(file_dir_array[0]);
 
     /* Open sequence file */
     FILE *seqfp = fopen(sequence_log_file_name, "r");
@@ -623,7 +626,7 @@ int main(int argc, char **argv)
 
     /* Create the pre-populated files and directories */
     mountall();
-    while (file_dir_array[i] != NULL) {
+    while (i < num_elements) {
         char *line = file_dir_array[i];
         printf("pre=%d \n", pre);
         /* parse the array entry for pre-populated files and directories */
