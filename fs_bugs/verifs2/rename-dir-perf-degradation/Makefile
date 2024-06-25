@@ -1,11 +1,14 @@
 CC=gcc
 CFLAGS=-Wall -g
-TARGET=rename-dirs-test
+TARGETS=rename-dirs-assert rename-dirs-basic
 
-all: $(TARGET)
+all: $(TARGETS)
 
-$(TARGET): rename-dirs-test.c
-	$(CC) $(CFLAGS) -o $(TARGET) rename-dirs-test.c
+rename-dirs-assert: rename-dirs-assert.c
+	$(CC) $(CFLAGS) -o rename-dirs-assert rename-dirs-assert.c
+
+rename-dirs-basic: rename-dirs-basic.c
+	$(CC) $(CFLAGS) -o rename-dirs-basic rename-dirs-basic.c
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGETS)

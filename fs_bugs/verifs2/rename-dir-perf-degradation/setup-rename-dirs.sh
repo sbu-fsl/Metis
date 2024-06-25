@@ -38,43 +38,43 @@ mkdir -p $VERIFS2_MNT_DIR
 
 mount -t fuse.fuse-cpp-ramfs verifs2 $VERIFS2_MNT_DIR
 
-# Populate same files/dirs to both Ext4 and VeriFS2 for renaming dir experiments
+# Populate same files/dirs to both Ext4 and VeriFS2 for BASIC renaming dir experiments
 # dir4 and dir5 does not exit
 
-# For Ext4
-mkdir -p $EXT4_MNT_DIR/dir1/filled_subdir1
-mkdir -p $EXT4_MNT_DIR/dir1/filled_subdir2
+# # For Ext4
+# mkdir -p $EXT4_MNT_DIR/dir1/filled_subdir1
+# mkdir -p $EXT4_MNT_DIR/dir1/filled_subdir2
 
-mkdir -p $EXT4_MNT_DIR/dir2/filled_subdir2
-mkdir -p $EXT4_MNT_DIR/dir2/filled_subdir3
+# mkdir -p $EXT4_MNT_DIR/dir2/filled_subdir2
+# mkdir -p $EXT4_MNT_DIR/dir2/filled_subdir3
 
-mkdir -p $EXT4_MNT_DIR/dir3/empty_subdir3
-mkdir -p $EXT4_MNT_DIR/dir3/empty_subdir4
-mkdir -p $EXT4_MNT_DIR/dir3/empty_subdir5
+# mkdir -p $EXT4_MNT_DIR/dir3/empty_subdir3
+# mkdir -p $EXT4_MNT_DIR/dir3/empty_subdir4
+# mkdir -p $EXT4_MNT_DIR/dir3/empty_subdir5
 
-touch $EXT4_MNT_DIR/dir1/filled_subdir1/file1
-touch $EXT4_MNT_DIR/dir1/filled_subdir2/file2
-mkdir -p $EXT4_MNT_DIR/dir2/filled_subdir2/subdir2
-touch $EXT4_MNT_DIR/dir2/filled_subdir3/file3
+# touch $EXT4_MNT_DIR/dir1/filled_subdir1/file1
+# touch $EXT4_MNT_DIR/dir1/filled_subdir2/file2
+# mkdir -p $EXT4_MNT_DIR/dir2/filled_subdir2/subdir2
+# touch $EXT4_MNT_DIR/dir2/filled_subdir3/file3
 
-# For VeriFS2
-mkdir -p $VERIFS2_MNT_DIR/dir1/filled_subdir1
-mkdir -p $VERIFS2_MNT_DIR/dir1/filled_subdir2
+# # For VeriFS2
+# mkdir -p $VERIFS2_MNT_DIR/dir1/filled_subdir1
+# mkdir -p $VERIFS2_MNT_DIR/dir1/filled_subdir2
 
-mkdir -p $VERIFS2_MNT_DIR/dir2/filled_subdir2
-mkdir -p $VERIFS2_MNT_DIR/dir2/filled_subdir3
+# mkdir -p $VERIFS2_MNT_DIR/dir2/filled_subdir2
+# mkdir -p $VERIFS2_MNT_DIR/dir2/filled_subdir3
 
-mkdir -p $VERIFS2_MNT_DIR/dir3/empty_subdir3
-mkdir -p $VERIFS2_MNT_DIR/dir3/empty_subdir4
-mkdir -p $VERIFS2_MNT_DIR/dir3/empty_subdir5
+# mkdir -p $VERIFS2_MNT_DIR/dir3/empty_subdir3
+# mkdir -p $VERIFS2_MNT_DIR/dir3/empty_subdir4
+# mkdir -p $VERIFS2_MNT_DIR/dir3/empty_subdir5
 
-touch $VERIFS2_MNT_DIR/dir1/filled_subdir1/file1
-touch $VERIFS2_MNT_DIR/dir1/filled_subdir2/file2
-mkdir -p $VERIFS2_MNT_DIR/dir2/filled_subdir2/subdir2
-touch $VERIFS2_MNT_DIR/dir2/filled_subdir3/file3
+# touch $VERIFS2_MNT_DIR/dir1/filled_subdir1/file1
+# touch $VERIFS2_MNT_DIR/dir1/filled_subdir2/file2
+# mkdir -p $VERIFS2_MNT_DIR/dir2/filled_subdir2/subdir2
+# touch $VERIFS2_MNT_DIR/dir2/filled_subdir3/file3
 
 echo "All rename setup setup done!"
 
 # Compile and run the C program
 make 
-./rename-dirs-test
+./rename-dirs-assert
