@@ -30,6 +30,13 @@
 
 #include <unordered_set>
 
+#define DIR_DEPTH_CHECK
+
+#ifdef DIR_DEPTH_CHECK
+// This should be the same as PATH_DEPTH in config.h
+#define MAX_DEPTH 3
+#endif
+
 struct md5sum {
     uint64_t a;
     uint64_t b;
@@ -159,8 +166,17 @@ static bool fs_with_extra_nlink(const char *fpath)
     return false;
 }
 
+// Whether it involves a directory
+// Is nftw given a depth of a dir
+// a routine to check the deepest object in the tree 
 static int nftw_handler(const char *fpath, const struct stat *finfo,
                         int typeflag, struct FTW *ftwbuf) {
+#ifdef DIR_DEPTH_CHECK
+    if (ftwbuf->level > MAX_DEPTH) {
+        fprintf(stderr, "Directory depth exceeds maximum allowed depth of %d\n", MAX_DEPTH);
+        exit(EXIT_FAILURE);
+    }
+#endif
     const char *abspath = get_abstract_path(fpath);
     if (is_excluded(abspath)) return FTW_SKIP_SUBTREE;
 
@@ -169,6 +185,8 @@ static int nftw_handler(const char *fpath, const struct stat *finfo,
     file.fullpath = fpath;
     file.abstract_path = abspath;
     memset(&file.attrs, 0, sizeof(file.attrs));
+    // stat buffer "finfo" gives info from stat(), etc. 
+    // st_mode includes both file type and file permission
     file.attrs.mode = finfo->st_mode;
     file.attrs.size = finfo->st_size;
     /* If abspath is "/" (means mountpoint root dir)
