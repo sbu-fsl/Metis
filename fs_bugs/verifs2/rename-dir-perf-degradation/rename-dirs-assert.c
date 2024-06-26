@@ -11,12 +11,14 @@ void create_test_structure(const char *base_path) {
     char src_dir[256];
     char sub_dir[256];
     char dest_base[256];
+    char dest_mid_dir[256];
     char dest_dir[256];
 
     snprintf(src_dir, sizeof(src_dir), "%s/d-00", base_path);
     snprintf(sub_dir, sizeof(sub_dir), "%s/d-00/d-01", base_path);
     snprintf(dest_base, sizeof(dest_base), "%s/d-01", base_path);
-    snprintf(dest_dir, sizeof(dest_dir), "%s/d-01/d-00", base_path);
+    snprintf(dest_mid_dir, sizeof(dest_dir), "%s/d-01/d-00", base_path);
+    snprintf(dest_dir, sizeof(dest_dir), "%s/d-01/d-00/d-00", base_path);
 
     // Create source directory and subdirectory
     mkdir(src_dir, 0755);
@@ -24,6 +26,9 @@ void create_test_structure(const char *base_path) {
 
     // Create destination base directory
     mkdir(dest_base, 0755);
+
+    // Create min destination directory
+    mkdir(dest_mid_dir, 0755);
 
     // Create destination directory
     mkdir(dest_dir, 0755);
