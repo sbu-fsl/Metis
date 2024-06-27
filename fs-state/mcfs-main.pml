@@ -196,10 +196,21 @@ proctype worker()
             makelog("BEGIN: chmod\n");
             mountall();
             if (enable_fdpool) {
-                int src_idx = pick_random(0, get_fpoolsize() - 1);
-                for (int i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s, 0%o", 
-                        chmod, get_filepool()[i][src_idx], Pworker->chmod_mode);
+                /* Case of file */
+                if ((double)rand() / RAND_MAX < CHMOD_FILE_PROB) {
+                    int src_idx = pick_random(0, get_fpoolsize() - 1);
+                    for (int i = 0; i < get_n_fs(); ++i) {
+                        makecall(get_rets()[i], get_errs()[i], "%s, 0%o", 
+                            chmod, get_filepool()[i][src_idx], Pworker->chmod_mode);
+                    }
+                }
+                /* Case of directory */
+                else {
+                    int src_idx = pick_random(0, get_dpoolsize() - 1);
+                    for (int i = 0; i < get_n_fs(); ++i) {
+                        makecall(get_rets()[i], get_errs()[i], "%s, 0%o", 
+                            chmod, get_directorypool()[i][src_idx], Pworker->chmod_mode);
+                    }
                 }
             }
             else {
@@ -222,10 +233,21 @@ proctype worker()
             makelog("BEGIN: chown_file\n");
             mountall();
             if (enable_fdpool) {
-                int src_idx = pick_random(0, get_fpoolsize() - 1);
-                for (int i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s, %d", 
-                        chown_file, get_filepool()[i][src_idx], (int) Pworker->chown_owner);
+                /* Case of file */
+                if ((double)rand() / RAND_MAX < CHOWN_FILE_PROB) {
+                    int src_idx = pick_random(0, get_fpoolsize() - 1);
+                    for (int i = 0; i < get_n_fs(); ++i) {
+                        makecall(get_rets()[i], get_errs()[i], "%s, %d", 
+                            chown_file, get_filepool()[i][src_idx], (int) Pworker->chown_owner);
+                    }
+                }
+                /* Case of directory */
+                else {
+                    int src_idx = pick_random(0, get_dpoolsize() - 1);
+                    for (int i = 0; i < get_n_fs(); ++i) {
+                        makecall(get_rets()[i], get_errs()[i], "%s, 0%o", 
+                            chown_file, get_directorypool()[i][src_idx], (int) Pworker->chown_owner);
+                    }
                 }
             }
             else {
@@ -248,10 +270,21 @@ proctype worker()
             makelog("BEGIN: chgrp_file\n");
             mountall();
             if (enable_fdpool) {
-                int src_idx = pick_random(0, get_fpoolsize() - 1);
-                for (int i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s, %d", 
-                        chgrp_file, get_filepool()[i][src_idx], (int) Pworker->chown_group);
+                /* Case of file */
+                if ((double)rand() / RAND_MAX < CHGRP_FILE_PROB) {                
+                    int src_idx = pick_random(0, get_fpoolsize() - 1);
+                    for (int i = 0; i < get_n_fs(); ++i) {
+                        makecall(get_rets()[i], get_errs()[i], "%s, %d", 
+                            chgrp_file, get_filepool()[i][src_idx], (int) Pworker->chown_group);
+                    }
+                }
+                /* Case of directory */
+                else {
+                    int src_idx = pick_random(0, get_dpoolsize() - 1);
+                    for (int i = 0; i < get_n_fs(); ++i) {
+                        makecall(get_rets()[i], get_errs()[i], "%s, 0%o", 
+                            chgrp_file, get_directorypool()[i][src_idx], (int) Pworker->chown_group);
+                    }
                 }
             }
             else {
@@ -316,9 +349,8 @@ proctype worker()
             c_code { 
                 makelog("BEGIN: rename\n");
                 mountall();
-                int dir_or_file = random() % 2;
                 /* Case of file */
-                if (dir_or_file == 0) {
+                if ((double)rand() / RAND_MAX < RENAME_FILE_PROB) {
                     int src_idx = pick_random(0, get_fpoolsize() - 1);
                     int dst_idx = pick_random(0, get_fpoolsize() - 1);
 
@@ -415,6 +447,8 @@ proctype driver(int nproc)
                 snprintf(get_testfiles()[i], len + 1, "%s/test.txt", get_basepaths()[i]);
             }
         }
+        /* For rand() in promela driver e.g., rename file and dir probs */
+        srand(time(NULL));
     };
 
     for (i : 1 .. nproc) {
