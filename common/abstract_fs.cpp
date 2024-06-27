@@ -34,7 +34,7 @@
 
 #ifdef DIR_DEPTH_CHECK
 // This should be the same as PATH_DEPTH in config.h
-#define MAX_DEPTH 3
+#define MAX_DEPTH 2
 #endif
 
 struct md5sum {

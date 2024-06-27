@@ -362,7 +362,10 @@ proctype worker()
                 /* Case of directory */
                 else {
                     int src_idx = pick_random(0, get_dpoolsize() - 1);
-                    int dst_idx = pick_random(0, get_dpoolsize() - 1);
+                    /* For rename dirs, the newpath/destination should be  
+                     * flat and does not have subdirs, otherwise, we face 
+                     * increasely deep dir structure */
+                    int dst_idx = pick_random(0, DIR_COUNT - 1);
 
                     for (int i = 0; i < get_n_fs(); ++i) {
                         makecall(get_rets()[i], get_errs()[i], "%s, %s", rename, 
