@@ -166,9 +166,6 @@ static bool fs_with_extra_nlink(const char *fpath)
     return false;
 }
 
-// Whether it involves a directory
-// Is nftw given a depth of a dir
-// a routine to check the deepest object in the tree 
 static int nftw_handler(const char *fpath, const struct stat *finfo,
                         int typeflag, struct FTW *ftwbuf) {
 #ifdef DIR_DEPTH_CHECK
