@@ -300,7 +300,7 @@ proctype worker()
             makelog("END: chgrp_file\n");
         };
     };
-:: atomic {
+    :: atomic {
         /* setxattr, check: retval, errno, xttar names and values */
         c_code {
             makelog("BEGIN: setxattr\n");
@@ -377,7 +377,6 @@ proctype worker()
                 makelog("END: rename\n");                
             }
     };
-
     :: atomic {
         /* link: run it only if the complex ops option enabled */
         c_expr {enable_complex_ops} ->
