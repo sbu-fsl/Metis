@@ -36,4 +36,12 @@
 #define MCFS_NAME_LEN 4
 #endif
 
+/* Probabilities to select files/dirs in the promela driver 
+ * By default, use 0.95 for all the followings */
+#define CHMOD_FILE_PROB 0.95
+#define CHOWN_FILE_PROB 0.95
+#define CHGRP_FILE_PROB 0.95
+#define RENAME_FILE_PROB 0.95
+#define SYMLINK_FILE_PROB 0.95
+
 #endif // _FSSTATE_CONFIG_H_
