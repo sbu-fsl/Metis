@@ -406,13 +406,25 @@ proctype worker()
             c_code {
                 makelog("BEGIN: symlink\n");
                 mountall();
+                /* Case of file */
+                if ((double)rand() / RAND_MAX < SYMLINK_FILE_PROB) {
+                    int src_idx = pick_random(0, get_fpoolsize() - 1);
+                    int dst_idx = pick_random(0, get_fpoolsize() - 1);
 
-                int src_idx = pick_random(0, get_fpoolsize() - 1);
-                int dst_idx = pick_random(0, get_fpoolsize() - 1);
+                    for (int i = 0; i < get_n_fs(); ++i) {
+                        makecall(get_rets()[i], get_errs()[i], "%s, %s", symlink, 
+                            get_filepool()[i][src_idx], get_filepool()[i][dst_idx]);
+                    }
+                }
+                /* Case of directory */
+                else {
+                    int src_idx = pick_random(0, get_dpoolsize() - 1);
+                    int dst_idx = pick_random(0, get_dpoolsize() - 1);
 
-                for (int i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s, %s", symlink, 
-                        get_filepool()[i][src_idx], get_filepool()[i][dst_idx]);
+                    for (int i = 0; i < get_n_fs(); ++i) {
+                        makecall(get_rets()[i], get_errs()[i], "%s, %s", symlink, 
+                            get_directorypool()[i][src_idx], get_directorypool()[i][dst_idx]);
+                    }
                 }
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_rets()));
                 expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
