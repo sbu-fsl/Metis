@@ -592,10 +592,15 @@ static int setup_nfs_verifs2(int fs_idx)
     // Mount VeriFS2 at the NFS server path
     ret = mount_verifs2(NFS_EXPORT_PATH);
     if (ret != 0) {
+        fprintf(stderr, "Failed to mount VeriFS2 at NFS server path %s.\n", NFS_EXPORT_PATH);
         return ret;
     }
     // Start Kernel NFS server service only once here for VeriFS2
-    start_and_export_nfs_server(fs_idx);
+    ret = start_and_export_nfs_server(fs_idx);
+    if (ret != 0) {
+        fprintf(stderr, "Failed to start NFS server for VeriFS2.\n");
+        return ret;
+    }
     // Mount the kernel NFS client path with the passed get_basepaths()[i]
     // TODO: VeriFS2 uses NFSv3, as VeriFS2 cannot work with NFSv4 for some unknown reasons
     snprintf(cmdbuf, PATH_MAX, "mount -t nfs -o rw,nolock,vers=3,proto=tcp %s:%s %s", 
