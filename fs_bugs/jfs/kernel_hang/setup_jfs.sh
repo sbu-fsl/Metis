@@ -11,7 +11,7 @@
 #
 
 # Mount directory for JFS 
-mntpoint="/mnt/test-jfs-i1-s0"
+mntpoint="/mnt/test-jfs-i0-s0"
 
 # Backing ramdisk for JFS
 ram_device="/dev/ram0"

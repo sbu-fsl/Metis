@@ -15,7 +15,7 @@
 command="sudo ./replay"
 
 # Number of execution iterations
-num_executions=1
+num_executions=500
 
 # Single log file for all executions
 log_file="loop_replay.log"
