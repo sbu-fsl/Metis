@@ -1,6 +1,6 @@
 # JFS Kernel Crash Bug Reproduction
 
-We have prepared scripts to reproduce a non-deterministic Kernel Crash bug (likely a race) in the Journaled File System (JFS). We have used Linux Kernel v6.6.1 and v6.9.4 in our experiments, however, we recommend using v6.9.4. A sample dmesg kernel log, captured while this crash was triggered using our replayer on JFS (mounted on a ramdisk with Linux v6.9.4), is available in this repository as dmesg_jfs_kernel_hang.txt.
+We have prepared scripts to reproduce a non-deterministic Kernel Crash bug (likely a race) in the Journaled File System (JFS). We have used Linux Kernel v6.6.1 and v6.9.4 in our experiments, however, we recommend using v6.9.4. A sample dmesg kernel log, captured while this crash was triggered using our replayer on JFS (mounted on a ramdisk with Linux v6.9.4), is available in this repository as dmesg_jfs_kernel_oops_trace.txt.
 
 ### Setting up the Environment
 We need to install Linux Kernel v6.9.4 before using the replayer. We have provided a kernel config, .kernel-6.9.4-config, that corresponds to the kernel used by us during the above experiment. On a Linux machine, follow the below steps to setup a Kernel with v6.9.4.
