@@ -607,7 +607,7 @@ int main(int argc, char **argv)
     * Read the file_dir_array to create the pre-populated files and directories.
     */
     char *sequence_log_file_name = "jfs_op_sequence.log";
-    char *file_dir_array[] = {"/f-01", "/d-00/f-01", "/d-00/f-02", "/d-01/f-00", "/d-01/f-02", "/d-00/d-01"};
+    char *file_dir_array[] = {"/d-01", "/d-01/f-00", "/d-00/d-01", "/d-01/d-01"};
     int i = 0;
     ssize_t len;
     size_t linecap = 0;
