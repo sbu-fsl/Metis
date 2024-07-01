@@ -119,10 +119,25 @@ proctype worker()
             makelog("BEGIN: unlink\n");
             mountall();
             if (enable_fdpool) {
-                int src_idx = pick_random(0, get_fpoolsize() - 1);
-                for (int i = 0; i < get_n_fs(); ++i) {
-                    makecall(get_rets()[i], get_errs()[i], "%s", unlink, 
-                        get_filepool()[i][src_idx]);
+                /* Case of file */
+                if ((double)rand() / RAND_MAX < UNLINK_FILE_PROB) {
+                    int src_idx = pick_random(0, get_fpoolsize() - 1);
+                    for (int i = 0; i < get_n_fs(); ++i) {
+                        makecall(get_rets()[i], get_errs()[i], "%s", unlink, 
+                            get_filepool()[i][src_idx]);
+                    }
+                }
+                /* Case of directory: this handles deletion of possible 
+                 * symlinks of directories that use the names in the 
+                 * directory pool, rmdir operation cannot delete the 
+                 * symlinks of directories 
+                 */
+                else {
+                    int src_idx = pick_random(0, get_dpoolsize() - 1);
+                    for (int i = 0; i < get_n_fs(); ++i) {
+                        makecall(get_rets()[i], get_errs()[i], "%s", unlink, 
+                            get_directorypool()[i][src_idx]);
+                    }
                 }
             }
             else {
@@ -344,7 +359,21 @@ proctype worker()
         }
     };
     :: atomic {
-        /* rename: run it only if the complex ops option enabled */
+        /* rename: run it only if the complex ops option enabled 
+         *
+         * Note: for directory renaming such as rename(d-00, d-01/d-00) where
+         * both "d-00/d-00" and "d-01/d-00" exist and the latter is EMPTY,
+         * this operation creates a deeper dir structure (d-01/d-00/d-00), 
+         * which is not expected. The fix to this problem is forcing the rename
+         * newpath doesn't have subdirs, and we then forced the newpath of directory 
+         * renaming to be flat and does not have subdirs, which selects 
+         * from the first DIR_COUNT dirs from the directory pool.
+         * 
+         * Note: the fix above also works if the predefined dir depth (PATH_DEPTH)
+         * is greater than the default value 2. For example, if we set PATH_DEPTH=3,
+         * we should not allow the newpath has subdirs either: which will constantly
+         * increase the dir depth. 
+         */
         c_expr {enable_complex_ops} ->
             c_code { 
                 makelog("BEGIN: rename\n");
@@ -403,7 +432,11 @@ proctype worker()
             }
     };
     :: atomic {
-        /* symlink: run it only if the complex ops option enabled */
+        /* symlink: run it only if the complex ops option enabled.
+         * Note: some systems don't allow to change the permission
+         * of symlinks, so we need to handle this case accordingly if 
+         * permission operations enabled (chmod/chown/chgrp)
+         */
         c_expr {enable_complex_ops} ->
             c_code {
                 makelog("BEGIN: symlink\n");

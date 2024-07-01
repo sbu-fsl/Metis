@@ -38,6 +38,7 @@
 
 /* Probabilities to select files/dirs in the promela driver 
  * By default, use 0.95 for all the followings */
+#define UNLINK_FILE_PROB 0.95
 #define CHMOD_FILE_PROB 0.95
 #define CHOWN_FILE_PROB 0.95
 #define CHGRP_FILE_PROB 0.95
