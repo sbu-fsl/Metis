@@ -119,8 +119,8 @@ int main(int argc, char **argv)
 		} else if (strncmp(funcname, "link", len) == 0) {
 			do_link(&argvec);
 		} else if (strncmp(funcname, "unlink", len) == 0) {
-            do_unlink(&argvec);
-        } else if (strncmp(funcname, "chmod", len) == 0) {
+            		do_unlink(&argvec);
+        	} else if (strncmp(funcname, "chmod", len) == 0) {
 			do_chmod(&argvec);
 		} else if (strncmp(funcname, "chgrp_file", len) == 0) {
 			do_chgrp(&argvec);
