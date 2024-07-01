@@ -22,6 +22,9 @@
 #include <assert.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/mount.h>
+#include <sys/xattr.h>
+#include <limits.h>
 
 #define __USE_XOPEN_EXTENDED 1
 #include <ftw.h>
@@ -50,6 +53,11 @@ int do_rmdir(vector_t *argvec);
 int do_rename(vector_t *argvec);
 int do_symlink(vector_t *argvec);
 int do_link(vector_t *argvec);
+int do_setxattr(vector_t *argvec);
+int do_removexattr(vector_t *argvec);
+int do_chown(vector_t *argvec);
+int do_chgrp(vector_t *argvec);
+int do_chmod(vector_t *argvec);
 void populate_replay_basepaths();
 void replayer_init(vector_t states);
 void checkpoint(int seq, vector_t states);

@@ -155,6 +155,92 @@ int do_link(vector_t *argvec)
 	return ret;
 }
 
+int do_setxattr(vector_t *argvec)
+{
+    char *path = *vector_get(argvec, char *, 1);
+    char *attr_name = *vector_get(argvec, char *, 2);
+    char *attr_value = *vector_get(argvec, char *, 3);
+    char *size = *vector_get(argvec, char *, 4);
+    char *flag = *vector_get(argvec, char *, 5);
+
+    char *size_ptr, *flag_ptr;
+    size_t attr_size = strtoul(size, &size_ptr, 10);
+    int flag_val = (int) strtol(flag, &flag_ptr, 0);
+
+    int ret = setxattr(path, attr_name, attr_value, attr_size, flag_val);
+    int err = errno;
+
+    printf("setxattr(%s, %s, %s, %zu, %d) -> ret=%d, errno=%s\n",
+            path, attr_name, attr_value, attr_size, flag_val, ret, strerror(err));
+    
+    return ret;
+}
+
+int do_removexattr(vector_t *argvec)
+{
+    char *path = *vector_get(argvec, char *, 1);
+    char *attr_name = *vector_get(argvec, char *, 2);
+
+    int ret = removexattr(path, attr_name);
+    int err = errno;
+
+    printf("removexattr(%s, %s) -> ret=%d, errno=%s\n",
+            path, attr_name, ret, strerror(err));
+    
+    return ret;   
+}
+
+int do_chown(vector_t *argvec)
+{
+    char *path = *vector_get(argvec, char *, 1);
+    char *owner_name = *vector_get(argvec, char *, 2);
+
+    char *owner_str;
+    uid_t uid = strtoul(owner_name, &owner_str, 10);
+
+    int ret = chown(path, uid, -1);
+    int err = errno;
+
+    printf("chown(%s, %d) -> ret=%d, errno=%s\n",
+            path, (int) uid, ret, strerror(err));
+    
+    return ret;
+}
+
+int do_chgrp(vector_t *argvec)
+{
+    char *path = *vector_get(argvec, char *, 1);
+    char *group_name = *vector_get(argvec, char *, 2);
+
+    char *group_str;
+    gid_t gid = strtoul(group_name, &group_str, 10);
+
+    int ret = chown(path, -1, gid);
+    int err = errno;
+
+    printf("chgrp(%s, %d) -> ret=%d, errno=%s\n",
+            path, (int) gid, ret, strerror(err));
+    
+    return ret;   
+}
+
+int do_chmod(vector_t *argvec)
+{
+    char *path = *vector_get(argvec, char *, 1);
+    char *mode_val = *vector_get(argvec, char *, 2);
+
+    char *mode_str;
+    mode_t mode = strtol(mode_val, &mode_str, 8);
+
+    int ret = chmod(path, mode);
+    int err = errno;
+
+    printf("chmod(%s, 0%o) -> ret=%d, errno=%s\n",
+            path, mode, ret, strerror(err));
+    
+    return ret;
+}
+
 void populate_replay_basepaths()
 {
 	for (int i = 0; i < get_n_fs(); ++i) {
