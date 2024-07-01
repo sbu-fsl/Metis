@@ -641,12 +641,18 @@ static long checkpoint_before_hook(unsigned char *ptr)
 #endif
 
     for (int i = 0; i < get_n_fs(); ++i) {
+        /* If not Verifs, we do not need to checkpoint the concrete 
+         * states here */
         if (!is_verifs(get_fslist()[i]))
             continue;
         int res = -1;
-        if (strncmp(get_fslist()[i], NFS_NAME, sizeof(NFS_NAME) - 1) == 0) {
+        if (is_nfs_ganesha_verifs2(get_fslist()[i])) {
             res = checkpoint_verifs(state_depth, NFS_GANESHA_EXPORT_PATH);
-        } else {
+        }
+        else if (is_nfs_verifs2(get_fslist()[i])) {
+            res = checkpoint_verifs(state_depth, NFS_EXPORT_PATH);
+        } 
+        else {
             res = checkpoint_verifs(state_depth, get_basepaths()[i]);
         }
         if (res != 0) {
@@ -686,9 +692,13 @@ static long restore_before_hook(unsigned char *ptr)
         if (!is_verifs(get_fslist()[i]))
             continue;
         int res = -1;
-        if (strncmp(get_fslist()[i], NFS_NAME, sizeof(NFS_NAME) - 1) == 0) {
+        if (is_nfs_ganesha_verifs2(get_fslist()[i])) {
             res = restore_verifs(state_depth, NFS_GANESHA_EXPORT_PATH);
-        } else {
+        } 
+        else if (is_nfs_verifs2(get_fslist()[i])) {
+            res = restore_verifs(state_depth, NFS_EXPORT_PATH);
+        }
+        else {
             res = restore_verifs(state_depth, get_basepaths()[i]);
         }
         if (res != 0) {

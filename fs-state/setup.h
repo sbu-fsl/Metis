@@ -49,6 +49,7 @@
 #define VERIFS_AFFIX       "verifs"
 #define NOVA_NAME           "nova"
 #define NFS_GANESHA_EXT4_NAME  "nfs-ganesha-ext4"
+#define NFS_GANESHA_VERIFS2_NAME  "nfs-ganesha-verifs2"
 #define NFS_GANESHA_NAME    "nfs-ganesha"
 #define NFS_NAME            "nfs"
 #define BTRFS_NAME          "btrfs"
@@ -64,6 +65,7 @@
 #define NFS_EXT4_NAME  "nfs-ext4"
 #define NFS_EXPORT_PATH "/mnt/test-nfs-export"
 #define NFS_LOCALHOST "localhost"
+#define NFS_VERIFS2_NAME "nfs-verifs2"
 
 /* Check if "verifs" is a substring, which checks verifs1,
  * verifs2, nfs-ganesha-verifs2, nfs-verifs2, etc. 
@@ -88,9 +90,18 @@ static inline bool is_nfs_ganesha(const char *fsname)
     return strncmp(fsname, NFS_GANESHA_NAME, strlen(NFS_GANESHA_NAME)) == 0;
 }
 
+static inline bool is_nfs_ganesha_verifs2(const char *fsname) {
+    return strncmp(fsname, NFS_GANESHA_VERIFS2_NAME, strlen(NFS_GANESHA_VERIFS2_NAME)) == 0;
+}
+
 static inline bool is_nfs_ext4(const char *fsname)
 {
     return strncmp(fsname, NFS_EXT4_NAME, strlen(NFS_EXT4_NAME)) == 0;
+}
+
+static inline bool is_nfs_verifs2(const char *fsname) {
+    return strncmp(fsname, NFS_VERIFS2_NAME, strlen(NFS_VERIFS2_NAME)) == 0;
+
 }
 
 void setup_filesystems();
