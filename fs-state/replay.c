@@ -112,6 +112,7 @@ int main(int argc, char **argv)
 		bool flag_ckpt = false, flag_restore = false;
 #endif
 		mountall();
+	  
 		if (strncmp(funcname, "create_file", len) == 0) {
 			do_create_file(&argvec);
 		} else if (strncmp(funcname, "write_file", len) == 0) {
@@ -130,6 +131,18 @@ int main(int argc, char **argv)
 			do_symlink(&argvec);
 		} else if (strncmp(funcname, "link", len) == 0) {
 			do_link(&argvec);
+		} else if (strncmp(funcname, "unlink", len) == 0) {
+            		do_unlink(&argvec);
+        	} else if (strncmp(funcname, "chmod", len) == 0) {
+			do_chmod(&argvec);
+		} else if (strncmp(funcname, "chgrp_file", len) == 0) {
+			do_chgrp(&argvec);
+		} else if (strncmp(funcname, "chown_file", len) == 0) {
+			do_chown(&argvec);
+		} else if (strncmp(funcname, "removexattr", len) == 0) {
+			do_removexattr(&argvec);
+		} else if (strncmp(funcname, "setxattr", len) == 0) {
+			do_setxattr(&argvec);
 		} else if (strncmp(funcname, "checkpoint", len) == 0) {
 #if ENABLE_REPLAYER_CR			
 			flag_ckpt = true;
