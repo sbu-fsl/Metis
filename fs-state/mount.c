@@ -132,7 +132,7 @@ void mountall()
                 goto err;
             }
             /* Mount NFS client after mounting the server export path */
-            snprintf(cmdbuf, PATH_MAX, "mount -t nfs -o rw,nolock,vers=3,proto=tcp %s:%s %s", 
+            snprintf(cmdbuf, PATH_MAX, "mount -t nfs -o rw,nolock,vers=4,proto=tcp %s:%s %s", 
                 NFS_LOCALHOST, NFS_EXPORT_PATH, get_basepaths()[i]);
             ret = execute_cmd_status(cmdbuf);
         }
