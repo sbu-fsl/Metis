@@ -64,6 +64,7 @@
 /* Kernel NFS macros */
 #define NFS_EXT4_NAME  "nfs-ext4"
 #define NFS_EXPORT_PATH "/mnt/test-nfs-export"
+#define NFS_ROOT_EXPORT_PATH "/"
 #define NFS_LOCALHOST "localhost"
 #define NFS_VERIFS2_NAME "nfs-verifs2"
 

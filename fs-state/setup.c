@@ -602,9 +602,16 @@ static int setup_nfs_verifs2(int fs_idx)
         return ret;
     }
     // Mount the kernel NFS client path with the passed get_basepaths()[i]
-    // TODO: VeriFS2 uses NFSv3, as VeriFS2 cannot work with NFSv4 for some unknown reasons
-    snprintf(cmdbuf, PATH_MAX, "mount -t nfs -o rw,nolock,vers=3,proto=tcp %s:%s %s", 
-        NFS_LOCALHOST, NFS_EXPORT_PATH, get_basepaths()[fs_idx]);
+    /* Note: when we use VeriFS2 for NFSv3, the server export path is 
+     * defined as "NFS_EXPORT_PATH". However, when we use VeriFS2 for NFSv4 and
+     * specify fsid=0 in /etc/exports, the export point with fsid=0 will be 
+     * used as the root of the overall exported filesystem, so the export path in 
+     * this case should be "/". If we still use the NFS_EXPORT_PATH for this case,
+     * we got error "mount.nfs: mounting localhost:/mnt/test-nfs-export failed, 
+     * reason given by server: No such file or directory".
+     */
+    snprintf(cmdbuf, PATH_MAX, "mount -t nfs -o rw,nolock,vers=4,proto=tcp %s:%s %s", 
+        NFS_LOCALHOST, NFS_ROOT_EXPORT_PATH, get_basepaths()[fs_idx]);
     ret = execute_cmd_status(cmdbuf);
     if (ret != 0) {
         fprintf(stderr, "Failed to mount NFS client path %s for VeriFS2.\n", get_basepaths()[fs_idx]);
