@@ -48,6 +48,7 @@ struct md5sum {
  */
 const char *nlink_fs[] = {"ext4", "ext2", "jffs2"};
 const char *root_dir = "/";
+char target[PATH_MAX];
 
 std::unordered_set<std::string> exclusion_list = {
         {"/lost+found"},
@@ -181,6 +182,18 @@ static int nftw_handler(const char *fpath, const struct stat *finfo,
     file.printer = walker_printer;
     file.fullpath = fpath;
     file.abstract_path = abspath;
+    // Get the relative path of symlink target
+    if (typeflag == FTW_SL) {
+        ssize_t len = readlink(fpath, target, PATH_MAX - 1);
+        if (len < 0) {
+            walker_printer("readlink() error on %s. errno = %d(%s)\n", fpath,
+                           errno, errnoname(errno));
+            return FTW_STOP;
+        }
+        target[len] = '\0';
+        // Get the relative path of the target of the symlink
+        file.target_relpath = target + basepath_len;
+    }
     memset(&file.attrs, 0, sizeof(file.attrs));
     // stat buffer "finfo" gives info from stat(), etc. 
     // st_mode includes both file type and file permission
@@ -266,6 +279,9 @@ void AbstractFile::FeedHasher(absfs_t *absfs) {
     const char *abspath = abstract_path.c_str();
     size_t pathlen = strnlen(abspath, PATH_MAX);
 
+    const char *tgt_relpath = target_relpath.c_str();
+    size_t tgtlen = strnlen(tgt_relpath, PATH_MAX);
+
     /* We only take file sizes of regular files into consideration,
      * because different file systems may have different behavior in
      * reporting special files' sizes (especially directories), which
@@ -283,26 +299,31 @@ void AbstractFile::FeedHasher(absfs_t *absfs) {
     switch (absfs->hash_option) {
         case xxh128_t: {
             XXH3_128bits_update(absfs->xxh_state, abspath, pathlen);
+            XXH3_128bits_update(absfs->xxh_state, tgt_relpath, tgtlen);
             XXH3_128bits_update(absfs->xxh_state, &attrs, sizeof(attrs));
             break;
         }
         case xxh3_t: {
             XXH3_64bits_update(absfs->xxh_state, abspath, pathlen);
+            XXH3_64bits_update(absfs->xxh_state, tgt_relpath, tgtlen);
             XXH3_64bits_update(absfs->xxh_state, &attrs, sizeof(attrs));
             break;
         }
         case md5_t: {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
             EVP_DigestUpdate(absfs->md5_state, abspath, pathlen);
+            EVP_DigestUpdate(absfs->md5_state, tgt_relpath, tgtlen);
             EVP_DigestUpdate(absfs->md5_state, &attrs, sizeof(attrs));
 #else
             MD5_Update(&absfs->md5_state, abspath, pathlen);
+            MD5_Update(&absfs->md5_state, tgt_relpath, tgtlen);
             MD5_Update(&absfs->md5_state, &attrs, sizeof(attrs));
 #endif
             break;
         }
         case crc32_t: {
             absfs->crc32_state = crc32((uLong) absfs->crc32_state, (const Bytef *) abspath, (uInt) pathlen);
+            absfs->crc32_state = crc32((uLong) absfs->crc32_state, (const Bytef *) tgt_relpath, (uInt) tgtlen);
             absfs->crc32_state = crc32((uLong) absfs->crc32_state, (const Bytef *) &attrs,
                                          (uInt) sizeof(attrs));
             break;

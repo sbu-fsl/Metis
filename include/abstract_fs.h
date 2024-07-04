@@ -125,6 +125,11 @@ struct AbstractFile {
     std::string fullpath;
     /* Abstract path is irrelevant to the basepath of the mount point */
     std::string abstract_path;
+    /* The target of the symbolic link (for the symlink type only)
+     * as we feed the value to hasher, so this field should 
+     * not be an pointer to a string, but a string itself
+     */
+    std::string target_relpath;
     struct {
         mode_t mode;
         size_t size;
