@@ -31,7 +31,6 @@ for script in script[0-9]*; do
     volumes:
       - /mnt/mcfs/nfs4mc/include:/scripts/include
       - /mnt/mcfs/swarm_logs:/scripts/logs
-      - /mnt/ram${script_number}:/mnt/ram0
     privileged: true
 EOL
 
