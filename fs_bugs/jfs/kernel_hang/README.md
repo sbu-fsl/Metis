@@ -1,6 +1,6 @@
 # JFS Kernel Crash Bug Reproduction
 
-We have prepared scripts to reproduce a non-deterministic Kernel Crash bug (likely a race) in the Journaled File System (JFS). We have used Linux Kernel v6.6.1 and v6.9.4 in our experiments, however, we recommend using v6.9.4. A sample dmesg kernel log, captured while this crash was triggered using our replayer on JFS (mounted on a ramdisk with Linux v6.9.4), is available in this repository as dmesg_jfs_kernel_oops_trace.txt.
+We have prepared scripts to reproduce a non-deterministic Kernel Crash bug (likely a race) in the Journaled File System (JFS). We have used Linux Kernel v6.6.1 and v6.9.4 in our experiments, however, we recommend using v6.9.4. A sample dmesg kernel log, captured while this crash was triggered using our replayer on JFS (mounted on a ramdisk with Linux v6.9.4), is available for download at https://drive.google.com/file/d/1EPFGxxNkN8Aj4kwrd9Z7hK0iRl5Ru4ku/view?usp=drive_link.
 
 ### Setting up the Environment
 We need to install Linux Kernel v6.9.4 before using the replayer. We have provided a kernel config, .kernel-6.9.4-config, that corresponds to the kernel used by us during the above experiment. On a Linux machine, follow the below steps to setup a Kernel with v6.9.4.
@@ -61,7 +61,7 @@ Depending upon the function invoked (setup_jfs_on_ramdev or setup_jfs_on_loopdev
 
 This will produce an executable named 'replay'
 
-* Post this execute the below command:
+* Post this, download the jfs_ops_sequence.log file (From https://drive.google.com/file/d/1I7uf9K2P47vAGpV99pvyZBSjkMeONbdC/view?usp=drive_link), place it within the current folder and execute the below command:
 
 > sudo bash ./loop_replay.sh
 
