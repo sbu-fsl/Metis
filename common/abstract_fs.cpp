@@ -57,8 +57,9 @@ std::unordered_set<std::string> exclusion_list = {
         {"/build"}
 };
 
+/* Also ignore NFS temp files "/.nfsXXXX" */
 static inline bool is_excluded(const std::string &path) {
-    return (exclusion_list.find(path) != exclusion_list.end());
+    return (exclusion_list.find(path) != exclusion_list.end() || path.rfind("./nfs", 0) == 0);
 }
 
 static inline bool is_this_or_parent(const char *name) {
