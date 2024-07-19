@@ -23,4 +23,5 @@ sudo rmmod brd
 
 ./loadmods.sh
 
+# sudo ./setup.sh -f verifs2:$VERIFS2_SZKB:ext4:$EXT4_SZKB
 sudo ./setup.sh -f ext4:$EXT4_SZKB:verifs2:$VERIFS2_SZKB
