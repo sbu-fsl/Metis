@@ -1,7 +1,18 @@
 #!/bin/bash
 
-# Define the base names for your scripts
-scripts=("script0" "script1" "script2" "script3" "script4" "script5") 
+# Initialize an empty array to store script names
+scripts=()
+
+# Loop over each file matching Dockerfile_script*
+for dockerfile in Dockerfile_script*; do
+    # Extract the script number from the Dockerfile name
+    script_number=$(echo "$dockerfile" | grep -o '[0-9]\+')
+
+    # Add the script to the array if the number was found
+    if [ -n "$script_number" ]; then
+        scripts+=("script${script_number}")
+    fi
+done
 
 # Function to generate the deployment YAML
 generate_deployment_yaml() {

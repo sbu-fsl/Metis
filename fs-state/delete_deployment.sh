@@ -1,7 +1,24 @@
 #!/bin/bash
 
-# Array of deployment names (without the .yaml extension)
-deployment_names=("script0-deployment" "script1-deployment" "script2-deployment" "script3-deployment" "script4-deployment" "script5-deployment")
+# Initialize an empty array for deployment files
+deployment_names=()
+
+# Populate the array with deployment files that match the pattern
+for file in script*-deployment.yaml; do
+    # Check if the file matches the pattern and exists
+    if [[ -f "$file" ]]; then
+        # Remove the .yaml extension from the filename
+        base_name="${file%.yaml}"
+	deployment_names+=("$base_name")
+    fi
+done
+
+# Check if any deployment files were found
+if [ ${#deployment_names[@]} -eq 0 ]; then
+    echo "No deployment files found."
+    exit 0
+fi
+
 
 # Iterate over deployment names and delete each deployment
 for name in "${deployment_names[@]}"; do

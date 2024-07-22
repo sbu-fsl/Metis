@@ -1,12 +1,31 @@
 #!/bin/bash
 
+# File containing hostname:scriptname mapping
+mapping_file="hostname_script_mapping.txt"
+
+# Get the current hostname
+current_hostname=$(hostname)
+
+# Extract the list of scripts mapped to the current hostname
+scripts_to_build=$(grep "${current_hostname} :" $mapping_file | awk -F ' : ' '{print $2}')
+
+# Check if there are any scripts to build
+if [ -z "$scripts_to_build" ]; then
+    echo "No scripts mapped to the current hostname (${current_hostname}). Exiting."
+    exit 1
+fi
+
+
 # Loop over each script matching the pattern script[0-9].sh
-for script in script[0-9]; do
-  # Extract the script number (e.g., script0.sh -> 0)
-  script_number=$(echo $script | grep -o '[0-9]')
+for script in $scripts_to_build; do
+   
+  # Check if the script file exists
+  if [ -f "${script}" ]; then
+    # Extract the script number (e.g., script0 -> 0)
+    script_number=$(echo $script | grep -o '[0-9]*')
 
   # Create a Dockerfile for each script
-  cat <<EOL > Dockerfile_script${script_number}
+  cat <<EOL > "Dockerfile_script${script_number}"
 # Dockerfile for ${script}
 FROM ubuntu:latest
 
@@ -48,6 +67,10 @@ RUN chmod +x ${script} pan*
 CMD ["sh", "-c", "./${script} > /scripts/logs/${script}.out 2> /scripts/logs/${script}.err"]
 EOL
 
+    echo "Dockerfile created for ${script}."
+  else
+    echo "Script ${script} not found. Skipping."
+  fi
 done
 
-echo "Dockerfiles created for each script."
+echo "Dockerfiles creation process completed."
