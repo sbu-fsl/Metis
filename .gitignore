@@ -27,6 +27,7 @@ restore
 crmfs
 *.so
 .pml_tmp
+.pml_tmp2
 *.img
 gcov_results/
 *.info

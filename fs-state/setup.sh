@@ -36,6 +36,7 @@ VERIFS_PREFIX="veri"
 VERI_PREFIX_LEN="${#VERIFS_PREFIX}"
 PML_SRC="./mcfs-main.pml"
 PML_TEMP="./.pml_tmp"
+PML_TEMP2="./.pml_tmp2"
 PML_START_PATN="\/\* The persistent content of the file systems \*\/"
 PML_END_PATN="\/\* Abstract state signatures of the file systems \*\/"
 
@@ -499,14 +500,24 @@ for i in $(seq 0 $(($n_fs-1))); do
     fi
 done
 
+C_TRACK_STMT=""
 if [ "$C_TRACK_CNT" -gt "0" ]; then
-    C_TRACK_STMT=""
     for i in $(seq 0 $(($C_TRACK_CNT-1))); do
         C_TRACK_STMT="${C_TRACK_STMT}${CTRACKLIST[$i]}\\n"
     done
+fi
 
-    sed "/$PML_START_PATN/,/$PML_END_PATN/{//!d}" $PML_SRC > $PML_TEMP
-    sed "/$PML_START_PATN/a$C_TRACK_STMT" $PML_TEMP > $PML_SRC
+# //!d: deletes all lines except the lines that match the patterns $PML_START_PATN and $PML_END_PATN
+# a$C_TRACK_STMT: appends the string $C_TRACK_STMT after the line that matches $PML_START_PATN
+# for a$C_TRACK_STMT, the string $C_TRACK_STMT cannot be empty
+# We need an additional temp file, PML_TEMP2, to store the appended content
+sed "/$PML_START_PATN/,/$PML_END_PATN/{//!d}" $PML_SRC > $PML_TEMP
+# Append only if the C_TRACK_STMT is not empty
+if [ -n "$C_TRACK_STMT" ]; then
+    sed "/$PML_START_PATN/a$C_TRACK_STMT" $PML_TEMP > $PML_TEMP2
+    mv -f $PML_TEMP2 $PML_SRC
+else 
+    mv -f $PML_TEMP $PML_SRC
 fi
 
 # Run test program
