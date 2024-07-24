@@ -135,6 +135,8 @@ n_fs=${#FSLIST[@]};
 ALL_RAMS=0
 ALL_MTDBLOCKS=0
 ALL_PMEMS=0
+# NODEV: no need a device, for in-memory file systems, esp. VeriFS
+ALL_NODEV=0
 RAM_NAME="ram"
 MTDBLOCK_NAME="mtdblock"
 PMEM_NAME="pmem"
@@ -149,8 +151,11 @@ for i in $(seq 0 $(($n_fs-1))); do
     elif [ "$dev_type" = "$MTDBLOCK_NAME" ]
     then 
         ALL_MTDBLOCKS=$(($ALL_MTDBLOCKS + 1))
-    else
+    elif [ "$dev_type" = "$PMEM_NAME" ]
+    then
         ALL_PMEMS=$(($ALL_PMEMS + 1))
+    else 
+        ALL_NODEV=$(($ALL_NODEV + 1))
     fi
 done
 
@@ -487,17 +492,14 @@ for i in $(seq 0 $(($n_fs-1))); do
 done
 
 # Insert c_track statements in promela code
-# Use the C_TRACK_CNT not the i to populate CTRACKLIST to make sure the index of the array is from 0
-# However, get_fsimgs() should use i because it matches the index of the file system in mmap_devices()
+# get_fsimgs() should use i because it matches the index of the file system in mmap_devices()
 C_TRACK_CNT=0
 CTRACKLIST=()
 for i in $(seq 0 $(($n_fs-1))); do
     DEVICE=${DEVLIST[$i]};
     DEVSZKB=${DEVSIZE_KB[$i]};
-    if [ "$DEVICE" != "" ]; then
-        CTRACKLIST[$C_TRACK_CNT]="c_track \"get_fsimgs()[$i]\" \"$(($DEVSZKB * 1024))\" \"UnMatched\";"
-        C_TRACK_CNT=$(($C_TRACK_CNT+1))
-    fi
+    CTRACKLIST[$i]="c_track \"get_fsimgs()[$i]\" \"$(($DEVSZKB * 1024))\" \"UnMatched\";"
+    C_TRACK_CNT=$(($C_TRACK_CNT+1))
 done
 
 C_TRACK_STMT=""
