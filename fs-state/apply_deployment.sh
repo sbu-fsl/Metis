@@ -5,7 +5,7 @@
 deployment_files=()
 
 # Populate the array with deployment files that match the pattern
-for file in script*-deployment.yaml; do
+for file in `hostname`-swarm-deployment.yaml; do
     # Check if the file matches the pattern and exists
     if [[ -f "$file" ]]; then
         deployment_files+=("$file")
