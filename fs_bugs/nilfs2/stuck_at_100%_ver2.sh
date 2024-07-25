@@ -14,7 +14,8 @@ PROTECTION_PERIOD="10"
 
 # constants
 CONFIG_FILE="/etc/nilfs_cleanerd.conf"
-MOUNT_POINT="/mnt/test-nilfs2-i1-s0"
+MOUNT_POINT="/mnt/test-nilfs2-i0"
+DEVICE="/dev/ram0"
 FILE_PREFIX="testfile"
 DIR_PREFIX="testdir"
 FILE_SIZE=4
@@ -62,7 +63,7 @@ create_and_delete() {
     df "${MOUNT_POINT}"
     df -h "${MOUNT_POINT}"
     df -i "${MOUNT_POINT}"
-    lssu -a -l /dev/ram1
+    lssu -a -l "${DEVICE}"
 
     echo -e "\n\nDeleting all files created"
     delete_files
@@ -73,7 +74,7 @@ create_and_delete() {
     df "${MOUNT_POINT}"
     df -h "${MOUNT_POINT}"
     df -i "${MOUNT_POINT}"
-    lssu -a -l /dev/ram1
+    lssu -a -l "${DEVICE}"
 }
 
 ## Initial setup 
@@ -85,16 +86,16 @@ else
     echo "Did not find the setting ${SETTING}"
 fi
 
-umount /mnt/test-nilfs2-i1-s0
-rm -rf /mnt/test-nilfs2-i1-s0
-mkdir /mnt/test-nilfs2-i1-s0
+umount "${MOUNT_POINT}"
+rm -rf "${MOUNT_POINT}"
+mkdir "${MOUNT_POINT}"
 rmmod brd
 cd /home/ubuntu/Metis/kernel/brd-for-6.9.2/
 make -C /lib/modules/$(uname -r)/build M=$(pwd)
 
-insmod brd.ko rd_nr=2 rd_sizes=256,1028
-mkfs.nilfs2 -B 16 -f /dev/ram1
-mount /dev/ram1 /mnt/test-nilfs2-i1-s0
+insmod brd.ko rd_nr=1 rd_sizes=1028
+mkfs.nilfs2 -B 16 -f "${DEVICE}"
+mount "${DEVICE}" "${MOUNT_POINT}"
 
 
 ## Disk usage after initialization
@@ -102,22 +103,25 @@ echo -e "\nInitial disk usage:"
 df "${MOUNT_POINT}"
 df -h "${MOUNT_POINT}"
 df -i "${MOUNT_POINT}"
-lssu -a -l /dev/ram1
+lssu -a -l "${DEVICE}"
 
 ## Create files from an empty disk
 create_and_delete
 
 ## Create files from a partially full disk
 create_and_delete
+create_and_delete
+create_and_delete
+create_and_delete
 
 ## Manually run cleanerd
-nilfs_cleanerd -p 1 /dev/ram1 "${MOUNT_POINT}"
+nilfs_cleanerd -p 1 "${DEVICE}" "${MOUNT_POINT}"
 
 sleep 60
 echo "Disk usage after manually running cleanerd" 
 df "${MOUNT_POINT}"
 df -h "${MOUNT_POINT}"
 df -i "${MOUNT_POINT}"
-lssu -a -l /dev/ram1
+lssu -a -l "${DEVICE}"
 
 
