@@ -58,13 +58,16 @@ COPY . /scripts/fs-state
 WORKDIR /scripts/fs-state
 
 # Create /dev/ram0
-RUN mknod /dev/ram0 b 1 0
+RUN mknod /dev/ram0 b 1 0 && ls -l /dev/ram0
 
 # Make the script and the pan executable executable
 RUN chmod +x ${script} pan*
 
 # Command to run the script and redirect output
-CMD ["sh", "-c", "./${script} > /scripts/logs/${script}.out 2> /scripts/logs/${script}.err"]
+# CMD ["sh", "-c", "./${script} > /scripts/logs/${script}.out 2> /scripts/logs/${script}.err"]
+
+# Keep the container running
+# CMD ["sleep", "infinity"]
 EOL
 
     echo "Dockerfile created for ${script}."
