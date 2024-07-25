@@ -40,6 +40,11 @@ for EACH_TOK in "${ADDR[@]}"; do
     TOK_CNT=$(($TOK_CNT + 1))
 done
 
+# Get the number of file systems
+n_fs=${#FSLIST[@]};
+RAM_NAME="ram"
+MTDBLOCK_NAME="mtdblock"
+PMEM_NAME="pmem"
 # Populate the device list to determine the device type, copied from setup.sh
 # Remove all uses of SWARM_ID, ALL_RAMS, ALL_MTDBLOCKS, ALL_PMEMS, RAM_ID, MTDBLOCK_ID, PMEM_ID
 IS_RAM_UNIFORM=1 # 1 means all ramdisks are the same size, 0 means not
@@ -50,6 +55,7 @@ FIRST_RD=1 # whether we are now processing the first ramdisk
 RAM_CNT=0
 MTDBLOCK_CNT=0
 PMEM_CNT=0
+
 for i in $(seq 0 $(($n_fs-1))); do
     fs=${FSLIST[$i]};
     dev_type=${FS_DEV_MAP[${fs}]}
@@ -57,10 +63,10 @@ for i in $(seq 0 $(($n_fs-1))); do
     then
         if [ "$FIRST_RD" -eq 1 ]; then
             LAST_RD_SIZE=${DEVSIZE_KB[$i]}
-            RD_SIZES+="${DEVSIZE_KB[$i]}"
+            RD_SIZES="$RD_SIZES${DEVSIZE_KB[$i]}"
             FIRST_RD=0
         else
-            RD_SIZES+=",${DEVSIZE_KB[$i]}"
+            RD_SIZES="$RD_SIZES,${DEVSIZE_KB[$i]}"
             if [ "$LAST_RD_SIZE" -ne ${DEVSIZE_KB[$i]} ]; then
                 IS_RAM_UNIFORM=0
             fi
