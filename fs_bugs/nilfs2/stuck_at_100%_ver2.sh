@@ -1,10 +1,5 @@
 #!/bin/bash
 
-if [ "$EUID" -ne 0 ]; then
-  sudo "$0" "$@"
-  exit $?
-fi
-
 # mode
 SLEEP=0
 
@@ -88,12 +83,9 @@ fi
 
 umount "${MOUNT_POINT}"
 rm -rf "${MOUNT_POINT}"
-mkdir "${MOUNT_POINT}"
 rmmod brd
-cd /home/ubuntu/Metis/kernel/brd-for-6.9.2/
-make -C /lib/modules/$(uname -r)/build M=$(pwd)
-
-insmod brd.ko rd_nr=1 rd_sizes=1028
+mkdir "${MOUNT_POINT}"
+modprobe brd rd_nr=1 rd_size=1028
 mkfs.nilfs2 -B 16 -f "${DEVICE}"
 mount "${DEVICE}" "${MOUNT_POINT}"
 
@@ -107,8 +99,6 @@ lssu -a -l "${DEVICE}"
 
 ## Create files from an empty disk
 create_and_delete
-
-## Create files from a partially full disk
 create_and_delete
 create_and_delete
 create_and_delete
