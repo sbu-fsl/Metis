@@ -2,6 +2,7 @@
 
 # Initialize an empty array to store script names
 scripts=()
+mapping_file="hostname_script_mapping.txt"
 
 # Loop over each file matching Dockerfile_script*
 for dockerfile in Dockerfile_script*; do
@@ -26,9 +27,28 @@ swarm_job_file="$current_host-swarm-job.yaml"
 > $swarm_service_file
 > $swarm_job_file
 
+# Read the hostname_script_mapping.txt file and store the mappings in an associative array
+declare -A script_to_hostname_map
+
+while IFS=' : ' read -r hostname script; do
+    # Trim whitespace
+    hostname=$(echo $hostname | xargs)
+    script=$(echo $script | xargs)
+    script_to_hostname_map["$script"]="$hostname"
+done < $mapping_file
+
 generate_job_yaml() {
     local script=$1
     local dev_number=$(echo "$script" | grep -o '[0-9]*')
+	
+    # Fetch the hostname for the given script from the associative array
+    local hostname="${script_to_hostname_map[$script]}"
+
+    # Check if the hostname was found for the script
+    if [ -z "$hostname" ]; then
+        echo "Error: No hostname found for script $script"
+        return 1
+    fi
 
     cat <<EOL >> $swarm_job_file
 apiVersion: batch/v1
@@ -37,7 +57,7 @@ metadata:
   name: ${script}-job
 spec:
   completions: 1
-  parallelism: 2
+  parallelism: 1
   backoffLimit: 10
   template:
     metadata:
@@ -49,6 +69,15 @@ spec:
       - name: ${script}
         image: ghcr.io/divyaankt/${script}:latest
         command: ["sh", "-c", "./${script} > /scripts/logs/${script}.out 2> /scripts/logs/${script}.err"]
+        resources:
+          requests:
+            memory: "500Mi"
+            cpu: "1"
+            ephemeral-storage: "500Mi"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
+	    ephemeral-storage: "1Gi"
         volumeMounts:
         - name: include-volume
           mountPath: /scripts/include
@@ -58,6 +87,15 @@ spec:
           mountPath: /dev/ram0
         securityContext:
           privileged: true
+#      affinity:
+#        nodeAffinity:
+#          requiredDuringSchedulingIgnoredDuringExecution:
+#            nodeSelectorTerms:
+#            - matchExpressions:
+#              - key: kubernetes.io/hostname
+#                operator: In
+#                values:
+#                - ${hostname}
       volumes:
       - name: include-volume
         hostPath:
