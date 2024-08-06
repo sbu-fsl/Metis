@@ -94,6 +94,7 @@ done
 # to it requires an additional configuration step
 cd ..
 sudo ./stop.sh
+sudo rmmod brd
 # For ramdisks:
 # Check if we use vanilla brd module or our own brd2 module
 if [ "$RAM_CNT" -gt 0 ]; then
@@ -116,4 +117,11 @@ if [ "$MTDBLOCK_CNT" -gt 0 ]; then
 fi
 
 # Run Metis with the given file systems and sizes
-sudo ./setup.sh -f $MCFSLIST
+# sudo ./setup.sh -f $MCFSLIST 
+sudo ./setup.sh -f $MCFSLIST &
+
+# Wait for specific length of time
+sleep $2
+./stop.sh
+sudo umount -f /dev/ram*
+rmmod brd
