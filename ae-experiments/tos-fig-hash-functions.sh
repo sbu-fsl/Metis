@@ -1,6 +1,9 @@
 #!/bin/bash
 
+EXP_TIME="1h"
+FSNAME="ext4"
 
+CURRENT_DIR=$(pwd)
 # Define the SPIN hash function file path
 SPIN_PATH="$HOME/fsl-spin"
 FILE_PATH="$SPIN_PATH/Src/pangen2.c"
@@ -24,9 +27,18 @@ for i in {0..3}; do
     make
     sudo make install
 
-    ############# Step 2: Run the SPIN tests #############
+    ############# Step 2: Run the Metis with SPIN for a predefined time #############
+    cd $CURRENT_DIR
+    cd ../fs-state/mcfs_scripts
+    ./only_one_fs.sh $FSNAME $EXP_TIME
+
+    ############# Step 3: Collect and analyze the performance results #############
+    # go to fs-state folder to collect and move logs
+    cd ..
+    mkdir -p tos-expt-hash-function-$i-${HASH_TYPES[$i]}-logs
+    mv *.log *.csv *.gz *.txt *.img script* swarm_done_s* tos-expt-hash-function-$i-${HASH_TYPES[$i]}-logs
 done
 
 # Restore to the default hash method
 sed -i "s/int absfs_hash_method = [0-9]\+;/int absfs_hash_method = $DEFAULT_HASH_METHOD;/" "$FILE_PATH"
-echo "All completed."
+echo "All hash function experiments completed."
