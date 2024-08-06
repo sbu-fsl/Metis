@@ -35,8 +35,8 @@ for i in {0..3}; do
     ############# Step 3: Collect and analyze the performance results #############
     # go to fs-state folder to collect and move logs
     cd ..
-    mkdir -p tos-expt-hash-function-$i-${HASH_TYPES[$i]}-logs
-    mv *.log *.csv *.gz *.txt *.img script* swarm_done_s* tos-expt-hash-function-$i-${HASH_TYPES[$i]}-logs
+    mkdir -p tos-expt-hash-function-$i-${HASH_TYPES[$i]}-${EXP_TIME}-logs
+    mv *.log *.csv *.gz *.txt *.img script* swarm_done_s* tos-expt-hash-function-$i-${HASH_TYPES[$i]}-${EXP_TIME}-logs
 done
 
 # Restore to the default hash method
