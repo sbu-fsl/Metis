@@ -58,7 +58,7 @@ metadata:
 spec:
   completions: 1
   parallelism: 1
-  backoffLimit: 10
+  backoffLimit: 5
   template:
     metadata:
       labels:
@@ -71,13 +71,13 @@ spec:
         command: ["sh", "-c", "./${script} > /scripts/logs/${script}.out 2> /scripts/logs/${script}.err"]
         resources:
           requests:
-            memory: "500Mi"
+            memory: "200Mi"
             cpu: "1"
-            ephemeral-storage: "500Mi"
+            ephemeral-storage: "200Mi"
           limits:
-            memory: "1Gi"
+            memory: "2Gi"
             cpu: "1"
-	    ephemeral-storage: "1Gi"
+            ephemeral-storage: "5Gi"
         volumeMounts:
         - name: include-volume
           mountPath: /scripts/include
@@ -87,15 +87,15 @@ spec:
           mountPath: /dev/ram0
         securityContext:
           privileged: true
-#      affinity:
-#        nodeAffinity:
-#          requiredDuringSchedulingIgnoredDuringExecution:
-#            nodeSelectorTerms:
-#            - matchExpressions:
-#              - key: kubernetes.io/hostname
-#                operator: In
-#                values:
-#                - ${hostname}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - ${hostname}
       volumes:
       - name: include-volume
         hostPath:
@@ -106,6 +106,7 @@ spec:
       - name: ramdisk-volume
         hostPath:
           path: /dev/ram$dev_number
+          type: BlockDevice
       imagePullSecrets:
       - name: regcred
 ---
