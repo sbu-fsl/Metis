@@ -22,7 +22,7 @@
 #define OUTPUT_PREFIX    "output"
 #define ERROR_PREFIX     "error"
 /* Interval of perf metrics logging (in secs) */
-#define PERF_INTERVAL    5
+#define PERF_INTERVAL    60
 /* Max length of function name in log */
 #define FUNC_NAME_LEN    16
 /* Abort the whole program when expect() fails */

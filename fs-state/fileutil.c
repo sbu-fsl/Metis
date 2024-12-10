@@ -628,8 +628,8 @@ static size_t state_depth = 0;
  */
 static long checkpoint_before_hook(unsigned char *ptr)
 {
-    submit_seq("checkpoint\n");
-    makelog("[seqid = %d] checkpoint (%zu)\n", count, state_depth);
+    // submit_seq("checkpoint\n");
+    // makelog("[seqid = %d] checkpoint (%zu)\n", count, state_depth);
 
     mmap_devices(IS_CHECKPOINT);
 
@@ -683,8 +683,8 @@ static long restore_before_hook(unsigned char *ptr)
 {
     state_depth--;
     
-    submit_seq("restore\n");
-    makelog("[seqid = %d] restore (%zu)\n", count, state_depth);
+    // submit_seq("restore\n");
+    // makelog("[seqid = %d] restore (%zu)\n", count, state_depth);
 
     mmap_devices(IS_SNAPSHOT);
 

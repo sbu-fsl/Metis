@@ -23,7 +23,7 @@ proctype worker()
        atomic {
         c_code {
             /* creat, check: return, errno, existence */
-            makelog("BEGIN: create_file\n");
+            // makelog("BEGIN: create_file\n");
             mountall();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
@@ -42,7 +42,7 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
-            makelog("END: create_file\n");
+            // makelog("END: create_file\n");
         };
     };
     :: pick_write_open_flag(write_flag);
@@ -52,7 +52,7 @@ proctype worker()
        atomic {
         /* write, check: retval, errno, content */
         c_code {
-            makelog("BEGIN: write_file\n");
+            // makelog("BEGIN: write_file\n");
             mountall();
             // off_t offset = pick_value(0, 32768, 1024);
             // size_t writelen = pick_value(0, 32768, 2048);
@@ -81,7 +81,7 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
-            makelog("END: write_file\n");
+            // makelog("END: write_file\n");
         };
     };
     :: pick_truncate_len(filelen);
@@ -90,7 +90,7 @@ proctype worker()
         /* TODO: compare file length. Currently ftruncate is mainly
            intended to avoid long term ENOSPC of write() */
         c_code {
-            makelog("BEGIN: truncate\n");
+            // makelog("BEGIN: truncate\n");
             mountall();
             // off_t flen = pick_value(0, 200000, 10000);
             if (enable_fdpool) {
@@ -110,13 +110,13 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
-            makelog("END: truncate\n");
+            // makelog("END: truncate\n");
         };
     };
     :: atomic {
         /* unlink, check: retval, errno, existence */
         c_code {
-            makelog("BEGIN: unlink\n");
+            // makelog("BEGIN: unlink\n");
             mountall();
             if (enable_fdpool) {
                 /* Case of file */
@@ -150,13 +150,13 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
-            makelog("END: unlink\n");
+            // makelog("END: unlink\n");
         }
     };
     :: atomic {
         /* mkdir, check: retval, errno, existence */
         c_code {
-            makelog("BEGIN: mkdir\n");
+            // makelog("BEGIN: mkdir\n");
             mountall();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_dpoolsize() - 1);
@@ -175,14 +175,14 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
-            makelog("END: mkdir\n");
+            // makelog("END: mkdir\n");
         }
         // assert(! c_expr{ get_errs()[0] == EEXIST && get_errs()[1] == EEXIST && get_errs()[2] == 0 });
     };
     :: atomic {
         /* rmdir, check: retval, errno, existence */
         c_code {
-            makelog("BEGIN: rmdir\n");
+            // makelog("BEGIN: rmdir\n");
             mountall();
             if (enable_fdpool) {
                 int src_idx = pick_random(0, get_dpoolsize() - 1);
@@ -201,14 +201,14 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
-            makelog("END: rmdir\n");
+            // makelog("END: rmdir\n");
         }
     };
     :: pick_chmod_mode(chmod_mode);
        atomic {
         c_code {
             /* chmod, check: return, errno, absfs */
-            makelog("BEGIN: chmod\n");
+            // makelog("BEGIN: chmod\n");
             mountall();
             if (enable_fdpool) {
                 /* Case of file */
@@ -238,14 +238,14 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
-            makelog("END: chmod\n");
+            // makelog("END: chmod\n");
         };
     };
     :: pick_chown_owner(chown_owner);
        atomic {
         c_code {
             /* chown_file, check: return, errno, absfs */
-            makelog("BEGIN: chown_file\n");
+            // makelog("BEGIN: chown_file\n");
             mountall();
             if (enable_fdpool) {
                 /* Case of file */
@@ -275,14 +275,14 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
-            makelog("END: chown_file\n");
+            // makelog("END: chown_file\n");
         };
     };
     :: pick_chown_group(chown_group);
        atomic {
         c_code {
             /* chgrp_file, check: return, errno, absfs */
-            makelog("BEGIN: chgrp_file\n");
+            // makelog("BEGIN: chgrp_file\n");
             mountall();
             if (enable_fdpool) {
                 /* Case of file */
@@ -312,13 +312,13 @@ proctype worker()
             expect(compare_equality_values(get_fslist(), get_n_fs(), get_errs()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
-            makelog("END: chgrp_file\n");
+            // makelog("END: chgrp_file\n");
         };
     };
     :: atomic {
         /* setxattr, check: retval, errno, xttar names and values */
         c_code {
-            makelog("BEGIN: setxattr\n");
+            // makelog("BEGIN: setxattr\n");
             mountall();
             int name_idx = random() % 2;
             int src_idx = pick_random(0, get_fpoolsize() - 1);
@@ -334,13 +334,13 @@ proctype worker()
             expect(compare_equality_file_xattr(get_fslist(), get_n_fs(), get_xfpaths()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
-            makelog("END: setxattr\n");
+            // makelog("END: setxattr\n");
         }
     };
     :: atomic {
         /* removexattr, check: retval, errno, xttar names and values */
         c_code {
-            makelog("BEGIN: removexattr\n");
+            // makelog("BEGIN: removexattr\n");
             mountall();
             int name_idx = random() % 2;
             int src_idx = pick_random(0, get_fpoolsize() - 1);
@@ -355,7 +355,7 @@ proctype worker()
             expect(compare_equality_file_xattr(get_fslist(), get_n_fs(), get_xfpaths()));
             expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
             unmount_all_strict();
-            makelog("END: removexattr\n");
+            // makelog("END: removexattr\n");
         }
     };
     :: atomic {
@@ -376,7 +376,7 @@ proctype worker()
          */
         c_expr {enable_complex_ops} ->
             c_code { 
-                makelog("BEGIN: rename\n");
+                // makelog("BEGIN: rename\n");
                 mountall();
                 /* Case of file */
                 if ((double)rand() / RAND_MAX < RENAME_FILE_PROB) {
@@ -406,14 +406,14 @@ proctype worker()
                 expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
 
                 unmount_all_strict();
-                makelog("END: rename\n");                
+                // makelog("END: rename\n");                
             }
     };
     :: atomic {
         /* link: run it only if the complex ops option enabled */
         c_expr {enable_complex_ops} ->
             c_code {
-                makelog("BEGIN: link\n");
+                // makelog("BEGIN: link\n");
                 mountall();
 
                 int src_idx = pick_random(0, get_fpoolsize() - 1);
@@ -428,7 +428,7 @@ proctype worker()
                 expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
 
                 unmount_all_strict();
-                makelog("END: link\n");
+                // makelog("END: link\n");
             }
     };
     :: atomic {
@@ -439,7 +439,7 @@ proctype worker()
          */
         c_expr {enable_complex_ops} ->
             c_code {
-                makelog("BEGIN: symlink\n");
+                // makelog("BEGIN: symlink\n");
                 mountall();
                 /* Case of file */
                 if ((double)rand() / RAND_MAX < SYMLINK_FILE_PROB) {
@@ -466,7 +466,7 @@ proctype worker()
                 expect(compare_equality_absfs(get_fslist(), get_n_fs(), get_absfs()));
 
                 unmount_all_strict();
-                makelog("END: symlink\n");
+                // makelog("END: symlink\n");
             }
     };
     od

@@ -16,7 +16,7 @@
 #include "log.h"
 
 /* Config values */
-static size_t log_queue_init_size = 10240;
+static size_t log_queue_init_size = 1024000;
 /* When the log file exceeds this size limit, the log daemon will
  * rotate the log */
 static size_t logfile_size_limit = 1024 * 1024 * 1024;

@@ -94,16 +94,16 @@ static inline void compute_abstract_state(const char *basepath,
 
 #define makecall(retvar, err, argfmt, funcname, ...) \
     count++; \
-    memset(func, 0, FUNC_NAME_LEN + 1); \
-    strncpy(func, #funcname, FUNC_NAME_LEN); \
-    cur_pid = Pworker->_pid; \
-    record_seq("%s, " argfmt "\n", func, __VA_ARGS__); \
+    /* memset(func, 0, FUNC_NAME_LEN + 1); */ \
+    /* strncpy(func, #funcname, FUNC_NAME_LEN); */ \
+    /* cur_pid = Pworker->_pid; */ \
+    /* record_seq("%s, " argfmt "\n", func, __VA_ARGS__); */ \
     errno = 0; \
     retvar = funcname(__VA_ARGS__); \
     err = errno; \
-    makelog("[seqid = %zu] %s (" argfmt ")", \
-            count, func, __VA_ARGS__); \
-    submit_message(" -> ret = %d, err = %s\n", retvar, errnoname(errno)); \
+    /* makelog("[seqid = %zu] %s (" argfmt ")", */ \
+    /*        count, func, __VA_ARGS__); */ \
+    /* submit_message(" -> ret = %d, err = %s\n", retvar, errnoname(errno)); */ \
     errno = err;
 
 #define logwarn(msg, ...) \
