@@ -94,7 +94,7 @@ static void do_write_log(void)
         ssize_t ret = fwrite(entry->content, 1, entry->loglen,
                 entry->dest->file);
         assert(ret >= 0);
-        fflush(entry->dest->file);
+        //fflush(entry->dest->file);
         free(entry->content);
         entry->content = NULL;
         entry->loglen = 0;
@@ -104,6 +104,8 @@ static void do_write_log(void)
             logrotate(entry->dest);
         }
     }
+
+    fflush(entry->dest->file);
 
     vector_destroy(&my_queue);
 }
