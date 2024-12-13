@@ -90,11 +90,32 @@ static void do_write_log(void)
 
     /* Iterate the copy of the message queue and write logs */
     struct log_entry *entry;
+    vector_t unique_loggers;
+    vector_init(&unique_loggers, struct logger *, DEFAULT_INITCAP);
+
+    // Using scoped block for vector_iter so as to restrict scope of _i
+    // Otherwise vector_iter can't be used more than once in function due
+    // to _i being declared in same scope multiple times
+    {
     vector_iter(&my_queue, struct log_entry, entry) {
         ssize_t ret = fwrite(entry->content, 1, entry->loglen,
                 entry->dest->file);
         assert(ret >= 0);
-        //fflush(entry->dest->file);
+        
+	/* Track unique loggers */
+	int found = 0;
+        struct logger **logger_entry;
+        vector_iter(&unique_loggers, struct logger *, logger_entry) {
+            if (*logger_entry == entry->dest) {
+                found = 1;
+                break;
+            }
+        }
+
+        if (!found) {
+            vector_add(&unique_loggers, &entry->dest);
+        }
+
         free(entry->content);
         entry->content = NULL;
         entry->loglen = 0;
@@ -104,8 +125,21 @@ static void do_write_log(void)
             logrotate(entry->dest);
         }
     }
+    }
 
-    fflush(entry->dest->file);
+    // Using scoped block for vector_iter so as to restrict scope of _i
+    // Otherwise vector_iter can't be used more than once in function due
+    // to _i being declared in same scope multiple times
+    {
+    /* Flush all unique loggers */
+    struct logger **logger_entry;
+    vector_iter(&unique_loggers, struct logger *, logger_entry) {
+        fflush((*logger_entry)->file);
+    }
+    }
+
+    /* Clean up */
+    vector_destroy(&unique_loggers);
 
     vector_destroy(&my_queue);
 }
