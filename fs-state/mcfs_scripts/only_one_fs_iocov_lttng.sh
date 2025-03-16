@@ -10,16 +10,12 @@
 # Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
 #
 
-# only_fs.sh run MCFS with one file system only, so it does not test 
-# file system (no reference file system)
-#
-# only_fs.sh uses vanilla brd and does not need brd2 (../../kernel/brd*) 
-# 
-# This script should be placed in fs-state/mcfs_scripts folder
-
-# Usage: ./only_fs.sh <file system name> <time to sleep> (e.g., ./only_fs.sh ext4 1h)
+# Usage: ./only_one_fs_iocov_lttng.sh -f <file system name> -t <time to sleep in seconds> -e <experiment config>
+# Example: ./only_one_fs_iocov_lttng.sh -f ext4 -t 3600 -e "with-iocov"
 
 CURDIR=$(pwd)
+
+FSSZKB=0
 
 # Supported File Systems: ext4, verifs2, btrfs, jfs
 EXT4_SZKB=2048 # 2 MiB minimum size for comparing, 256KiB for one file system only
@@ -33,30 +29,57 @@ XFS_SZKB=16384 # 16 MiB
 JFS_SZKB=16384 # 16 MiB
 NILFS2_SZKB=1028 # 1028 KiB
 
-FSNAME=$1
-FSSZKB=0
+FSTYPE="ext4"
+DURATION_SECS="3600"
+EXPCONFIG="unknown-expconfig"
+TIMESTAMP="unknown-timestamp"
 
-if [ -z "$1" ]; then
-    echo "Error: File system name is missing."
-    exit 1
-fi
+while [[ $# -gt 0 ]]; do
+    key=$1;
+    case $key in
+        -f|--fs)
+            FSTYPE="$2"
+            shift
+            shift
+            ;;
+        -d|--duration)
+            DURATION_SECS="$2"
+            shift
+            shift
+            ;;
+        -e|--expconfig)
+            EXPCONFIG="$2"
+            shift
+            shift
+            ;;
+        -t|--timestamp)
+            TIMESTAMP="$2"
+            shift
+            shift
+            ;;
+        *)
+            POSITIONAL+=("$1")
+            shift
+            ;;
+    esac
+done
 
 # If fs is Ext4
-if [ "$FSNAME" == "ext4" ]; then
+if [ "$FSTYPE" == "ext4" ]; then
     FSSZKB=$EXT4_SZKB
-elif [ "$FSNAME" == "verifs2" ]; then
+elif [ "$FSTYPE" == "verifs2" ]; then
     FSSZKB=$VERIFS2_SZKB
-elif [ "$FSNAME" == "verifs1" ]; then
+elif [ "$FSTYPE" == "verifs1" ]; then
     FSSZKB=$VERIFS1_SZKB
-elif [ "$FSNAME" == "ext2" ]; then
+elif [ "$FSTYPE" == "ext2" ]; then
     FSSZKB=$EXT2_SZKB
-elif [ "$FSNAME" == "xfs" ]; then
+elif [ "$FSTYPE" == "xfs" ]; then
     FSSZKB=$XFS_SZKB
-elif [ "$FSNAME" == "btrfs" ]; then
+elif [ "$FSTYPE" == "btrfs" ]; then
     FSSZKB=$BTRFS_SZKB
-elif [ "$FSNAME" == "jfs" ]; then
+elif [ "$FSTYPE" == "jfs" ]; then
     FSSZKB=$JFS_SZKB
-elif [ "$FSNAME" == "nilfs2" ]; then
+elif [ "$FSTYPE" == "nilfs2" ]; then
     FSSZKB=$NILFS2_SZKB
 else
     echo "Error: File system $1 is not supported."
@@ -64,6 +87,7 @@ else
 fi
 
 cd ..
+
 # Stop MCFS and unmount all test file systems
 sudo ./stop.sh
 
@@ -73,29 +97,12 @@ if [ "$FSSZKB" != 0 ]; then
     modprobe brd rd_nr=1 rd_size=$FSSZKB
 fi
 
-# If the second argument is not empty
-# Run MCFS script for a specific time period
-# -f $FSNAME:$FSSZKB; NOT -f 0:$FSNAME:$FSSZKB
-# if [ -n "$2" ]; then
-#     timeout $2 ./setup.sh -f $FSNAME:$FSSZKB
-# fi
+./setup.sh -f $FSTYPE:$FSSZKB &
 
-# Updated way to run Metis with timeout
-# Or: ./setup.sh -f $FSNAME:$FSSZKB &
-./setup.sh -f $FSNAME:$FSSZKB &
-
-# Wait for 240 minutes (4 hours)
-sleep $2
+# Wait for duration time
+sleep $DURATION_SECS
 ./stop.sh
 sudo umount -f /dev/ram0 
 rmmod brd
 
-# # Move all the experimental logs to the new folder
-# NEWESTCSV=$(ls -t *.csv | head -n1)
-# # Time stamp of csv file
-# TSCSV="${NEWESTCSV:9: -4}"
-
-# NEWDIR="$CURDIR/$1-$2-$FSSZKB-$TSCSV"
-# mkdir -p $NEWDIR
-
-# mv *$TSCSV.log *$TSCSV.csv *$TSCSV.log.gz *.txt *.img script* $NEWDIR
+cd $CURDIR
