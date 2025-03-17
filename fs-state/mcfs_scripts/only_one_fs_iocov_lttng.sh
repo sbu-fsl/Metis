@@ -34,6 +34,11 @@ DURATION_SECS="3600"
 EXPCONFIG="unknown-expconfig"
 TIMESTAMP="unknown-timestamp"
 
+# Suffix for the output file
+SUFFIX="all-related-metis-"
+
+RESULT_DIR="/mcfs2/IOCov-experiments-2025-0312/metis-iocov-overhead-2025-0313/Metis/fs-state/all-metis-iocov-results"
+
 while [[ $# -gt 0 ]]; do
     key=$1;
     case $key in
@@ -97,11 +102,55 @@ if [ "$FSSZKB" != 0 ]; then
     modprobe brd rd_nr=1 rd_size=$FSSZKB
 fi
 
+echo "Running Metis with IOCov and LTTng"
+echo "FSTYPE: $FSTYPE"
+echo "DURATION_SECS: $DURATION_SECS"
+echo "EXPCONFIG: $EXPCONFIG"
+echo "TIMESTAMP: $TIMESTAMP"
+
+# LTTng parameters
+SYSCALLS=("open" "openat" "creat" "read" "pread64" "write" "pwrite64" "lseek" "llseek" "truncate" "ftruncate" "mkdir" "mkdirat" "chmod" "fchmod" "fchmodat" "close" "close_range" "chdir" "fchdir")
+
+SCPARAM=""
+
+for sc in ${SYSCALLS[@]}; do
+    SCPARAM="${SCPARAM}${sc},"
+done
+
+SUFFIX="${SUFFIX}${FSTYPE}-${DURATION_SECS}-${EXPCONFIG}"
+SCPARAM="${SCPARAM::-1}"
+
+# Start LTTng tracing for IOCov here
+
+lttng create my-kernel-session-${SUFFIX} --output="$RESULT_DIR/my-kernel-trace-${SUFFIX}"
+
+lttng enable-event --kernel --syscall $SCPARAM
+
+start=`date +%s`
+lttng start
+
 ./setup.sh -f $FSTYPE:$FSSZKB &
+SETUP_PID=$!
 
 # Wait for duration time
 sleep $DURATION_SECS
+
+echo "Stopping setup.sh (Run #$i)..."
+kill "$SETUP_PID"   # Terminate setup.sh process
 ./stop.sh
+wait "$SETUP_PID" 2>/dev/null  # Ensure process cleanup
+
+# Stop LTTng tracing for IOCov here
+lttng stop
+
+lttng destroy
+
+chown -R $(whoami) "$RESULT_DIR/my-kernel-trace-${SUFFIX}"
+
+end=`date +%s`
+runtime=$((end-start))
+babeltrace2 "$RESULT_DIR/my-kernel-trace-${SUFFIX}/kernel" > "$RESULT_DIR/metis-lttng-${SUFFIX}-chdir-fchdir-${runtime}.log"
+
 sudo umount -f /dev/ram0 
 rmmod brd
 
