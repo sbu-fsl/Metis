@@ -117,7 +117,7 @@ for sc in ${SYSCALLS[@]}; do
     SCPARAM="${SCPARAM}${sc},"
 done
 
-SUFFIX="${SUFFIX}${FSTYPE}-${DURATION_SECS}-${EXPCONFIG}"
+SUFFIX="${SUFFIX}${FSTYPE}-${DURATION_SECS}-${EXPCONFIG}-${TIMESTAMP}"
 SCPARAM="${SCPARAM::-1}"
 
 # Start LTTng tracing for IOCov here
